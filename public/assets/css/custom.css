@@ -1,0 +1,21 @@
+#userEditDelOptionsModal .form-group label
+{
+	display: flex;
+    align-items: center;
+    column-gap: 10px;
+}
+
+#userEditDelOptionsModal .form-group input
+{
+	margin-top: 0px;
+}
+
+.new_imei_table
+{
+	font-size: 13px;
+}
+
+button.selectDeviceUserChange {
+    padding: 10px 20px;
+    margin-right: 20px;
+}

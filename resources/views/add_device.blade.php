@@ -1,0 +1,895 @@
+<?php
+
+use App\Helper\CommonHelper;
+
+$getDeviceCategory = CommonHelper::getDeviceCategory();
+?>
+@extends('layouts.apps')
+@section('content')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<!--main content start-->
+<section id="main-content">
+    <section class="wrapper">
+        <!--======== Page Title and Breadcrumbs Start ========-->
+        <div class="top-page-header">
+            <div class="page-breadcrumb">
+                <nav class="c_breadcrumbs">
+                    <ul>
+                        <li><a href="#">Device Management</a></li>
+                        <li class="active"><a href="#">Add Device</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        <!--======== Page Title and Breadcrumbs End ========-->
+        <!--======== Form Validation Content Start End ========-->
+        <div class="row">
+            <div class="col-md-12">
+                <!--=========== START TAGS INPUT ===========-->
+                <div class="c_panel">
+                    <div class="c_title">
+                        <h2>Add Device</h2>
+                        <div class="clearfix"></div>
+                    </div><!--/.c_title-->
+                    <div class="c_content">
+                        <div class="row" id="alert_msg">
+                            @if ($message = Session::get('success'))
+                            <div class="col-sm-12 alert alert-success" role="alert">
+                                {{ $message }}
+                            </div>
+                            @endif
+                            @if ($message = Session::get('error'))
+                            <div class="col-sm-12 alert alert-danger" role="alert">
+                                {{ $message }}
+                            </div>
+                            @endif
+                            @if ($errors->any())
+                            <div class="col-sm-12 alert alert-danger" role="alert">
+                                {{ $errors->first() }}
+                            </div>
+                            @endif
+                        </div>
+                        <div class="col-sm-12 alert alert-success success_msg" role="alert" style="display:none"></div>
+                        <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
+                        <form class="validator form-horizontal " id="commentForm" method="post" action="#" onsubmit="return false">
+                            @csrf
+                            <div class="form-group ">
+                                <label for="cname" class="control-label col-lg-3">Account (optional)</label>
+                                <div class="col-lg-6">
+                                    <select class="" id="user_id" name="user_id">
+                                        @if(count($users) > 0)
+                                        <option value="">Unassigned Account</option>
+                                        @foreach($users as $user)
+                                        <option value="{{$user->id}}">{{$user->name}}</option>
+                                        @endforeach
+                                        @else
+                                        <option value="">Unassigned Account</option>
+                                        @endif
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group ">
+                                <label for="cemail" class="control-label col-lg-3">Name (optional)</label>
+                                <div class="col-lg-6">
+                                    <input class="form-control" placeholder="Enter Device Name" id="name" type="text" name="name">
+                                </div>
+                            </div>
+                            <div class="form-group ">
+                                <label for="cemail" class="control-label col-lg-3">IMEI <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <input class="form-control" placeholder="Enter 15 Digit IMEI Number" maxlength="15" id="imei" type="text" name="imei" onkeypress="return blockSpecialChar(event)" required />
+                                </div>
+                            </div>
+                            @if(Auth::user()->user_type=='Admin')
+                            <div class="form-group ">
+                                <label for="curl" class="control-label col-lg-3 ">Device Category <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <select class="" id="s2example-2" name="deviceCategory" onChange="getSelectedDeviceCategory()" required>
+                                        <option value=""> </option>
+                                        @foreach($getDeviceCategory as $deviceCategory)
+                                        <option value="{{$deviceCategory->id}}">{{$deviceCategory->device_category_name}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group isCanEnable" style="display:none;">
+                                <label for="firmware" class="control-label col-lg-3 " required>Can Configuration <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <input type="text" class="form-control" name="canConfigurationArr" id="canConfigurationArr" value="" readonly="readonly" />
+                                    <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display:none"></div>
+                                    <button type="button" class="btn btn-primary" onclick="openCanModal()">
+                                        Configure CAN Protocol
+                                    </button>
+                                </div>
+                            </div>
+                            @endif
+                            <div class="form-group " id="templateInput" style='display:none;'>
+                                <label for="curl" class="control-label col-lg-3 " required>Templates <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <select id="templates" name="configuration[template]" placeholder='Search and Select' id="templates" onChange="getTemplateConfiguration()">
+                                        <option value=""> </option>
+                                    </select>
+                                </div>
+                            </div>
+                            @if(Auth::user()->user_type=='Admin')
+                            <div class="form-group " id="FirmwareInput" style='display:none;'>
+                                <label for="firmware" class="control-label col-lg-3 " required>Firmware <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <select id="firmware" name="firmware" class="form-control" placeholder='Search and Select'>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group " id="modalInput" style='display:none;'>
+                                <label for="firmware" class="control-label col-lg-3 " required>Model Name <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <input type="text" class="form-control" name="configuration[modelName]" id="modelName" value="" readonly="readonly" />
+                                    <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display:none"></div>
+                                </div>
+                            </div>
+                            <div class="form-group " id="VendorID" style='display:none;'>
+                                <label for="firmware" class="control-label col-lg-3 " required>Vendor ID <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <input type="text" class="form-control" name="configuration[vendorId]" id="VendorId" value="0" readonly="readonly" />
+                                    <div class="col-sm-12 alert alert-danger vendor_error" role="alert" style="display:none"></div>
+                                </div>
+                            </div>
+                            @endif
+                            <div id='deviceCategoryInputFields' style='display:none;'></div>
+                            @if(Auth::user()->user_type=='Admin')
+                            <div class="form-group ">
+                                <label for="curl" class="control-label col-lg-3">Ping interval <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <input class="form-control" placeholder="Enter Ping Interval" id="ping_interval" type="Number" name="configuration[ping_interval]" value="4" onkeypress="return blockSpecialCharTransmission(event)" required />
+                                </div>
+                            </div>
+                            @endif
+                            @if(Auth::user()->user_type=='Admin')
+                            <div class="form-group ">
+                                <label for="curl" class="control-label col-lg-3">Device Edit Permission</label>
+                                <div class="col-lg-6">
+                                    <label>Enable</label>
+                                    <input checked type="radio" name="configuration[is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;">
+                                    <label>Disable</label>
+                                    <input type="radio" name="configuration[is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;">
+                                </div>
+                            </div>
+                            @endif
+                            <div id="loading" class="bgx-loading" style="display:none;">
+                                <img src="/assets/icons/loader.gif" alt="Loading..." />
+                            </div>
+                            <div class="form-group">
+                                <div class="col-lg-offset-3 col-lg-6">
+                                    <button class="btn btn-primary btn-flat btn-disable-after-submit" type="submit">Save</button>
+                                    @if(Auth::user()->user_type=='User')
+                                    <input class="form-control" id="ping_interval" type="hidden" name="configuration[ping_interval]" value="" />
+                                    @endif
+                                </div>
+                            </div>
+                        </form>
+                        <hr>
+                    </div><!--/.c_content-->
+                </div><!--/.c_panels-->
+            </div>
+        </div>
+        <!--======== Form Validation Content Start End ========-->
+    </section>
+</section>
+<!-- Modal -->
+<div class="modal" id="canModal" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
+                <h5 class="modal-title">CAN Protocol Configuration</h5>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <form id="canForm">
+                            <!-- Protocol Selection -->
+                            <div class="isCanEnable" style="display:none;">
+                                <div>
+                                    <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
+                                    <div class="col-lg-12 padding-1 padding-bottom-10">
+                                        <select id="can_channel" name="canConfiguration[canChannel]" required>
+                                            <option value="">-- Select CAN Channel --</option>
+                                            <option value="1">CAN 1</option>
+                                            <option value="2">CAN 2</option>
+                                            <option value="3">CAN 3</option>
+                                            <option value="4">CAN 4</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="margin:10px 0px;">
+                                    <label class="control-label">Can Baud Rate <span class="require">*</span></label>
+                                    <select id="can_baud_rate" name="canConfiguration[can_baud_rate]" class="form-control" required>
+                                        <option value="">-- Select Protocol --</option>
+                                        <option value="500">500 kbps</option>
+                                        <option value="250">250 kbps</option>
+                                    </select>
+                                </div>
+                                <div style="margin:10px 0px;">
+                                    <label class="control-label">Can ID Type <span class="require">*</span></label>
+                                    <select id="can_id_type" name="canConfiguration[can_id_type]" class="form-control" required>
+                                        <option value="">-- Select Protocol --</option>
+                                        <option value="0">Standard</option>
+                                        <option value="1">Extended</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="curl" class="control-label padding-left-3">Can Protocol<span class="require">*</span></label>
+                                    <div class="col-lg-12 padding-1 padding-bottom-10">
+                                        <select class="" id="can_protocol" name="canConfiguration[can_protocol]" onChange="selectedCanProtocol()" required>
+                                            <option value=""> </option>
+                                            <option value="1">J1979</option>
+                                            <option value="2">J1939</option>
+                                            <option value="3">Custom CAN</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="dynamicCanFields"></div>
+                            <!-- Submit -->
+                            <!-- <button type="button" class="btn btn-success mt-4">Generate JSON</button> -->
+                        </form>
+                    </div>
+                    <div class="col-md-12 text-right">
+                        <button type="button" class="btn btn-success mt-4" onclick="generateJSON()">Submit</button>
+                    </div>
+                </div>
+                <!-- Output JSON -->
+                <!-- <div class="mt-4">
+                    <label class="form-label">Generated JSON:</label>
+                    <textarea class="form-control" id="outputJson" rows="10" readonly></textarea>
+                </div> -->
+            </div>
+
+        </div>
+    </div>
+</div>
+<!--======== Main Content End ========-->
+@stop
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $(' #container').on('input', '.inputType', function() {
+            var value = $(this).val();
+            $(this).val(value.replace(/\s/g, '')); // Remove all spaces
+        });
+        $("#user_id").select2();
+        $('#imei').bind('keyup paste', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+        $('#templates').select2({
+            placeholder: "Search and Select",
+        });
+        $('#can_protocol').select2({
+            placeholder: "Search and Select",
+        });
+        $('#can_channel').select2({
+            placeholder: "Search and Select",
+        });
+        $('#s2example-2').select2({
+            placeholder: "Search and Select",
+        });
+        $('#user_id, #firmware').on('change', function() {
+            var userId = $('#user_id').val();
+            if (userId == "") {
+                $("#VendorId").val(0);
+                $('#templateInput').show();
+                $('#modelName').show();
+                $('#VendorId').show();
+                $(".vendor_error").hide()
+                $(".modelName_error").hide();
+                $('#deviceCategoryInputFields').show();
+                getSelectedDeviceCategory();
+            } else {
+                $('#templateInput').hide();
+                $('#deviceCategoryInputFields').empty().hide();
+            }
+            //getSelectedDeviceCategory();
+            // $('#templates').trigger('change');
+            var firmwareId = $('#firmware').val();
+            if (userId && firmwareId) {
+                checkModalNameExist(userId, firmwareId);
+            }
+        });
+        // $('#firmware').select2({
+        // placeholder: "Search and Select" ,
+        // });
+        $("#commentForm").submit(function(event) {
+            $(".error_msg").html("").hide();
+            $(".success_msg").html("").hide();
+            event.preventDefault(); // Prevent default form submission
+            formValid = true;
+            let imei = $("#imei").val();
+            if (!isValidIMEI(imei)) {
+                formValid = false;
+            }
+            if (formValid) {
+                $('.error_msg').empty().hide();
+                $('.success_msg').empty().hide();
+                // Serialize form data
+                let formData = $(this).serialize();
+                // AJAX request
+                $.ajax({
+                    url: "{{ url('/admin/store-device') }}", // Replace with your API endpoint
+                    type: "POST",
+                    data: formData,
+                    success: function(response) {
+                        let result = JSON.parse(response);
+                        if (result.status = 200) {
+                            $('.btn-disable-after-submit').attr("disabled", true);
+                            $('.success_msg').append(result.status_message).show();
+                            document.documentElement.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error("Error:", xhr.responseText);
+                        let errors = JSON.parse(xhr.responseText);
+                        // Display specific errors in the error message container
+                        if (errors && errors.errors.imei) {
+                            $('.error_msg').append(errors.errors.imei[0]).show();
+                        }
+                        document.documentElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                        // Handle error response as needed
+                    },
+                    complete: function() {
+                        // Optional: Hide loading indicator or enable submit button
+                        $('#loading').hide();
+                    }
+                });
+            } else {
+                $(".error_msg").append("Please Enter the valid IMEI no ").show();
+                document.documentElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                return false;
+            }
+        });
+    });
+
+    function escapeSelector(selector) {
+        return selector.replace(/([ #;?%&,.+*~\':" !^$[\]()=>|\/@])/g, '\\$1');
+    }
+
+    function generateJSON() {
+        let canConfigData = {};
+        $('input[name^="canConfiguration["], select[name^="canConfiguration["]').each(function() {
+            let fieldId = $(this).attr('id'); // Or extract from name if needed
+            let value = $(this).val();
+            // Special handling for can_protocol
+            if (fieldId === 'can_protocol') {
+                canConfigData[fieldId] = {
+                    id: 97,
+                    value: value
+                };
+            } else if (fieldId == 'can_channel') {
+                canConfigData[fieldId] = {
+                    id: 94,
+                    value: value
+                };
+            } else if (fieldId == 'can_baud_rate') {
+                canConfigData[fieldId] = {
+                    id: 96,
+                    value: value
+                };
+            } else if (fieldId == 'can_id_type') {
+                canConfigData[fieldId] = {
+                    id: 95,
+                    value: value
+                };
+            } else {
+                let hiddenInput = $(`input[name="idCanParameters[${fieldId}]"]`);
+                let canParametersType = $(`input[name="CanParametersType[${fieldId}]"]`).val();
+                let id = hiddenInput.val();
+
+                // Check if id and value are not empty/null
+                if (id && value !== "") {
+                    if (canParametersType == 'multiselect') {
+                        const formattedMultiValue = `{${value.join(',')}}`;
+                        canConfigData[fieldId] = {
+                            id: parseInt(id),
+                            value: formattedMultiValue
+                        };
+                    } else {
+                        canConfigData[fieldId] = {
+                            id: parseInt(id),
+                            value: value
+                        };
+                    }
+                }
+            }
+        });
+        // console.log(JSON.stringify(canConfigData, null, 2));
+        // console.log("canConfigData ==>", canConfigData);
+        // return false;
+        $('#canConfigurationArr').val(JSON.stringify(canConfigData));
+        $('#canModal').modal('hide');
+    }
+
+    function openCanModal() {
+        $('#canModal').modal('show');
+    }
+    $(document).ready(function() {
+        $('#protocolSelect').on('change', function() {
+            const value = $(this).val();
+            $('#j1979Fields').toggle(value === 'J1979');
+            $('#j1939Fields').toggle(value === 'J1939');
+            let selected = $(this).val();
+            $('#j1979Fields input, #j1939Fields input').removeAttr('required');
+            if (selected === 'J1979') {
+                $('#j1979Fields input').attr('required', true);
+            } else if (selected === 'J1939') {
+                $('#j1939Fields input').attr('required', true);
+            }
+        });
+        $('#canForm').on('submit', function(e) {
+            e.preventDefault();
+            const protocol = $('#protocolSelect').val();
+            let json = {
+                can_enabled: true,
+                protocol
+            };
+            if (protocol === 'J1979') {
+                json.can_protocol = $('[name="can_protocol"]').val();
+                json.request_id = $('[name="request_id"]').val();
+                json.response_ids = $('[name="response_ids"]').val().split(',').map(s => s.trim());
+                json.baud_rate = parseInt($('[name="baud_rate"]').val());
+                json.polling_interval_ms = parseInt($('[name="polling_interval_ms"]').val());
+                json.supported_modes = $('[name="supported_modes"]').val().split(',').map(s => s.trim());
+                json.supported_pids = $('[name="supported_pids"]').val().split(',').map(s => s.trim());
+                json.extended_id = false;
+            }
+            if (protocol === 'J1939') {
+                json.baud_rate = parseInt($('[name="baud_rate"]').val());
+                json.source_address = $('[name="source_address"]').val();
+                json.preferred_address = $('[name="preferred_address"]').val();
+                json.pgns_to_poll = $('[name="pgns_to_poll"]').val().split(',').map(s => s.trim());
+                json.use_tp = $('[name="use_tp"]').val() === 'true';
+                json.can_channel = $('[name="can_channel"]').val();
+                json.name = {
+                    identity_number: parseInt($('[name="identity_number"]').val()),
+                    manufacturer_code: parseInt($('[name="manufacturer_code"]').val()),
+                    ecu_instance: parseInt($('[name="ecu_instance"]').val()),
+                    function_instance: parseInt($('[name="function_instance"]').val()),
+                    function: parseInt($('[name="function"]').val()),
+                    vehicle_system: parseInt($('[name="vehicle_system"]').val()),
+                    arbitrary_address_capable: $('[name="arbitrary_address_capable"]').val() === 'true'
+                };
+            }
+            $('#outputJson').val(JSON.stringify(json, null, 2));
+        });
+    });
+
+    function checkModalNameExist(userId, firmwareId) {
+        let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-model-name') }}";
+        $.ajax({
+            url: actionUrl,
+            type: "POST",
+            data: {
+                user_id: userId,
+                firmware_id: firmwareId
+            },
+            success: function(response) {
+                let result = JSON.parse(response);
+                if (result.status == 200) {
+                    if (result.modalList !== null && result.modalList !== undefined) {
+                        let modal = JSON.parse(result.modalList);
+                        if (modal != null) {
+                            $('#modelName').val(modal.name);
+                            $('#VendorId').val(modal.vendorId);
+                            $('#modelName').show();
+                            $('#VendorId').show();
+                            $(".vendor_error").hide()
+                            $(".modelName_error").hide();
+                            $('.btn-disable-after-submit').attr('disabled', false);
+                        } else {
+                            $('#modelName').hide();
+                            $('#VendorId').hide();
+                            $(".modelName_error").show().html('Model Name is not Assigned . Please contact with Administrator');
+                            $(".vendor_error").show().html('Vendor ID is not Assigned . Please contact with Administrator');
+                            $('.btn-disable-after-submit').attr('disabled', true);
+                        }
+                    } else {
+                        $('#modelName').hide();
+                        $(".modelName_error").show();
+
+                        $('.btn-disable-after-submit').attr('disabled', true);
+                    }
+                } else {
+                    // $('.error_msg').append(result.message).show();
+                }
+            },
+            error: function(xhr) {
+                // Handle error
+                console.error("Error:", xhr.responseText);
+                $('.error_msg').append("An error occurred while processing your request.").show();
+            },
+            complete: function() {
+                $('#loading').hide();
+            }
+        });
+    }
+
+    function isValidIMEI(imei) {
+        imei = imei.replace(/[^\d]/g, '');
+        if (imei.length !== 15) {
+            return false;
+        }
+        let sum = 0;
+        for (let i = 0; i < 15; i++) {
+            let digit = parseInt(imei.charAt(i));
+            if (i % 2 === 1) {
+                digit *= 2;
+                if (digit > 9) {
+                    digit = digit.toString();
+                    digit = parseInt(digit.charAt(0)) + parseInt(digit.charAt(1));
+                }
+            }
+            sum += digit;
+        }
+        return sum % 10 === 0;
+    }
+
+    function selectedCanProtocol() {
+        let canProtocolValue = $('#can_protocol').val();
+        if (!canProtocolValue) return;
+
+        let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-can-protocol-fields') }}";
+
+        $.ajax({
+            url: actionUrl,
+            type: 'POST',
+            data: {
+                protocol: canProtocolValue,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(fields) {
+                let html = '<div class="row">';
+                fields.forEach(field => {
+                    const fieldId = field.fieldName.replace(/\s+/g, '_').toLowerCase();
+                    const inputType = field.inputType;
+                    let validation = {};
+                    try {
+                        validation = JSON.parse(field.validationConfig || '{}');
+                        console.log("validation ==>", validation);
+                    } catch (e) {
+                        console.warn('Invalid JSON in validationConfig for field:', field.fieldName);
+                    }
+                    let inputHtml = `<input type="hidden" name="idCanParameters[${fieldId}]" value="${field.id}" />`;
+                    inputHtml += `<input type="hidden" name="CanParametersType[${fieldId }]" value="${ inputType}" />`;
+                    let attr = `id="${fieldId}" name="canConfiguration[${fieldId}]" class="form-control ip-url-space" placeholder="Enter ${field.fieldName}"`;
+                    if (inputType === 'number') {
+                        if (validation.numberInput) {
+                            attr += ` min="${validation.numberInput.min}" max="${validation.numberInput.max}"`;
+                        }
+                        inputHtml += `<input type="number" ${attr} />`;
+                    } else if (inputType == 'multiselect') {
+                        inputHtml += `<select id="${fieldId}" placeholder="Enter ${field.fieldName}" multiple name="canConfiguration[${fieldId}][]">`;
+                        if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
+                            validation.selectOptions.forEach((option, index) => {
+                                inputHtml += `<option value="${validation.selectValues[index]}">${option}</option>`;
+                            });
+                        } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
+                            Object.entries(validation.selectOptions).forEach(([key, value]) => {
+                                inputHtml += `<option value="${key}">${value}</option>`;
+                            });
+                        } else {
+                            inputHtml += `<option value="">-- Select --</option>`;
+                        }
+                        inputHtml += `</select>`;
+                        setTimeout(() => {
+                            var $select = $('#' + fieldId);
+                            if ($select.length) {
+                                $select.select2({
+                                    placeholder: "Select up to 3 options",
+                                    width: "100%"
+                                });
+                                $select.on("change", function() {
+                                    var selected = $(this).select2("val");
+                                    if (selected && selected.length > validation.maxSelectValue) {
+                                        selected.splice(validation.maxSelectValue);
+                                        $(this).select2("val", selected);
+                                        alert("You can only select up to " + validation.maxSelectValue + " options.");
+                                    }
+                                });
+                            }
+                        }, 100);
+
+                    } else if (inputType === 'select') {
+                        inputHtml += `<select ${attr}>`;
+                        if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
+                            validation.selectOptions.forEach(option => {
+                                inputHtml += `<option value="${option}">${option}</option>`;
+                            });
+                        } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
+                            Object.entries(validation.selectOptions).forEach(([key, value]) => {
+                                inputHtml += `<option value="${key}">${value}</option>`;
+                            });
+                        } else {
+                            inputHtml += `<option value="">-- Select --</option>`;
+                        }
+                        inputHtml += `</select>`;
+                    } else if (inputType === "text_array") {
+                        var values = [""];
+                        var maxValue = validation.maxValueInput || 0;
+                        inputHtml += "<div id='" + fieldId + "_wrapper' class='text-array-wrapper'>" +
+                        values.map(function(val, index) {
+                            return "<div class='text-array-item d-flex align-items-center mb-2'>" +
+                                "<input type='text' maxlength='8' id='" + fieldId + index + "' name='canConfiguration[" + fieldId + "][]' class='form-control text-array-space me-2' placeholder='Enter " + field.fieldName + "' value='" + val.trim() + "' />" +
+                                "<button type='button' class='btn btn-sm btn-danger remove-text-input'><i class='fa fa-minus'></i></button>" +
+                                "</div>";
+                        }).join("") +
+                        "<button type='button' class='btn btn-sm btn-primary add-text-input mt-1'><i class='fa fa-plus'></i> Add</button>" +
+                        "</div>";
+                        inputHtml += "<input type='hidden' id='" + fieldId + "' name='canConfiguration[" + fieldId + "]' />";
+                        setTimeout(function() {
+                            var wrapper = $("#" + fieldId + "_wrapper");
+                            wrapper.on("click", ".add-text-input", function() {
+                                var count = wrapper.find(".text-array-item").length;
+                                if (maxValue && count >= maxValue) {
+                                    alert("You can only add up to " + maxValue + " inputs for " + field.fieldName + ".");
+                                    return;
+                                }
+                                var newInput = "<div class='text-array-item d-flex align-items-center mb-2'>" +
+                                    "<input type='text' id='" + fieldId + "_" + count + "' name='canConfiguration[" + fieldId + "][]' class='form-control text-array-space me-2' placeholder='Enter " + field.fieldName + "' />" +
+                                    "<button type='button' class='btn btn-sm btn-danger remove-text-input'><i class='fa fa-minus'></i></button>" +
+                                    "</div>";
+                                $(this).before(newInput);
+                            });
+                            wrapper.on("click", ".remove-text-input", function() {
+                                $(this).closest(".text-array-item").remove();
+                                updateHiddenValue();
+                            });
+                            wrapper.on("input", "input[type=text]", function() {
+                                updateHiddenValue();
+                            });
+
+                            function updateHiddenValue() {
+                                var values = [];
+                                wrapper.find("input[type=text]").each(function() {
+                                    var val = $(this).val().trim();
+                                    if (val) values.push(val);
+                                });
+                                $("#" + fieldId).val("{" + values.join(",") + "}");
+                            }
+                            updateHiddenValue();
+                        }, 100);
+                    } else if (inputType === 'hex') {
+                        let attr1 = `id="${fieldId}" name="canConfiguration[${fieldId}]" class="form-control text-array-space me-2"`;
+                        let maxValue = validation.maxValueInput || 0;
+                        if (validation.maxValueInput) {
+                            attr1 += `maxlength="${validation.maxValueInput}"`;
+                        }
+                        inputHtml += `<input type="text" ${attr1} />`;
+
+                    } else {
+                        // default to text input
+                        if (validation.maxValueInput) {
+                            attr += ` maxlength="${validation.maxValueInput}"`;
+                        }
+                        inputHtml += `<input type="text" ${attr} />`;
+                    }
+                    html += `<div class="col-md-12 padding-3 padding-top-10">
+                        <div class="form-group" id="modalInput">
+                            <label for="${fieldId}" class="control-label padding-left-14" required>
+                                ${field.fieldName} <span class="require">*</span>
+                            </label>
+                            <div class="col-lg-12">
+                                ${inputHtml}
+                                <div class="col-sm-12 alert alert-danger ${fieldId}_error" role="alert" style="display:none"></div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+                $('#dynamicCanFields').html(html).show();
+            },
+            error: function(xhr) {
+                console.error("Error fetching CAN protocol fields", xhr);
+            }
+        });
+    }
+
+    function getSelectedDeviceCategory() {
+        $('#loading').show();
+        let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-device-category') }}";
+        var selectedDeviceCategoryId = $('#s2example-2').val();
+        $('#deviceCategoryInputFields').html('');
+        $.ajax({
+            url: actionUrl,
+            type: "POST",
+            data: {
+                id: selectedDeviceCategoryId
+            },
+            success: function(response) {
+                let result = JSON.parse(response);
+                let templates = JSON.parse(result.templates);
+                let templateConfig = templates.configurations;
+                let canEnable = result.canEnable == 1 ? true : false;
+                if (canEnable) {
+                    $('.isCanEnable').show();
+                }
+                console.log("canEnable ==>", canEnable);
+                let firmwares = JSON.parse(result.firmware);
+                let dataFields = JSON.parse(result.dataFields);
+                console.log("dataFields ==>", dataFields);
+                var selectedOptionText = $('#s2example-2 option:selected').text();
+                $('#modelName').val(selectedOptionText);
+                console.log('firmwares', firmwares);
+                if ($('#user_id').val() == "" || $('#user_id').val() == "No User Found") {
+                    $('#templateInput').show();
+                }
+                $('#FirmwareInput').show();
+                $('#modalInput').show();
+                $('#VendorID').show();
+                $('#templates').empty();
+                $('#firmware').empty();
+                firmwares.forEach(firmware => {
+                    var option = new Option(firmware.name, firmware.id, firmware.is_default == 1, firmware.is_default == 1);
+                    $('#firmware').append(option);
+                });
+                if ($('#user_id').val() == "" || $('#user_id').val() == "No User Found") {
+                    templates.forEach((template) => {
+                        var option = new Option(template.template_name, template.id, template.default_template == 1, template.default_template == 1);
+                        $('#templates').append(option);
+                    });
+                    // Trigger change event after all options are appended
+                    $('#templates').trigger('change');
+                    // Select the option using Select2's API
+                    if (templates.length > 0) {
+                        $('#templates').val(templates[0].id).trigger('change.select2');
+                    }
+                }
+                let htmlContent = '';
+                if ($('#user_id').val() == "" || $('#user_id').val() == "No User Found") {
+                    if (result.status == 200) {
+                        let inputFields = JSON.parse(result.device_input);
+                        inputFields.forEach((input, index) => {
+                            htmlContent += '<input class="form-control" type="hidden" name="idParameters[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="">';
+                            if (input.type == 'select') {
+                                let field = dataFields.filter((item) => item.fieldName.replace(/\s+/g, '_').toLowerCase() == input.key.replace(/\s+/g, '_').toLowerCase());
+                                let config = JSON.parse(field[0].validationConfig);
+                                htmlContent += '<div class="form-group">';
+                                htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                                htmlContent += '<div class="col-lg-6">';
+                                htmlContent += '<select class="form-control inputType" name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? ' required' : '') + '>';
+                                if (config?.selectOptions && config?.selectValues) {
+                                    config.selectOptions.forEach((option, index) => {
+                                        const value = config.selectValues[index] ?? '';
+                                        htmlContent += `<option value="${value}">${option}</option>`;
+                                    });
+                                }
+                                htmlContent += '</select>';
+                                htmlContent += '</div>';
+                                htmlContent += '</div>';
+                            } else if (input.type == 'multiselect') {
+                                htmlContent += '<div class="form-group">';
+                                htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                                let field = dataFields.filter((item) => item.fieldName.replace(/\s+/g, '_').toLowerCase() == input.key.replace(/\s+/g, '_').toLowerCase());
+                                htmlContent += '<div class="col-lg-6">';
+                                htmlContent += `<select id="${input.key.replace(/\s+/g, '_').toLowerCase() }" " multiple name=" configuration[` + input.key.replace(/\s+/g, '_').toLowerCase() + `][]" ` + (input.requiredFieldInput ? 'required' : '') + `>`;
+                                let config = JSON.parse(field[0].validationConfig);
+                                if (config.selectOptions && Array.isArray(config.selectOptions)) {
+                                    console.log("is array ==>", config.selectOptions);
+                                    config.selectOptions.forEach((option, index) => {
+                                        htmlContent += `<option value="${config.selectValues[index]}">${option}</option>`;
+                                    });
+                                } else if (config.selectOptions && typeof config.selectOptions === 'object') {
+                                    console.log("is object", );
+                                    Object.entries(config.selectOptions).forEach(([key, value]) => {
+                                        htmlContent += `<option value="${key}">${value}</option>`;
+                                    });
+                                } else {
+                                    htmlContent += `<option value="">-- Select --</option>`;
+                                }
+
+                                htmlContent += `</select></div>`;
+                                htmlContent += `</div>`;
+                                // Apply Select2
+                                setTimeout(() => {
+                                    $(document).ready(function() {
+                                        var $select = $('#' + input.key.replace(/\s+/g, '_').toLowerCase());
+                                        $select.select2({
+                                            placeholder: "Select up to 3 options",
+                                            width: "100%"
+                                        });
+                                        $select.on("change", function() {
+                                            var selected = $(this).select2("val");
+                                            if (selected && selected.length > config.maxSelectValue) {
+                                                // Remove the last selected item
+                                                selected.splice(config.maxSelectValue);
+                                                $(this).select2("val", selected);
+                                                alert("You can only select up to " + config.maxSelectValue + " options.");
+                                            }
+                                        });
+                                    });
+                                }, 100);
+                            } else {
+                                if (input.key == "Password") {
+                                    htmlContent += '<div class="form-group">';
+                                    htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                                    htmlContent += '<div class="col-lg-6">';
+                                    htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == ' number' ? 'minlength ="' + input.numberRange[0]?.min + '" maxlength="' + input.numberRange[0]?.max + '"' : '') + '  placeholder="Enter ' + input.key + '" name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
+                                    htmlContent += '</div>';
+                                    htmlContent += '</div>';
+                                } else {
+                                    htmlContent += '<div class="form-group">';
+                                    htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                                    htmlContent += '<div class="col-lg-6">';
+                                    htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'min ="' + input.numberRange?.min + '" max="' + input.numberRange?.max + '"' : '') + '  placeholder="Enter ' + input.key + '" name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
+
+                                    htmlContent += '</div>';
+                                    htmlContent += '</div>';
+                                }
+                            }
+                        });
+                        if ($('#user_id').val() == "") {
+                            $('#deviceCategoryInputFields').append(htmlContent);
+                        }
+                    } else {
+                        $('#loading').hide();
+                        $('#deviceCategoryInputFields').empty();
+                        alert(result.message);
+
+                    }
+                } else {
+                    $('#deviceCategoryInputFields').empty();
+                }
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText); // Handle error
+            },
+            complete: function() {
+                $('#loading').hide(); // Hide loading indicator regardless of success or error
+            }
+        });
+    }
+
+    function getTemplateConfiguration() {
+        let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-template-configuration') }}";
+        $('#loading').show();
+        var selectedTemplateId = $('#templates').val();
+        $.ajax({
+            url: actionUrl,
+            type: "POST",
+            data: {
+                id: selectedTemplateId
+            },
+            success: function(response) {
+                $('#loading').hide();
+                let result = JSON.parse(response);
+                let template = JSON.parse(JSON.parse(result.template));
+                console.log("template==>", template);
+                Object.keys(template).forEach(function(key) {
+                    let element = $("input[name='configuration[" + key + "]'], select[name='configuration[" + key + "]']");
+                    let hiddenelement = $(`input[name="idParameters\\[${key}\\]"]`);
+                    // Check if the element exists
+                    if (element.length > 0) {
+                        // Determine the type of element (input or select) and set the value
+                        hiddenelement.val(template[key].id)
+                        if (element.is('input')) {
+                            element.val(template[key].value);
+                        } else if (element.is('select')) {
+                            element.val(template[key].value);
+                        }
+                    } else {
+                        console.log("Element not found for key:", key);
+                    }
+                });
+                $('#deviceCategoryInputFields').show();
+            },
+            error: function(data) {
+                console.error(data.responseText);
+            }
+        });
+    }
+</script>

@@ -18,7 +18,10 @@ jobs:
           key: ${{ secrets.EC2_KEY }}         # Private key stored as secret
           script: |
             cd /var/www/html/GPSCPANEL_PROD
-            git pull origin dev
+            git checkout main
+            git pull origin main
+            chmod -R 777 storage bootstrap/cache
+            export APP_DEBUG=false
             composer install --no-dev --optimize-autoloader
             php artisan migrate --force
             php artisan config:clear

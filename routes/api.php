@@ -29,7 +29,7 @@ Route::post('/generate-token-jig', [AddDeviceThroughJigController::class, 'gener
 Route::middleware('check.auth.token')->post('/postPacketData', [DeviceApiController::class, 'postPacketData']);
 
 // Authenticated firmware route
-Route::middleware('check.auth.file.token')->get('/download-firmware/{deviceId}', [DeviceApiController::class, 'downloadFirmware']);
+Route::get('/download-firmware/{deviceId}', [DeviceApiController::class, 'downloadFirmware']);
 
 Route::middleware('check.auth.token.jig')->post('/add-device-through-jig', [AddDeviceThroughJigController::class, 'addDevice']);
 

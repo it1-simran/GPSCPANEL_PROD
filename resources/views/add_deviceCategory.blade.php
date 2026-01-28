@@ -88,6 +88,12 @@
                                         <input type="checkbox" class='default_template_checkbnox' name="is_esim" id="is_esim">
                                     </div>
                                 </div>
+                                 <div class="form-group ">
+                                    <label for="curl" class="control-label col-lg-3"><b>Is Certification Enable </b></label>
+                                    <div class="col-lg-6">
+                                        <input type="checkbox" class='default_template_checkbnox' name="is_certification_enable" id="is_certification_enable">
+                                    </div>
+                                </div>
                                 <div class="form-group ">
                                     <label for="curl" class="control-label col-lg-3"><b>Is Can Enable </b></label>
                                     <div class="col-lg-6">

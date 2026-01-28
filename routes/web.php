@@ -310,6 +310,8 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->name('device.edit');
     Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->name('device.update');
     Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);
+    Route::post('/device/{id}/certificate', [DeviceController::class, 'generateCertificate']);
+    Route::post('/device/{id}/certificate/preview', [DeviceController::class, 'previewCertificate']);
     Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations']);
     Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations']);
     Route::post('/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations']);

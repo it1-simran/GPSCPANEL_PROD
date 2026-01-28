@@ -92,7 +92,8 @@ class DeviceCategoryController extends Controller
         $deviceCategory = DeviceCategory::create([
             'device_category_name' => $request->deviceName,
             'inputs' => json_encode($result),
-            'is_esim' => $request->is_esim == 'on' ? 1 : 0
+            'is_esim' => $request->is_esim == 'on' ? 1 : 0,
+            'is_certification_enable' => $request->is_certification_enable == 'on' ? 1: 0
         ]);
         Template::create([
             'template_name' => $request->template_name,
@@ -377,6 +378,7 @@ class DeviceCategoryController extends Controller
         $device_category->device_category_name = $request->deviceName;
         $device_category->is_esim = $request->is_esim == "on" ? 1 : 0;
         $device_category->is_can_protocol = $request->is_can_enable == "on" ? 1 : 0;
+        $device_category->is_certification_enable = $request->is_certification_enable == "on" ? 1 : 0;
         $nameParameters = $request->nameParameters;
         $idParameters = $request->idParameters;
         $defaultValues = $request->default;

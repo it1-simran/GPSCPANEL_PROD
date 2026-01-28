@@ -97,6 +97,13 @@
                                     </div>
                                 </div>
                                 <div class="form-group ">
+                                    <label for="curl" class="control-label col-lg-3"><b>Is Certification Enable </b></label>
+                                    <div class="col-lg-6">
+                                        <input type="checkbox" class='default_template_checkbnox' name="is_certification_enable" id="is_certification_enable"  {{$device_category->is_certification_enable == 1 ?
+                                        'checked' : ''}}>
+                                    </div>
+                                </div>
+                                <div class="form-group ">
                                     <label for="curl" class="control-label col-lg-3"><b>Is Can Enable </b></label>
                                     <div class="col-lg-6">
                                         <input type="checkbox" class='default_template_checkbnox' name="is_can_enable" id="is_can_enable"
@@ -202,7 +209,7 @@
 
                         const selectId = `defaultValue${item.id}`;
                         const selectedValues = validationConfig.selectValues || [];;
-                            console.log("validationConfig ==>", validationConfig);
+                        console.log("validationConfig ==>", validationConfig);
                         defaultInput = `
                         <select class="form-control select2-multiselect" name="default[${index}][]" id="${selectId}" multiple style="width: 100%; height: auto;">
                             ${validationConfig.selectOptions.map((opt, i) => {

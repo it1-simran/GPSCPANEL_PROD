@@ -53,9 +53,9 @@ class CommonHelper
         $currentUser = Auth::user();
         if ($currentUser->user_type != 'Admin') {
             $deviceCategoryIdsArray = explode(',',  $currentUser->device_category_id);
-            $getDeviceCategory = DeviceCategory::select('id', 'device_category_name')->whereIn('id', $deviceCategoryIdsArray)->where('is_deleted', 0)->get();
+            $getDeviceCategory = DeviceCategory::select('id', 'device_category_name', 'is_certification_enable')->whereIn('id', $deviceCategoryIdsArray)->where('is_deleted', 0)->get();
         } else {
-            $getDeviceCategory = DeviceCategory::select('id', 'device_category_name')->where('is_deleted', 0)->get();
+            $getDeviceCategory = DeviceCategory::select('id', 'device_category_name', 'is_certification_enable')->where('is_deleted', 0)->get();
         }
         $html = '<div class="tabs">';
         foreach ($getDeviceCategory as $key => $category) {
@@ -149,6 +149,9 @@ class CommonHelper
                 $html .= '<th>Logs</th>';
             }
             $html .= '<th>Default Configurations </th>';
+            if (Auth::user()->user_type == 'User' && (int)$category->is_certification_enable === 1) {
+                $html .= '<th>Certificate</th>';
+            }
 
             if (Auth::user()->user_type == 'Admin') {
                 $html .= '<th>Delete</th>';
@@ -188,6 +191,9 @@ class CommonHelper
                             $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;">Logs</a></button></td>';
                         }
                         $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info">View Configuration</a></td>';
+                        if (Auth::user()->user_type == 'User' && (int)$category->is_certification_enable === 1) {
+                            $html .= '<td><button class="btn btn-success btn-sm certificate-button" data-device-id="' . $contact->id . '" data-category-id="' . $category->id . '">Certificate</button></td>';
+                        }
                         if (Auth::user()->user_type == 'Admin') {
                             $html .= '<td>';
                             $html .= '<form action="' . route('device.delete', $contact->id) . '" method="post">';

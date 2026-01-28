@@ -390,6 +390,14 @@ class DeviceApiController extends Controller
 	}
 	public function downloadFirmware(Request $request, $deviceId)
 	{
+
+		$token = $request->bearerToken()       // Authorization: Bearer xxx
+        ?? $request->header('Authorization') // raw Authorization
+        ?? $request->query('token');  // ?token=xxx
+
+		if (!$token) {
+			return response('Unauthorized', 401);
+		}
 		//$filename = basename($filename);
 		$device = Device::find($deviceId);
 

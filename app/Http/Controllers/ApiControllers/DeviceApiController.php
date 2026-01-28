@@ -455,7 +455,7 @@ class DeviceApiController extends Controller
 				ob_end_clean();
 			}
 
-			return response()->download($filePath);
+			return response()->download($filePath)->header('Content-Length', filesize($filePath));
 		} else {
 			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
 				->header('Content-Type', 'text/plain');

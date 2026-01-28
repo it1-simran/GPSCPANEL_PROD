@@ -391,13 +391,13 @@ class DeviceApiController extends Controller
 	public function downloadFirmware(Request $request, $deviceId)
 	{
 
-		$token = $request->bearerToken()       // Authorization: Bearer xxx
-        ?? $request->header('Authorization') // raw Authorization
-        ?? $request->query('token');  // ?token=xxx
+		// $token = $request->bearerToken()       // Authorization: Bearer xxx
+        // ?? $request->header('Authorization') // raw Authorization
+        // ?? $request->query('token');  // ?token=xxx
 
-		if (!$token) {
-			return response('Unauthorized', 401);
-		}
+		// if (!$token) {
+		// 	return response('Unauthorized', 401);
+		// }
 		//$filename = basename($filename);
 		$device = Device::find($deviceId);
 
@@ -415,7 +415,7 @@ class DeviceApiController extends Controller
 		if($firmware){
 			$firmwareConfig = json_decode($firmware->configurations,true);
 			$filename =  $firmwareConfig['filename'] ?? null;
-			$filePath = public_path("fw/{$filename}");
+			$filePath = public_path('fw' . DIRECTORY_SEPARATOR . "{$filename}");
 			
 			// Debug Log
 			Devicelog::create([
@@ -462,9 +462,11 @@ class DeviceApiController extends Controller
 				[
 					'Content-Type'  => 'application/octet-stream',
 					'Cache-Control' => 'no-cache',
+					'Content-Length' => filesize($filePath),
 				]
 			);
-			$response->headers->set('Content-Length', filesize($filePath));
+			// $response->headers->set('Content-Length', filesize($filePath));
+			// $response->headers->set('Accept-Ranges', 'bytes');
 			return $response;
 		} else {
 			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)

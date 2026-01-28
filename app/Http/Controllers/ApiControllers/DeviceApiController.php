@@ -455,7 +455,17 @@ class DeviceApiController extends Controller
 				ob_end_clean();
 			}
 
-			return response()->download($filePath)->header('Content-Length', filesize($filePath));
+			// return response()->download($filePath)->header('Content-Length', filesize($filePath));
+			$response = response()->download(
+				$filePath,
+				basename($filePath),
+				[
+					'Content-Type'  => 'application/octet-stream',
+					'Cache-Control' => 'no-cache',
+				]
+			);
+			$response->headers->set('Content-Length', filesize($filePath));
+			return $response;
 		} else {
 			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
 				->header('Content-Type', 'text/plain');

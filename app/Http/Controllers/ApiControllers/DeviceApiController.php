@@ -391,13 +391,14 @@ class DeviceApiController extends Controller
 	public function downloadFirmware(Request $request, $deviceId)
 	{
 
-		// $token = $request->bearerToken()       // Authorization: Bearer xxx
-        // ?? $request->header('Authorization') // raw Authorization
-        // ?? $request->query('token');  // ?token=xxx
-
-		// if (!$token) {
-		// 	return response('Unauthorized', 401);
-		// }
+		$token = $request->bearerToken()       // Authorization: Bearer xxx
+        ?? $request->header('Authorization') // raw Authorization
+        ?? $request->query('token');  // ?token=xxx
+		$tokenVerify = Device::where(['api_token'=>  $token,'id'=>$deviceId = $request->route('deviceId')])->first();
+		if (!$tokenVerify) {
+			return response('+#UNAUTHORIZED;', 401)
+                ->header('Content-Type', 'text/plain');
+		}
 		//$filename = basename($filename);
 		$device = Device::find($deviceId);
 
@@ -456,18 +457,27 @@ class DeviceApiController extends Controller
 			}
 
 			// return response()->download($filePath)->header('Content-Length', filesize($filePath));
-			$response = response()->download(
-				$filePath,
-				basename($filePath),
-				[
-					'Content-Type'  => 'application/octet-stream',
-					'Cache-Control' => 'no-cache',
-					'Content-Length' => filesize($filePath),
-				]
-			);
+			// $response = response()->download(
+			// 	$filePath,
+			// 	basename($filePath),
+			// 	[
+			// 		'Content-Type'  => 'application/octet-stream',
+			// 		'Cache-Control' => 'no-cache',
+			// 		'Content-Length' => filesize($filePath),
+			// 	]
+			// );
+			 return response()->stream(function() use ($filePath) {
+					readfile($filePath);
+				}, 200, [
+					'Content-Type'        => 'application/octet-stream',
+					'Content-Disposition' => 'attachment; filename="'.basename($filePath).'"',
+					'Content-Length'      => filesize($filePath),
+					'Cache-Control'       => 'no-cache',
+					'Accept-Ranges'       => 'bytes',
+				]);
 			// $response->headers->set('Content-Length', filesize($filePath));
 			// $response->headers->set('Accept-Ranges', 'bytes');
-			return $response;
+			// return $response;
 		} else {
 			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
 				->header('Content-Type', 'text/plain');

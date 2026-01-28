@@ -5,6 +5,7 @@
 
 # Optional: disable caching for firmware
 <FilesMatch "\.bin$">
+Header unset Transfer-Encoding
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires "0"

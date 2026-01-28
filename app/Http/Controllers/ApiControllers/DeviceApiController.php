@@ -390,7 +390,6 @@ class DeviceApiController extends Controller
 	}
 	public function downloadFirmware(Request $request, $deviceId)
 	{
-	   
 		//$filename = basename($filename);
 		$device = Device::find($deviceId);
 
@@ -404,32 +403,54 @@ class DeviceApiController extends Controller
 
 		// Decode the JSON configurations field
 		$configurations = json_decode($device->configurations, true); // Decode as associative array
-        $firmware =  DB::table('firmware')->where(['id' => $configurations['firmware_id']['value']])->first();
-        if($firmware){
-        $firmwareConfig = json_decode($firmware->configurations,true);
-		$filename =  $firmwareConfig['filename'] ?? null;
-		$filePath = public_path("fw/{$filename}");
-		if ($filename) {
-			if (file_exists($filePath)) {
-				$fileSize = filesize($filePath);
-				if ($fileSize != $firmwareConfig['fileSize']) {
-					return response('FAIL,FIRMWARE_FILE_SIZE_NOT_MATCHED;', 404)
-						->header('Content-Type', 'text/plain');
+		$firmware =  DB::table('firmware')->where(['id' => $configurations['firmware_id']['value']])->first();
+		if($firmware){
+			$firmwareConfig = json_decode($firmware->configurations,true);
+			$filename =  $firmwareConfig['filename'] ?? null;
+			$filePath = public_path("fw/{$filename}");
+			
+			// Debug Log
+			Devicelog::create([
+				'device_id' => $device->id,
+				'user_id' => $device->user_id ?? 0,
+				'log' => "Firmware Download Request. Filename: $filename, Path: $filePath. Exists: " . (file_exists($filePath) ? 'Yes' : 'No'),
+				'action' => 'FirmwareDownload',
+				'is_active' => 1
+			]);
+
+			if ($filename) {
+				if (file_exists($filePath)) {
+					$fileSize = filesize($filePath);
+					if ($fileSize != $firmwareConfig['fileSize']) {
+						Devicelog::create([
+							'device_id' => $device->id,
+							'user_id' => $device->user_id ?? 0,
+							'log' => "Firmware size mismatch. Disk: $fileSize, Config: " . $firmwareConfig['fileSize'],
+							'action' => 'FirmwareDownload_Error',
+							'is_active' => 1
+						]);
+						return response('FAIL,FIRMWARE_FILE_SIZE_NOT_MATCHED;', 404)
+							->header('Content-Type', 'text/plain');
+					}
 				}
+			} else {
+				return response('FAIL,FIRMWARE_NOT_MATCHED;', 404)
+					->header('Content-Type', 'text/plain');
 			}
+			if (!file_exists($filePath)) {
+				return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
+					->header('Content-Type', 'text/plain');
+			}
+
+			// Clear output buffer to ensure clean binary download
+			if (ob_get_length()) {
+				ob_end_clean();
+			}
+
+			return response()->download($filePath);
 		} else {
-			return response('FAIL,FIRMWARE_NOT_MATCHED;', 404)
-				->header('Content-Type', 'text/plain');
-		}
-		if (!file_exists($filePath)) {
 			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
 				->header('Content-Type', 'text/plain');
 		}
-
-		return response()->download($filePath);
-        } else {
-            return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
-				->header('Content-Type', 'text/plain');
-        }
 	}
 }

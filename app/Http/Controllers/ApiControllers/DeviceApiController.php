@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\ApiControllers;
 
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Device;
 use App\Devicelog;
 use App\Helper\CommonHelper;
@@ -389,12 +388,130 @@ class DeviceApiController extends Controller
 		// ]); 
 	}
 
+
+	public function downloadFirmware(Request $request, $deviceId)
+	{
+		// Step 1: Get token
+		$token = $request->bearerToken()
+			?? $request->header('Authorization')
+			?? $request->query('token');
+
+		// Step 2: Verify device
+		$device = Device::where(['id' => $deviceId, 'api_token' => $token])->first();
+		if (!$device) {
+			return response('+#UNAUTHORIZED;', 401)
+				->header('Content-Type', 'text/plain');
+		}
+
+		// Step 3: Get firmware info
+		$configurations = json_decode($device->configurations, true);
+		$firmware = DB::table('firmware')->where('id', $configurations['firmware_id']['value'])->first();
+		if (!$firmware) {
+			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
+				->header('Content-Type', 'text/plain');
+		}
+
+		$firmwareConfig = json_decode($firmware->configurations, true);
+		$filename = $firmwareConfig['filename'] ?? null;
+		$filePath = public_path("fw/{$filename}");
+
+		if (!$filename || !file_exists($filePath)) {
+			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
+				->header('Content-Type', 'text/plain');
+		}
+
+		$fileSize = filesize($filePath);
+
+		// Step 4: Validate file size if needed
+		if (isset($firmwareConfig['fileSize']) && $fileSize != $firmwareConfig['fileSize']) {
+			Devicelog::create([
+				'device_id' => $device->id,
+				'user_id' => $device->user_id ?? 0,
+				'log' => "Firmware size mismatch. Disk: $fileSize, Config: " . $firmwareConfig['fileSize'],
+				'action' => 'FirmwareDownload_Error',
+				'is_active' => 1
+			]);
+			return response('FAIL,FIRMWARE_FILE_SIZE_NOT_MATCHED;', 404)
+				->header('Content-Type', 'text/plain');
+		}
+
+		// Step 5: Log download request
+		Devicelog::create([
+			'device_id' => $device->id,
+			'user_id' => $device->user_id ?? 0,
+			'log' => "Firmware Download Direct. Filename: $filename",
+			'action' => 'FirmwareDownload',
+			'is_active' => 1
+		]);
+
+		// Step 6: Clear output buffer
+		if (ob_get_level()) {
+			ob_end_clean();
+		}
+
+		// Step 7: Send proper headers for direct download
+		return response()->stream(function () use ($filePath) {
+			$chunkSize = 1024 * 1024; // 1MB per chunk
+			$handle = fopen($filePath, 'rb');
+			if ($handle === false) {
+				return;
+			}
+
+			while (!feof($handle)) {
+				echo fread($handle, $chunkSize);
+				flush(); // make sure chunk is sent to client
+			}
+
+			fclose($handle);
+		}, 200, [
+			'Content-Type' => 'application/octet-stream',
+			'Content-Disposition' => 'attachment; filename="' . basename($filePath) . '"',
+			'Content-Length' => $fileSize,
+			'Cache-Control' => 'no-cache',
+			'Accept-Ranges' => 'bytes'
+		]);
+	}
+
+	// public function downloadFirmware(Request $request, $deviceId)
+	// {
+	// 	$token = $request->bearerToken() ?? $request->header('Authorization') ?? $request->query('token');
+
+	// 	$device = Device::where(['id' => $deviceId, 'api_token' => $token])->first();
+	// 	if (!$device) {
+	// 		return response('+#UNAUTHORIZED;', 401)->header('Content-Type', 'text/plain');
+	// 	}
+
+	// 	$configurations = json_decode($device->configurations, true);
+	// 	$firmware = DB::table('firmware')->where('id', $configurations['firmware_id']['value'])->first();
+	// 	if (!$firmware) {
+	// 		return response('FAIL,FIRMWARE_NOT_EXIST;', 404)->header('Content-Type', 'text/plain');
+	// 	}
+
+	// 	$firmwareConfig = json_decode($firmware->configurations, true);
+	// 	$filename = $firmwareConfig['filename'] ?? null;
+	// 	if (!$filename || !file_exists(public_path("fw/{$filename}"))) {
+	// 		return response('FAIL,FIRMWARE_NOT_EXIST;', 404)->header('Content-Type', 'text/plain');
+	// 	}
+
+	// 	// Log download request
+	// 	Devicelog::create([
+	// 		'device_id' => $device->id,
+	// 		'user_id' => $device->user_id ?? 0,
+	// 		'log' => "Firmware Download Redirect. Filename: $filename",
+	// 		'action' => 'FirmwareDownload',
+	// 		'is_active' => 1
+	// 	]);
+
+	// 	// Redirect device to Apache-served firmware URL
+	// 	return redirect()->away(url("/fw/{$filename}?token={$token}"));
+	// }
+
 	// public function downloadFirmware(Request $request, $deviceId)
 	// {
 	// 	// Step 1: Get token
-	// 	$token = $request->bearerToken()
-	// 		?? $request->header('Authorization')
-	// 		?? $request->query('token');
+	// 	$token = $request->bearerToken()       // Authorization: Bearer xxx
+	// 		?? $request->header('Authorization') // raw Authorization
+	// 		?? $request->query('token');        // ?token=xxx
 
 	// 	// Step 2: Verify device and token
 	// 	$device = Device::where(['id' => $deviceId, 'api_token' => $token])->first();
@@ -427,7 +544,7 @@ class DeviceApiController extends Controller
 	// 			->header('Content-Type', 'text/plain');
 	// 	}
 
-	// 	$filePath = public_path("fw/{$filename}");
+	// 	$filePath = public_path('fw' . DIRECTORY_SEPARATOR . $filename);
 	// 	if (!file_exists($filePath)) {
 	// 		return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
 	// 			->header('Content-Type', 'text/plain');
@@ -452,130 +569,32 @@ class DeviceApiController extends Controller
 	// 	Devicelog::create([
 	// 		'device_id' => $device->id,
 	// 		'user_id' => $device->user_id ?? 0,
-	// 		'log' => "Firmware download via X-Sendfile: {$filename}",
+	// 		'log' => "Firmware Download Request. Filename: $filename, Path: $filePath. Exists: Yes",
 	// 		'action' => 'FirmwareDownload',
 	// 		'is_active' => 1
 	// 	]);
 
-	// 	// Step 7: Let Apache send the file
-	// 	return response('', 200, [
-	// 		'Content-Type' => 'application/octet-stream',
-	// 		'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-	// 		'X-Sendfile' => $filePath
-	// 	]);
+	// 	// Step 7: Clear output buffer
+	// 	if (ob_get_length()) {
+	// 		ob_end_clean();
+	// 	}
+
+	// 	// Step 8: Send firmware file directly with headers
+	// 	header('Content-Type: application/octet-stream');
+	// 	header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
+	// 	header('Content-Length: ' . $fileSize);
+	// 	header('Cache-Control: no-cache');
+	// 	header('Accept-Ranges: bytes');
+
+	// 	// Disable gzip compression (Apache mod_deflate)
+	// 	if (function_exists('apache_setenv')) {
+	// 		apache_setenv('no-gzip', '1');
+	// 	}
+
+	// 	// Output the file
+	// 	readfile($filePath);
+	// 	exit; // stop Laravel execution
 	// }
-
-
-
-
-	public function downloadFirmware(Request $request, $deviceId)
-	{
-		// Step 1: Get token
-		$token = $request->bearerToken()       // Authorization: Bearer xxx
-			?? $request->header('Authorization') // raw Authorization
-			?? $request->query('token');        // ?token=xxx
-
-		// Step 2: Verify device and token
-		$device = Device::where(['id' => $deviceId, 'api_token' => $token])->first();
-		if (!$device) {
-			return response('+#UNAUTHORIZED;', 401)
-				->header('Content-Type', 'text/plain');
-		}
-
-		// Step 3: Decode device configurations
-		$configurations = json_decode($device->configurations, true);
-		if (empty($configurations['firmware_id']['value'])) {
-			return response('FAIL,FIRMWARE_NOT_CONFIGURED;', 404)
-				->header('Content-Type', 'text/plain');
-		}
-
-		$firmware = DB::table('firmware')
-			->where('id', $configurations['firmware_id']['value'])
-			->first();
-
-		if (!$firmware) {
-			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
-				->header('Content-Type', 'text/plain');
-		}
-
-		// Step 4: Get firmware file info
-		$firmwareConfig = json_decode($firmware->configurations, true);
-		$filename = $firmwareConfig['filename'] ?? null;
-		if (!$filename) {
-			return response('FAIL,FIRMWARE_NOT_MATCHED;', 404)
-				->header('Content-Type', 'text/plain');
-		}
-
-		$filePath = public_path('fw' . DIRECTORY_SEPARATOR . $filename);
-		if (!file_exists($filePath)) {
-			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
-				->header('Content-Type', 'text/plain');
-		}
-
-		// Step 5: Validate file size
-		$fileSize = filesize($filePath);
-		if (isset($firmwareConfig['fileSize']) && $fileSize != $firmwareConfig['fileSize']) {
-			Devicelog::create([
-				'device_id' => $device->id,
-				'user_id' => $device->user_id ?? 0,
-				'log' => "Firmware size mismatch. Disk: $fileSize, Config: " . $firmwareConfig['fileSize'],
-				'action' => 'FirmwareDownload_Error',
-				'is_active' => 1
-			]);
-
-			return response('FAIL,FIRMWARE_FILE_SIZE_NOT_MATCHED;', 404)
-				->header('Content-Type', 'text/plain');
-		}
-
-		// Step 6: Log download request
-		Devicelog::create([
-			'device_id' => $device->id,
-			'user_id' => $device->user_id ?? 0,
-			'log' => "Firmware Download Request. Filename: $filename, Path: $filePath. Exists: Yes",
-			'action' => 'FirmwareDownload',
-			'is_active' => 1
-		]);
-
-		while (ob_get_level()) {
-			ob_end_clean();
-		}
-
-		$response = new StreamedResponse(function () use ($filePath) {
-			// Output the file in one go
-			readfile($filePath);
-		});
-
-		// Force headers
-		$response->headers->set('Content-Type', 'application/octet-stream');
-		$response->headers->set('Content-Disposition', 'attachment; filename="' . basename($filePath) . '"');
-		$response->headers->set('Content-Length', $fileSize);
-		$response->headers->set('Cache-Control', 'no-cache');
-		$response->headers->set('Connection', 'close');
-
-		return $response->send();
-
-
-		// // Step 7: Clear output buffer
-		// if (ob_get_length()) {
-		// 	ob_end_clean();
-		// }
-
-		// // Step 8: Send firmware file directly with headers
-		// header('Content-Type: application/octet-stream');
-		// header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
-		// header('Content-Length: ' . $fileSize);
-		// header('Cache-Control: no-cache');
-		// header('Accept-Ranges: bytes');
-
-		// // Disable gzip compression (Apache mod_deflate)
-		// if (function_exists('apache_setenv')) {
-		// 	apache_setenv('no-gzip', '1');
-		// }
-
-		// // Output the file
-		// readfile($filePath);
-		// exit; // stop Laravel execution
-	}
 
 	// public function downloadFirmware(Request $request, $deviceId)
 	// {

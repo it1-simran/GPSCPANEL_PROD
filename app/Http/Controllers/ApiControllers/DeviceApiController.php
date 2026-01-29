@@ -53,7 +53,7 @@ class DeviceApiController extends Controller
 			$deviceCategory = DB::table('device_categories')->where('id', $matchData->device_category_id)->first();
 			if (!$deviceCategory) {
 				return response('FAIL', 404)
-				->header('Content-Type', 'text/plain');
+					->header('Content-Type', 'text/plain');
 			}
 			$canCofigurations = [];
 			if ($deviceCategory->is_can_protocol == 1) {
@@ -105,17 +105,17 @@ class DeviceApiController extends Controller
 				}
 				$config = json_decode($matchData->configurations, true);
 				$postData = [
-                    'last_ping'   => Carbon::now('UTC')->toDateTimeString(),
-                    'total_pings' => isset($config['total_pings']) ? (int)$config['total_pings'] + 1 : 1,
-                    'activationDate' => (
-                        (isset($config['total_pings']) && (int)$config['total_pings'] === 0)
-                            ? Carbon::now('UTC')->toDateTimeString()
-                            : (isset($config['activationDate']) && $config['activationDate']
-                                ? $config['activationDate']
-                                : Carbon::now('UTC')->toDateTimeString()
-                              )
-                    ),
-                ];
+					'last_ping'   => Carbon::now('UTC')->toDateTimeString(),
+					'total_pings' => isset($config['total_pings']) ? (int)$config['total_pings'] + 1 : 1,
+					'activationDate' => (
+						(isset($config['total_pings']) && (int)$config['total_pings'] === 0)
+						? Carbon::now('UTC')->toDateTimeString()
+						: (isset($config['activationDate']) && $config['activationDate']
+							? $config['activationDate']
+							: Carbon::now('UTC')->toDateTimeString()
+						)
+					),
+				];
 				$finalArray = array_merge($config, $postData);
 				$finalParameterData = json_encode($finalResponse);
 				DB::table('devices')->where('id',  $matchData->id)->update([
@@ -161,18 +161,18 @@ class DeviceApiController extends Controller
 					->header('Content-Type', 'text/plain');
 			} else {
 				$config = json_decode($matchData->configurations, true);
-                $postData = [
-                    'last_ping'   => Carbon::now('UTC')->toDateTimeString(),
-                    'total_pings' => isset($config['total_pings']) ? (int)$config['total_pings'] + 1 : 1,
-                    'activationDate' => (
-                        (isset($config['total_pings']) && (int)$config['total_pings'] === 0)
-                            ? Carbon::now('UTC')->toDateTimeString()
-                            : (isset($config['activationDate']) && $config['activationDate']
-                                ? $config['activationDate']
-                                : Carbon::now('UTC')->toDateTimeString()
-                              )
-                    ),
-                ];
+				$postData = [
+					'last_ping'   => Carbon::now('UTC')->toDateTimeString(),
+					'total_pings' => isset($config['total_pings']) ? (int)$config['total_pings'] + 1 : 1,
+					'activationDate' => (
+						(isset($config['total_pings']) && (int)$config['total_pings'] === 0)
+						? Carbon::now('UTC')->toDateTimeString()
+						: (isset($config['activationDate']) && $config['activationDate']
+							? $config['activationDate']
+							: Carbon::now('UTC')->toDateTimeString()
+						)
+					),
+				];
 				$finalArray = array_merge($config, $postData);
 				$finalParameterData = json_encode($finalResponse);
 				DB::table('devices')->where('id', $matchData->id)->update([
@@ -307,14 +307,13 @@ class DeviceApiController extends Controller
 					if ($id !== null) {
 						if ($fieldKey == 'firmware_id' || $fieldKey == 'firmware_version' || $fieldKey == 'firmwareFileSize') {
 							if ($firmwareId != 0) {
-								if($fieldKey == 'firmware_version'){
-							        $response[$id] = $configurationsFirmware['version'];
-							        
-							    } else if($fieldKey == 'firmwareFileSize'){
-							         $response[$id] = $configurationsFirmware['fileSize'];
-							    } else {
-							        $response[$id] = $value;
-							    }
+								if ($fieldKey == 'firmware_version') {
+									$response[$id] = $configurationsFirmware['version'];
+								} else if ($fieldKey == 'firmwareFileSize') {
+									$response[$id] = $configurationsFirmware['fileSize'];
+								} else {
+									$response[$id] = $value;
+								}
 							}
 						} else {
 							$response[$id] = $value;
@@ -389,46 +388,12 @@ class DeviceApiController extends Controller
 		// ]); 
 	}
 
-	// public function downloadFirmware(Request $request, $deviceId)
-	// {
-	// 	$token = $request->bearerToken() ?? $request->header('Authorization') ?? $request->query('token');
-
-	// 	$device = Device::where(['id' => $deviceId, 'api_token' => $token])->first();
-	// 	if (!$device) {
-	// 		return response('+#UNAUTHORIZED;', 401)->header('Content-Type', 'text/plain');
-	// 	}
-
-	// 	$configurations = json_decode($device->configurations, true);
-	// 	$firmware = DB::table('firmware')->where('id', $configurations['firmware_id']['value'])->first();
-	// 	if (!$firmware) {
-	// 		return response('FAIL,FIRMWARE_NOT_EXIST;', 404)->header('Content-Type', 'text/plain');
-	// 	}
-
-	// 	$firmwareConfig = json_decode($firmware->configurations, true);
-	// 	$filename = $firmwareConfig['filename'] ?? null;
-	// 	if (!$filename || !file_exists(public_path("fw/{$filename}"))) {
-	// 		return response('FAIL,FIRMWARE_NOT_EXIST;', 404)->header('Content-Type', 'text/plain');
-	// 	}
-
-	// 	// Log download request
-	// 	Devicelog::create([
-	// 		'device_id' => $device->id,
-	// 		'user_id' => $device->user_id ?? 0,
-	// 		'log' => "Firmware Download Redirect. Filename: $filename",
-	// 		'action' => 'FirmwareDownload',
-	// 		'is_active' => 1
-	// 	]);
-
-	// 	// Redirect device to Apache-served firmware URL
-	// 	return redirect()->away(url("/fw/{$filename}?token={$token}"));
-	// }
-
 	public function downloadFirmware(Request $request, $deviceId)
 	{
 		// Step 1: Get token
-		$token = $request->bearerToken()       // Authorization: Bearer xxx
-			?? $request->header('Authorization') // raw Authorization
-			?? $request->query('token');        // ?token=xxx
+		$token = $request->bearerToken()
+			?? $request->header('Authorization')
+			?? $request->query('token');
 
 		// Step 2: Verify device and token
 		$device = Device::where(['id' => $deviceId, 'api_token' => $token])->first();
@@ -461,7 +426,7 @@ class DeviceApiController extends Controller
 				->header('Content-Type', 'text/plain');
 		}
 
-		$filePath = public_path('fw' . DIRECTORY_SEPARATOR . $filename);
+		$filePath = public_path("fw/{$filename}");
 		if (!file_exists($filePath)) {
 			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
 				->header('Content-Type', 'text/plain');
@@ -486,39 +451,118 @@ class DeviceApiController extends Controller
 		Devicelog::create([
 			'device_id' => $device->id,
 			'user_id' => $device->user_id ?? 0,
-			'log' => "Firmware Download Request. Filename: $filename, Path: $filePath. Exists: Yes",
+			'log' => "Firmware download via X-Sendfile: {$filename}",
 			'action' => 'FirmwareDownload',
 			'is_active' => 1
 		]);
 
-		// Step 7: Clear output buffer
-		if (ob_get_length()) {
-			ob_end_clean();
-		}
-
-		// Step 8: Send firmware file directly with headers
-		header('Content-Type: application/octet-stream');
-		header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
-		header('Content-Length: ' . $fileSize);
-		header('Cache-Control: no-cache');
-		header('Accept-Ranges: bytes');
-
-		// Disable gzip compression (Apache mod_deflate)
-		if (function_exists('apache_setenv')) {
-			apache_setenv('no-gzip', '1');
-		}
-
-		// Output the file
-		readfile($filePath);
-		exit; // stop Laravel execution
+		// Step 7: Let Apache send the file
+		return response('', 200, [
+			'Content-Type' => 'application/octet-stream',
+			'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+			'X-Sendfile' => $filePath
+		]);
 	}
+
+
+
+
+	// public function downloadFirmware(Request $request, $deviceId)
+	// {
+	// 	// Step 1: Get token
+	// 	$token = $request->bearerToken()       // Authorization: Bearer xxx
+	// 		?? $request->header('Authorization') // raw Authorization
+	// 		?? $request->query('token');        // ?token=xxx
+
+	// 	// Step 2: Verify device and token
+	// 	$device = Device::where(['id' => $deviceId, 'api_token' => $token])->first();
+	// 	if (!$device) {
+	// 		return response('+#UNAUTHORIZED;', 401)
+	// 			->header('Content-Type', 'text/plain');
+	// 	}
+
+	// 	// Step 3: Decode device configurations
+	// 	$configurations = json_decode($device->configurations, true);
+	// 	if (empty($configurations['firmware_id']['value'])) {
+	// 		return response('FAIL,FIRMWARE_NOT_CONFIGURED;', 404)
+	// 			->header('Content-Type', 'text/plain');
+	// 	}
+
+	// 	$firmware = DB::table('firmware')
+	// 		->where('id', $configurations['firmware_id']['value'])
+	// 		->first();
+
+	// 	if (!$firmware) {
+	// 		return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
+	// 			->header('Content-Type', 'text/plain');
+	// 	}
+
+	// 	// Step 4: Get firmware file info
+	// 	$firmwareConfig = json_decode($firmware->configurations, true);
+	// 	$filename = $firmwareConfig['filename'] ?? null;
+	// 	if (!$filename) {
+	// 		return response('FAIL,FIRMWARE_NOT_MATCHED;', 404)
+	// 			->header('Content-Type', 'text/plain');
+	// 	}
+
+	// 	$filePath = public_path('fw' . DIRECTORY_SEPARATOR . $filename);
+	// 	if (!file_exists($filePath)) {
+	// 		return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
+	// 			->header('Content-Type', 'text/plain');
+	// 	}
+
+	// 	// Step 5: Validate file size
+	// 	$fileSize = filesize($filePath);
+	// 	if (isset($firmwareConfig['fileSize']) && $fileSize != $firmwareConfig['fileSize']) {
+	// 		Devicelog::create([
+	// 			'device_id' => $device->id,
+	// 			'user_id' => $device->user_id ?? 0,
+	// 			'log' => "Firmware size mismatch. Disk: $fileSize, Config: " . $firmwareConfig['fileSize'],
+	// 			'action' => 'FirmwareDownload_Error',
+	// 			'is_active' => 1
+	// 		]);
+
+	// 		return response('FAIL,FIRMWARE_FILE_SIZE_NOT_MATCHED;', 404)
+	// 			->header('Content-Type', 'text/plain');
+	// 	}
+
+	// 	// Step 6: Log download request
+	// 	Devicelog::create([
+	// 		'device_id' => $device->id,
+	// 		'user_id' => $device->user_id ?? 0,
+	// 		'log' => "Firmware Download Request. Filename: $filename, Path: $filePath. Exists: Yes",
+	// 		'action' => 'FirmwareDownload',
+	// 		'is_active' => 1
+	// 	]);
+
+	// 	// Step 7: Clear output buffer
+	// 	if (ob_get_length()) {
+	// 		ob_end_clean();
+	// 	}
+
+	// 	// Step 8: Send firmware file directly with headers
+	// 	header('Content-Type: application/octet-stream');
+	// 	header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
+	// 	header('Content-Length: ' . $fileSize);
+	// 	header('Cache-Control: no-cache');
+	// 	header('Accept-Ranges: bytes');
+
+	// 	// Disable gzip compression (Apache mod_deflate)
+	// 	if (function_exists('apache_setenv')) {
+	// 		apache_setenv('no-gzip', '1');
+	// 	}
+
+	// 	// Output the file
+	// 	readfile($filePath);
+	// 	exit; // stop Laravel execution
+	// }
 
 	// public function downloadFirmware(Request $request, $deviceId)
 	// {
 
 	// 	$token = $request->bearerToken()       // Authorization: Bearer xxx
-    //     ?? $request->header('Authorization') // raw Authorization
-    //     ?? $request->query('token');  // ?token=xxx
+	//     ?? $request->header('Authorization') // raw Authorization
+	//     ?? $request->query('token');  // ?token=xxx
 	// 	$tokenVerify = Device::where(['api_token'=>  $token,'id'=>$deviceId = $request->route('deviceId')])->first();
 	// 	if (!$tokenVerify) {
 	// 		return response('Unauthorized', 401);
@@ -541,7 +585,7 @@ class DeviceApiController extends Controller
 	// 		$firmwareConfig = json_decode($firmware->configurations,true);
 	// 		$filename =  $firmwareConfig['filename'] ?? null;
 	// 		$filePath = public_path('fw' . DIRECTORY_SEPARATOR . "{$filename}");
-			
+
 	// 		// Debug Log
 	// 		Devicelog::create([
 	// 			'device_id' => $device->id,

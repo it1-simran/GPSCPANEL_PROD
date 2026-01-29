@@ -470,6 +470,10 @@ class DeviceApiController extends Controller
 
 	public function downloadFirmware(Request $request, $deviceId)
 	{
+
+		while (ob_get_level()) {
+			ob_end_clean();
+		}
 		// Step 1: Get token
 		$token = $request->bearerToken()       // Authorization: Bearer xxx
 			?? $request->header('Authorization') // raw Authorization
@@ -536,9 +540,7 @@ class DeviceApiController extends Controller
 			'is_active' => 1
 		]);
 
-		while (ob_get_level()) {
-			ob_end_clean();
-		}
+
 
 		$response = new StreamedResponse(function () use ($filePath) {
 			// Output the file in one go

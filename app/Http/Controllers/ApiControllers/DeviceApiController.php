@@ -536,6 +536,10 @@ class DeviceApiController extends Controller
 			'is_active' => 1
 		]);
 
+		while (ob_get_level()) {
+			ob_end_clean();
+		}
+
 		$response = new StreamedResponse(function () use ($filePath) {
 			// Output the file in one go
 			readfile($filePath);

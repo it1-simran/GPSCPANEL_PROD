@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\ApiControllers;
 
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Device;
 use App\Devicelog;
 use App\Helper\CommonHelper;
@@ -535,26 +536,41 @@ class DeviceApiController extends Controller
 			'is_active' => 1
 		]);
 
-		// Step 7: Clear output buffer
-		if (ob_get_length()) {
-			ob_end_clean();
-		}
+		$response = new StreamedResponse(function () use ($filePath) {
+			// Output the file in one go
+			readfile($filePath);
+		});
 
-		// Step 8: Send firmware file directly with headers
-		header('Content-Type: application/octet-stream');
-		header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
-		header('Content-Length: ' . $fileSize);
-		header('Cache-Control: no-cache');
-		header('Accept-Ranges: bytes');
+		// Force headers
+		$response->headers->set('Content-Type', 'application/octet-stream');
+		$response->headers->set('Content-Disposition', 'attachment; filename="' . basename($filePath) . '"');
+		$response->headers->set('Content-Length', $fileSize);
+		$response->headers->set('Cache-Control', 'no-cache');
+		$response->headers->set('Connection', 'close');
 
-		// Disable gzip compression (Apache mod_deflate)
-		if (function_exists('apache_setenv')) {
-			apache_setenv('no-gzip', '1');
-		}
+		return $response->send();
 
-		// Output the file
-		readfile($filePath);
-		exit; // stop Laravel execution
+
+		// // Step 7: Clear output buffer
+		// if (ob_get_length()) {
+		// 	ob_end_clean();
+		// }
+
+		// // Step 8: Send firmware file directly with headers
+		// header('Content-Type: application/octet-stream');
+		// header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
+		// header('Content-Length: ' . $fileSize);
+		// header('Cache-Control: no-cache');
+		// header('Accept-Ranges: bytes');
+
+		// // Disable gzip compression (Apache mod_deflate)
+		// if (function_exists('apache_setenv')) {
+		// 	apache_setenv('no-gzip', '1');
+		// }
+
+		// // Output the file
+		// readfile($filePath);
+		// exit; // stop Laravel execution
 	}
 
 	// public function downloadFirmware(Request $request, $deviceId)

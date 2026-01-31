@@ -364,14 +364,8 @@ class DeviceController extends Controller
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
         ];
-        $qrText = sprintf(
-            "Vehicle Registration: %s\nChassis No: %s\nEngine No: %s\nColor: %s\nVehicle Model: %s",
-            $data['vehicle_registration_no'],
-            $data['chassis_no'],
-            $data['engine_no'],
-            $data['color'],
-            $data['vehicle_model']
-        );
+        $pdfLink = url('/AS9076.pdf');
+        $qrText = $pdfLink;
         $client = new Client();
         $qrImageDataUri = null;
         try {
@@ -442,14 +436,8 @@ class DeviceController extends Controller
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
         ];
-        $qrText = sprintf(
-            "Vehicle Registration: %s\nChassis No: %s\nEngine No: %s\nColor: %s\nVehicle Model: %s",
-            $data['vehicle_registration_no'],
-            $data['chassis_no'],
-            $data['engine_no'],
-            $data['color'],
-            $data['vehicle_model']
-        );
+        $pdfLink = url('/AS9076.pdf');
+        $qrText = $pdfLink;
         $client = new Client();
         $qrImageDataUri = null;
         try {
@@ -495,13 +483,13 @@ class DeviceController extends Controller
             'vehicle_registration_no' => 'required|string|max:255',
             'vltd_serial_no' => 'required|string|max:255',
             'vltd_make' => 'required|string|max:255',
-            'vltd_model' => 'required|string|max:255',
+            // 'vltd_model' => 'required|string|max:255',
             'chassis_no' => 'required|string|max:255',
             'engine_no' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'vehicle_model' => 'required|string|max:255',
-            'arai_tac' => 'required|string|max:255',
-            'arai_date' => 'required|date',
+            // 'arai_tac' => 'nullable|string|max:255',
+            // 'arai_date' => 'nullable|date',
             'service_providers' => 'required|array|min:1',
             'service_providers.*' => 'string|max:255',
         ]);
@@ -519,8 +507,8 @@ class DeviceController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
-            'arai_tac' => $request->arai_tac,
-            'arai_date' => Carbon::parse($request->arai_date)->format('Y-m-d'),
+            'arai_tac' => $request->arai_tac ?? 'AS9076',
+            'arai_date' => $request->arai_date ? Carbon::parse($request->arai_date)->format('Y-m-d') : Carbon::parse('08-12-2025')->format('Y-m-d'),
             'service_providers' => $request->service_providers,
         ];
         $device->configurations = json_encode($config);
@@ -549,14 +537,8 @@ class DeviceController extends Controller
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
         ]);
-        $qrText = sprintf(
-            "Vehicle Registration: %s\nChassis No: %s\nEngine No: %s\nColor: %s\nVehicle Model: %s",
-            $data['vehicle_registration_no'],
-            $data['chassis_no'],
-            $data['engine_no'],
-            $data['color'],
-            $data['vehicle_model']
-        );
+        $pdfLink = url('/AS9076.pdf');
+        $qrText = $pdfLink;
         $client = new Client();
         $qrImageDataUri = null;
         try {

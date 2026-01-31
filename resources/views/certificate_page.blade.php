@@ -77,7 +77,7 @@
                     <div class="form-group">
                       <label class="control-label col-lg-3">VLTD Model <span class="require">*</span></label>
                       <div class="col-lg-6">
-                        <input class="form-control" type="text" name="vltd_model" value="{{ $category_name }}" required />
+                        <input class="form-control" type="text" name="vltd_model" value="{{ $category_name }}" required readonly disabled="disabled"/>
                       </div>
                     </div>
                     <div class="form-group">
@@ -104,25 +104,24 @@
                         <input class="form-control" type="text" name="vehicle_model" required />
                       </div>
                     </div>
-                    <div class="form-group">
+                    <!-- <div class="form-group">
                       <label class="control-label col-lg-3">ARAI TAC/COP No <span class="require">*</span></label>
                       <div class="col-lg-6">
                         <input class="form-control" type="text" name="arai_tac" required />
                       </div>
-                    </div>
-                    <div class="form-group">
+                    </div> -->
+                    <!-- <div class="form-group">
                       <label class="control-label col-lg-3">ARAI Date <span class="require">*</span></label>
                       <div class="col-lg-6">
                         <input class="form-control" type="date" name="arai_date" required />
                       </div>
-                    </div>
+                    </div> -->
                     <div class="form-group">
                       <label class="control-label col-lg-3">Service Providers <span class="require">*</span></label>
                       <div class="col-lg-6">
-                        <select class="form-control" name="service_providers[]" multiple id="serviceProvidersSelect">
+                        <select name="service_providers[]" multiple id="serviceProvidersSelect">
                           <option value="Taisys">Taisys</option>
-                          <option value="ProviderA">ProviderA</option>
-                          <option value="ProviderB">ProviderB</option>
+                          <option value="Growspace">Growspace</option>
                         </select>
                       </div>
                     </div>

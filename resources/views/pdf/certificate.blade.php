@@ -104,7 +104,7 @@
   <div class="page">
     <div class="header">
       <div class="title-area">
-        <div class="cert-title">VLTD FITMENT CERTIFICATE</div>
+        <div class="cert-title">INSTALLATION CERTIFICATE</div>
         <div class="subtitle">(Generated online By JSD Electronics)</div>
       </div>
       <div class="right">

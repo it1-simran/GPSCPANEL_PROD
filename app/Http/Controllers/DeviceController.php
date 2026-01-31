@@ -332,8 +332,8 @@ class DeviceController extends Controller
             'color' => 'required|string|max:255',
             'vehicle_model' => 'required|string|max:255',
             'arai_tac' => 'required|string|max:255',
-            'arai_date' => 'required|date',
-            'service_provider' => 'required|string|max:255',
+             'arai_date' => 'required|date',
+            'service_providers' => 'array',
         ]);
         $device = Device::findOrFail($id);
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
@@ -342,6 +342,7 @@ class DeviceController extends Controller
         if (is_array($config)) {
             $iccId = $config['ccid']['value'] ?? ($config['iccid']['value'] ?? '');
         }
+        $providers = $request->service_providers ?? ($request->service_provider ? [$request->service_provider] : []);
         $data = [
             'holder_name' => $request->holder_name,
             'authority_city' => $request->authority_city,
@@ -357,7 +358,7 @@ class DeviceController extends Controller
             'arai_tac' => $request->arai_tac,
             'arai_date' => Carbon::parse($request->arai_date)->format('Y-m-d'),
             'vltd_icc_id' => $iccId,
-            'service_provider' => $request->service_provider,
+            'service_providers' => $providers,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
@@ -410,7 +411,7 @@ class DeviceController extends Controller
             'vehicle_model' => 'required|string|max:255',
             'arai_tac' => 'required|string|max:255',
             'arai_date' => 'required|date',
-            'service_provider' => 'required|string|max:255',
+            'service_providers' => 'array',
         ]);
         $device = Device::findOrFail($id);
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
@@ -419,6 +420,7 @@ class DeviceController extends Controller
         if (is_array($config)) {
             $iccId = $config['ccid']['value'] ?? ($config['iccid']['value'] ?? '');
         }
+        $providers = $request->service_providers ?? ($request->service_provider ? [$request->service_provider] : []);
         $data = [
             'holder_name' => $request->holder_name,
             'authority_city' => $request->authority_city,
@@ -434,12 +436,119 @@ class DeviceController extends Controller
             'arai_tac' => $request->arai_tac,
             'arai_date' => Carbon::parse($request->arai_date)->format('Y-m-d'),
             'vltd_icc_id' => $iccId,
-            'service_provider' => $request->service_provider,
+            'service_providers' => $providers,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
         ];
+        $qrText = sprintf(
+            "Vehicle Registration: %s\nChassis No: %s\nEngine No: %s\nColor: %s\nVehicle Model: %s",
+            $data['vehicle_registration_no'],
+            $data['chassis_no'],
+            $data['engine_no'],
+            $data['color'],
+            $data['vehicle_model']
+        );
+        $client = new Client();
+        $qrImageDataUri = null;
+        try {
+            $resp = $client->get('https://api.qrserver.com/v1/create-qr-code/', [
+                'query' => [
+                    'size' => '150x150',
+                    'data' => $qrText
+                ],
+                'http_errors' => false,
+                'timeout' => 10
+            ]);
+            if ($resp->getStatusCode() === 200) {
+                $body = $resp->getBody()->getContents();
+                $qrImageDataUri = 'data:image/png;base64,' . base64_encode($body);
+            }
+        } catch (\Throwable $e) {
+            $qrImageDataUri = null;
+        }
+        $data['qr_image'] = $qrImageDataUri;
+        $pdf = PDF::loadView('pdf.certificate', $data);
+        return $pdf->stream('certificate_' . $device->imei . '.pdf');
+    }
+
+    public function certificatePage($id)
+    {
+        $device = Device::findOrFail($id);
+        $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
+        $config = json_decode($device->configurations, true) ?: [];
+        $saved = $config['certificate_details'] ?? null;
+        return view('certificate_page', [
+            'device' => $device,
+            'category_name' => $categoryName,
+            'saved' => $saved,
+        ]);
+    }
+
+    public function saveCertificateDetails($id, Request $request)
+    {
+        $request->validate([
+            'holder_name' => 'required|string|max:255',
+            'authority_city' => 'required|string|max:255',
+            'fitment_date' => 'required|date',
+            'vehicle_registration_no' => 'required|string|max:255',
+            'vltd_serial_no' => 'required|string|max:255',
+            'vltd_make' => 'required|string|max:255',
+            'vltd_model' => 'required|string|max:255',
+            'chassis_no' => 'required|string|max:255',
+            'engine_no' => 'required|string|max:255',
+            'color' => 'required|string|max:255',
+            'vehicle_model' => 'required|string|max:255',
+            'arai_tac' => 'required|string|max:255',
+            'arai_date' => 'required|date',
+            'service_providers' => 'required|array|min:1',
+            'service_providers.*' => 'string|max:255',
+        ]);
+        $device = Device::findOrFail($id);
+        $config = json_decode($device->configurations, true) ?: [];
+        $config['certificate_details'] = [
+            'holder_name' => $request->holder_name,
+            'authority_city' => $request->authority_city,
+            'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
+            'vehicle_registration_no' => $request->vehicle_registration_no,
+            'vltd_serial_no' => $request->vltd_serial_no,
+            'vltd_make' => $request->vltd_make,
+            'vltd_model' => $request->vltd_model,
+            'chassis_no' => $request->chassis_no,
+            'engine_no' => $request->engine_no,
+            'color' => $request->color,
+            'vehicle_model' => $request->vehicle_model,
+            'arai_tac' => $request->arai_tac,
+            'arai_date' => Carbon::parse($request->arai_date)->format('Y-m-d'),
+            'service_providers' => $request->service_providers,
+        ];
+        $device->configurations = json_encode($config);
+        $device->update();
+        return redirect('/user/device/' . $device->id . '/certificate/view');
+    }
+
+    public function viewCertificate($id)
+    {
+        $device = Device::findOrFail($id);
+        $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
+        $config = json_decode($device->configurations, true) ?: [];
+        $details = $config['certificate_details'] ?? null;
+        if (!$details) {
+            return redirect('/user/device/' . $device->id . '/certificate');
+        }
+        $iccId = '';
+        $conf = json_decode($device->configurations, true);
+        if (is_array($conf)) {
+            $iccId = $conf['ccid']['value'] ?? ($conf['iccid']['value'] ?? '');
+        }
+        $data = array_merge($details, [
+            'vltd_icc_id' => $iccId,
+            'device_name' => $device->name,
+            'imei' => $device->imei,
+            'category_name' => $categoryName,
+            'issued_date' => Carbon::now()->format('d-M-Y'),
+        ]);
         $qrText = sprintf(
             "Vehicle Registration: %s\nChassis No: %s\nEngine No: %s\nColor: %s\nVehicle Model: %s",
             $data['vehicle_registration_no'],

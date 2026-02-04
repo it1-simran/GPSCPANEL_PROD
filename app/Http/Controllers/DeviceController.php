@@ -341,6 +341,10 @@ class DeviceController extends Controller
             'service_providers' => 'nullable',
         ]);
         $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
+        }
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
             ->find($device->device_category_id);
@@ -428,6 +432,10 @@ class DeviceController extends Controller
             'service_providers' => 'nullable',
         ]);
         $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
+        }
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
             ->find($device->device_category_id);
@@ -498,6 +506,10 @@ class DeviceController extends Controller
     public function certificatePage($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
+        }
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
             ->find($device->device_category_id);
@@ -537,6 +549,10 @@ class DeviceController extends Controller
     public function saveCertificateDetails($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
+        }
         $uniqueIgnoreId = $device->id;
         $uniqueFields = [
             'vehicle_registration_no',
@@ -619,6 +635,10 @@ class DeviceController extends Controller
     public function viewCertificate($id)
     {
         $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
+        }
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
             ->find($device->device_category_id);

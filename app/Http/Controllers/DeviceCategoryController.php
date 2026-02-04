@@ -61,7 +61,11 @@ class DeviceCategoryController extends Controller
         $tempConfiguration = $converted;
         $validatedData = $request->validate([
             'deviceName' => 'required',
+            'arai_tac_no' => 'required_if:is_certification_enable,on|string|max:255',
+            'arai_date' => 'required_if:is_certification_enable,on|date',
+            'certification_model_name' => 'required_if:is_certification_enable,on|string|max:255',
         ]);
+        $isCertificationEnabled = $request->is_certification_enable == 'on';
         $name = $request->nameParameters;
         $id = $request->idParameters;
         $type = $request->inputType;
@@ -93,7 +97,10 @@ class DeviceCategoryController extends Controller
             'device_category_name' => $request->deviceName,
             'inputs' => json_encode($result),
             'is_esim' => $request->is_esim == 'on' ? 1 : 0,
-            'is_certification_enable' => $request->is_certification_enable == 'on' ? 1: 0
+            'is_certification_enable' => $isCertificationEnabled ? 1 : 0,
+            'arai_tac_no' => $isCertificationEnabled ? $request->arai_tac_no : null,
+            'arai_date' => $isCertificationEnabled ? $request->arai_date : null,
+            'certification_model_name' => $isCertificationEnabled ? $request->certification_model_name : null,
         ]);
         Template::create([
             'template_name' => $request->template_name,
@@ -374,11 +381,21 @@ class DeviceCategoryController extends Controller
     }
     public function updateDeviceCategory(Request $request)
     {
+        $request->validate([
+            'deviceName' => 'required',
+            'arai_tac_no' => 'required_if:is_certification_enable,on|string|max:255',
+            'arai_date' => 'required_if:is_certification_enable,on|date',
+            'certification_model_name' => 'required_if:is_certification_enable,on|string|max:255',
+        ]);
+        $isCertificationEnabled = $request->is_certification_enable == 'on';
         $device_category = DeviceCategory::find($request->device_id);
         $device_category->device_category_name = $request->deviceName;
         $device_category->is_esim = $request->is_esim == "on" ? 1 : 0;
         $device_category->is_can_protocol = $request->is_can_enable == "on" ? 1 : 0;
-        $device_category->is_certification_enable = $request->is_certification_enable == "on" ? 1 : 0;
+        $device_category->is_certification_enable = $isCertificationEnabled ? 1 : 0;
+        $device_category->arai_tac_no = $isCertificationEnabled ? $request->arai_tac_no : null;
+        $device_category->arai_date = $isCertificationEnabled ? $request->arai_date : null;
+        $device_category->certification_model_name = $isCertificationEnabled ? $request->certification_model_name : null;
         $nameParameters = $request->nameParameters;
         $idParameters = $request->idParameters;
         $defaultValues = $request->default;

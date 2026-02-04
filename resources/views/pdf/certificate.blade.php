@@ -105,7 +105,7 @@
     <div class="header">
       <div class="title-area">
         <div class="cert-title">INSTALLATION CERTIFICATE</div>
-        <div class="subtitle">(Generated online By JSD Electronics)</div>
+        <div class="subtitle">(Generated online By JSD Electronics India Pvt LTD)</div>
       </div>
       <div class="right">
         <div class="qr">
@@ -128,32 +128,28 @@
 
     <div class="body" style="margin-top:80px;">
       <div class="subject" style="margin-top:6px;">
-        <span class="bold">Subject:</span> Installation of VLTD Serial no: <span class="bold underline">{{ $vltd_serial_no }}</span> in the vehicle registration no :
+        <span class="bold">Subject:</span> Installation of VLTD Serial no: <span class="bold underline">{{ $vltd_serial_no }}</span> in the Vehicle Registration No :
         <br><span class="bold underline">{{ $vehicle_registration_no }}</span>
       </div>
       Dear Sir,<br>
-      It is to inform you that Mr/Ms. <span class="bold">{{ $holder_name }}</span> is fitted with VLTD make: <span class="bold">{{ $vltd_make }}</span>, Model: <span class="bold">{{ $vltd_model }}</span> at our retrofitment center in his/her vehicle registration no : <span class="bold">{{ $vehicle_registration_no }}</span>,<br>
-      Chassis No: <span class="bold">{{ $chassis_no }}</span>, Engine No <span class="bold">{{ $engine_no }}</span>, Color: <span class="bold">{{ $color }}</span>, Vehicle Model: <span class="bold">{{ $vehicle_model }}</span>.<br>
-      Our retro-fitment center is approved by state Government Transport Department for fitment of Vehicle Location Tracking Device.<br>
-      According to ARAI TAC/COP No : <span class="bold">AS9076</span> Dated <span class="bold">08-12-2025</span><br>
+      It is to inform you that <span class="bold">{{ $holder_name }}</span> is fitted with VLTD make: <span class="bold">{{ $vltd_make }}</span>, Model: <span class="bold">{{ $vltd_model }}</span> at our retrofitment center in his/her <br> Vehicle Registration No : <span class="bold">{{ $vehicle_registration_no }}</span>,<br>
+      Chassis No: <span class="bold">{{ $chassis_no }}</span>,<br> Engine No <span class="bold">{{ $engine_no }}</span>,<br> Color: <span class="bold">{{ $color }}</span>,<br> Vehicle Model: <span class="bold">{{ $vehicle_model }}</span>.<br>
+      Our retro-fitment center is approved by JSD Electronics India Pvt LTD for fitment of Vehicle Location Tracking Device.<br>
+      According to ARAI TAC/COP No : <span class="bold">{{ $arai_tac ?? 'AS9076' }}</span> Dated <span class="bold">{{ $arai_date ?? '08-12-2025' }}</span> .The details of VLTD shown below :<br>
     </div>
-
     <div class="details">
-      The details of VLTD shown below :
-
       VLTD Serial No: <span class="bold">{{ $vltd_serial_no }}</span><br>
       VLTD IMEI No: <span class="bold">{{ $imei }}</span><br>
-      VLTD ICC ID: <span class="bold">{{ $vltd_icc_id }}</span><br>
-      Service Providers:
+      VLTD ICCID: <span class="bold">{{ $vltd_icc_id }}</span><br>
+      Service Provider:
       <div class="box">
         @php
-        $providers = isset($service_providers) ? (is_array($service_providers) ? $service_providers : [$service_providers]) : [];
+        $provider = $service_provider ?? null;
+        if (!$provider && isset($service_providers)) {
+          $provider = is_array($service_providers) ? ($service_providers[0] ?? null) : $service_providers;
+        }
         @endphp
-        <ol class="list"style="margin-left:10px;">
-          @foreach($providers as $p)
-          <li><span class="bold">{{ $p }}</span></li>
-          @endforeach
-        </ol>
+        <span class="bold">{{ $provider }}</span>
       </div>
     </div>
 

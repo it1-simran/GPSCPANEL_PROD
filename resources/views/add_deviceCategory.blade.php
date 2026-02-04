@@ -94,6 +94,26 @@
                                         <input type="checkbox" class='default_template_checkbnox' name="is_certification_enable" id="is_certification_enable">
                                     </div>
                                 </div>
+                                <div id="certificationFields" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="arai_tac_no" class="control-label col-lg-3">ARAI/ TAC NO</label>
+                                        <div class="col-lg-6">
+                                            <input class="form-control" id="arai_tac_no" type="text" name="arai_tac_no" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="arai_date" class="control-label col-lg-3">Date</label>
+                                        <div class="col-lg-6">
+                                            <input class="form-control" id="arai_date" type="date" name="arai_date" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="certification_model_name" class="control-label col-lg-3">Model Name</label>
+                                        <div class="col-lg-6">
+                                            <input class="form-control" id="certification_model_name" type="text" name="certification_model_name" />
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="form-group ">
                                     <label for="curl" class="control-label col-lg-3"><b>Is Can Enable </b></label>
                                     <div class="col-lg-6">
@@ -1005,6 +1025,28 @@
                 }
             });
         });
+
+        function toggleCertificationFields() {
+            const enabled = $('#is_certification_enable').is(':checked');
+            const $fields = $('#certificationFields');
+            const $inputs = $fields.find('input');
+
+            if (enabled) {
+                $fields.show();
+                $inputs.prop('disabled', false);
+                $('#arai_tac_no').prop('required', true);
+                $('#arai_date').prop('required', true);
+                $('#certification_model_name').prop('required', true);
+            } else {
+                $fields.hide();
+                $inputs.prop('required', false);
+                $inputs.prop('disabled', true);
+                $inputs.val('');
+            }
+        }
+
+        $('#is_certification_enable').on('change', toggleCertificationFields);
+        toggleCertificationFields();
     });
 </script>
 

@@ -9,6 +9,7 @@ use App\Device;
 use App\Template;
 use App\Firmware;
 use App\Modal;
+use App\DeviceCategory;
 use App\Helper\CommonHelper;
 use App\DataFields;
 use App\Devicelog;
@@ -16,11 +17,14 @@ use DB;
 use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Import\DeviceImport;
 use Carbon\Carbon;
 use PDF;
 use GuzzleHttp\Client;
+
 
 class DeviceController extends Controller
 {
@@ -331,18 +335,33 @@ class DeviceController extends Controller
             'engine_no' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'vehicle_model' => 'required|string|max:255',
-            'arai_tac' => 'required|string|max:255',
-             'arai_date' => 'required|date',
-            'service_providers' => 'array',
+            'arai_tac' => 'nullable|string|max:255',
+            'arai_date' => 'nullable|date',
+            'service_provider' => 'required_without:service_providers|nullable|string|max:255',
+            'service_providers' => 'nullable',
         ]);
         $device = Device::findOrFail($id);
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
+        $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
+            ->find($device->device_category_id);
+        $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
         $config = json_decode($device->configurations, true);
         $iccId = '';
         if (is_array($config)) {
             $iccId = $config['ccid']['value'] ?? ($config['iccid']['value'] ?? '');
         }
-        $providers = $request->service_providers ?? ($request->service_provider ? [$request->service_provider] : []);
+        $provider = $request->service_provider ?? null;
+        if (!$provider && isset($request->service_providers)) {
+            if (is_array($request->service_providers)) {
+                $provider = $request->service_providers[0] ?? null;
+            } else {
+                $provider = $request->service_providers;
+            }
+        }
+        $araiTac = $isCertificationEnabled && !empty($deviceCategory->arai_tac_no) ? $deviceCategory->arai_tac_no : ($request->arai_tac ?? 'AS9076');
+        $araiDateRaw = $isCertificationEnabled && !empty($deviceCategory->arai_date) ? $deviceCategory->arai_date : ($request->arai_date ?? '08-12-2025');
+        $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
+        $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
         $data = [
             'holder_name' => $request->holder_name,
             'authority_city' => $request->authority_city,
@@ -350,15 +369,15 @@ class DeviceController extends Controller
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
             'vltd_make' => $request->vltd_make,
-            'vltd_model' => $request->vltd_model,
+            'vltd_model' => $vltdModel,
             'chassis_no' => $request->chassis_no,
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
-            'arai_tac' => $request->arai_tac,
-            'arai_date' => Carbon::parse($request->arai_date)->format('Y-m-d'),
+            'arai_tac' => $araiTac,
+            'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId,
-            'service_providers' => $providers,
+            'service_provider' => $provider,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
@@ -403,18 +422,33 @@ class DeviceController extends Controller
             'engine_no' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'vehicle_model' => 'required|string|max:255',
-            'arai_tac' => 'required|string|max:255',
-            'arai_date' => 'required|date',
-            'service_providers' => 'array',
+            'arai_tac' => 'nullable|string|max:255',
+            'arai_date' => 'nullable|date',
+            'service_provider' => 'required_without:service_providers|nullable|string|max:255',
+            'service_providers' => 'nullable',
         ]);
         $device = Device::findOrFail($id);
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
+        $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
+            ->find($device->device_category_id);
+        $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
         $config = json_decode($device->configurations, true);
         $iccId = '';
         if (is_array($config)) {
             $iccId = $config['ccid']['value'] ?? ($config['iccid']['value'] ?? '');
         }
-        $providers = $request->service_providers ?? ($request->service_provider ? [$request->service_provider] : []);
+        $provider = $request->service_provider ?? null;
+        if (!$provider && isset($request->service_providers)) {
+            if (is_array($request->service_providers)) {
+                $provider = $request->service_providers[0] ?? null;
+            } else {
+                $provider = $request->service_providers;
+            }
+        }
+        $araiTac = $isCertificationEnabled && !empty($deviceCategory->arai_tac_no) ? $deviceCategory->arai_tac_no : ($request->arai_tac ?? 'AS9076');
+        $araiDateRaw = $isCertificationEnabled && !empty($deviceCategory->arai_date) ? $deviceCategory->arai_date : ($request->arai_date ?? '08-12-2025');
+        $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
+        $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
         $data = [
             'holder_name' => $request->holder_name,
             'authority_city' => $request->authority_city,
@@ -422,15 +456,15 @@ class DeviceController extends Controller
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
             'vltd_make' => $request->vltd_make,
-            'vltd_model' => $request->vltd_model,
+            'vltd_model' => $vltdModel,
             'chassis_no' => $request->chassis_no,
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
-            'arai_tac' => $request->arai_tac,
-            'arai_date' => Carbon::parse($request->arai_date)->format('Y-m-d'),
+            'arai_tac' => $araiTac,
+            'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId,
-            'service_providers' => $providers,
+            'service_provider' => $provider,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
@@ -461,39 +495,99 @@ class DeviceController extends Controller
         return $pdf->stream('certificate_' . $device->imei . '.pdf');
     }
 
-    public function certificatePage($id)
+    public function certificatePage($id, Request $request)
     {
         $device = Device::findOrFail($id);
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
+        $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
+            ->find($device->device_category_id);
+        $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
+        $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $categoryName;
+        $araiTac = $isCertificationEnabled ? ($deviceCategory->arai_tac_no ?? null) : null;
+        $araiDate = $isCertificationEnabled ? ($deviceCategory->arai_date ?? null) : null;
+        $deviceConfig = json_decode($device->configurations, true);
+        $iccId = '';
+        if (is_array($deviceConfig)) {
+            $iccId = $deviceConfig['ccid']['value'] ?? ($deviceConfig['iccid']['value'] ?? '');
+        }
         $config = json_decode($device->configurations, true) ?: [];
         $saved = $config['certificate_details'] ?? null;
+        $editMode = (int) $request->query('edit', 0) === 1;
         return view('certificate_page', [
             'device' => $device,
             'category_name' => $categoryName,
+            'vltd_model' => $vltdModel,
+            'is_certification_enable' => $isCertificationEnabled,
+            'arai_tac' => $araiTac,
+            'arai_date' => $araiDate,
+            'vltd_icc_id' => $iccId,
             'saved' => $saved,
+            'edit_mode' => $editMode,
         ]);
     }
-
+    public static function uniqueJson(Device $device, string $key, $value): bool
+    {
+        return !Device::where('id', '!=', $device->id)
+            ->where(function ($query) use ($key, $value) {
+                $query->whereJsonContains("configurations->certificate_details->$key", $value)
+                    ->orWhereJsonContains("configurations->$key", $value);
+            })
+            ->exists();
+    }
     public function saveCertificateDetails($id, Request $request)
     {
+        $device = Device::findOrFail($id);
+        $uniqueIgnoreId = $device->id;
+        $uniqueFields = [
+            'vehicle_registration_no',
+            'vltd_serial_no',
+            'chassis_no',
+            'engine_no',
+            'vltd_icc_id',
+        ];
+        foreach ($uniqueFields as $field) {
+            if (!empty($request->$field)) {
+                if (!self::uniqueJson($device, $field, $request->$field)) {
+                    throw ValidationException::withMessages([
+                        $field => "This $field already exists.",
+                    ]);
+                }
+            }
+        }
         $request->validate([
             'holder_name' => 'required|string|max:255',
             'authority_city' => 'required|string|max:255',
             'fitment_date' => 'required|date',
-            'vehicle_registration_no' => 'required|string|max:255',
-            'vltd_serial_no' => 'required|string|max:255',
+            // 'vehicle_registration_no' => ['required', 'string', 'max:255', Rule::unique('devices', 'vehicle_registration_no')->ignore($uniqueIgnoreId)],
+            // 'vltd_serial_no' => ['required', 'string', 'max:255', Rule::unique('devices', 'vltd_serial_no')->ignore($uniqueIgnoreId)],
             'vltd_make' => 'required|string|max:255',
             // 'vltd_model' => 'required|string|max:255',
-            'chassis_no' => 'required|string|max:255',
-            'engine_no' => 'required|string|max:255',
+            // 'chassis_no' => ['required', 'string', 'max:255', Rule::unique('devices', 'chassis_no')->ignore($uniqueIgnoreId)],
+            // 'engine_no' => ['required', 'string', 'max:255', Rule::unique('devices', 'engine_no')->ignore($uniqueIgnoreId)],
             'color' => 'required|string|max:255',
             'vehicle_model' => 'required|string|max:255',
+            //'vltd_icc_id' => ['nullable', 'string', 'max:255', Rule::unique('devices', 'vltd_icc_id')->ignore($uniqueIgnoreId)],
             // 'arai_tac' => 'nullable|string|max:255',
             // 'arai_date' => 'nullable|date',
-            'service_providers' => 'required|array|min:1',
-            'service_providers.*' => 'string|max:255',
+            'service_provider' => 'required_without:service_providers|nullable|string|max:255',
+            'service_providers' => 'nullable',
         ]);
-        $device = Device::findOrFail($id);
+        $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
+        $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
+            ->find($device->device_category_id);
+        $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
+        $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $categoryName;
+        $araiTac = $isCertificationEnabled && !empty($deviceCategory->arai_tac_no) ? $deviceCategory->arai_tac_no : ($request->arai_tac ?? 'AS9076');
+        $araiDateRaw = $isCertificationEnabled && !empty($deviceCategory->arai_date) ? $deviceCategory->arai_date : ($request->arai_date ?? '08-12-2025');
+        $araiDate = Carbon::parse($araiDateRaw)->format('Y-m-d');
+        $serviceProvider = $request->service_provider ?? null;
+        if (!$serviceProvider && isset($request->service_providers)) {
+            if (is_array($request->service_providers)) {
+                $serviceProvider = $request->service_providers[0] ?? null;
+            } else {
+                $serviceProvider = $request->service_providers;
+            }
+        }
         $config = json_decode($device->configurations, true) ?: [];
         $config['certificate_details'] = [
             'holder_name' => $request->holder_name,
@@ -502,16 +596,22 @@ class DeviceController extends Controller
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
             'vltd_make' => $request->vltd_make,
-            'vltd_model' => $request->vltd_model,
+            'vltd_model' => $vltdModel,
             'chassis_no' => $request->chassis_no,
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
-            'arai_tac' => $request->arai_tac ?? 'AS9076',
-            'arai_date' => $request->arai_date ? Carbon::parse($request->arai_date)->format('Y-m-d') : Carbon::parse('08-12-2025')->format('Y-m-d'),
-            'service_providers' => $request->service_providers,
+            'vltd_icc_id' => $request->vltd_icc_id,
+            'arai_tac' => $araiTac,
+            'arai_date' => $araiDate,
+            'service_provider' => $serviceProvider,
         ];
         $device->configurations = json_encode($config);
+        // $device->certificate_vltd_serial_no = $request->vltd_serial_no;
+        // $device->certificate_vltd_icc_id = $request->vltd_icc_id;
+        // $device->certificate_vehicle_registration_no = $request->vehicle_registration_no;
+        // $device->certificate_chassis_no = $request->chassis_no;
+        // $device->certificate_engine_no = $request->engine_no;
         $device->update();
         return redirect('/user/device/' . $device->id . '/certificate/view');
     }
@@ -520,23 +620,50 @@ class DeviceController extends Controller
     {
         $device = Device::findOrFail($id);
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
+        $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
+            ->find($device->device_category_id);
+        $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
         $config = json_decode($device->configurations, true) ?: [];
         $details = $config['certificate_details'] ?? null;
         if (!$details) {
             return redirect('/user/device/' . $device->id . '/certificate');
+        }
+        if (empty($details['service_provider']) && isset($details['service_providers'])) {
+            if (is_array($details['service_providers'])) {
+                $details['service_provider'] = $details['service_providers'][0] ?? null;
+            } else {
+                $details['service_provider'] = $details['service_providers'];
+            }
+        }
+        if ($isCertificationEnabled) {
+            if (!empty($deviceCategory->certification_model_name)) {
+                $details['vltd_model'] = $deviceCategory->certification_model_name;
+            } else {
+                $details['vltd_model'] = $details['vltd_model'] ?? $categoryName;
+            }
+            if (!empty($deviceCategory->arai_tac_no)) {
+                $details['arai_tac'] = $deviceCategory->arai_tac_no;
+            }
+            if (!empty($deviceCategory->arai_date)) {
+                $details['arai_date'] = Carbon::parse($deviceCategory->arai_date)->format('Y-m-d');
+            }
         }
         $iccId = '';
         $conf = json_decode($device->configurations, true);
         if (is_array($conf)) {
             $iccId = $conf['ccid']['value'] ?? ($conf['iccid']['value'] ?? '');
         }
+        $finalIccId = !empty($details['vltd_icc_id']) ? $details['vltd_icc_id'] : $iccId;
         $data = array_merge($details, [
-            'vltd_icc_id' => $iccId,
+            'vltd_icc_id' => $finalIccId,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
         ]);
+        if (!empty($data['arai_date'])) {
+            $data['arai_date'] = Carbon::parse($data['arai_date'])->format('d-m-Y');
+        }
         $pdfLink = url('/AS9076.pdf');
         $qrText = $pdfLink;
         $client = new Client();
@@ -1183,7 +1310,7 @@ class DeviceController extends Controller
             $devices = DB::table('devices')
                 ->leftJoin('writers', function ($join) {
                     $join->on('writers.id', '=', 'devices.user_id')
-                    ->where('writers.is_deleted', '=', '0');
+                        ->where('writers.is_deleted', '=', '0');
                 })
                 ->select('devices.*', 'writers.name as username')
                 ->where('devices.is_deleted', '0')
@@ -2031,7 +2158,7 @@ class DeviceController extends Controller
         $device->timestamps = false; // disable auto timestamps temporarily
         $device->updated_at = $utcTime;
         $device->save();
-        $device->timestamps = true; 
+        $device->timestamps = true;
         // // vice->updated_at = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
         // dd($device->updated_at);
         //$device->save();
@@ -2096,11 +2223,11 @@ class DeviceController extends Controller
         }
 
         $device->can_configurations = json_encode($newChanges);
-         $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
+        $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
         $device->timestamps = false; // disable auto timestamps temporarily
         $device->updated_at = $utcTime;
         // $device->save();
-        $device->timestamps = true; 
+        $device->timestamps = true;
         // $device->updated_at = Carbon::now('UTC')->toDateTimeString();
         $device->save();
 
@@ -2220,7 +2347,7 @@ class DeviceController extends Controller
             $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
             $contact->timestamps = false; // disable auto timestamps temporarily
             $contact->updated_at = $utcTime;
-            
+
 
             // $contact->updated_at = Carbon::now('UTC')->toDateTimeString();
             $contact->update();
@@ -2295,11 +2422,11 @@ class DeviceController extends Controller
             $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
             $contact->timestamps = false; // disable auto timestamps temporarily
             $contact->updated_at = $utcTime;
-            
+
 
             // $contact->updated_at = Carbon::now('UTC')->toDateTimeString();
             $contact->update();
-            $contact->timestamps = true; 
+            $contact->timestamps = true;
             $contact->update();
             if (!empty($changedFields)) {
                 $changeLogMessage = '';
@@ -2403,8 +2530,8 @@ class DeviceController extends Controller
                 case 'text':
                 case 'IP/URL':
                 case 'hex':
-                $dataBinding['maxValueInput'] = $data['maxValueInput'][0][0] ?? null;
-                break;
+                    $dataBinding['maxValueInput'] = $data['maxValueInput'][0][0] ?? null;
+                    break;
                 case 'text_array':
                     $dataBinding['maxValueInput'] = $data['maxValueInput'][0][0] ?? null;
                     break;
@@ -2452,7 +2579,7 @@ class DeviceController extends Controller
         } else if ($protocolType == '1') {
             $fieldIdArray = ['91', '92'];
         } else if ($protocolType == '3') {
-            $fieldIdArray = ['102','93'];
+            $fieldIdArray = ['102', '93'];
         }
         $fields = DataFields::whereIn('id', $fieldIdArray)->get([
             'id',

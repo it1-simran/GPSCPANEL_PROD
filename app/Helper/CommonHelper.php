@@ -192,7 +192,7 @@ class CommonHelper
                         }
                         $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info">View Configuration</a></td>';
                         if (Auth::user()->user_type == 'User' && (int)$category->is_certification_enable === 1) {
-                            $html .= '<td><button class="btn btn-success btn-sm certificate-button" data-device-id="' . $contact->id . '" data-category-id="' . $category->id . '">Certificate</button></td>';
+                            $html .= '<td><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/device/' . $contact->id . '/certificate') . '" class="btn btn-success btn-sm" data-device-id="' . $contact->id . '" data-category-id="' . $category->id . '">Certificate</a></td>';
                         }
                         if (Auth::user()->user_type == 'Admin') {
                             $html .= '<td>';

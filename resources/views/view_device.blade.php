@@ -157,10 +157,10 @@ $currentEmail = Auth::user()->email;
       initializeDataTables();
     });
     $('.dataTables_filter input').attr("placeholder", "Zoeken...");
-    $(document).on('click', '.certificate-button', function() {
-      var deviceId = $(this).data('device-id');
-      window.open('/user/device/' + deviceId + '/certificate', '_blank');
-    });
+    //$(document).on('click', '.certificate-button', function() {
+      //var deviceId = $(this).data('device-id');
+      //window.open('/user/device/' + deviceId + '/certificate', '_blank');
+    //});
     $('#certificatePreviewBtn').on('click', function() {
       var deviceId = $('#certificateForm').data('deviceId');
       if (!deviceId) return;

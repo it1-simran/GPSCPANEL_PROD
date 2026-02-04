@@ -33,9 +33,9 @@
             @endif
             @if($saved && empty($edit_mode))
               <div class="row">
-                <div class="col-lg-12 text-right margin-bottom-10">
+                <!-- <div class="col-lg-12 text-right margin-bottom-10">
                   <a href="/user/device/{{ $device->id }}/certificate?edit=1" class="btn btn-default">Edit Details</a>
-                </div>
+                </div> -->
                 <div class="col-md-12" style="height:80vh;">
                   <iframe src="/user/device/{{ $device->id }}/certificate/view" style="width:100%;height:100%;border:1px solid #ccc;"></iframe>
                 </div>
@@ -63,7 +63,8 @@
                     <div class="form-group">
                       <label class="control-label col-lg-3">Fitment Date <span class="require">*</span></label>
                       <div class="col-lg-6">
-                        <input class="form-control" type="date" name="fitment_date" value="{{ old('fitment_date', $formData['fitment_date'] ?? '') }}" required />
+                        <input class="form-control" type="date" name="fitment_date_display" value="{{ date('Y-m-d') }}" disabled="disabled" readonly="readonly" />
+                        <input type="hidden" name="fitment_date" value="{{ date('Y-m-d') }}" />
                       </div>
                     </div>
                     <div class="form-group">

@@ -97,6 +97,33 @@
                                     </div>
                                 </div>
                                 <div class="form-group ">
+                                    <label for="curl" class="control-label col-lg-3"><b>Is Certification Enable </b></label>
+                                    <div class="col-lg-6">
+                                        <input type="checkbox" class='default_template_checkbnox' name="is_certification_enable" id="is_certification_enable"  {{$device_category->is_certification_enable == 1 ?
+                                        'checked' : ''}}>
+                                    </div>
+                                </div>
+                                <div id="certificationFields" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="arai_tac_no" class="control-label col-lg-3">ARAI/ TAC NO</label>
+                                        <div class="col-lg-6">
+                                            <input class="form-control" id="arai_tac_no" type="text" name="arai_tac_no" value="{{ $device_category->arai_tac_no }}" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="arai_date" class="control-label col-lg-3">Date</label>
+                                        <div class="col-lg-6">
+                                            <input class="form-control" id="arai_date" type="date" name="arai_date" value="{{ $device_category->arai_date }}" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="certification_model_name" class="control-label col-lg-3">Model Name</label>
+                                        <div class="col-lg-6">
+                                            <input class="form-control" id="certification_model_name" type="text" name="certification_model_name" value="{{ $device_category->certification_model_name }}" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group ">
                                     <label for="curl" class="control-label col-lg-3"><b>Is Can Enable </b></label>
                                     <div class="col-lg-6">
                                         <input type="checkbox" class='default_template_checkbnox' name="is_can_enable" id="is_can_enable"
@@ -165,6 +192,27 @@
             placeholder: 'Select devices',
             allowClear: true
         });
+
+        function toggleCertificationFields() {
+            const enabled = $('#is_certification_enable').is(':checked');
+            const $fields = $('#certificationFields');
+            const $inputs = $fields.find('input');
+
+            if (enabled) {
+                $fields.show();
+                $inputs.prop('disabled', false);
+                $('#arai_tac_no').prop('required', true);
+                $('#arai_date').prop('required', true);
+                $('#certification_model_name').prop('required', true);
+            } else {
+                $fields.hide();
+                $inputs.prop('required', false);
+                $inputs.prop('disabled', true);
+            }
+        }
+
+        $('#is_certification_enable').on('change', toggleCertificationFields);
+        toggleCertificationFields();
         $('#user-select').on('change', function() {
             const selectedOptionsIndex = Array.from(this.selectedOptions).map(opt => Number(opt.value));
             selectedOptionsIndex.forEach(id => {
@@ -202,7 +250,7 @@
 
                         const selectId = `defaultValue${item.id}`;
                         const selectedValues = validationConfig.selectValues || [];;
-                            console.log("validationConfig ==>", validationConfig);
+                        console.log("validationConfig ==>", validationConfig);
                         defaultInput = `
                         <select class="form-control select2-multiselect" name="default[${index}][]" id="${selectId}" multiple style="width: 100%; height: auto;">
                             ${validationConfig.selectOptions.map((opt, i) => {

@@ -88,6 +88,43 @@ $currentEmail = Auth::user()->email;
 
 @stop
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<div class="modal" id="certificateModal" aria-hidden="true">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
+        <h4 class="modal-title"><strong>Download Certificate</strong></h4>
+      </div>
+      <form id="certificateForm" method="post" action="#">
+        @csrf
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group"><label class="form-label">Certificate Holder Name</label><input type="text" class="form-control" name="holder_name" required></div>
+              <div class="form-group"><label class="form-label">Authority City</label><input type="text" class="form-control" name="authority_city" required></div>
+              <div class="form-group"><label class="form-label">Fitment Date</label><input type="date" class="form-control" name="fitment_date" required></div>
+              <div class="form-group"><label class="form-label">Vehicle Registration No</label><input type="text" class="form-control" name="vehicle_registration_no" required></div>
+              <div class="form-group"><label class="form-label">VLTD Serial No</label><input type="text" class="form-control" name="vltd_serial_no" required></div>
+              <div class="form-group"><label class="form-label">VLTD Make</label><input type="text" class="form-control" name="vltd_make" required></div>
+              <div class="form-group"><label class="form-label">VLTD Model</label><input type="text" class="form-control" name="vltd_model" required></div>
+              <div class="form-group"><label class="form-label">Chassis No</label><input type="text" class="form-control" name="chassis_no" required></div>
+              <div class="form-group"><label class="form-label">Engine No</label><input type="text" class="form-control" name="engine_no" required></div>
+              <div class="form-group"><label class="form-label">Color</label><input type="text" class="form-control" name="color" required></div>
+              <div class="form-group"><label class="form-label">Vehicle Model</label><input type="text" class="form-control" name="vehicle_model" required></div>
+              <div class="form-group"><label class="form-label">ARAI TAC/COP No</label><input type="text" class="form-control" name="arai_tac" required></div>
+              <div class="form-group"><label class="form-label">ARAI Date</label><input type="date" class="form-control" name="arai_date" required></div>
+              <div class="form-group"><label class="form-label">Service Provider</label><input type="text" class="form-control" name="service_provider" required></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer text-center">
+          <button type="button" class="btn btn-info btn-raised rippler rippler-default" id="certificatePreviewBtn"><i class="fa fa-eye"></i> Preview</button>
+          <button type="submit" class="btn btn-primary btn-raised rippler rippler-default"><i class="fa fa-download"></i> Download</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  </div>
 <script>
   $(document).ready(function() {
     function initializeDataTables() {
@@ -120,6 +157,22 @@ $currentEmail = Auth::user()->email;
       initializeDataTables();
     });
     $('.dataTables_filter input').attr("placeholder", "Zoeken...");
+    //$(document).on('click', '.certificate-button', function() {
+      //var deviceId = $(this).data('device-id');
+      //window.open('/user/device/' + deviceId + '/certificate', '_blank');
+    //});
+    $('#certificatePreviewBtn').on('click', function() {
+      var deviceId = $('#certificateForm').data('deviceId');
+      if (!deviceId) return;
+      var previewUrl = '/user/device/' + deviceId + '/certificate/preview';
+      var form = $('#certificateForm');
+      var originalAction = form.attr('action');
+      form.attr('action', previewUrl);
+      form.attr('target', '_blank');
+      form.trigger('submit');
+      form.attr('action', originalAction);
+      form.removeAttr('target');
+    });
     $('.user-responsive').on('click', function(e) {
       var allVals = []; 
       

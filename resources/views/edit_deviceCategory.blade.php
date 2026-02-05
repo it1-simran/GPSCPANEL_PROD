@@ -226,10 +226,11 @@
             console.log("selectedItems ==>", selectedItems);
             $('#selectedDeviceInput').empty();
             selectedItems.forEach((item, index) => {
-
+                console.log("item ==>", item);
                 const validationConfig = item.validationConfig ? JSON.parse(item.validationConfig) : {};
                 const selectOptions = validationConfig.selectOptions || [];
                 const selectValues = validationConfig.selectValues || [];
+
                 let defaultInput = '';
                 let validationRule = '';
                 switch (item.inputType) {
@@ -318,8 +319,8 @@
                     ${validationRule}
                   </div>
                   <div class="col-lg-1 d-flex bgx-checkbox-custom">
-                    <input type="hidden" name="inputFieldRequired[]" value="false">
-                    <input type="checkbox" checked name="inputFieldRequired[]" value="true"/>
+                    <input type="hidden" name="inputFieldRequired[${index}]" value="off">
+                    <input type="checkbox" name="inputFieldRequired[${index}]" value="on" ${selectedOptions[index]?.requiredFieldInput ? 'checked' : ''}/>
                 </div>
                   <div class="col-lg-1 bgx-del-button-container">
                     <button type="button" class="btn btn-danger btn-sm remove-input" data-id="${item.id}">

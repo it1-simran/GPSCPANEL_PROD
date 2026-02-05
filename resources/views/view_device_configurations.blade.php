@@ -2,6 +2,8 @@
 
 use App\DeviceCategory;
 use App\Helper\CommonHelper;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 $configurations = json_decode($device['configurations'], true);
 $canConfigurations = $device['can_configurations'] != "" ? json_decode($device['can_configurations'], true) : [];
@@ -350,7 +352,7 @@ $errors = json_decode($device['errors'], true);
                                         @endif
                                         @endempty
                                     </div>
-                                    @if($configurations['can_interface']['value'] == 1)
+                                    @if(isset($configurations['can_interface']['value']) && $configurations['can_interface']['value'] == 1)
                                     @if($getCanEnableByDeviceCategory->is_can_protocol == 1)
                                     <div class="user-info">
                                         <h4><b>CAN Protocol Configurations</b></h4>

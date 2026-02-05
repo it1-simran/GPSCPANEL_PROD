@@ -517,6 +517,12 @@ class DeviceCategoryController extends Controller
                     ];
                 }
             }
+            // Preserve runtime/statistics keys
+            foreach (['activationDate', 'total_pings', 'last_ping'] as $statKey) {
+                if (isset($config[$statKey])) {
+                    $newDeviceConfig[$statKey] = $config[$statKey];
+                }
+            }
             $device->configurations = json_encode($newDeviceConfig);
             $device->update();
         }

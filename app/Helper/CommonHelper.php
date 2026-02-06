@@ -389,11 +389,11 @@ class CommonHelper
                         value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]) ? $configurations[strtolower(str_replace(' ', '_', $inputs->key))]['id'] : '') . '"/>';
             $dataFieldOptions = self::getDataFieldById($inputs->id);
             $fieldValidate = json_decode($dataFieldOptions->validationConfig);
-            if ($inputs->type == 'select') {
+                if ($inputs->type == 'select') {
                 $html .= '<div class="form-group">
                             <label class="control-label col-lg-5">' . $inputs->key . ' ' . (isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput ? '<span class="require">*</span>' : '') . '</label>
                             <div class="col-lg-6">
-                                <select class="form-control inputType" name="configuration[' . $key . '][' . strtolower(str_replace(' ', '_', $inputs->key)) . ']">';
+                                <select class="form-control inputType" name="configuration[' . $key . '][' . strtolower(str_replace(' ', '_', $inputs->key)) . ']" ' . ((isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput) ? 'required' : '') . '>';
                 foreach ($dataFieldOptions->selectOptions as $keyField => $option) {
                     $value = $dataFieldOptions->selectValues[$keyField] ?? '';
                     $configKey = strtolower(str_replace(' ', '_', $inputs->key));
@@ -409,7 +409,7 @@ class CommonHelper
                 $html .= '</select>
                             </div>
                         </div>';
-            } else if ($inputs->type == 'multiselect') {
+                } else if ($inputs->type == 'multiselect') {
                 $html .= '<div class="form-group">
                             <label class="control-label col-lg-5">' . $inputs->key . ' ' . (isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput ? '<span class="require">*</span>' : '') . '</label>
                             <div class="col-lg-6">';
@@ -424,11 +424,11 @@ class CommonHelper
                     $selectedValues = [];
                 }
                 $selectedValues = array_map('strval', $selectedValues);
-                $html .= '<select class="inputType select2-multiselect" 
+                    $html .= '<select class="inputType select2-multiselect" 
                         id="configval' . $configKey . '"
                         name="configuration[' . $key . '][' . $configKey . '][]" 
                         multiple ' .
-                    (isset($input['requiredFieldInput']) && $input['requiredFieldInput'] ? 'required' : '') .
+                    ((isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput) ? 'required' : '') .
                     ' style="width:100%">';
 
                 foreach ($dataFieldOptions->selectOptions as $key1 => $option) {
@@ -461,7 +461,7 @@ class CommonHelper
                         });
                     });
                 </script>';
-            } else {
+                } else {
                 if ($inputs->key == 'Password') {
                     $html .= '<div class="form-group">
                             <label for="ip" class="control-label col-lg-5">' . $inputs->key . ' ' . (isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput ? '<span class="require">*</span>' : '') . '</label>
@@ -469,15 +469,14 @@ class CommonHelper
                                 <input class="form-control"
                                 placeholder="Enter ' . $inputs->key . '"
                                 id="' . strtolower(str_replace(' ', '_', $inputs->key)) . '"
-                                type="' . (isset($inputs->requiredFieldInput) && $inputs->type == 'number' ? 'number' : 'text') . '"
+                                type="' . ($inputs->type == 'number' ? 'number' : 'text') . '"
                                 name="configuration[' . $key . '][' . strtolower(str_replace(' ', '_', $inputs->key)) . ']"';
                     if (isset($inputs->type) && $inputs->type == 'number') {
                         $minValue = isset($fieldValidate->numberInput->min) ? ' minlength="' . $fieldValidate->numberInput->min . '"' : '';
                         $maxValue = isset($fieldValidate->numberInput->max) ? ' maxlength="' . $fieldValidate->numberInput->max . '"' : '';
                         $html .= $minValue . $maxValue;
                     }
-                    $html .= ' value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]) ? $configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value'] : '') . '"
-                                        required />
+                        $html .= ' value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) ? htmlspecialchars($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) : '') . '" ' . ((isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput) ? 'required' : '') . ' />
                             </div>
                         </div>';
                 } else {
@@ -487,7 +486,7 @@ class CommonHelper
                     <input class="form-control"
                         placeholder="Enter ' . $inputs->key . '"
                         id="' . strtolower(str_replace(' ', '_', $inputs->key)) . '"
-                        type="' . (isset($inputs->requiredFieldInput) && $inputs->type == 'number' ? 'number' : 'text') . '"
+                        type="' . ($inputs->type == 'number' ? 'number' : 'text') . '"
                         name="configuration[' . $key . '][' . strtolower(str_replace(' ', '_', $inputs->key)) . ']"';
                     if (isset($inputs->type) && $inputs->type == 'number') {
                         $minValue = isset($fieldValidate->numberInput->min) ? ' min="' . $fieldValidate->numberInput->min . '"' : '';
@@ -496,8 +495,7 @@ class CommonHelper
                     }
                     $maxLength = (isset($inputs->type) && ($inputs->type == 'text_array' || $inputs->type == 'text' || $inputs->type == 'IP/URL') && isset($fieldValidate->maxValueInput)) ? 'maxlength="' . $fieldValidate->maxValueInput . '"' : '';
                     $html .= $maxLength;
-                    $html .= ' value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]) ? $configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value'] : '') . '"
-                        required />
+                        $html .= ' value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) ? htmlspecialchars($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) : '') . '" ' . ((isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput) ? 'required' : '') . ' />
                 </div>
             </div>';
                 }
@@ -676,9 +674,9 @@ class CommonHelper
                     $addClassIpUrl = isset($input->type) && $input->type == 'IP/URL' ? 'ip-url-space' : '';
                     $html .= '<input class="form-control ' . $addClassTextArray . ' ' . $addClassIpUrl . '" placeholder="Enter ' . $input->key . '" 
                     id="' . strtolower(str_replace(' ', '_', $input->key)) . '" 
-                    type="' . (isset($input->requiredFieldInput) && $input->type == 'number' ? 'number' : 'text') . '" name="configuration[0][' . strtolower(str_replace(' ', '_', $input->key)) . ']" value="' . (isset($configurations[strtolower(str_replace(' ', '_', $input->key))]['value']) ? htmlspecialchars($configurations[strtolower(str_replace(' ', '_', $input->key))]['value']) : '') . '"';
+                    type="' . ($input->type == 'number' ? 'number' : 'text') . '" name="configuration[0][' . strtolower(str_replace(' ', '_', $input->key)) . ']" value="' . (isset($configurations[strtolower(str_replace(' ', '_', $input->key))]['value']) ? htmlspecialchars($configurations[strtolower(str_replace(' ', '_', $input->key))]['value']) : '') . '"';
                     $html .= ' ' . $minValue . ' ' . $maxValue . ' ' . $maxLength;
-                    $html .= ' required />';
+                    $html .= ' ' . (isset($input->requiredFieldInput) && $input->requiredFieldInput ? 'required' : '') . ' />';
                 }
             }
 
@@ -3264,21 +3262,21 @@ class CommonHelper
                 </script>';
                 } else {
                     if ($input['key'] == 'Password') {
-                        $inputType = isset($input['requiredFieldInput']) && $input['type'] == 'number' ? 'number' : 'text';
+                        $inputType = ($input['type'] == 'number' ? 'number' : 'text');
                         $minValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->min) ? 'minlength="' .  $fieldValidate->numberInput->min . '"' : '';
                         $maxValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->max) ? 'maxlength="' . $fieldValidate->numberInput->max . '"' : '';
-                        $maxLength = isset($input['type']) && $input['type'] == 'text' || $input['type'] == 'IP/URL' || $input['type'] == 'text_array'  && isset($fieldValidate->maxValueInput) ? 'maxlength="' . $fieldValidate->maxValueInput . '"' : '';
+                        $maxLength = ((isset($input['type']) && ($input['type'] == 'text' || $input['type'] == 'IP/URL' || $input['type'] == 'text_array')) && isset($fieldValidate->maxValueInput)) ? 'maxlength="' . $fieldValidate->maxValueInput . '"' : '';
                         $value = isset($configurations[strtolower(str_replace(' ', '_', $input['key']))]) ? $configurations[strtolower(str_replace(' ', '_', $input['key']))]['value'] : $input['default'];
                         $html .= '<input class="form-control" placeholder="Enter ' . $input['key'] . '" id="' . strtolower(str_replace(' ', '_', $input['key'])) . '" type="' . $inputType . '" ';
                         $html .= $minValue . ' ' . $maxValue . ' ' . $maxLength . ' ';
-                        $html .= 'name="configuration[' . strtolower(str_replace(' ', '_', $input['key'])) . ']" value="' . $value . '" required />';
+                        $html .= 'name="configuration[' . strtolower(str_replace(' ', '_', $input['key'])) . ']" value="' . htmlspecialchars($value) . '" ' . ((isset($input['requiredFieldInput']) && $input['requiredFieldInput']) ? 'required' : '') . ' />';
                     } else {
                         $addClassTextArray = isset($input['type']) && $input['type'] == 'text_array' ? "text-array-space" : '';
                         $addClassIpUrl = isset($input['type']) && $input['type'] == 'IP/URL' ? "ip-url-space" : '';
-                        $inputType = isset($input['requiredFieldInput']) && $input['type'] == 'number' ? 'number' : 'text';
+                        $inputType = ($input['type'] == 'number' ? 'number' : 'text');
                         $minValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->min) ? 'min="' .  $fieldValidate->numberInput->min . '"' : '';
                         $maxValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->max) ? 'max="' . $fieldValidate->numberInput->max . '"' : '';
-                        $maxLength = isset($input['type']) && $input['type'] == 'text' || $input['type'] == 'IP/URL' || $input['type'] == 'text_array' && isset($fieldValidate->maxValueInput) ? 'maxlength="' . $fieldValidate->maxValueInput . '"' : '';
+                        $maxLength = ((isset($input['type']) && ($input['type'] == 'text' || $input['type'] == 'IP/URL' || $input['type'] == 'text_array')) && isset($fieldValidate->maxValueInput)) ? 'maxlength="' . $fieldValidate->maxValueInput . '"' : '';
                         $key = strtolower(str_replace(' ', '_', $input['key']));
                         $value = isset($configurations[$key])
                             ? (is_array($configurations[$key]['value'])
@@ -3287,7 +3285,7 @@ class CommonHelper
                             : $input['default'];
                         $html .= '<input class="form-control ' . $addClassTextArray . ' ' . $addClassIpUrl . '" placeholder="Enter ' . $input['key'] . '" id="' . strtolower(str_replace(' ', '_', $input['key'])) . '" type="' . $inputType . '" ';
                         $html .= $minValue . ' ' . $maxValue . ' ' . $maxLength . ' ';
-                        $html .= 'name="configuration[' . strtolower(str_replace(' ', '_', $input['key'])) . ']" value="' . $value . '" required />';
+                        $html .= 'name="configuration[' . strtolower(str_replace(' ', '_', $input['key'])) . ']" value="' . htmlspecialchars($value) . '" ' . ((isset($input['requiredFieldInput']) && $input['requiredFieldInput']) ? 'required' : '') . ' />';
                     }
                 }
                 $html .= '</div>';

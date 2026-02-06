@@ -302,9 +302,9 @@ class DeviceApiController extends Controller
 			foreach ($staticFields as $fieldKey) {
 				if (isset($configurations[$fieldKey])) {
 					$id = $configurations[$fieldKey]['id'] ?? null;
-					$value = $configurations[$fieldKey]['value'] ?? null;
+					$value = $configurations[$fieldKey]['value'] ?? "";
 
-					if ($id !== null) {
+					if ($id !== "") {
 						if ($fieldKey == 'firmware_id' || $fieldKey == 'firmware_version' || $fieldKey == 'firmwareFileSize') {
 							if ($firmwareId != 0) {
 								if($fieldKey == 'firmware_version'){
@@ -347,9 +347,9 @@ class DeviceApiController extends Controller
 				foreach ($canCofigurations as $key => $input) {
 					if (isset($canCofigurations[$key])) {
 						$id = $canCofigurations[$key]['id'] ?? null;
-						$value = $canCofigurations[$key]['value'] ?? null;
+						$value = $canCofigurations[$key]['value'] ?? "null";
 
-						if ($id !== null) {
+						if ($id !== "") {
 							// Check if value is a JSON-encoded array string
 							$decoded = is_array($value) ? $value : json_decode($value, true);
 

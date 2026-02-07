@@ -275,7 +275,7 @@ class DeviceApiController extends Controller
 				$key = str_replace(' ', '_', strtolower($input['key']));
 				if (isset($configurations[$key])) {
 					$id = $configurations[$key]['id'] ?? null;
-					$value = $configurations[$key]['value'] ?? null;
+					$value = $configurations[$key]['value'] ?? "";
 
 					if ($id !== null) {
 						$response[$id] = $value;
@@ -302,9 +302,9 @@ class DeviceApiController extends Controller
 			foreach ($staticFields as $fieldKey) {
 				if (isset($configurations[$fieldKey])) {
 					$id = $configurations[$fieldKey]['id'] ?? null;
-					$value = $configurations[$fieldKey]['value'] ?? "";
+					$value = $configurations[$fieldKey]['value'] != null ? $configurations[$fieldKey]['value'] : "";
 
-					if ($id !== "") {
+					if ($id !== null) {
 						if ($fieldKey == 'firmware_id' || $fieldKey == 'firmware_version' || $fieldKey == 'firmwareFileSize') {
 							if ($firmwareId != 0) {
 								if($fieldKey == 'firmware_version'){
@@ -347,9 +347,11 @@ class DeviceApiController extends Controller
 				foreach ($canCofigurations as $key => $input) {
 					if (isset($canCofigurations[$key])) {
 						$id = $canCofigurations[$key]['id'] ?? null;
-						$value = $canCofigurations[$key]['value'] ?? "null";
+						$value = (isset($canCofigurations[$key]['value']) && $canCofigurations[$key]['value'] !== null)
+							? $canCofigurations[$key]['value']
+							: "";
 
-						if ($id !== "") {
+						if ($id !== null) {
 							// Check if value is a JSON-encoded array string
 							$decoded = is_array($value) ? $value : json_decode($value, true);
 
@@ -379,6 +381,13 @@ class DeviceApiController extends Controller
 		// 		}
 		// 	}
 		// }
+
+		// Normalize any remaining nulls to empty strings
+		foreach ($response as $k => $v) {
+			if ($v === null) {
+				$response[$k] = "";
+			}
+		}
 
 		// Return clean JSON
 		return json_encode($response);

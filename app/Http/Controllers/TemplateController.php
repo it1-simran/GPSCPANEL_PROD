@@ -135,7 +135,7 @@ class TemplateController extends Controller
             'template_name' => $request->template_name,
             'device_category_id' => $request->deviceCategory,
             'configurations' => json_encode($configuration),
-            'can_configurations' => $canConfigurations
+            'can_configurations' => json_encode($canConfigurations)
         ];
         if ($userType != 'Admin') {
             if ((isset($_POST['default_template']) && $_POST['default_template'] == "on") || $checkifFirst == 0) {

@@ -127,8 +127,8 @@ $get_default_template = DB::table('templates')
                 <label for="curl" class="control-label col-lg-3">Account Type</label>
                 <div class="col-lg-6">
                   <select data-prev="{{$contact->user_type}}" id="userType" class="form-control userAccType" name="user_type">
-                    <option <?php echo (($contact->user_type == 'Reseller') ? 'selected' : '') ?> value="Reseller">Reseller</option>
-                    <option <?php echo (($contact->user_type == 'User') ? 'selected' : '') ?> value="User">User</option>
+                    <option <?php echo (($contact->user_type == 'Reseller') ? 'selected' : '') ?> value="Reseller">Manufacturer</option>
+                    <option <?php echo (($contact->user_type == 'User') ? 'selected' : '') ?> value="User">Dealer</option>
                     @if($currentUser->user_type =='Admin')
                     <option <?php echo (($contact->user_type == 'Support') ? 'selected' : '') ?> value="Support">Support</option>
                     @endif

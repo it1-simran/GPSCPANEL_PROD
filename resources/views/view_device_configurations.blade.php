@@ -570,6 +570,7 @@ $errors = json_decode($device['errors'], true);
     function getFirmwareWitModel(userId) {
         const firmwareDropdown = $('#firmware');
         let selectedFirmware = <?= json_encode($configurations['firmware_id']) ?>;
+        let categoryId = "<?= $device['device_category_id'] ?>";
 
         firmwareDropdown.empty(); // clear previous options
         let actionUrl = "{{ url(Auth::user()->user_type == 'Admin' ? 'admin/get-firmware-with-models' : (Auth::user()->user_type == 'Reseller' ? 'reseller/get-firmware-with-models' : (Auth::user()->user_type == 'Support' ? 'support/get-firmware-with-models' : 'user/get-firmware-with-models'))) }}";
@@ -579,6 +580,7 @@ $errors = json_decode($device['errors'], true);
                 type: 'POST',
                 data: {
                     user_id: userId,
+                    category_id: categoryId,
                     _token: $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
@@ -616,6 +618,7 @@ $errors = json_decode($device['errors'], true);
                 type: 'POST',
                 data: {
                     user_id: userId,
+                    category_id: categoryId,
                     _token: $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {

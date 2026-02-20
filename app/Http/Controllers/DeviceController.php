@@ -2121,8 +2121,7 @@ class DeviceController extends Controller
         if ($uid == $currentUser->id || $device->user_id == $currentUser->id) {
             $uid = '';
         }
-        $firmware = Firmware::where(['device_category_id' => $device->device_category_id])->get();
-
+        $firmware = Firmware::where('device_category_id', $device->device_category_id)->where('is_deleted', 0)->get();
         $query = Template::select('*')->where('device_category_id', $device->device_category_id)->where('is_deleted', '0');
 
         if (Auth::user()->user_type == 'Admin') {

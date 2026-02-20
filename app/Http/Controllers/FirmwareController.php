@@ -598,12 +598,23 @@ class FirmwareController extends Controller
     }
     public function getFirmwareWithModel(Request $request)
     {
-        $firmwares = Firmware::whereIn('id', function ($query) use ($request) {
-            $query->select('firmware_id')
-                ->from('modals')
-                ->where('user_id', $request->user_id);
-        })->get(['id', 'name']); // Fetch only necessary fields
-        if (count($firmwares) == 0) {
+        $firmwaresQuery = Firmware::query();
+
+        if ($request->has('user_id') && $request->user_id != "" && $request->user_id != "No User Found") {
+            $firmwaresQuery->whereIn('id', function ($query) use ($request) {
+                $query->select('firmware_id')
+                    ->from('modals')
+                    ->where('user_id', $request->user_id);
+            });
+        }
+
+        if ($request->has('category_id') && $request->category_id != "") {
+            $firmwaresQuery->where('device_category_id', $request->category_id);
+        }
+
+        $firmwares = $firmwaresQuery->where('is_deleted', 0)->get(['id', 'name']);
+
+        if (count($firmwares) == 0 && $request->has('user_id') && $request->user_id != "" && $request->user_id != "No User Found") {
             if (Auth::user()->user_type != "Admin" && Auth::user()->user_type != "Support") {
                 $writer = Writer::where("id", Auth::user()->id)->first();
             
@@ -612,13 +623,27 @@ class FirmwareController extends Controller
                         $query->select('firmware_id')
                             ->from('modals')
                             ->where('user_id', $writer->created_by != "1"? $writer->created_by  : Auth::user()->id);
-                    })->get(['id', 'name']);
+                    });
+                    
+                    if ($request->has('category_id') && $request->category_id != "") {
+                        $firmwares->where('device_category_id', $request->category_id);
+                    }
+                    
+                    $firmwares = $firmwares->get(['id', 'name']);
                 }
             } else {
-                $firmwares = Firmware::where('is_deleted', 0)
-                ->select('id', 'name')
-                ->get();
+                $firmwares = Firmware::where('is_deleted', 0);
+                if ($request->has('category_id') && $request->category_id != "") {
+                    $firmwares->where('device_category_id', $request->category_id);
+                }
+                $firmwares = $firmwares->select('id', 'name')->get();
             }
+        } else if (count($firmwares) == 0) {
+             $firmwaresQuery = Firmware::where('is_deleted', 0);
+             if ($request->has('category_id') && $request->category_id != "") {
+                $firmwaresQuery->where('device_category_id', $request->category_id);
+            }
+            $firmwares = $firmwaresQuery->select('id', 'name')->get();
         }
 
         return response()->json([

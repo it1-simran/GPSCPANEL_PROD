@@ -141,8 +141,13 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             <td>{{ $request->phone }}</td>
                                             <td>{{ ucfirst($request->userType) }}</td>
                                             <td>{{ $request->deviceCategory }}</td>
-                                            <td>{{ $request->deviceIp }}</td>
-                                            <td>{{ $request->devicePort }}</td>
+                                            @php
+                                                $configurations = json_decode($request->configurations, true);
+                                                $deviceIp = $configurations['ip_test']['value'] ?? 'N/A';
+                                                $devicePort = $configurations['port']['value'] ?? 'N/A';
+                                            @endphp
+                                            <td>{{ $deviceIp }}</td>
+                                            <td>{{ $devicePort }}</td>
                                             <td>{{ $request->resend_count }}</td>
                                             <td>
                                                 <span class="badge 
@@ -250,8 +255,13 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         <td>{{ $request->phone }}</td>
                                         <td>{{ ucfirst($request->userType) }}</td>
                                         <td>{{ $request->deviceCategory }}</td>
-                                        <td>{{ $request->deviceIp }}</td>
-                                        <td>{{ $request->devicePort }}</td>
+                                        @php
+                                            $configurations = json_decode($request->configurations, true);
+                                            $deviceIp = $configurations['ip_test']['value'] ?? 'N/A';
+                                            $devicePort = $configurations['port']['value'] ?? 'N/A';
+                                        @endphp
+                                        <td>{{ $deviceIp }}</td>
+                                        <td>{{ $devicePort }}</td>
                                         <td>{{ $request->resend_count }}</td>
                                         <td>
                                             <span class="badge bg-warning text-dark">{{ ucfirst($request->status) }}</span>

@@ -1906,10 +1906,12 @@ class DeviceController extends Controller
                 $imei = strval($value[2]);
                 $deviceData = Device::Select('*')->where('imei', $imei)->first();
                 if ($imei) {
+                    $arr = [];
                     $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
                     $newConfig = array_merge($oldConfig, $converted);
                     $arr['configurations'] = json_encode($newConfig);
-                    $arr['can_configurations'] = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
+                    $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
+                    $arr['can_configurations'] = json_encode($canConverted);
                     if (in_array($imei, $new_imei_list)) {
                         $master_id = Auth::user()->id;
                         // $mid = $master_id;
@@ -2025,9 +2027,12 @@ class DeviceController extends Controller
                 $imei = strval($value[2]);
                 $deviceData = Device::Select('*')->where('imei', $imei)->first();
                 if ($imei) {
+                    $arr = [];
                     $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
                     $newConfig = array_merge($oldConfig, $converted);
                     $arr['configurations'] = json_encode($newConfig);
+                    $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
+                    $arr['can_configurations'] = json_encode($canConverted);
                     if (in_array($imei, $new_imei_list)) {
                         $master_id = Auth::user()->id;
                         // $mid = $master_id;

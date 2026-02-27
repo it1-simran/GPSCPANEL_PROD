@@ -69,6 +69,47 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
         .form-footer a:hover {
             text-decoration: underline;
         }
+
+        /* Select2 Bootstrap 5 Styling Fix */
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            padding: 0.375rem 0.75rem !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: normal !important;
+            padding-left: 0 !important;
+            color: #212529 !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+            top: 1px !important;
+            right: 10px !important;
+        }
+        .select2-dropdown {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+
+        .config-header-bg {
+            background-color: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0bb2d4;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+        }
+        .require {
+            color: red;
+            font-weight: bold;
+            margin-left: 3px;
+        }
     </style>
 </head>
 
@@ -98,6 +139,20 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             @endif
+
+            @if(isset($user) && in_array($user->status, ['RejectedBySupport', 'RejectedByAdmin']) && $user->description)
+            <div class="alert alert-warning border-start border-danger border-4 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="fa fa-exclamation-circle text-danger me-3" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <h6 class="fw-bold text-danger mb-1">Attention: Previous Request Rejected</h6>
+                        <p class="mb-0 text-muted small"><strong>Reason:</strong> "{{ $user->description }}"</p>
+                        <p class="mb-0 text-muted small mt-1">Please update the information below and resubmit.</p>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <h2 class="text-center mb-4">Create Account</h2>
 
             <form method="POST" id="registerForm" action="{{ route('register.user.store') }}" class="row">
@@ -157,7 +212,7 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
                     </select>
                 </div>
                 <div id="deviceConfigWrapper" style="display:none;">
-                    <h5 class="mt-3">Default Configuration</h5>
+                    <h5 class="mt-4 config-header-bg">Default Configuration</h5>
                     <div id="deviceConfigFields" class="row"></div>
                 </div>
                 <button type="button" id="registerBtn" class="btn btn-custom w-100">
@@ -249,10 +304,16 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
     $(document).ready(function() {
         $('.select2').select2({
             placeholder: "Search and Select",
+            width: '100%'
         });
         // On Register click → send OTP & open modal
         $('#registerBtn').click(function(e) {
             e.preventDefault();
+
+            let form = document.getElementById('registerForm');
+            if (!form.reportValidity()) {
+                return;
+            }
 
             let $btn = $(this);
             let $spinner = $btn.find('.spinner-border');
@@ -411,23 +472,62 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
                         // 🔹 Sanitize key -> lowercase + replace spaces with underscores
                         let safeKey = field.key.toLowerCase().replace(/\s+/g, '_');
 
+                        let attrs = '';
+                        if (field.required) attrs += ' required';
+                        
+                        // Check for category-level numeric range
+                        if (field.type === 'number' && field.numberRange && !Array.isArray(field.numberRange)) {
+                            if (field.numberRange.min !== undefined && field.numberRange.min !== '') attrs += ` min="${field.numberRange.min}"`;
+                            if (field.numberRange.max !== undefined && field.numberRange.max !== '') attrs += ` max="${field.numberRange.max}"`;
+                        } 
+                        // Global fallback for numeric range
+                        else if (field.type === 'number' && validation && validation.numberInput) {
+                            if (validation.numberInput.min !== undefined) attrs += ` min="${validation.numberInput.min}"`;
+                            if (validation.numberInput.max !== undefined) attrs += ` max="${validation.numberInput.max}"`;
+                        }
+
+                        // Check for category-level maxlength
+                        if (['text', 'IP/URL', 'text_array'].includes(field.type)) {
+                            if (field.maxValueInput && !Array.isArray(field.maxValueInput) && field.maxValueInput !== "") {
+                                attrs += ` maxlength="${field.maxValueInput}"`;
+                            } else if (validation && validation.maxValueInput) {
+                                attrs += ` maxlength="${validation.maxValueInput}"`;
+                            }
+                        }
+
                         if (['number', 'text', 'IP/URL'].includes(field.type)) {
                             input = `<input type="${field.type === 'IP/URL' ? 'text' : field.type}"
                             class="form-control"
                             name="config[${safeKey}]"
-                            value="${field.default}">`;
+                            value="${field.default}" ${attrs}>`;
                         } else if (field.type === 'select') {
                             console.log("field ==>", field);
-                            input = `<select class="form-control" name="config[${safeKey}]">
-                                ${validation.selectOptions.map((val, index) => 
-                                    `<option value="${validation.selectValues[index]}" selected>${val}</option>`
-                                ).join('')}
+                            let optionsHtml = '';
+                            if (field.selectOptions && Array.isArray(field.selectOptions) && field.selectOptions.length > 0) {
+                                optionsHtml = field.selectOptions.map(opt => 
+                                    `<option value="${opt.value}" ${opt.value == field.default ? 'selected' : ''}>${opt.option}</option>`
+                                ).join('');
+                            } else if (validation && validation.selectOptions) {
+                                optionsHtml = validation.selectOptions.map((val, index) => 
+                                    `<option value="${validation.selectValues[index]}" ${validation.selectValues[index] == field.default ? 'selected' : ''}>${val}</option>`
+                                ).join('');
+                            }
+                            input = `<select class="form-control" name="config[${safeKey}]" ${field.required ? 'required' : ''}>
+                                ${optionsHtml}
                             </select>`;
                         } else if (field.type === 'multiselect') {
-                            input = `<select class="form-control" name="config[${safeKey}][]" multiple>
-                                ${validation.selectOptions.map((val, index) => 
-                                    `<option value="${validation.selectValues[index]}" selected>${val}</option>`
-                                ).join('')}
+                             let optionsHtml = '';
+                            if (field.selectOptions && Array.isArray(field.selectOptions) && field.selectOptions.length > 0) {
+                                optionsHtml = field.selectOptions.map(opt => 
+                                    `<option value="${opt.value}">${opt.option}</option>`
+                                ).join('');
+                            } else if (validation && validation.selectOptions) {
+                                optionsHtml = validation.selectOptions.map((val, index) => 
+                                    `<option value="${validation.selectValues[index]}">${val}</option>`
+                                ).join('');
+                            }
+                            input = `<select class="form-control" name="config[${safeKey}][]" multiple ${field.required ? 'required' : ''}>
+                                ${optionsHtml}
                             </select>`;
                         } else if (field.type === 'text_array') {
                             input = `<input type="text" class="form-control"
@@ -440,7 +540,7 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
 
                         container.append(`
                             <div class="col-md-6 mb-3">
-                                <label><b>${field.key}</b></label>
+                                <label><b>${field.key}</b>${field.required ? '<span class="require">*</span>' : ''}</label>
                                 ${input}
                             </div>
                         `);

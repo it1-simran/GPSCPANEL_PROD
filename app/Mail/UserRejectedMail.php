@@ -5,6 +5,8 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\URL;
+use Carbon\Carbon;
 
 class UserRejectedMail extends Mailable
 {
@@ -12,6 +14,8 @@ class UserRejectedMail extends Mailable
 
     public $user;
     public $reason;
+    public $link;
+    public $expirationHours = 24;
 
     /**
      * Create a new message instance.
@@ -20,6 +24,13 @@ class UserRejectedMail extends Mailable
     {
         $this->user = $user;
         $this->reason = $reason;
+
+        // Generate a resubmission link (signed URL)
+        $this->link = URL::temporarySignedRoute(
+            'register.user',
+            Carbon::now()->addHours($this->expirationHours),
+            ['name' => $user->name, 'email' => $user->email]
+        );
     }
 
     /**

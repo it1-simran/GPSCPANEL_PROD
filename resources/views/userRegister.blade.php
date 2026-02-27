@@ -176,6 +176,7 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
                         maxlength="10"
                         pattern="\d{10}"
                         title="Phone number must be exactly 10 digits"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                         required>
                 </div>
 

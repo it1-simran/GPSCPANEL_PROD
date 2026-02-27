@@ -42,7 +42,7 @@
             </div>
 
             <div class="validity-timer">
-                <i class="fa fa-clock-o"></i> This пригласительная link is valid for <strong>12 hours</strong>.
+                <i class="fa fa-clock-o"></i> This link is valid for <strong>12 hours</strong>.
             </div>
 
             <p>If you did not expect this email, you can safely ignore it.</p>

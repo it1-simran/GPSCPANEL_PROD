@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\UserRejectedMail;
+use App\Mail\UserApprovedMail;
 use Illuminate\Support\Facades\DB;
 
 class GuestUserController extends Controller
@@ -46,7 +47,7 @@ class GuestUserController extends Controller
             }
 
             // Case B: If registration request is already submitted and pending
-            if ($user->status !== 'RequestMailSent') {
+            if (!in_array($user->status, ['RequestMailSent', 'RejectedBySupport', 'RejectedByAdmin'])) {
                 return response()->view('errors.custom_message', [
                     'title' => 'Pending Approval',
                     'message' => 'Your registration request has been submitted successfully and is awaiting approval.',
@@ -56,7 +57,7 @@ class GuestUserController extends Controller
         }
 
         // 3️⃣ Otherwise, show the registration form
-        return view('userRegister', compact('name', 'email'));
+        return view('userRegister', compact('name', 'email', 'user'));
     }
 
     public function store(Request $request)
@@ -220,6 +221,9 @@ class GuestUserController extends Controller
                 'configurations'    => json_encode($writerConfigArr),
                 'created_by'        => Auth::id()
             ]);
+
+            // Send success email with credentials
+            Mail::to($user->email)->send(new UserApprovedMail($user, '123456'));
         } elseif ($request->action === 'AdminApprovalPending') {
             $user->status = 'AdminApprovalPending';
             $user->save();
@@ -247,14 +251,16 @@ class GuestUserController extends Controller
         $formattedFields = [];
         foreach ($fields as $field) {
             $dataFieldOptions = CommonHelper::getDataFieldById($field['id']);
-            $validationConfig = json_decode($dataFieldOptions->validationConfig);
             $formattedFields[] = [
                 'id' => $field['id'],
                 'key' => $field['key'],
                 'type' => $field['type'],
                 'default' => $field['default'],
-                'validation' => $validationConfig,
-                'options' => $dataFieldOptions->options ?? []
+                'required' => $field['requiredFieldInput'] ?? false,
+                'maxValueInput' => $field['maxValueInput'] ?? null,
+                'numberRange' => $field['numberRange'] ?? null,
+                'selectOptions' => $field['selectOptions'] ?? [],
+                'validation' => json_decode($dataFieldOptions->validationConfig ?? '{}')
             ];
         }
         // Assuming "configuration" column stores your JSON
@@ -289,10 +295,8 @@ class GuestUserController extends Controller
 
         // 🔹 Check if already exists in GuestApprovalUser
         $existsInGuestApproval = DB::table('guestapprovaluser')
-            ->where(function ($query) use ($request) {
-                $query->where('email', $request->email)
-                    ->where('status', '!=', 'RequestMailSent');
-            })
+            ->where('email', $request->email)
+            ->whereNotIn('status', ['RequestMailSent', 'RejectedBySupport', 'RejectedByAdmin'])
             ->exists();
 
 
@@ -309,9 +313,10 @@ class GuestUserController extends Controller
         Session::put('otp_email', $request->email); // Store email for verification step
 
         // 🔹 Send OTP email
-        Mail::raw("Your OTP is: $otp", function ($message) use ($request) {
+        $user_name = $request->name;
+        Mail::send('emails.registration_otp', ['otp' => $otp, 'user_name' => $user_name], function ($message) use ($request) {
             $message->to($request->email)
-                ->subject('Your Email Verification OTP');
+                ->subject('Email Verification OTP - ' . config('app.name'));
         });
 
         return response()->json([

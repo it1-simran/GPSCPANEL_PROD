@@ -21,6 +21,7 @@ class GuestApprovalUser extends Model
         'description',
         'resend_count',
         'status',
+        'timezone',
     ];
 }
 ?>

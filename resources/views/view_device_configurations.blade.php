@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 $configurations = json_decode($device['configurations'], true);
+
 $canConfigurations = $device['can_configurations'] != "" ? json_decode($device['can_configurations'], true) : [];
 $getCanEnableByDeviceCategory = DeviceCategory::select('is_can_protocol')->where('id', $device['device_category_id'])->first();
 $parameters = json_decode($device['parameters'], true);
@@ -754,7 +755,35 @@ $errors = json_decode($device['errors'], true);
                 });
         }
 
-        let coordinates = parseCoordinates("<?php echo isset($configurations['lat'], $configurations['lat_d']) ? $configurations['lat'] . $configurations['lat_d'] : '' ?>", "<?php echo isset($configurations['lon'], $configurations['lon_d']) ? $configurations['lon'] . $configurations['lon_d'] : ''; ?>");
+        function toDecimal(dm, dir) {
+            if (dm == null || dir == null) return NaN;
+            var v = parseFloat(String(dm).trim());
+            if (!isFinite(v)) return NaN;
+            var d = String(dir).trim().toUpperCase();
+            var hemi = d.charAt(0); // N/S/E/W even if full word like 'North'
+            var deg = Math.floor(v / 100);
+            var min = v - deg * 100;
+            var dec = deg + (min / 60);
+            if (hemi === 'S' || hemi === 'W') dec = -dec;
+            return Number(dec.toFixed(6));
+        }
+
+        var latVal = "<?= isset($parameters['latitude']['value']) ? $parameters['latitude']['value'] : '' ?>";
+        var latDir = "<?= isset($parameters['latitude_direction']['value']) ? $parameters['latitude_direction']['value'] : '' ?>";
+        var lonVal = "<?= isset($parameters['longitude']['value']) ? $parameters['longitude']['value'] : '' ?>";
+        var lonDir = "<?= isset($parameters['longitude_direction']['value']) ? $parameters['longitude_direction']['value'] : '' ?>";
+
+        console.log('raw lat/lon', { latVal, latDir, lonVal, lonDir });
+        let coordinates = {
+            latitude: toDecimal(latVal, latDir),
+            longitude: toDecimal(lonVal, lonDir)
+        };
+
+        if (!isFinite(coordinates.latitude) || !isFinite(coordinates.longitude)) {
+            var latCombined = (String(latVal || '').trim() + String(latDir || '').trim()).trim();
+            var lonCombined = (String(lonVal || '').trim() + String(lonDir || '').trim()).trim();
+            coordinates = parseCoordinates(latCombined, lonCombined);
+        }
         console.log('coordinates', coordinates)
 
         // Initialize map when document is ready
@@ -766,9 +795,19 @@ $errors = json_decode($device['errors'], true);
     });
 
     function parseCoordinates(latitude, longitude) {
+        latitude = String(latitude || '').trim();
+        longitude = String(longitude || '').trim();
+        // Extract last hemisphere letter if present; tolerate full words
+        var latDirection = latitude.replace(/.*?([NnSs])$/, '$1').toUpperCase();
+        var lonDirection = longitude.replace(/.*?([EeWw])$/, '$1').toUpperCase();
+        var latNum = latitude.replace(/[^0-9.]/g, '');
+        var lonNum = longitude.replace(/[^0-9.]/g, '');
+        var latValue = parseFloat(latNum);
+        var lonValue = parseFloat(lonNum);
+        if (!isFinite(latValue) || !isFinite(lonValue)) {
+            return { latitude: NaN, longitude: NaN };
+        }
         // Parse latitude
-        var latDirection = latitude.slice(-1); // N or S
-        var latValue = parseFloat(latitude.slice(0, -1)); // Remove the last character and convert to float
         var latDegrees = Math.floor(latValue / 100); // Extract degrees
         var latDecimalMinutes = (latValue % 100) / 60; // Convert remainder to decimal minutes
         var lat = latDegrees + latDecimalMinutes;
@@ -777,8 +816,6 @@ $errors = json_decode($device['errors'], true);
         }
 
         // Parse longitude
-        var lonDirection = longitude.slice(-1); // E or W
-        var lonValue = parseFloat(longitude.slice(0, -1)); // Remove the last character and convert to float
         var lonDegrees = Math.floor(lonValue / 100); // Extract degrees
         var lonDecimalMinutes = (lonValue % 100) / 60; // Convert remainder to decimal minutes
         var lon = lonDegrees + lonDecimalMinutes;
@@ -787,8 +824,8 @@ $errors = json_decode($device['errors'], true);
         }
 
         return {
-            latitude: lat,
-            longitude: lon
+            latitude: Number(lat.toFixed(6)),
+            longitude: Number(lon.toFixed(6))
         };
     }
 </script>

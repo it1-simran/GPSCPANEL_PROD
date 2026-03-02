@@ -754,11 +754,15 @@ $errors = json_decode($device['errors'], true);
                 });
         }
 
-        let coordinates = parseCoordinates("<?php echo isset($configurations['lat']) ? $configurations['lat'] . $configurations['lat_d'] : '' ?>", "<?php echo isset($configurations['lon']) ? $configurations['lon'] . $configurations['lon'] : ''; ?>");
+        let coordinates = parseCoordinates("<?php echo isset($configurations['lat'], $configurations['lat_d']) ? $configurations['lat'] . $configurations['lat_d'] : '' ?>", "<?php echo isset($configurations['lon'], $configurations['lon_d']) ? $configurations['lon'] . $configurations['lon_d'] : ''; ?>");
         console.log('coordinates', coordinates)
 
         // Initialize map when document is ready
-        initMap(coordinates.latitude, coordinates.longitude);
+        if (isFinite(coordinates.latitude) && isFinite(coordinates.longitude)) {
+            initMap(coordinates.latitude, coordinates.longitude);
+        } else {
+            initMap(0, 0);
+        }
     });
 
     function parseCoordinates(latitude, longitude) {

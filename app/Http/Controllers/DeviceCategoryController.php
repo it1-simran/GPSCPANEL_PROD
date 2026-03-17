@@ -656,7 +656,34 @@ class DeviceCategoryController extends Controller
     public function getDeviceCategory(Request $request)
     {
         $device_category = DeviceCategory::find($request->id);
-        $firmware = DB::table('firmware')->select('*')->where('device_category_id', $request->id)->get();
+        $firmwareQuery = Firmware::query()
+            ->where('device_category_id', $request->id)
+            ->where('is_deleted', 0);
+
+        if (Auth::user()->user_type === 'Admin' || Auth::user()->user_type === 'Support') {
+            $firmware = $firmwareQuery->get();
+        } else {
+            $firmwareIds = DB::table('modals')
+                ->where('user_id', auth()->id())
+                ->pluck('firmware_id')
+                ->unique()
+                ->filter();
+
+            if ($firmwareIds->isEmpty()) {
+                $writer = Writer::find(auth()->id());
+                if ($writer && $writer->created_by && $writer->created_by != "1") {
+                    $firmwareIds = DB::table('modals')
+                        ->where('user_id', $writer->created_by)
+                        ->pluck('firmware_id')
+                        ->unique()
+                        ->filter();
+                }
+            }
+
+            $firmware = $firmwareIds->isEmpty()
+                ? $firmwareQuery->whereRaw('1 = 0')->get()
+                : $firmwareQuery->whereIn('id', $firmwareIds)->get();
+        }
         if ($device_category) {
             $dataFields = DB::table('data_fields')->where('fieldType', 0)->get();
             if (Auth::user()->user_type == 'Admin') {

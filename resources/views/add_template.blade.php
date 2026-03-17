@@ -240,7 +240,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   const inputType = field.inputType;
                   let validation = {};
                   try {
-                      validation = JSON.parse(field.validationConfig || '{}');
+                      const parsedValidation = JSON.parse(field.validationConfig || '{}');
+                      validation = (parsedValidation && typeof parsedValidation === 'object') ? parsedValidation : {};
                   } catch (e) {
                       console.warn('Invalid JSON in validationConfig for field:', field.fieldName);
                   }
@@ -249,8 +250,10 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   inputHtml += `<input type="hidden" name="CanParametersType[${fieldId }]" value="${ inputType}" />`;
                   
                     if (inputType === 'number') {
-                      if (validation.numberInput) {
-                          attr += ` min="${validation.numberInput.min}" max="${validation.numberInput.max}"`;
+                      const numberInput = (validation.numberInput && typeof validation.numberInput === 'object') ? validation.numberInput : null;
+                      if (numberInput) {
+                          if (numberInput.min !== undefined) { attr += ` min="${numberInput.min}"`; }
+                          if (numberInput.max !== undefined) { attr += ` max="${numberInput.max}"`; }
                       }
                       inputHtml += `<input type="number" ${attr} />`;
                     } else if (inputType === 'select') {
@@ -622,7 +625,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                        htmlContent += '<input class="form-control" type="hidden"  name="idParameters[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="'+input.id+'">';
                       if (input.type == 'select') {
                           let field = dataFields.filter((item) => item.fieldName.replace(/\s+/g, '_').toLowerCase() == input.key.replace(/\s+/g, '_').toLowerCase());
-                          let config = JSON.parse(field[0].validationConfig);
+                          let config = (field.length > 0 && field[0].validationConfig) ? JSON.parse(field[0].validationConfig) : {};
                           htmlContent += '<div class="form-group">';
                           htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                           htmlContent += '<div class="col-lg-6">';
@@ -643,7 +646,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         let field = dataFields.filter((item) => item.fieldName.replace(/\s+/g, '_').toLowerCase() == input.key.replace(/\s+/g, '_').toLowerCase());
                             htmlContent += '<div class="col-lg-6">';
                         htmlContent += `<select id="${input.key.replace(/\s+/g, '_').toLowerCase() }" " multiple name="configuration[` + input.key.replace(/\s+/g, '_').toLowerCase() + `][]" ` + (input.requiredFieldInput ? 'required' : '') + `>`;
-                        let config = JSON.parse(field[0].validationConfig);
+                        let config = (field.length > 0 && field[0].validationConfig) ? JSON.parse(field[0].validationConfig) : {};
                         if (config.selectOptions && Array.isArray(config.selectOptions)) {
                             config.selectOptions.forEach((option, index) => {
                                 htmlContent += `<option value="${config.selectValues[index]}">${option}</option>`;
@@ -677,7 +680,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             });
                         }, 100);
                     } else {
-                        const validationConfig = dataFields[index].validationConfig ? JSON.parse(dataFields[index].validationConfig) : {};
+                        const fieldNameNormalized = input.key.replace(/\s+/g, '_').toLowerCase();
+                        const matchingField = dataFields.find(f => f.fieldName.replace(/\s+/g, '_').toLowerCase() === fieldNameNormalized);
+                        const validationConfig = (matchingField && matchingField.validationConfig) ? JSON.parse(matchingField.validationConfig) : {};
                         if(input.key == "Password"){
                             htmlContent += '<div class="form-group">';
                             htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
@@ -710,7 +715,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             // //   html += maxLength;
                             // }
                             //htmlContent += '<input class="form-control inputType" type="'+ (input.type == 'text' ? 'maxlength="' + input['maxValueInput']['maxLength'] + '") + (input.type == 'number' ? 'number' : 'text') + '"  ' + (input.type == 'number' ? 'min ="' + input.numberRange?.min + '" max="' + input.numberRange?.max + '"' : '') + '  placeholder="Enter ' + input.key + '"novalidate="novalidate"  id="' + input.key.replace(/\s+/g, '_').toLowerCase() + '" name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input?.requiredFieldInput ?'required' : '') + ' value="'+(input.default != null ? input.default : '' )+'">';
-                            htmlContent += '<input class="form-control inputType '+addClassTextArray +' '+addClassIpUrl+'" ' + 'type="' + (input.type === 'number' ? 'number' : 'text') + '" ' + (['text_array', 'text', 'IP/URL'].includes(input.type) && validationConfig.maxValueInput ? 'maxlength="' + validationConfig.maxValueInput + '" ' : '') + (input.type === 'number' && input.numberRange ? 'min="' + validationConfig.numberInput.min + '" max="' + validationConfig.numberInput.max + '" ' : '') + 'placeholder="Enter ' + input.key + '" ' + 'novalidate="novalidate" ' + 'id="' + input.key.replace(/\s+/g, '_').toLowerCase() + '" ' + 'name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' +(input?.requiredFieldInput ? 'required ' : '') + 'value="' + (input.default != null ? input.default : '') + '">' ;
+                            htmlContent += '<input class="form-control inputType '+addClassTextArray +' '+addClassIpUrl+'" ' + 'type="' + (input.type === 'number' ? 'number' : 'text') + '" ' + (['text_array', 'text', 'IP/URL'].includes(input.type) && validationConfig.maxValueInput ? 'maxlength="' + validationConfig.maxValueInput + '" ' : '') + (input.type === 'number' && input.numberRange ? 'min="' + (input.numberRange.min ?? '') + '" max="' + (input.numberRange.max ?? '') + '" ' : '') + 'placeholder="Enter ' + input.key + '" ' + 'novalidate="novalidate" ' + 'id="' + input.key.replace(/\s+/g, '_').toLowerCase() + '" ' + 'name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' +(input?.requiredFieldInput ? 'required ' : '') + 'value="' + (input.default != null ? input.default : '') + '">' ;
                             htmlContent += '</div>';
                             htmlContent += '</div>';  
                         }

@@ -1193,7 +1193,8 @@ $get_default_template = DB::table('templates')
       });
 
       if (formIsValid) {
-        let actionUrl = "/{{$url_type}}/update-user/{{$contact->id}}/{{$contact->user_type}}";
+        let selectedUserType = $('#userType').length ? $('#userType').val() : "{{$contact->user_type}}";
+        let actionUrl = "/{{$url_type}}/update-user/{{$contact->id}}/" + selectedUserType;
         let formData = $(this).serialize();
 
         $.ajax({

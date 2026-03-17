@@ -308,16 +308,19 @@
 
                             <label class="control-label col-lg-3">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
                             <div class="col-lg-8">
+                              @php
+                                $configKey = str_replace(' ', '_', strtolower($input['key']));
+                                $configVal = '';
+                                if (isset($configurationValue) && isset($configurationValue[$configKey]) && array_key_exists('value', $configurationValue[$configKey])) {
+                                  $configVal = is_array($configurationValue[$configKey]['value'])
+                                    ? json_encode($configurationValue[$configKey]['value'])
+                                    : $configurationValue[$configKey]['value'];
+                                }
+                              @endphp
                               <input class="form-control {{$addClassTextArray}} {{$addClassIpUrl}}" type="{{ $input['type'] == 'number' ? 'number' : 'text' }}"
                                 {!! $input['type']=='number' ? 'min="' . ($input['numberRange']['min'] ?? '' ) . '" max="' . ($input['numberRange']['max'] ?? '' ) . '"' : '' !!}
-                                placeholder="Enter {{ isset($input['key']) ? $input['key'] :''  }}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]"
-                                value="{{ 
-                                    isset($input['key']) && isset($configurationValue) 
-                                        ? (is_array($configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value']) 
-                                            ? json_encode($configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value']) 
-                                            : $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value']) 
-                                        : '' 
-                                }}"
+                                placeholder="Enter {{ isset($input['key']) ? $input['key'] :''  }}" name="configuration[{{ $category->id }}][{{ $configKey }}]"
+                                value="{{ $configVal }}"
 
                                 {{ $input['requiredFieldInput'] ? 'required' : '' }}>
                             </div>

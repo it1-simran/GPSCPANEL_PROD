@@ -163,6 +163,25 @@ class RegisterController extends Controller
 
     $configurationData = $request->input('configuration', []);
 
+    $requiredFieldMap = [];
+    foreach ($configurationData as $categoryId => $configRow) {
+      $requiredFieldMap[$categoryId] = [];
+      $deviceCategoryModel = DeviceCategory::find($categoryId);
+      if ($deviceCategoryModel && $deviceCategoryModel->inputs) {
+        $inputs = json_decode($deviceCategoryModel->inputs, true);
+        if (is_array($inputs)) {
+          foreach ($inputs as $input) {
+            if (!empty($input['requiredFieldInput'])) {
+              $fieldKey = strtolower(str_replace(' ', '_', $input['key'] ?? ''));
+              if ($fieldKey !== '') {
+                $requiredFieldMap[$categoryId][$fieldKey] = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
     $request->validate([
       'user_type' => 'required|in:Reseller,User,Support',
       'name' => 'required|string|max:255',
@@ -175,7 +194,8 @@ class RegisterController extends Controller
 
     foreach ($configurationData as $key => $configuration) {
       foreach ($configuration as $field => $value) {
-        $rule = 'required';
+        $isRequired = !empty($requiredFieldMap[$key][$field]) || $field === 'template';
+        $rule = $isRequired ? 'required' : 'nullable';
         switch ($field) {
           case 'template':
             $rule .= '|exists:templates,id';
@@ -449,6 +469,9 @@ class RegisterController extends Controller
 
     // dd($formatted);
 
+    $currentUser = Auth::user();
+    $requestedUserType = $request->get('user_type');
+
     if ($userType == 'Admin') {
       $contact = Writer::find($id);
       $contact->twoFactorAuthentication = $request->get('twoFactorAuthentication') == 'on' ? 1 : 0;
@@ -471,7 +494,13 @@ class RegisterController extends Controller
       $contact->email = $request->get('email');
       $contact->device_category_id = implode(',', $request->deviceCategory);
       $contact->twoFactorAuthentication = $request->get('twoFactorAuthentication') == 'on' ? 1 : 0;
-      $contact->user_type = $userType == "Reseller" ? $request->get('user_type') : $userType;
+      if ($currentUser->user_type == 'Reseller' && in_array($requestedUserType, ['User', 'Reseller'], true)) {
+        $contact->user_type = $requestedUserType;
+      } else if ($currentUser->user_type == 'Admin' && in_array($requestedUserType, ['Reseller', 'User', 'Support'], true)) {
+        $contact->user_type = $requestedUserType;
+      } else {
+        $contact->user_type = $userType;
+      }
       $contact->is_support_active = $request->get('is_support_active') === 'on' ? 1 : 0;
       $contact->configurations = json_encode($formatted);
       $contact->timezone = $request->get('timezone');

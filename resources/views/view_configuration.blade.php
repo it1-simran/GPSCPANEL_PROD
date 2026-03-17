@@ -39,7 +39,7 @@ $timeZones = TimezoneModel::all();
 										</div>
 										<div class='row  bgx-configurations view-user-configurations'>
 											<div class='col-lg-5'>
-												<div class="bgx-table-container">;
+												<div class="bgx-table-container">
 													<div class="bgx-table-row">
 														<div class="bgx-table-cell"><strong>Name:</strong> {{ $user['name'] ?: '--'  }}</div>
 														<div class="bgx-table-cell"><strong>Mobile:</strong> {{ $user['mobile'] ?: '--'  }}</div>

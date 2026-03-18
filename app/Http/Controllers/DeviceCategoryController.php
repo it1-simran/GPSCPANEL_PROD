@@ -810,9 +810,9 @@ class DeviceCategoryController extends Controller
     }
     public function getTemplateConfiguration(Request $request)
     {
-        $getTemplateConfiguration = Template::select('configurations')->where('id', $request->id)->get();
+        $getTemplateConfiguration = Template::select('configurations')->where('id', $request->id)->first();
         if ($getTemplateConfiguration) {
-            return json_encode(['status' => 200, 'message' => 'Template Configuration fetched', 'template' => json_encode($getTemplateConfiguration[0]['configurations'])]);
+            return json_encode(['status' => 200, 'message' => 'Template Configuration fetched', 'template' => $getTemplateConfiguration->configurations]);
         } else {
             return json_encode(['status' => 403, 'message' => 'Error Occured!!']);
         }

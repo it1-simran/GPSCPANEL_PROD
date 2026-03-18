@@ -876,19 +876,51 @@ class TemplateController extends Controller
                     $data[] = $rowData;
                     $rowIndex++;
                 }
+                $skippedImeis = [];
+                $updatedCount = 0;
                 foreach ($data  as $val) {
-                    $dataVal = Device::where(['imei' => $val[2], 'device_category_id' => $request->deviceCategory])->first();
+                    $imei = $val[2];
+                    $dataVal = Device::where(['imei' => $imei, 'device_category_id' => $request->deviceCategory])->first();
+                    
+                    if (!$dataVal) {
+                        $skippedImeis[] = $imei;
+                        continue;
+                    }
+
+                    // Check if Admin or if device belongs to/is assigned to user
+                    if (Auth::user()->user_type !== 'Admin') {
+                        $authId = Auth::id();
+                        $aids = explode(',', $dataVal->assign_to_ids ?? '');
+                        $isAuthorized = ($dataVal->user_id == $authId || $dataVal->master_id == $authId || in_array((string)$authId, $aids));
+                        
+                        // Strict check: Must belong to user and NOT be unassigned (user_id must not be empty)
+                        if (!$isAuthorized || empty($dataVal->user_id)) {
+                            $skippedImeis[] = $imei;
+                            continue;
+                        }
+                    }
+
                     if ($dataVal) {
                         $oldDevices = json_decode($dataVal->configurations, true);
+                        if (!is_array($oldDevices)) {
+                            $oldDevices = [];
+                        }
                         $configuration = array_replace($oldDevices, $templatechanges);
                         $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
                         // dd($configuration);
-                        $dataVal->can_configurations = $canConverted;
+                        $dataVal->can_configurations = json_encode($canConverted);
                         $dataVal->configurations = json_encode($configuration);
                         $dataVal->update();
+                        $updatedCount++;
                     }
                 }
-                return back()->with('success', "Device Updated Successfully!");
+
+                if (count($skippedImeis) > 0) {
+                    $errorMsg = "Updated $updatedCount devices. The following IMEIs were skipped because they do not belong to you, are unassigned, or were not found: " . implode(', ', $skippedImeis);
+                    return back()->withErrors($errorMsg);
+                }
+
+                return back()->with('success', "All $updatedCount devices updated successfully!");
             }
         }
         return back()->withErrors('File is invalid or no file was uploaded.');

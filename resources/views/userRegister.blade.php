@@ -197,11 +197,12 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
 
                 <div class="mb-3 col-sm-6">
                     <label for="user_type" class="form-label">Account Type</label>
-                    <select name="user_type" class="form-select" required>
+                    <select class="form-select" disabled required>
                         <option value="">Select Account Type</option>
-                        <option value="dealer">Dealer</option>
-                        <option value="manufacturer">Manufacturer</option>
+                        <option value="dealer" {{ (isset($user) && strtolower($user->userType) == 'dealer') ? 'selected' : '' }}>Dealer</option>
+                        <option value="manufacturer" {{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'selected' : '' }}>Manufacturer</option>
                     </select>
+                    <input type="hidden" name="user_type" value="{{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'manufacturer' : 'dealer' }}">
                 </div>
                 <div class="mb-3 col-sm-6">
                     <label for="device_category" class="form-label">Device Category</label>

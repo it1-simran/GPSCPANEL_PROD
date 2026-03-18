@@ -125,6 +125,7 @@ class GuestUserController extends Controller
         $request->validate([
             'name'  => 'required|string|max:255',
             'email' => 'required|email',
+            'user_type' => 'required|string|in:Manufacturer,Dealer',
         ]);
 
         $guest = GuestApprovalUser::where('email', $request->email)->first();
@@ -136,6 +137,7 @@ class GuestUserController extends Controller
             // Update existing guest
             $guest->update([
                 'name'         => $request->name,
+                'userType'     => $request->user_type,
                 'status'       => 'RequestMailSent',
                 'resend_count' => $guest->resend_count + 1,
             ]);
@@ -144,6 +146,7 @@ class GuestUserController extends Controller
             GuestApprovalUser::create([
                 'name'         => $request->name,
                 'email'        => $request->email,
+                'userType'     => $request->user_type,
                 'status'       => 'RequestMailSent',
                 'resend_count' => 1,
             ]);
@@ -203,16 +206,25 @@ class GuestUserController extends Controller
                 'default_template'   => 1
             ])->first();
             $writerConfigArr = [];
+            $finalConfig = $userConfiguration;
             if ($defaultTemplate) {
                 $defaultTempConfig = json_decode($defaultTemplate->configurations, true);
-                $final = $userConfiguration + $defaultTempConfig;
-                $writerConfigArr[] = $final;
+                $finalConfig = $userConfiguration + $defaultTempConfig;
             }
-            Writer::create([
+            // Ensure ping_interval and is_editable are set if they are not in user configurations
+            if (!isset($finalConfig['ping_interval'])) {
+                $finalConfig['ping_interval'] = ["id" => 77, "value" => 4];
+            }
+            if (!isset($finalConfig['is_editable'])) {
+                $finalConfig['is_editable'] = ["id" => 78, "value" => 1];
+            }
+            $writerConfigArr[] = $finalConfig;
+
+            $writer = Writer::create([
                 'name'              => $user->name,
                 'email'             => $user->email,
                 'mobile'            => $user->phone,
-                'userType'          => $user->userType,
+                'user_type'         => (strtolower($user->userType) == 'manufacturer' ? 'Reseller' : 'User'),
                 'timezone'          => $user->timezone,
                 'password'          => Hash::make('123456'),
                 'LoginPassword'     => '123456',
@@ -220,6 +232,16 @@ class GuestUserController extends Controller
                 'device_category_id' => $user->deviceCategory,
                 'configurations'    => json_encode($writerConfigArr),
                 'created_by'        => Auth::id()
+            ]);
+
+            // ✅ Create default template for this user (mirrors Add User logic)
+            Template::create([
+                'id_user'            => $writer->id,
+                'template_name'      => 'default',
+                'device_category_id' => $user->deviceCategory,
+                'configurations'     => json_encode($finalConfig),
+                'default_template'   => 1,
+                'verify'             => 2 // 2 corresponds to user-level template usually
             ]);
 
             // Send success email with credentials

@@ -338,6 +338,8 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::post('/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations']);
     Route::patch('/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations']);
     Route::get('/view-template-configurations/{id}', [TemplateController::class, 'viewTemplateConifiguration']);
+    Route::get('/assign-setting-bulk', [TemplateController::class, 'assignTemplateBulk']);
+    Route::post('/assign-template-bulk', [TemplateController::class, 'editDeviceTemplateBulk']);
 
     // Device Category
     Route::post('/get-device-category', [DeviceCategoryController::class, 'getDeviceCategory']);

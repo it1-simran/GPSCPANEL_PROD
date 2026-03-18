@@ -383,6 +383,9 @@ $ticketCount = $tickets->count();
                                 <li class="{{ request()->is('user/view-template') ? 'active' : '' }}">
                                     <a href="{{ url('user/view-template') }}">View Settings</a>
                                 </li>
+                                <li class="{{ request()->is('user/assign-setting-bulk') ? 'active' : '' }}">
+                                    <a href="{{ url('user/assign-setting-bulk') }}">Assign Settings Bulk</a>
+                                </li>
                             </ul>
                         </li>
                         @endif

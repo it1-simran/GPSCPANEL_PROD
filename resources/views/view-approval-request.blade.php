@@ -56,6 +56,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                                 <label for="email" class="form-label">Email</label>
                                                 <input type="email" class="form-control" id="email" name="email" required>
                                             </div>
+                                            <div class="margin-bottom-20">
+                                                <label for="user_type" class="form-label">Account Type</label>
+                                                <select class="form-control" id="user_type" name="user_type" required>
+                                                    <option value="">Select User Type</option>
+                                                    <option value="Manufacturer">Manufacturer</option>
+                                                    <option value="Dealer">Dealer</option>
+                                                </select>
+                                            </div>
                                         </div>
 
                                         <div class="modal-footer">
@@ -187,7 +195,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                                 </button>
                                                 @elseif(in_array($request->status, ['RejectedByAdmin', 'RejectedBySupport', 'RequestMailSent']))
                                                 <button type="button" class="btn btn-sm btn-info"
-                                                    onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}')">
+                                                    onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}')">
                                                     Resend Request
                                                 </button>
                                                 @endif
@@ -323,7 +331,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             </button>
                                             @elseif(in_array($request->status, ['RequestMailSent']))
                                             <button type="button" class="btn btn-sm btn-info"
-                                                onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}')">
+                                                onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}')">
                                                 Resend Request
                                             </button>
                                             @endif
@@ -824,11 +832,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $("#viewDetailsModal").modal("show");
     }
 
-    function openResendModal(name, email) {
+    function openResendModal(name, email, userType) {
         // Set form values
         document.getElementById('name').value = name;
         document.getElementById('email').value = email;
-
+        document.getElementById('user_type').value = userType;
+        
         // Change modal title & button text (optional)
         document.getElementById('accountRequestModalLabel').innerText = 'Resend Account Request';
         document.querySelector('#accountRequestModal button[type="submit"]').innerText = 'Resend Request';
@@ -838,6 +847,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     }
 
     function requestModel() {
+        // Reset form values
+        document.getElementById('name').value = '';
+        document.getElementById('email').value = '';
+        document.getElementById('user_type').value = '';
+
+        // Reset modal title & button text
+        document.getElementById('accountRequestModalLabel').innerText = 'Send Account Request';
+        document.querySelector('#accountRequestModal button[type="submit"]').innerText = 'Send Request';
+
         $("#accountRequestModal").modal("show");
     }
 

@@ -365,7 +365,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         let canProtocolValue = $('#can_protocol').val();
         if (!canProtocolValue) return;
 
-        let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-can-protocol-fields') }}";
+        let actionUrl = "{{ url($url_type . '/get-can-protocol-fields') }}";
 
         $.ajax({
             url: actionUrl,
@@ -646,7 +646,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     });
 
     function getSelectedDeviceCategory() {
-        let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-device-category') }}";
+        let actionUrl = "{{ url($url_type . '/get-device-category') }}";
         $('#deviceCategoryInputFields').hide();
         $('#loading').show();
         var selectedDeviceCategoryId = $('#s2example-2').val();
@@ -828,7 +828,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 }
             },
             error: function(xhr) {
-                console.log(xhr.responseText); // Handle error
+                $('#loading').hide();
+                alert("Something went wrong while fetching device categories. Please try again or check your connection.");
+                console.log(xhr.responseText);
             },
             complete: function() {
                 $('#loading').hide(); // Hide loading indicator regardless of success or error
@@ -837,7 +839,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     }
 
     function getTemplateConfiguration() {
-        let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-template-configuration') }}";
+        let actionUrl = "{{ url($url_type . '/get-template-configuration') }}";
         $('#loading').show();
         var selectedTemplateId = $('#templates').val();
         $.ajax({
@@ -848,8 +850,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             },
             success: function(response) {
                 $('#loading').hide();
-                let result = JSON.parse(response);
-                let template = JSON.parse(JSON.parse(result.template))
+                let result = typeof response === 'string' ? JSON.parse(response) : response;
+                let template = typeof result.template === 'string' ? JSON.parse(result.template) : result.template;
                 Object.keys(template).forEach(function(key) {
                     let element = $("input[name='configuration[" + key + "]'], select[name='configuration[" + key + "]']");
 
@@ -868,7 +870,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 $('#deviceCategoryInputFields').show();
             },
             error: function(data) {
-                alert(data.responseText);
+                $('#loading').hide();
+                alert("Internal server error: The requested template configuration could not be loaded. Please ensure the template exists.");
+                console.log(data.responseText);
             }
         });
     }

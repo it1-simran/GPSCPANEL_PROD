@@ -1336,12 +1336,16 @@ class DeviceController extends Controller
                 ->where('devices.is_deleted', '0')
                 ->get();
         } else {
+            $authId = auth()->id();
             $devices = DB::table('devices')
                 ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
                 ->select('devices.*', 'writers.name as username')
                 ->where('devices.is_deleted', '0')
-                ->where('writers.is_deleted', '0')
-                ->where('devices.user_id', auth()->id())
+                ->where(function($q) use ($authId) {
+                    $q->where('devices.user_id', $authId)
+                      ->orWhere('devices.master_id', $authId)
+                      ->orWhereRaw("FIND_IN_SET(?, devices.assign_to_ids)", [$authId]);
+                })
                 ->get();
         }
         $users = DB::table('writers')
@@ -1908,6 +1912,9 @@ class DeviceController extends Controller
                 if ($imei) {
                     $arr = [];
                     $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
+                    if (!is_array($oldConfig)) {
+                         $oldConfig = [];
+                    }
                     $newConfig = array_merge($oldConfig, $converted);
                     $arr['configurations'] = json_encode($newConfig);
                     $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
@@ -2029,6 +2036,9 @@ class DeviceController extends Controller
                 if ($imei) {
                     $arr = [];
                     $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
+                    if (!is_array($oldConfig)) {
+                         $oldConfig = [];
+                    }
                     $newConfig = array_merge($oldConfig, $converted);
                     $arr['configurations'] = json_encode($newConfig);
                     $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
@@ -2165,10 +2175,13 @@ class DeviceController extends Controller
         $device = Device::Find($id);
         $newChanges = $converted;
         $oldChanges = json_decode($device->configurations, true);
+        if (!is_array($oldChanges)) {
+            $oldChanges = [];
+        }
         $changedFields = [];
         foreach ($newChanges as $key => $value) {
-            if (!isset($oldChanges[$key]) || $oldChanges[$key]['value'] !== $value['value']) {
-                $oldValue = isset($oldChanges[$key]) ? $oldChanges[$key]['value'] : 'N/A';
+            if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $value['value']) {
+                $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? $oldChanges[$key]['value'] : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : 'N/A');
                 $newValue = $value['value'];
                 $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
             }
@@ -2233,11 +2246,14 @@ class DeviceController extends Controller
         $device = Device::find($id);
         $newChanges = $converted;
         $oldChanges = json_decode($device->can_configurations, true) ?? [];
+        if (!is_array($oldChanges)) {
+            $oldChanges = [];
+        }
         $changedFields = [];
 
         foreach ($newChanges as $key => $value) {
-            if (!isset($oldChanges[$key]) || $oldChanges[$key]['value'] !== $value['value']) {
-                $oldValue = $oldChanges[$key]['value'] ?? 'N/A';
+            if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $value['value']) {
+                $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? $oldChanges[$key]['value'] : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : 'N/A');
                 $newValue = $value['value'];
                 $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
             }
@@ -2303,12 +2319,15 @@ class DeviceController extends Controller
 
         $is_editable = DB::table('devices')->where('id', $contact_id)->first();
         $config = json_decode($is_editable->configurations, true);
+        if (!is_array($config)) {
+            $config = [];
+        }
         // dd($config['is_editable']['value']);
         $prev_uid = $request->input('prev_uid');
 
+        $is_editable_val = (isset($config['is_editable']) && is_array($config['is_editable'])) ? ($config['is_editable']['value'] ?? '0') : ($config['is_editable'] ?? '0');
 
-
-        if (Auth::user()->user_type != 'Admin' && $config['is_editable']['value'] == '1') {
+        if (Auth::user()->user_type != 'Admin' && $is_editable_val == '1') {
             $contact = Device::find($contact_id);
             if (Auth::user()->user_type == 'Reseller') {
                 if ($request->get('user_id')) {
@@ -2339,23 +2358,33 @@ class DeviceController extends Controller
             //  dd($contact->assign_to_ids);
             // $contact->name  = $request->name;
             $firmwareChanges = json_decode($firmware->configurations, true);
-            $converted['firmware_file']['value'] = $firmwareChanges['filename'];
-            $converted['firmware_version']['value'] = $firmwareChanges['version'];
-            $converted['firmwareFileSize']['value'] = $firmwareChanges['fileSize'];
+            if (!is_array($firmwareChanges)) {
+                $firmwareChanges = [];
+            }
+            $converted['firmware_file']['value'] = $firmwareChanges['filename'] ?? '';
+            $converted['firmware_version']['value'] = $firmwareChanges['version'] ?? '';
+            $converted['firmwareFileSize']['value'] = $firmwareChanges['fileSize'] ?? '';
 
 
             // $newChanges['firmware_file'] = $firmwareChanges['filename'];
             // $newChanges['firmware_version'] = $firmwareChanges['version'];
             $oldChanges = json_decode($contact->configurations, true);
-            $converted['ping_interval']['value'] =  $params['ping_interval'] ?? $oldChanges['ping_interval']['value'];
-            $converted['is_editable']['value'] =  $params['is_editable'] ?? $oldChanges['is_editable']['value'];
+            if (!is_array($oldChanges)) {
+                $oldChanges = [];
+            }
+            $old_ping = (isset($oldChanges['ping_interval']) && is_array($oldChanges['ping_interval'])) ? ($oldChanges['ping_interval']['value'] ?? '') : ($oldChanges['ping_interval'] ?? '');
+            $converted['ping_interval']['value'] = $params['ping_interval'] ?? $old_ping;
+
+            $old_editable = (isset($oldChanges['is_editable']) && is_array($oldChanges['is_editable'])) ? ($oldChanges['is_editable']['value'] ?? '') : ($oldChanges['is_editable'] ?? '');
+            $converted['is_editable']['value'] = $params['is_editable'] ?? $old_editable;
+            
             $newChanges = $converted;
             // dd($newChanges);
             $changedFields = [];
             foreach ($newChanges as $key => $value) {
-                if (!isset($oldChanges[$key]) || $oldChanges[$key]['value'] !== $value['value']) {
-                    $oldValue = isset($oldChanges[$key]) ? $oldChanges[$key]['value'] : 'N/A';
-                    $newValue = $value['value'];
+                if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $value['value']) {
+                    $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? '') : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : 'N/A');
+                    $newValue = $value['value'] ?? '';
                     $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
                 }
             }
@@ -2414,21 +2443,31 @@ class DeviceController extends Controller
                 $contact->assign_to_ids =  '';
             }
             $firmwareChanges = json_decode($firmware->configurations, true);
-            $converted['firmware_file']['value'] = $firmwareChanges['filename'];
-            $converted['firmware_version']['value'] = $firmwareChanges['version'];
-            $converted['firmwareFileSize']['value'] = $firmwareChanges['fileSize'];
+            if (!is_array($firmwareChanges)) {
+                $firmwareChanges = [];
+            }
+            $converted['firmware_file']['value'] = $firmwareChanges['filename'] ?? '';
+            $converted['firmware_version']['value'] = $firmwareChanges['version'] ?? '';
+            $converted['firmwareFileSize']['value'] = $firmwareChanges['fileSize'] ?? '';
             $newChanges = $converted;
 
             $oldChanges = json_decode($contact->configurations, true);
-            $converted['ping_interval']['value'] =  $params['ping_interval'] ?? $oldChanges['ping_interval']['value'];
-            $converted['is_editable']['value'] =  $params['is_editable'] ?? $oldChanges['is_editable']['value'];
+            if (!is_array($oldChanges)) {
+                $oldChanges = [];
+            }
+            $old_ping = (isset($oldChanges['ping_interval']) && is_array($oldChanges['ping_interval'])) ? ($oldChanges['ping_interval']['value'] ?? '') : ($oldChanges['ping_interval'] ?? '');
+            $converted['ping_interval']['value'] = $params['ping_interval'] ?? $old_ping;
+
+            $old_editable = (isset($oldChanges['is_editable']) && is_array($oldChanges['is_editable'])) ? ($oldChanges['is_editable']['value'] ?? '') : ($oldChanges['is_editable'] ?? '');
+            $converted['is_editable']['value'] = $params['is_editable'] ?? $old_editable;
+
             $newChanges = $converted;
             $changedFields = [];
 
             foreach ($newChanges as $key => $value) {
-                if (!isset($oldChanges[$key]) || (isset($oldChanges[$key]['value']) && $oldChanges[$key]['value'] !== $value['value'])) {
-                    $oldValue = isset($oldChanges[$key]) ? $oldChanges[$key]['value'] : 'N/A';
-                    $newValue = $value['value'];
+                if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $value['value']) {
+                    $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? '') : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : 'N/A');
+                    $newValue = $value['value'] ?? '';
                     $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
                 }
             }

@@ -76,7 +76,7 @@ class FirmwareController extends Controller
             foreach ($models as $model) {
                 $temp = [
                     'user_id' => $model->user_id,
-                    'notification' => "New Version Avaliable of Firmware " .$firmware->name. ' version' . $config->version ,
+                    'notification' => "New Version Avaliable of Firmware " . $firmware->name . ' version' . $config->version,
                     'firmware_id' => $firmware->id,
                     'is_view' => 0
                 ];
@@ -304,7 +304,17 @@ class FirmwareController extends Controller
     public function getModelName(Request $request)
     {
 
-        $getmodalifExist = modal::where(['user_id' => $request->user_id, 'firmware_id' => $request->firmware_id])->first();
+        if (Auth::user()->user_type == 'User') {
+            if ($request->user_id) {
+                $getmodalifExist = modal::where(['user_id' => $request->user_id, 'firmware_id' =>
+                $request->firmware_id])->first();
+            } else {
+                $getmodalifExist = modal::where(['user_id' => Auth::user()->id, 'firmware_id' => $request->firmware_id])->first();
+            }
+        } else {
+            $getmodalifExist = modal::where(['user_id' => $request->user_id, 'firmware_id' =>
+            $request->firmware_id])->first();
+        }
         // dd($getmodalifExist);
         // if($getmodalifExist){
         return json_encode(['status' => 200, 'modalList' => json_encode($getmodalifExist)]);
@@ -364,14 +374,15 @@ class FirmwareController extends Controller
         $ccid->delete();
         return redirect()->back()->with(['error' => $ccid->name . 'Esim deleted Successfully']);
     }
-    public function updateFirmwareDevices(Request $request){
-      
+    public function updateFirmwareDevices(Request $request)
+    {
+
         $notification = notifications::find($request->notification_id);
         $firmware = Firmware::find($request->firmware_id);
         $firmwareConfiguration = json_decode($firmware->configurations);
-        $devices = Device::whereRaw("JSON_EXTRACT(configurations, '$.firmware_id') = '".$request->firmware_id."'")->get();
-        foreach($devices as $device){
-          
+        $devices = Device::whereRaw("JSON_EXTRACT(configurations, '$.firmware_id') = '" . $request->firmware_id . "'")->get();
+        foreach ($devices as $device) {
+
             $configuration = json_decode($device->configurations);
 
             $configuration->firmware_file = $firmwareConfiguration->filename;
@@ -379,11 +390,9 @@ class FirmwareController extends Controller
             $device->configurations = json_encode($configuration);
             // Save the updated device record
             $device->save();
-        }   
+        }
         $notification->is_view = 1;
         $notification->save();
         return json_encode(['status' => 200]);
     }
-
-
 }

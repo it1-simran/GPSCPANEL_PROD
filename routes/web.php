@@ -138,7 +138,21 @@ Route::middleware('check.role:admin')->group(function () {
     Route::post('/admin/linkResellers', [RegisterController::class, 'linkResellers']);
     Route::get('/admin/view-uncategorized-users', [RegisterController::class, 'viewUncategorized'])->name('users.viewUncategorized');
 
+    /* ======================= IMEI Tracking Management (Live Tracker) ======================= */
+    Route::get('/admin/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('imei-devices.index');
+    Route::get('/admin/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('imei-devices.create');
+    Route::post('/admin/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'store'])->name('imei-devices.store');
+    Route::get('/admin/imei-devices/{imei_device}/edit', [\App\Http\Controllers\ImeiDeviceController::class, 'edit'])->name('imei-devices.edit');
+    Route::put('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'update'])->name('imei-devices.update');
+    Route::delete('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'destroy'])->name('imei-devices.destroy');
+    Route::patch('/admin/imei-devices/{imei_device}/toggle-status', [\App\Http\Controllers\ImeiDeviceController::class, 'toggleStatus'])->name('imei-devices.toggle-status');
+
+    Route::get('/tracker', [\App\Http\Controllers\LiveTrackerController::class, 'index'])->name('tracker.index');
+    Route::post('/tracker/{device}/close', [\App\Http\Controllers\LiveTrackerController::class, 'closeConnection'])->name('tracker.close');
+    Route::post('/tracker/{device}/test', [\App\Http\Controllers\LiveTrackerController::class, 'testBroadcast'])->name('tracker.test');
+
     /* ======================= Firmware Management Routes ======================= */
+
     Route::get('/admin/view-firmware', [FirmwareController::class, 'show']);
     Route::get('/admin/view-models', [FirmwareController::class, 'viewModals']);
     Route::get('/admin/view-esim-customers', [FirmwareController::class, 'esimCustomer']);

@@ -34,3 +34,10 @@ Route::get('/download-firmware/{deviceId}', [DeviceApiController::class, 'downlo
 Route::middleware('check.auth.token.jig')->post('/add-device-through-jig', [AddDeviceThroughJigController::class, 'addDevice']);
 
 // Route::get('download-firmware/{filename}/{deviceId}', 'ApiControllers\DeviceApiController@downloadFirmware');
+
+// IMEI Logs Data Ingestion
+// IMEI Logs Data Ingestion
+Route::post('/packets/ingest', [\App\Http\Controllers\Api\PacketIngestionController::class, 'store']);
+
+// Live Tracking Log Fetcher
+Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs']);

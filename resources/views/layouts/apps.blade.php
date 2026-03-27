@@ -249,6 +249,19 @@ $ticketCount = $tickets->count();
                                 </li>
                             </ul>
                         </li>
+                        <li class='sub-menu {{ request()->is('admin/imei-devices*', 'tracker*') ? 'active' : '' }}'>
+                            <a href="#" class="hvr-bounce-to-right-sidebar-parent">
+                                <span class='icon-sidebar pe-7s-map-marker fa-2x'></span><span>Live Tracking</span>
+                            </a>
+                            <ul class='sub'>
+                                <li class="{{ request()->is('admin/imei-devices') ? 'active' : '' }}">
+                                    <a href="{{ url('admin/imei-devices') }}">Manage Trackers</a>
+                                </li>
+                                <li class="{{ request()->is('tracker') ? 'active' : '' }}">
+                                    <a href="{{ url('tracker') }}">Live Track / Logs</a>
+                                </li>
+                            </ul>
+                        </li>
                         <li class='sub-menu {{ request()->is('admin/add-template*', 'admin/view-template*') ? 'active' : '' }}'>
                             <a href="#" class="hvr-bounce-to-right-sidebar-parent">
                                 <span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span>

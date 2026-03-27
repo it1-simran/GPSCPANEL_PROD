@@ -121,13 +121,11 @@
                 ->count();
             $totalpingsadmin = DB::table('writers')->where('writers.created_by', '1')
                 ->where('writers.is_deleted', 0)
-                ->get()
                 ->sum("total_pings");
             $countTotalPings = DB::table('writers')->where('id', auth()->id())->where('writers.is_deleted', 0)->value('total_pings');
             $todaypingsadmin = DB::table('writers')->where('writers.created_by', '1')
                 ->where('writers.is_deleted', 0)
                 ->whereDate('writers.created_at', '=', today())
-                ->get()
                 ->sum("total_pings");
             $todaypingsuser = DB::table('writers')->where('id', auth()->id())->first();
             $totalfirmware = DB::table('firmware')->count();

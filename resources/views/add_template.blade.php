@@ -111,6 +111,20 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     </select>
                                 </div>
                             </div>
+                            <div class="form-group " id="modalInput" style='display:none;'>
+                                <label for="firmware" class="control-label col-lg-3 " required>Model Name <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <input type="text" class="form-control" name="configuration[modelName]" id="modelName" value="" readonly="readonly" />
+                                    <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display:none"></div>
+                                </div>
+                            </div>
+                            <div class="form-group " id="VendorID" style='display:none;'>
+                                <label for="firmware" class="control-label col-lg-3 " required>Vendor ID <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <input type="text" class="form-control" name="configuration[vendorId]" id="VendorId" value="0" readonly="readonly" />
+                                    <div class="col-sm-12 alert alert-danger vendor_error" role="alert" style="display:none"></div>
+                                </div>
+                            </div>
                             <div id='deviceCategoryInputFields'></div>
                             @if(Auth::user()->user_type=='Admin')
                             <div class="form-group ">
@@ -746,7 +760,64 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       $('#deviceCategory').select2({
           placeholder: "Search and Select",
       }); 
+
+      $('#firmware').on('change', function() {
+          var userId = $('input[name="user_id"]').length ? $('input[name="user_id"]').val() : null;
+          var firmwareId = $(this).val();
+          var categoryId = $('#deviceCategory').val();
+
+          if (firmwareId) {
+              checkModalNameExist(userId, firmwareId, categoryId);
+          }
+      });
    });
+
+   function checkModalNameExist(userId, firmwareId, categoryId) {
+        let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : (Auth::user()->user_type == 'Reseller' ? 'reseller' : (Auth::user()->user_type == 'Support' ? 'support' : 'user')))) }}/get-model-name";
+        $.ajax({
+            url: actionUrl,
+            type: "POST",
+            data: {
+                user_id: userId,
+                firmware_id: firmwareId,
+                category_id: categoryId,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                let result = (typeof response === 'string') ? JSON.parse(response) : response;
+                if (result.status == 200) {
+                    let modal = result.modal;
+                    if (modal != null) {
+                        $('#modelName').val(modal.name);
+                        $('#VendorId').val(modal.vendorId);
+                        
+                        $('#modalInput').show();
+                        $('#VendorID').show();
+                        
+                        $(".modelName_error").hide();
+                        $(".vendor_error").hide();
+                        $('.btn-disable-after-submit').attr('disabled', false);
+
+                    } else {
+                        $('#modalInput').hide();
+                        $('#VendorID').hide();
+                        $(".modelName_error").show().html('Model Name is not Assigned. Please contact with Administrator');
+                        $(".vendor_error").show().html('Vendor ID is not Assigned. Please contact with Administrator');
+                        $('.btn-disable-after-submit').attr('disabled', true);
+                    }
+                } else {
+                    $('#modalInput').hide();
+                    $('#VendorID').hide();
+                    $(".modelName_error").show().html(result.message || 'Model and Firmware combination does not exist.');
+                    $(".vendor_error").show().html(result.message || 'Model and Firmware combination does not exist.');
+                    $('.btn-disable-after-submit').attr('disabled', true);
+                }
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText); // Handle error
+            }
+        });
+    }
 </script>
 <!--======== Main Content End ========-->
 @stop

@@ -62,6 +62,12 @@ class DeviceApiController extends Controller
 			/// fetch parameters field names and values
 			$finalResponse = [];
 			foreach ($data as $id => $value) {
+				if ($id == 38 && isset($configurations['modelName'])) {
+					$configurations['modelName']['value'] = $value;
+				}
+				if ($id == 39 && isset($configurations['vendorId'])) {
+					$configurations['vendorId']['value'] = $value;
+				}
 				foreach ($dataFieldsParameters as $field) {
 					if ($field['id'] == $id) {
 						$fieldName = strtolower(str_replace(' ', '_', $field['fieldName']));
@@ -75,6 +81,10 @@ class DeviceApiController extends Controller
 			}
 			// fetch configuration from db
 			$configurations = json_decode($matchData->configurations, true);
+			
+			// Removed master hierarchy overrides for model name and vendor id
+            // as they should come directly from the request payload.
+
 			$inputs = json_decode($deviceCategory->inputs, true);
 			$getFirmwareFromConfigurations = isset($configurations['firmware_id']['value'])
 				? DB::table('firmware')->where(['id' => $configurations['firmware_id']['value']])->first()
@@ -139,7 +149,7 @@ class DeviceApiController extends Controller
 				$this->updateWriterStats($matchData->user_id);
 				if ($configurations['firmware_id']['value'] !=  $firmwareCheck1) {
 					if (isset($ccidCheck)) {
-						$error['firmware'] = "Wrong Firmware ID Assigned to this Device. Select the Appropirate ESIM Make.Device Configure ESim from portal " . CommonHelper::getEsim($configurationsFirmware == 0 ? $configurationsFirmware['esim'] : '') . " , Recevied from the ccId " . CommonHelper::getEsim($ccidCheck->esim) . "";
+						$error['firmware'] = "Wrong Firmware ID Assigned to this Device. Select the Appropirate ESIM Make.Device Configure ESim from portal " . CommonHelper::getEsim($configurationsFirmware != 0 ? $configurationsFirmware['esim'] : '') . " , Recevied from the ccId " . CommonHelper::getEsim($ccidCheck->esim) . "";
 					}
 					$firmwareId = 0;
 				}
@@ -283,6 +293,9 @@ class DeviceApiController extends Controller
 				}
 			}
 		}
+
+		// Removed master hierarchy overrides for model name and vendor id
+        // as they should come directly from the request payload or configurations.
 
 		// Add static configuration fields by ID
 		$staticFields = [

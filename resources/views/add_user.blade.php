@@ -208,10 +208,58 @@
                                   <option>No Template Found</option>
                                 <?php endif; ?>
                               </select>
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          @php
+                            $firmwares = \DB::table('firmware')->where('device_category_id', $category->id)->get();
+                          @endphp
+                          <div class="form-group">
+                            <label for="firmware<?= $category->id ?>" class="control-label col-lg-3">
+                              Firmware <span class="require">*</span>
+                            </label>
+                            <div class="col-lg-8">
+                              <select class="form-control" 
+                                id="firmware<?= $category->id ?>" 
+                                data-index="<?= $category->id ?>" 
+                                data-category="<?= $category->id ?>"
+                                name="configuration[<?= $category->id ?>][firmware_id]" 
+                                onchange="changeFirmware(<?= $category->id ?>)">
+                                @foreach($firmwares as $firmware)
+                                  <option value="{{ $firmware->id }}" {{ $firmware->is_default == 1 ? 'selected' : '' }}>
+                                    {{ $firmware->name }}
+                                  </option>
+                                @endforeach
+                              </select>
                             </div>
                           </div>
                         </div>
                       </div>
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group">
+                            <label class="control-label col-lg-3">Model Name <span class="require">*</span></label>
+                            <div class="col-lg-8">
+                              <input type="text" class="form-control" name="configuration[<?= $category->id ?>][modelName]" id="modelName<?= $category->id ?>" readonly />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group">
+                            <label class="control-label col-lg-3">Vendor ID <span class="require">*</span></label>
+                            <div class="col-lg-8">
+                              <input type="text" class="form-control" name="configuration[<?= $category->id ?>][vendorId]" id="vendorId<?= $category->id ?>" readonly />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <script>
+                        $(document).ready(function() {
+                          setTimeout(function() {
+                             changeFirmware(<?= $category->id ?>);
+                          }, 500);
+                        });
+                      </script>
                       @foreach($enhancedInputs as $index => $input)
                       @if(isset($input['key']))
                       @php
@@ -613,6 +661,7 @@
 
                 let inputFields = JSON.parse(result.device);
                 let templates = JSON.parse(result.templates);
+                let defaultTemplatesToTrigger = [];
                 inputFields.forEach((data, index) => {
                   let input = JSON.parse(data.inputs);
                   htmlContent += '<div class="device-category-fields device-category-block-' + deviceCategoryId + ' card">';
@@ -624,7 +673,7 @@
                   if (templates[index].length > 0) {
                     templates[index].forEach((temp) => {
                       if (temp.default_template == 1) {
-                        changeTemplate(index, temp.id)
+                        defaultTemplatesToTrigger.push({index: index, id: temp.id});
                       }
                       htmlContent += '<option ' + (temp.default_template == 1 ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + ' ' + (temp.default_template == 1 ? ' (Default)' : '') + '</option>';
                     });
@@ -644,7 +693,7 @@
                       htmlContent += '<div class="form-group">';
                       htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                       htmlContent += '<div class="col-lg-8">';
-                      htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']["value"]" ' + (input.requiredFieldInput ? '' : '') + '>';
+                      htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
                       // htmlContent += '<option value="">Please Select</option>';
 
                       validation?.selectOptions.forEach((option, optIndex) => {
@@ -731,6 +780,14 @@
                 });
 
                 $('#deviceCategoryInputFields').html(htmlContent);
+                
+                setTimeout(() => {
+                  if (typeof defaultTemplatesToTrigger !== 'undefined') {
+                    defaultTemplatesToTrigger.forEach(task => {
+                      changeTemplate(task.index, task.id);
+                    });
+                  }
+                }, 300);
               } else {
                 $('#deviceCategoryInputFields').html('<p>No input fields found.</p>');
                 alert(result.message);
@@ -772,12 +829,10 @@
 
               let inputFields = JSON.parse(result.device);
               let templates = JSON.parse(result.templates);
+              let defaultTemplatesToTrigger = [];
               inputFields.forEach((data, index) => {
                 let input = JSON.parse(data.inputs);
                 let canEnable = data.is_can_protocol == 1 ? true : false;
-                // if (canEnable) {
-                //   $('.isCanEnable' + index).show();
-                // }
                 htmlContent += '<div class="device-category-fields card">';
                 htmlContent += '<div class="card-title"><h4 >' + data.device_category_name + '</h4></div>';
                 htmlContent += '<div class="card-details">';
@@ -787,13 +842,31 @@
                 if (templates[index].length > 0) {
                   templates[index].forEach((temp) => {
                     if (temp.default_template == 1) {
-                      changeTemplate(index, temp.id)
+                      defaultTemplatesToTrigger.push({index: index, id: temp.id});
                     }
                     htmlContent += '<option ' + (temp.default_template == 1 ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + ' ' + (temp.default_template == 1 ? ' (Default)' : '') + '</option>';
                   });
                 }
-                // htmlContent += '<option>No Template Found</option>';
+                htmlContent += '</select></div></div></div>';
+                
+                // Add Firmware selection
+                let firmwares = JSON.parse(result.firmware);
+                htmlContent += '<div class="col-lg-6">';
+                htmlContent += '<div class="form-group"><label for="firmware' + index + '" class="control-label col-lg-3">Firmware <span class="require">*</span></label><div class="col-lg-8"><select class="form-control firmware-select" id="firmware' + index + '" data-index="' + index + '" data-category="' + data.id + '" name="configuration[' + index + '][firmware_id]" onchange="changeFirmware(' + index + ')">';
+                if (firmwares[index] && firmwares[index].length > 0) {
+                  firmwares[index].forEach((firmware) => {
+                    htmlContent += '<option ' + (firmware.is_default == 1 ? "selected" : "") + ' value="' + firmware.id + '">' + firmware.name + '</option>';
+                  });
+                }
                 htmlContent += '</select></div></div></div></div>';
+
+                // Add Model and Vendor fields
+                htmlContent += '<div class="row">';
+                htmlContent += '<div class="col-lg-6">';
+                htmlContent += '<div class="form-group"><label class="control-label col-lg-3">Model Name <span class="require">*</span></label><div class="col-lg-8"><input type="text" class="form-control" name="configuration[' + index + '][modelName]" id="modelName' + index + '" readonly /></div></div></div>';
+                htmlContent += '<div class="col-lg-6">';
+                htmlContent += '<div class="form-group"><label class="control-label col-lg-3">Vendor ID <span class="require">*</span></label><div class="col-lg-8"><input type="text" class="form-control" name="configuration[' + index + '][vendorId]" id="vendorId' + index + '" readonly /></div></div></div>';
+                htmlContent += '</div>';
 
                 input.forEach((input, index1) => {
                   let validation = JSON.parse(input.validationConfig);
@@ -807,7 +880,7 @@
                     htmlContent += '<div class="form-group">';
                     htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                     htmlContent += '<div class="col-lg-8">';
-                    htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']["value"]" ' + (input.requiredFieldInput ? '' : '') + '>';
+                    htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
                     // htmlContent += '<option value="">Please Select</option>';
 
                     validation?.selectOptions.forEach((option, optIndex) => {
@@ -991,7 +1064,16 @@
               });
 
               $('#deviceCategoryInputFields').html(htmlContent);
-            } else {
+
+            setTimeout(() => {
+               if (typeof defaultTemplatesToTrigger !== 'undefined') {
+                 defaultTemplatesToTrigger.forEach(task => {
+                   changeTemplate(task.index, task.id);
+                   changeFirmware(task.index);
+                 });
+               }
+            }, 300);
+          } else {
               $('#deviceCategoryInputFields').html('<p>No input fields found.</p>');
               alert(result.message);
             }
@@ -1004,7 +1086,43 @@
           }
         });
 
+    function changeFirmware(index) {
+      let firmwareSelect = $('#firmware' + index);
+      let firmwareId = firmwareSelect.val();
+      let categoryId = firmwareSelect.data('category');
+      let userId = ''; // Add Account always has empty user at creation
+      
+      if (firmwareId && categoryId) {
+        checkUserModalNameExist(index, userId, firmwareId, categoryId);
       }
+    }
+
+    function checkUserModalNameExist(index, userId, firmwareId, categoryId) {
+      let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-model-name') }}";
+      $.ajax({
+        url: actionUrl,
+        type: "POST",
+        data: {
+          user_id: userId,
+          firmware_id: firmwareId,
+          category_id: categoryId,
+          _token: '{{ csrf_token() }}'
+        },
+        success: function(response) {
+          let result = (typeof response === 'string') ? JSON.parse(response) : response;
+          if (result.status == 200 && result.modal) {
+            $('#modelName' + index).val(result.modal.name);
+            $('#vendorId' + index).val(result.modal.vendorId);
+          } else {
+            // Default to JSD for unassigned/no model
+            $('#modelName' + index).val($('.device-category-block-title' + index).text() || 'N/A');
+            $('#vendorId' + index).val("JSD");
+          }
+        },
+        error: function() {
+          $('#vendorId' + index).val("JSD");
+        }
+      });
     }
     $(document).ready(function() {
       //$('#templates0').select2();
@@ -1271,27 +1389,84 @@
         var templateId = $('#templates' + index).val();
       } else {
         var templateId = id;
+        $('#templates' + index).val(id).trigger('change');
       }
       $.ajax({
         url: actionUrl,
         type: "POST",
         data: {
-          id: templateId
+          id: templateId,
+          _token: "{{ csrf_token() }}"
         },
         success: function(response) {
-          let result = JSON.parse(response);
+          console.log("Template Fetch Success for Index " + index + ":", response);
+          let result;
+          try {
+            result = (typeof response === 'string') ? JSON.parse(response) : response;
+          } catch (e) {
+            console.error("Failed to parse response JSON", e, response);
+            return;
+          }
 
           if (result.status == 200) {
-            let template = JSON.parse(result.template);
-            Object.keys(template)
-              .filter((key) => key !== 'template')
-              .forEach(function(key) {
-                let element = $(`input[name='configuration[${index}][${key}]'], select[name='configuration[${index}][${key}]']`);
+            let templateData = result.template;
+            let template;
+            try {
+              template = (typeof templateData === 'string') ? JSON.parse(templateData) : templateData;
+              // Handle potential double encoding
+              if (typeof template === 'string') {
+                template = JSON.parse(template);
+              }
+            } catch (e) {
+              console.error("Failed to parse template configurations", e, templateData);
+              return;
+            }
 
-                if (element.is('input') || element.is('select')) {
-                  element.val(template[key]['value']);
-                }
-              });
+            if (template && typeof template === 'object') {
+              console.log("Applying template configurations:", template);
+              Object.keys(template)
+                .filter((key) => key !== 'template')
+                .forEach(function(key) {
+                  let val = (typeof template[key] === 'object' && template[key] !== null && 'value' in template[key]) ? template[key]['value'] : template[key];
+                  
+                  // Normalize the key from template
+                  let normKey = key.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
+
+                  // Broad recursive lookup for fields starting with configuration[index]
+                  $('input, select').each(function() {
+                    let name = $(this).attr('name');
+                    if (name && name.startsWith(`configuration[${index}]`)) {
+                      // Extract the field part, e.g. "ip" from "configuration[0][ip]"
+                      let matches = name.match(/\[([^\]]+)\]$/);
+                      if (!matches) {
+                        // Handle cases like configuration[0][ip][] (multiselect)
+                        matches = name.match(/\[([^\]]+)\]\[\]$/);
+                      }
+                      
+                      if (matches && matches[1]) {
+                        let fieldPart = matches[1];
+                        let normFieldPart = fieldPart.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
+                        
+                        // Check for direct match or normalized match
+                        if (normFieldPart === normKey || fieldPart.toLowerCase() === key.toLowerCase() || fieldPart.toLowerCase().replace(/\s+/g, '_') === key.toLowerCase().replace(/\s+/g, '_')) {
+                          if ($(this).is(':radio')) {
+                             if ($(this).val() == val) {
+                               $(this).prop('checked', true);
+                             }
+                          } else {
+                            $(this).val(val);
+                            if ($(this).is('select')) {
+                              $(this).trigger('change');
+                            }
+                          }
+                        }
+                      }
+                    }
+                  });
+                });
+            } else {
+              console.warn("Template data is empty or invalid structure", template);
+            }
           } else {
             console.error(result.message);
           }

@@ -255,8 +255,21 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 <div class="col-lg-6">
                                     <select id="firmware" name="configuration[firmware_id]" class="form-control" placeholder='Search and Select'>
                                         <option value=""> </option>
-
                                     </select>
+                                </div>
+                            </div>
+                            <div class="form-group " id="modalInput" style='display:none;'>
+                                <label for="firmware" class="control-label col-lg-3 " required>Model Name <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <input type="text" class="form-control" name="configuration[modelName]" id="modelName" value="" readonly="readonly" />
+                                    <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display:none"></div>
+                                </div>
+                            </div>
+                            <div class="form-group " id="VendorID" style='display:none;'>
+                                <label for="firmware" class="control-label col-lg-3 " required>Vendor ID <span class="require">*</span></label>
+                                <div class="col-lg-6">
+                                    <input type="text" class="form-control" name="configuration[vendorId]" id="VendorId" value="0" readonly="readonly" />
+                                    <div class="col-sm-12 alert alert-danger vendor_error" role="alert" style="display:none"></div>
                                 </div>
                             </div>
                             <div class="form-group " id="templateInput" style='display:none;'>
@@ -636,14 +649,78 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
         //         });
         //     });
-        //     $('#user_id, #firmware').on('change', function() {
-        //         var userId = $('#user_id').val();
-        //         var firmwareId = $('#firmware').val();
-        //         if (userId && firmwareId) {
-        //             checkModalNameExist(userId, firmwareId);
-        //         }
-        //     });
+        $('#firmware').on('change', function() {
+            var userId = $('input[name="user_id"]').length ? $('input[name="user_id"]').val() : null;
+            var firmwareId = $(this).val();
+            var categoryId = $('#s2example-2').val();
+
+            if (firmwareId) {
+                checkModalNameExist(userId, firmwareId, categoryId);
+            }
+        });
     });
+
+    function checkModalNameExist(userId, firmwareId, categoryId) {
+        let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : (Auth::user()->user_type == 'Reseller' ? 'reseller' : (Auth::user()->user_type == 'Support' ? 'support' : 'user')))) }}/get-model-name";
+        $.ajax({
+            url: actionUrl,
+            type: "POST",
+            data: {
+                user_id: userId,
+                firmware_id: firmwareId,
+                category_id: categoryId,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                let result = (typeof response === 'string') ? JSON.parse(response) : response;
+                if (result.status == 200) {
+                    let modal = result.modal;
+                    if (modal != null) {
+                        $('#modelName').val(modal.name);
+                        $('#VendorId').val(modal.vendorId);
+                        
+                        $('#modalInput').show();
+                        $('#VendorID').show();
+                        
+                        $(".modelName_error").hide();
+                        $(".vendor_error").hide();
+                        $('.btn-disable-after-submit').attr('disabled', false);
+
+                    } else {
+                        handleNoModelFound(userId, categoryId);
+                    }
+                } else {
+                    handleNoModelFound(userId, categoryId, result.message);
+                }
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText);
+                $(".modelName_error").show().html("An error occurred while processing your request.");
+                $('.btn-disable-after-submit').attr('disabled', true);
+            }
+        });
+    }
+
+    function handleNoModelFound(userId, categoryId, message) {
+        if (!userId || userId == "No User Found") {
+            var selectedOptionText = $('#s2example-2 option:selected').text();
+            $('#modelName').val(selectedOptionText);
+            $('#VendorId').val("JSD");
+            
+            $('#modalInput').show();
+            $('#VendorID').show();
+            
+            $(".modelName_error").hide();
+            $(".vendor_error").hide();
+            $('.btn-disable-after-submit').attr('disabled', false);
+        } else {
+            $('#modalInput').hide();
+            $('#VendorID').hide();
+            $(".modelName_error").show().html(message || 'Model and Firmware combination does not exist. Please contact with Administrator');
+            $(".vendor_error").show().html(message || 'Vendor ID is not Assigned. Please contact with Administrator');
+            $('.btn-disable-after-submit').attr('disabled', true);
+        }
+    }
 
     function getSelectedDeviceCategory() {
         let actionUrl = "{{ url($url_type . '/get-device-category') }}";
@@ -669,10 +746,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 $('#templateInput').show();
                 $('#FirmwareInput').show();
                 $('#modalInput').show();
+                $('#VendorID').show();
                 $('#templates').empty();
                 $('#firmware').empty();
                 var selectedOptionText = $('#s2example-2 option:selected').text();
                 $('#modelName').val(selectedOptionText);
+                $('#VendorId').val("JSD");
                 firmwares.forEach(firmware => {
                     var option = new Option(firmware.name, firmware.id, firmware.is_default == 1, firmware.is_default == 1);
                     $('#firmware').append(option);
@@ -684,6 +763,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
                 // Trigger change event after all options are appended
                 $('#templates').trigger('change');
+                $('#firmware').trigger('change');
                 let htmlContent = '';
                 if (result.status == 200) {
                     let inputFields = JSON.parse(result.device_input);

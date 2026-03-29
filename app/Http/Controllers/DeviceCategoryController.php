@@ -612,7 +612,7 @@ class DeviceCategoryController extends Controller
                     }
                 }
                 if (!empty($inputs)) {
-                    $inputs = $inputs;
+                    // $inputs is already populated
                 }
             }
 
@@ -656,6 +656,19 @@ class DeviceCategoryController extends Controller
     public function getDeviceCategory(Request $request)
     {
         $device_category = DeviceCategory::find($request->id);
+        $target_id = ($request->has('user_id') && $request->user_id != "" && $request->user_id != "No User Found") ? $request->user_id : Auth::id();
+        $target_user = Writer::find($target_id);
+
+        $search_ids = [$target_id];
+        if ($target_user) {
+            $current_parent = $target_user->created_by;
+            while ($current_parent && $current_parent != "1" && count($search_ids) < 5) {
+                $search_ids[] = $current_parent;
+                $p_user = Writer::find($current_parent);
+                $current_parent = $p_user ? $p_user->created_by : null;
+            }
+        }
+
         $firmwareQuery = Firmware::query()
             ->where('device_category_id', $request->id)
             ->where('is_deleted', 0);
@@ -664,20 +677,19 @@ class DeviceCategoryController extends Controller
             $firmware = $firmwareQuery->get();
         } else {
             $firmwareIds = DB::table('modals')
-                ->where('user_id', auth()->id())
+                ->whereIn('user_id', $search_ids)
                 ->pluck('firmware_id')
                 ->unique()
                 ->filter();
 
             if ($firmwareIds->isEmpty()) {
-                $writer = Writer::find(auth()->id());
-                if ($writer && $writer->created_by && $writer->created_by != "1") {
-                    $firmwareIds = DB::table('modals')
-                        ->where('user_id', $writer->created_by)
-                        ->pluck('firmware_id')
-                        ->unique()
-                        ->filter();
-                }
+                // If it's a reseller/user and still empty, check if Admin has defined models for the direct Reseller (L1)
+                $l1_reseller_id = end($search_ids);
+                $firmwareIds = DB::table('modals')
+                    ->where('user_id', $l1_reseller_id)
+                    ->pluck('firmware_id')
+                    ->unique()
+                    ->filter();
             }
 
             $firmware = $firmwareIds->isEmpty()
@@ -775,7 +787,8 @@ class DeviceCategoryController extends Controller
         }
         if ($device_category) {
             $templates = [];
-            $dataFields = DB::table('data_fields')->where('inputType', 'select')->get();
+            $firmwares = [];
+            $selectFields = DB::table('data_fields')->where('inputType', 'select')->get();
             foreach ($device_category as $category) {
                 $inputs = json_decode($category->inputs, true);
                 $inputIds = collect($inputs)->pluck('id')->toArray();
@@ -786,6 +799,10 @@ class DeviceCategoryController extends Controller
                     return $input;
                 });
                 $category->inputs = json_encode($enhancedInputs);
+
+                // Fetch firmwares for this category
+                $firmwares[] = DB::table('firmware')->select('*')->where('device_category_id', $category->id)->get();
+
                 if (Auth::user()->user_type == 'Reseller') {
                     $getTemplateByDeviceCategory = Template::select('*')->where('templates.id_user', Auth::user()->id)->where('templates.is_deleted', '0')->where('verify', '2')->where(['device_category_id' => $category->id])->get();
                 } else {
@@ -794,7 +811,7 @@ class DeviceCategoryController extends Controller
 
                 $templates[] = $getTemplateByDeviceCategory;
             }
-            return json_encode(['status' => 200, 'message' => 'catgory inputs fetched', 'device' => json_encode($device_category), 'configurations' =>  $configurations, 'templates' => json_encode($templates), 'dataFields' => json_encode($dataFields)]);
+            return json_encode(['status' => 200, 'message' => 'catgory inputs fetched', 'device' => json_encode($device_category), 'configurations' =>  $configurations, 'templates' => json_encode($templates), 'firmware' => json_encode($firmwares), 'dataFields' => json_encode($selectFields)]);
         } else {
             return json_encode(['status' => 403, 'message' => 'Error Occured!!']);
         }

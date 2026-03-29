@@ -96,7 +96,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 <label for="firmware" class="control-label col-lg-3 " required>Can Configuration <span class="require">*</span></label>
                                 <div class="col-lg-6">
                                     <input type="text" class="form-control" name="canConfigurationArr" id="canConfigurationArr" value="" readonly="readonly" />
-                                    <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display:none"></div>
+                                    <div class="col-sm-12 alert alert-danger canConfiguration_error" role="alert" style="display:none"></div>
                                     <button type="button" class="btn btn-primary" onclick="openCanModal()">
                                         Configure CAN Protocol
                                     </button>
@@ -111,7 +111,6 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     </select>
                                 </div>
                             </div>
-                            @if(Auth::user()->user_type=='Admin')
                             <div class="form-group " id="FirmwareInput" style='display:none;'>
                                 <label for="firmware" class="control-label col-lg-3 " required>Firmware <span class="require">*</span></label>
                                 <div class="col-lg-6">
@@ -133,7 +132,6 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     <div class="col-sm-12 alert alert-danger vendor_error" role="alert" style="display:none"></div>
                                 </div>
                             </div>
-                            @endif
                             <div id='deviceCategoryInputFields' style='display:none;'></div>
                             @if(Auth::user()->user_type=='Admin')
                             <div class="form-group ">
@@ -272,26 +270,35 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $('#s2example-2').select2({
             placeholder: "Search and Select",
         });
-        $('#user_id, #firmware').on('change', function() {
-            var userId = $('#user_id').val();
-            if (userId == "") {
-                $("#VendorId").val(0);
+        $('#user_id').on('change', function() {
+            var userId = $(this).val();
+            var categoryId = $('#s2example-2').val();
+
+            if (userId == "" || userId == "No User Found") {
+                // Admin mode or no user selected
                 $('#templateInput').show();
                 $('#modelName').show();
                 $('#VendorId').show();
                 $(".vendor_error").hide()
                 $(".modelName_error").hide();
                 $('#deviceCategoryInputFields').show();
-                getSelectedDeviceCategory();
             } else {
                 $('#templateInput').hide();
                 $('#deviceCategoryInputFields').empty().hide();
             }
-            //getSelectedDeviceCategory();
-            // $('#templates').trigger('change');
-            var firmwareId = $('#firmware').val();
-            if (userId && firmwareId) {
-                checkModalNameExist(userId, firmwareId);
+
+            if (categoryId) {
+                getSelectedDeviceCategory(userId);
+            }
+        });
+
+        $('#firmware').on('change', function() {
+            var userId = $('#user_id').val();
+            var firmwareId = $(this).val();
+            var categoryId = $('#s2example-2').val();
+
+            if (firmwareId) {
+                checkModalNameExist(userId, firmwareId, categoryId);
             }
         });
         // $('#firmware').select2({
@@ -303,6 +310,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             event.preventDefault(); // Prevent default form submission
             formValid = true;
             let imei = $("#imei").val();
+            let firmware = $("#firmware").val();
+            if(!firmware || firmware == ""){
+                $('.error_msg').append("Please select a firmware").show();
+                formValid = false;
+            }
             if (!isValidIMEI(imei)) {
                 formValid = false;
             }
@@ -469,54 +481,56 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         });
     });
 
-    function checkModalNameExist(userId, firmwareId) {
+    function checkModalNameExist(userId, firmwareId, categoryId) {
         let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-model-name') }}";
         $.ajax({
             url: actionUrl,
             type: "POST",
             data: {
                 user_id: userId,
-                firmware_id: firmwareId
+                firmware_id: firmwareId,
+                category_id: categoryId
             },
             success: function(response) {
-                let result = JSON.parse(response);
+                let result = (typeof response === 'string') ? JSON.parse(response) : response;
                 if (result.status == 200) {
-                    if (result.modalList !== null && result.modalList !== undefined) {
-                        let modal = JSON.parse(result.modalList);
-                        if (modal != null) {
-                            $('#modelName').val(modal.name);
-                            $('#VendorId').val(modal.vendorId);
-                            $('#modelName').show();
-                            $('#VendorId').show();
-                            $(".vendor_error").hide()
-                            $(".modelName_error").hide();
-                            $('.btn-disable-after-submit').attr('disabled', false);
-                        } else {
-                            $('#modelName').hide();
-                            $('#VendorId').hide();
-                            $(".modelName_error").show().html('Model Name is not Assigned . Please contact with Administrator');
-                            $(".vendor_error").show().html('Vendor ID is not Assigned . Please contact with Administrator');
-                            $('.btn-disable-after-submit').attr('disabled', true);
-                        }
+                    let modal = result.modal;
+                    if (modal != null) {
+                        $('#modelName').val(modal.name).show();
+                        $('#VendorId').val(modal.vendorId).show();
+                        $(".vendor_error").hide();
+                        $(".modelName_error").hide();
+                        $('.btn-disable-after-submit').attr('disabled', false);
                     } else {
-                        $('#modelName').hide();
-                        $(".modelName_error").show();
-
-                        $('.btn-disable-after-submit').attr('disabled', true);
+                        handleNoModelFound(userId, categoryId);
                     }
                 } else {
-                    // $('.error_msg').append(result.message).show();
+                    handleNoModelFound(userId, categoryId, result.message);
                 }
             },
             error: function(xhr) {
-                // Handle error
                 console.error("Error:", xhr.responseText);
-                $('.error_msg').append("An error occurred while processing your request.").show();
-            },
-            complete: function() {
-                $('#loading').hide();
+                $(".modelName_error").show().html("An error occurred while processing your request.");
+                $('.btn-disable-after-submit').attr('disabled', true);
             }
         });
+    }
+
+    function handleNoModelFound(userId, categoryId, message) {
+        if (userId == "" || userId == "No User Found") {
+            var selectedOptionText = $('#s2example-2 option:selected').text();
+            $('#modelName').val(selectedOptionText).show();
+            $('#VendorId').val("JSD").show();
+            $(".vendor_error").hide();
+            $(".modelName_error").hide();
+            $('.btn-disable-after-submit').attr('disabled', false);
+        } else {
+            $('#modelName').hide();
+            $('#VendorId').hide();
+            $(".modelName_error").show().html(message || 'Model and Firmware combination does not exist. Please contact the administrator.');
+            $(".vendor_error").show().html(message || 'Model and Firmware combination does not exist. Please contact the administrator.');
+            $('.btn-disable-after-submit').attr('disabled', true);
+        }
     }
 
     function isValidIMEI(imei) {
@@ -699,7 +713,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         });
     }
 
-    function getSelectedDeviceCategory() {
+    function getSelectedDeviceCategory(userId) {
         $('#loading').show();
         let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-device-category') }}";
         var selectedDeviceCategoryId = $('#s2example-2').val();
@@ -708,22 +722,24 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             url: actionUrl,
             type: "POST",
             data: {
-                id: selectedDeviceCategoryId
+                id: selectedDeviceCategoryId,
+                user_id: userId
             },
             success: function(response) {
-                let result = JSON.parse(response);
-                let templates = JSON.parse(result.templates);
+                let result = (typeof response === 'string') ? JSON.parse(response) : response;
+                let templates = (typeof result.templates === 'string') ? JSON.parse(result.templates) : result.templates;
                 let templateConfig = templates.configurations;
                 let canEnable = result.canEnable == 1 ? true : false;
                 if (canEnable) {
                     $('.isCanEnable').show();
                 }
                 console.log("canEnable ==>", canEnable);
-                let firmwares = JSON.parse(result.firmware);
-                let dataFields = JSON.parse(result.dataFields);
+                let firmwares = (typeof result.firmware === 'string') ? JSON.parse(result.firmware) : result.firmware;
+                let dataFields = (typeof result.dataFields === 'string') ? JSON.parse(result.dataFields) : result.dataFields;
                 console.log("dataFields ==>", dataFields);
                 var selectedOptionText = $('#s2example-2 option:selected').text();
                 $('#modelName').val(selectedOptionText);
+                $('#VendorId').val("JSD");
                 console.log('firmwares', firmwares);
                 if ($('#user_id').val() == "" || $('#user_id').val() == "No User Found") {
                     $('#templateInput').show();
@@ -749,10 +765,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         $('#templates').val(templates[0].id).trigger('change.select2');
                     }
                 }
+                $('#firmware').trigger('change');
                 let htmlContent = '';
                 if ($('#user_id').val() == "" || $('#user_id').val() == "No User Found") {
                     if (result.status == 200) {
-                        let inputFields = JSON.parse(result.device_input);
+                        let inputFields = (typeof result.device_input === 'string') ? JSON.parse(result.device_input) : result.device_input;
                         inputFields.forEach((input, index) => {
                             htmlContent += '<input class="form-control" type="hidden" name="idParameters[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="">';
                             if (input.type == 'select') {
@@ -814,26 +831,36 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     });
                                 }, 100);
                             } else {
-                                if (input.key == "Password") {
+                                 if (input.key == "Password") {
                                     htmlContent += '<div class="form-group">';
                                     htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                                     htmlContent += '<div class="col-lg-6">';
-                                    htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == ' number' ? 'minlength ="' + input.numberRange[0]?.min + '" maxlength="' + input.numberRange[0]?.max + '"' : '') + '  placeholder="Enter ' + input.key + '" name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
+                                    let minMaxAttr = '';
+                                    if (input.type == 'number' && input.numberRange) {
+                                        if (input.numberRange.min !== undefined) minMaxAttr += ' min="' + input.numberRange.min + '"';
+                                        if (input.numberRange.max !== undefined) minMaxAttr += ' max="' + input.numberRange.max + '"';
+                                    }
+                                    htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + minMaxAttr + '  placeholder="Enter ' + input.key + '" name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                                     htmlContent += '</div>';
                                     htmlContent += '</div>';
                                 } else {
                                     htmlContent += '<div class="form-group">';
                                     htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                                     htmlContent += '<div class="col-lg-6">';
-                                    htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'min ="' + input.numberRange?.min + '" max="' + input.numberRange?.max + '"' : '') + '  placeholder="Enter ' + input.key + '" name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
+                                    let minMaxAttr = '';
+                                    if (input.type == 'number' && input.numberRange) {
+                                        if (input.numberRange.min !== undefined) minMaxAttr += ' min="' + input.numberRange.min + '"';
+                                        if (input.numberRange.max !== undefined) minMaxAttr += ' max="' + input.numberRange.max + '"';
+                                    }
+                                    htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + minMaxAttr + '  placeholder="Enter ' + input.key + '" name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
 
                                     htmlContent += '</div>';
                                     htmlContent += '</div>';
                                 }
                             }
                         });
-                        if ($('#user_id').val() == "") {
-                            $('#deviceCategoryInputFields').append(htmlContent);
+                        if ($('#user_id').val() == "" || $('#user_id').val() == "No User Found") {
+                            $('#deviceCategoryInputFields').append(htmlContent).show();
                         }
                     } else {
                         $('#loading').hide();
@@ -866,8 +893,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             },
             success: function(response) {
                 $('#loading').hide();
-                let result = JSON.parse(response);
-                let template = JSON.parse(JSON.parse(result.template));
+                let result = (typeof response === 'string') ? JSON.parse(response) : response;
+                let template = (result.template && typeof result.template === 'string') ? JSON.parse(result.template) : result.template;
+                
+                // Final check: if it's STILL a string, parse it again (handles accidental double encoding)
+                if (typeof template === 'string') {
+                    try { template = JSON.parse(template); } catch(e) {}
+                }
+                
                 console.log("template==>", template);
                 Object.keys(template).forEach(function(key) {
                     let element = $("input[name='configuration[" + key + "]'], select[name='configuration[" + key + "]']");

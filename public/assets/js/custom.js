@@ -124,6 +124,12 @@ $(document).ready(function () {
             hasError = true;
             return false;
         }
+        var firmwareId = $("#firmware").val();
+        if (!firmwareId || firmwareId == "") {
+            alert("Please select a firmware");
+            hasError = true;
+            return false;
+        }
         if (!hasError) {
             const fileInput = $("#excel_file")[0];
             const formData = new FormData();
@@ -337,6 +343,17 @@ $(document).ready(function () {
         }
         if (!select2Element.val()) {
             alert("please select device Category");
+            hasError = true;
+            $btn.prop("disabled", false);
+            $btn.find(".btn-text").removeClass("d-none");
+            $btn.find(".spinner-border").addClass("d-none");
+
+            return false;
+        }
+
+        var firmwareId = $("#firmware").val();
+        if (!firmwareId || firmwareId == "") {
+            alert("Please select a firmware");
             hasError = true;
             $btn.prop("disabled", false);
             $btn.find(".btn-text").removeClass("d-none");

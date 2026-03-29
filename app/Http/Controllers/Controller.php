@@ -81,6 +81,47 @@ class Controller extends BaseController
         return implode(',', $resultArray);
     }
 
+    /**
+     * Build correct assign_to_ids chain when assigning device to a child account
+     *
+     * HIERARCHY FLOW:
+     * Admin (1) creates device
+     *   → Device: user_id=null, master_id=0, assign_to_ids=""
+     *
+     * Admin assigns to Reseller (2)  ← Admin is the assigning user
+     *   → Device: user_id=2, master_id=1, assign_to_ids="1"
+     *
+     * Reseller (2) assigns to Dealer (3)
+     *   → Device: user_id=3, master_id=2, assign_to_ids="1,2"
+     *
+     * Dealer (3) assigns to User (4)
+     *   → Device: user_id=4, master_id=3, assign_to_ids="1,2,3"
+     *
+     * @param int $assigningUserId Current user assigning device (e.g., Admin ID = 1)
+     * @param string $currentAssignToIds Current chain before assignment (e.g., "")
+     * @return string New assign_to_ids chain (e.g., "1")
+     */
+    public static function buildAssignToIdsChain($assigningUserId, $currentAssignToIds = '')
+    {
+        // If no assigning user provided, return as-is
+        if (empty($assigningUserId)) {
+            return $currentAssignToIds ?? '';
+        }
+
+        // Parse existing chain and convert to integers
+        $normalized = array_filter(
+            array_map('intval', explode(',', $currentAssignToIds ?: ''))
+        );
+
+        // Append current user if not already present
+        if (!in_array((int) $assigningUserId, $normalized)) {
+            $normalized[] = (int) $assigningUserId;
+        }
+
+        // Return comma-separated chain
+        return implode(',', $normalized);
+    }
+
     public function getDeviceAssignToList($device_id)
     {
         $cu_id = Auth::user()->id;

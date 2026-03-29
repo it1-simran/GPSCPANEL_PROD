@@ -3373,4 +3373,59 @@ class CommonHelper
         }
         return 'N/A';
     }
+
+    public static function getModelByHierarchy($device, $firmwareId, $userId = null, $categoryId = null)
+    {
+        $search_ids = [];
+
+        if ($device) {
+            $categoryId = $device->device_category_id;
+            if (!empty($device->assign_to_ids)) {
+                $aids = explode(',', $device->assign_to_ids);
+                if (count($aids) >= 2) {
+                    // Level 1 Reseller is always at index[1]
+                    $search_ids[] = (int)trim($aids[1]);
+                } else {
+                    // Only 1 element in chain (e.g. "1" from Admin direct assignment)
+                    // index[1] doesn't exist — use device's user_id to look up the model
+                    if (!empty($device->user_id)) {
+                        $userId = $device->user_id;
+                    } else {
+                        // Last resort: use the single chain element (Admin)
+                        $search_ids[] = (int)trim($aids[0]);
+                    }
+                }
+            } else if (!empty($device->user_id)) {
+                // No assign_to_ids at all — use device's user_id
+                $userId = $device->user_id;
+            }
+        }
+
+        // Trace the `created_by` chain of the resolved user_id
+        // This handles: dealer directly assigned by Admin, Level-1 Reseller, etc.
+        if (empty($search_ids) && $userId && $userId != "No User Found") {
+            $target_user = \App\Writer::find($userId);
+            $search_ids[] = $userId;
+            if ($target_user) {
+                // Traverse up the chain (maximum 5 levels to avoid infinite loops)
+                $current_parent = $target_user->created_by;
+                while ($current_parent && $current_parent != "1" && count($search_ids) < 5) {
+                    $search_ids[] = $current_parent;
+                    $p_user = \App\Writer::find($current_parent);
+                    $current_parent = $p_user ? $p_user->created_by : null;
+                }
+            }
+        }
+
+        if (empty($search_ids)) {
+            $search_ids[] = 1; // Admin last resort
+        }
+
+        $modal = \App\Modal::where('firmware_id', $firmwareId)
+            ->whereIn('user_id', $search_ids)
+            ->first();
+
+        // Return null if no model found — let the caller handle the fallback
+        return $modal ?: null;
+    }
 }

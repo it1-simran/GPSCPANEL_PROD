@@ -179,6 +179,7 @@ $(document).ready(function () {
                     new_imei_table = parent_modal
                         .find("#new_imei_table")
                         .DataTable({
+                            destroy: true,
                             iDisplayLength: 10,
                             columnDefs: [
                                 {
@@ -190,15 +191,8 @@ $(document).ready(function () {
                         });
 
                     $("body").on("click", "#new_imei_checkall", function (e) {
-                        var rows = new_imei_table
-                            .rows({ search: "applied" })
-                            .nodes();
-                        parent_modal
-                            .find(
-                                '.new_imei_table tbody input[type="checkbox"]',
-                                rows
-                            )
-                            .prop("checked", this.checked);
+                        var rows = new_imei_table.rows({ search: "applied" }).nodes();
+                        $(rows).find('input[type="checkbox"]').prop("checked", this.checked);
                     });
 
                     $("body").on(
@@ -223,6 +217,7 @@ $(document).ready(function () {
                     dup_imei_table = parent_modal
                         .find("#dup_imei_table")
                         .DataTable({
+                            destroy: true,
                             iDisplayLength: 25,
                             columnDefs: [
                                 {
@@ -234,15 +229,8 @@ $(document).ready(function () {
                         });
 
                     $("body").on("click", "#dup_imei_checkall", function (e) {
-                        var rows = dup_imei_table
-                            .rows({ search: "applied" })
-                            .nodes();
-                        parent_modal
-                            .find(
-                                '.dup_imei_table tbody input[type="checkbox"]',
-                                rows
-                            )
-                            .prop("checked", this.checked);
+                        var rows = dup_imei_table.rows({ search: "applied" }).nodes();
+                        $(rows).find('input[type="checkbox"]').prop("checked", this.checked);
                     });
 
                     $("body").on(
@@ -410,6 +398,7 @@ $(document).ready(function () {
                     new_imei_table = parent_modal
                         .find("#new_imei_table")
                         .DataTable({
+                            destroy: true,
                             iDisplayLength: 10,
                             columnDefs: [
                                 {
@@ -425,15 +414,8 @@ $(document).ready(function () {
                     $btn.find(".spinner-border").addClass("d-none");
 
                     $("body").on("click", "#new_imei_checkall", function (e) {
-                        var rows = new_imei_table
-                            .rows({ search: "applied" })
-                            .nodes();
-                        parent_modal
-                            .find(
-                                '.new_imei_table tbody input[type="checkbox"]',
-                                rows
-                            )
-                            .prop("checked", this.checked);
+                        var rows = new_imei_table.rows({ search: "applied" }).nodes();
+                        $(rows).find('input[type="checkbox"]').prop("checked", this.checked);
                     });
 
                     $("body").on(
@@ -458,6 +440,7 @@ $(document).ready(function () {
                     dup_imei_table = parent_modal
                         .find("#dup_imei_table")
                         .DataTable({
+                            destroy: true,
                             iDisplayLength: 25,
                             columnDefs: [
                                 {
@@ -469,15 +452,8 @@ $(document).ready(function () {
                         });
 
                     $("body").on("click", "#dup_imei_checkall", function (e) {
-                        var rows = dup_imei_table
-                            .rows({ search: "applied" })
-                            .nodes();
-                        parent_modal
-                            .find(
-                                '.dup_imei_table tbody input[type="checkbox"]',
-                                rows
-                            )
-                            .prop("checked", this.checked);
+                        var rows = dup_imei_table.rows({ search: "applied" }).nodes();
+                        $(rows).find('input[type="checkbox"]').prop("checked", this.checked);
                     });
 
                     $("body").on(

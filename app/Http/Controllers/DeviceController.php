@@ -1952,30 +1952,31 @@ class DeviceController extends Controller
                     $arr['configurations'] = json_encode($newConfig);
                     $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
                     $arr['can_configurations'] = json_encode($canConverted);
+                    $master_id = Auth::user()->id;
                     if (in_array($imei, $new_imei_list)) {
-                        $master_id = Auth::user()->id;
-                        // $mid = $master_id;
-                        $mid = $assign_to_ids = '';
+                        $mid = null;
+                        $assign_to_ids = '';
                         if ($request->user_id) {
                             $mid = $master_id;
-                            $assign_to_ids = $request->user_id;
+                            $assign_to_ids = $master_id;
                         }
 
                         $arr['name'] = $name;
                         $arr['imei'] = $imei;
-                        $arr['master_id'] = $master_id;
+                        $arr['master_id'] = $mid;
+                        $arr['user_id'] = $request->user_id;
                         $arr['assign_to_ids'] = $assign_to_ids;
                         $arr['device_category_id'] = $request->deviceCategory;
                         Device::create($arr);
                     }
 
                     if (in_array($imei, $dup_imei_list) && $dup_type == 'overwrite') {
-                        $master_id = Auth::user()->id;
-                        $mid = $assign_to_ids = '';
+                        $mid = null;
+                        $assign_to_ids = '';
 
                         if ($request->user_id) {
                             $mid = $master_id;
-                            $assign_to_ids = $request->user_id;
+                            $assign_to_ids = $master_id;
                         }
                         $arr['name'] = $name;
                         $arr['master_id'] = $mid;
@@ -2076,30 +2077,31 @@ class DeviceController extends Controller
                     $arr['configurations'] = json_encode($newConfig);
                     $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
                     $arr['can_configurations'] = json_encode($canConverted);
+                    $master_id = Auth::user()->id;
                     if (in_array($imei, $new_imei_list)) {
-                        $master_id = Auth::user()->id;
-                        // $mid = $master_id;
-                        $mid = $assign_to_ids = '';
+                        $mid = null;
+                        $assign_to_ids = '';
                         if ($request->user_id) {
                             $mid = $master_id;
-                            $assign_to_ids = $request->user_id;
+                            $assign_to_ids = $master_id;
                         }
 
                         $arr['name'] = $name;
                         $arr['imei'] = $imei;
-                        $arr['master_id'] = $master_id;
+                        $arr['master_id'] = $mid;
+                        $arr['user_id'] = $request->user_id;
                         $arr['assign_to_ids'] = $assign_to_ids;
                         $arr['device_category_id'] = $request->deviceCategory;
                         Device::create($arr);
                     }
 
                     if (in_array($imei, $dup_imei_list) && $dup_type == 'overwrite') {
-                        $master_id = Auth::user()->id;
-                        $mid = $assign_to_ids = '';
+                        $mid = null;
+                        $assign_to_ids = '';
 
                         if ($request->user_id) {
                             $mid = $master_id;
-                            $assign_to_ids = $request->user_id;
+                            $assign_to_ids = $master_id;
                         }
                         $arr['name'] = $name;
                         $arr['master_id'] = $mid;

@@ -10,7 +10,6 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Controller extends BaseController
-
 {
 
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
@@ -36,7 +35,7 @@ class Controller extends BaseController
             $url_type = 'admin';
         } else if (Auth::user()->user_type == 'Reseller') {
             $url_type = 'reseller';
-        } else if(Auth::user()->user_type == 'Support') {
+        } else if (Auth::user()->user_type == 'Support') {
             $url_type = 'support';
         }
 
@@ -74,6 +73,9 @@ class Controller extends BaseController
                 $acc_ids[] = $child_Acc['uid'];
             }
         }
+        // [1,33,35];
+        // [33,35];
+        //[1]]
 
         $assign_to_ids = explode(',', $assign_to_ids);
 
@@ -325,7 +327,7 @@ class Controller extends BaseController
 
     public function manageEditDelAccs($uid, $rdata, $action_type)
     {
-     
+
         if ($action_type == 'edit') {
             $acc_type_changed = $rdata['acc_type_changed'];
 
@@ -348,7 +350,7 @@ class Controller extends BaseController
                     self::delAllChildAccounts($child_Accs);
                 } else if ($rdata['del_type'] == 'shift_all') /// SHIFT ALL DIRECT CHILDS TO PARENT
                 {
-                  
+
                     $directChildAccs = self::getDirectChildAccounts($uid);
                     self::shiftDirectChildAccToParent($directChildAccs, $uid);
                 }

@@ -1885,19 +1885,19 @@ class DeviceController extends Controller
         $dup_type = $request->get('dup_type');
         $config = $request->configuration;
         $converted = [];
-        if ($dup_type != 'overwrite') {
-            $commonFields = DB::table("data_fields")->where(["is_common" => 1])->get();
-            foreach ($commonFields as $index => $value) {
-                if (strpos($value->fieldName, ' ') !== false) {
-                    $key = strtolower(str_replace(' ', '_', $value->fieldName));
-                } else {
-                    $key = lcfirst(str_replace(' ', '_', $value->fieldName));
-                }
-                $converted[$key] = [
-                    'id' => $value->id,
-                    'value' => $config[$key] ?? ''
-                ];
+        $commonFields = DB::table("data_fields")->where(["is_common" => 1])->get();
+        foreach ($commonFields as $index => $value) {
+            if (strpos($value->fieldName, ' ') !== false) {
+                $key = strtolower(str_replace(' ', '_', $value->fieldName));
+            } else {
+                $key = lcfirst(str_replace(' ', '_', $value->fieldName));
             }
+            // Check for both snake_case and camelCase in $config
+            $camelKey = lcfirst(str_replace('_', '', ucwords($key, '_')));
+            $converted[$key] = [
+                'id' => $value->id,
+                'value' => $config[$key] ?? $config[$camelKey] ?? ''
+            ];
         }
 
 
@@ -1922,6 +1922,17 @@ class DeviceController extends Controller
                         'value' => $config[$key] ?? ''
                     ];
                 }
+            }
+        }
+        $firmwareId = $request->firmware;
+        if ($firmwareId) {
+            $firmware = DB::table('firmware')->select('configurations')->where(['id' => $firmwareId])->first();
+            if ($firmware) {
+                $fimwareArr = json_decode($firmware->configurations, true);
+                $converted['firmware_id'] = ['value' => $firmwareId];
+                $converted['firmware_file'] = ['value' => $fimwareArr['filename'] ?? ''];
+                $converted['firmware_version'] = ['value' => $fimwareArr['version'] ?? ''];
+                $converted['firmwareFileSize'] = ['value' => $fimwareArr['fileSize'] ?? ''];
             }
         }
         // dd($converted);
@@ -2010,19 +2021,19 @@ class DeviceController extends Controller
         $dup_type = $request->get('dup_type');
         $config = $request->configuration;
         $converted = [];
-        if ($dup_type != 'overwrite') {
-            $commonFields = DB::table("data_fields")->where(["is_common" => 1])->get();
-            foreach ($commonFields as $index => $value) {
-                if (strpos($value->fieldName, ' ') !== false) {
-                    $key = strtolower(str_replace(' ', '_', $value->fieldName));
-                } else {
-                    $key = lcfirst(str_replace(' ', '_', $value->fieldName));
-                }
-                $converted[$key] = [
-                    'id' => $value->id,
-                    'value' => $config[$key] ?? ''
-                ];
+        $commonFields = DB::table("data_fields")->where(["is_common" => 1])->get();
+        foreach ($commonFields as $index => $value) {
+            if (strpos($value->fieldName, ' ') !== false) {
+                $key = strtolower(str_replace(' ', '_', $value->fieldName));
+            } else {
+                $key = lcfirst(str_replace(' ', '_', $value->fieldName));
             }
+            // Check for both snake_case and camelCase in $config
+            $camelKey = lcfirst(str_replace('_', '', ucwords($key, '_')));
+            $converted[$key] = [
+                'id' => $value->id,
+                'value' => $config[$key] ?? $config[$camelKey] ?? ''
+            ];
         }
 
 
@@ -2047,6 +2058,17 @@ class DeviceController extends Controller
                         'value' => $config[$key] ?? ''
                     ];
                 }
+            }
+        }
+        $firmwareId = $request->firmware;
+        if ($firmwareId) {
+            $firmware = DB::table('firmware')->select('configurations')->where(['id' => $firmwareId])->first();
+            if ($firmware) {
+                $fimwareArr = json_decode($firmware->configurations, true);
+                $converted['firmware_id'] = ['value' => $firmwareId];
+                $converted['firmware_file'] = ['value' => $fimwareArr['filename'] ?? ''];
+                $converted['firmware_version'] = ['value' => $fimwareArr['version'] ?? ''];
+                $converted['firmwareFileSize'] = ['value' => $fimwareArr['fileSize'] ?? ''];
             }
         }
         // dd($converted);

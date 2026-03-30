@@ -960,6 +960,8 @@ class DeviceController extends Controller
         } else {
             $users = DB::table('writers')
                 ->select('id', 'name')
+                ->where('created_by', $currentUser->id)
+                ->where('is_deleted', 0)
                 ->get();
         }
         if (Auth::user()->user_type == 'Admin') {
@@ -1039,21 +1041,21 @@ class DeviceController extends Controller
             $contact->update();
         } elseif (Auth::user()->user_type == 'Admin') {
             $contact = Device::find($contact_id);
-            if ($request->get('user_id')) {
-                if ($prev_uid == '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
-                {
-                    $contact->master_id = auth()->id();
-                    $contact->user_id = $request->get('user_id');
-                    // Build proper chain for Admin (returns empty string)
-                    $contact->assign_to_ids = self::buildAssignToIdsChain(auth()->id(), $is_editable->assign_to_ids);
-                } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) /// BEFORE WAS ASSIGNED AND NOW CHANGED
-                {
-                    $contact->master_id = auth()->id();
-                    $contact->user_id = $request->get('user_id');
-                    // Build proper chain for Admin (returns empty string)
-                    $contact->assign_to_ids = self::buildAssignToIdsChain(auth()->id(), $is_editable->assign_to_ids);
-                }
-            } else {
+                if ($request->get('user_id')) {
+                    if ($prev_uid == '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
+                    {
+                        $contact->master_id = auth()->id();
+                        $contact->user_id = $request->get('user_id');
+                        // Reset hierarchy chain for direct Admin assignment
+                        $contact->assign_to_ids = (string)auth()->id();
+                    } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) /// BEFORE WAS ASSIGNED AND NOW CHANGED
+                    {
+                        $contact->master_id = auth()->id();
+                        $contact->user_id = $request->get('user_id');
+                        // Reset hierarchy chain when Admin reassigns
+                        $contact->assign_to_ids = (string)auth()->id();
+                    }
+                } else {
                 if ($prev_uid != '') /// DEVICE IS BEING UNASSIGNED
                 {
                     // When unassigning, only change user_id and chain - keep master_id as original owner
@@ -1125,13 +1127,13 @@ class DeviceController extends Controller
                     if ($device_uid == '') {
                         $device_array['master_id'] = auth()->id();
                         $device_array['user_id'] = $user_id;
-                        // Build proper chain for Admin (returns empty string)
-                        $device_array['assign_to_ids'] = self::buildAssignToIdsChain(auth()->id(), $device_info->assign_to_ids);
+                        // Build proper chain for Admin (Root is Admin)
+                        $device_array['assign_to_ids'] = (string)auth()->id();
                     } else if ($device_uid != '' && $device_uid != $user_id) {
                         $device_array['master_id'] = auth()->id();
                         $device_array['user_id'] = $user_id;
-                        // Build proper chain for Admin (returns empty string)
-                        $device_array['assign_to_ids'] = self::buildAssignToIdsChain(auth()->id(), $device_info->assign_to_ids);
+                        // Reset chain for Admin (Root is Admin)
+                        $device_array['assign_to_ids'] = (string)auth()->id();
                     }
                 } else {
                     if ($device_uid != '') /// DEVICE IS BEING UNASSIGNED
@@ -2548,19 +2550,18 @@ class DeviceController extends Controller
 
             $contact = Device::find($contact_id);
             if ($request->get('user_id')) {
-                // echo "hi";
                 if ($prev_uid == '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
                 {
                     $contact->master_id = auth()->id();
                     $contact->user_id = $request->get('user_id');
-                    // Build proper chain for Admin (returns empty string)
-                    $contact->assign_to_ids = self::buildAssignToIdsChain(auth()->id(), $is_editable->assign_to_ids);
+                    // Reset hierarchy chain for direct Admin assignment
+                    $contact->assign_to_ids = (string)auth()->id();
                 } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) /// BEFORE WAS ASSIGNED AND NOW CHANGED
                 {
                     $contact->master_id = auth()->id();
                     $contact->user_id = $request->get('user_id');
-                    // Build proper chain for Admin (returns empty string)
-                    $contact->assign_to_ids = self::buildAssignToIdsChain(auth()->id(), $is_editable->assign_to_ids);
+                    // Reset hierarchy chain when Admin reassigns
+                    $contact->assign_to_ids = (string)auth()->id();
                 }
             } else {
                 // echo "hello";

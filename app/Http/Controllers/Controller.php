@@ -18,10 +18,14 @@ class Controller extends BaseController
 
     public function getNextValue(array $values, $lastValue)
     {
+        $lastIndex = array_search($lastValue, $values);
+        if ($lastIndex === false) {
+            return '';
+        }
+        
         if ($lastValue == end($values)) {
             return '';
         } else {
-            $lastIndex = array_search($lastValue, $values);
             $nextIndex = ($lastIndex + 1) % count($values);
             return $values[$nextIndex];
         }

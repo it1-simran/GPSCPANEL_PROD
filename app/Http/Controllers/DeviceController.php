@@ -271,6 +271,17 @@ class DeviceController extends Controller
             // Get next assigned user ID relative to current user
             if (!empty($aids)) {
                 $next_id = self::getNextValue($aids, Auth::user()->id);
+                
+                if (empty($next_id) && Auth::user()->user_type == 'Admin') {
+                    $root_id = $aids[0];
+                    $root_writer = DB::table('writers')->select('user_type')->where('id', $root_id)->first();
+                    if ($root_writer && $root_writer->user_type == 'Support') {
+                        $next_id = self::getNextValue($aids, $root_id);
+                        if (empty($next_id)) {
+                            $next_id = $device->user_id;
+                        }
+                    }
+                }
             }
 
             // Direct assignment
@@ -881,8 +892,13 @@ class DeviceController extends Controller
             $template_info = DB::table('templates')->select('templates.*')->where('templates.is_deleted', '0')->where('verify', '1')->get();
         }
         if (count($devices) > 0) {
-            foreach ($devices as $device) {
-                $device->username = 'Unassigned';
+            foreach ($devices as $dkey => $device) {
+                if ($device->user_id) {
+                    $u_info = DB::table('writers')->select('name')->where('id', $device->user_id)->first();
+                    $device->username = $u_info->name ?? 'Unassigned';
+                } else {
+                    $device->username = 'Unassigned';
+                }
             }
             // foreach ($devices as $dkey => $device) {
             //     $uname = 'Unassigned'; // default
@@ -1000,7 +1016,7 @@ class DeviceController extends Controller
         $contact_id = $request->input('id');
         $is_editable = DB::table('devices')->where('id', $contact_id)->first();
         $prev_uid = $request->input('prev_uid');
-        if (Auth::user()->user_type != 'Admin' and $is_editable->is_editable == '1') {
+        if (Auth::user()->user_type != 'Admin' && Auth::user()->user_type != 'Support' && $is_editable->is_editable == '1') {
             $contact = Device::find($contact_id);
             if (Auth::user()->user_type == 'Reseller') {
                 if ($request->get('user_id')) {
@@ -1039,22 +1055,19 @@ class DeviceController extends Controller
             }
             $contact->configurations = json_encode($request->get('configuration'));
             $contact->update();
-        } elseif (Auth::user()->user_type == 'Admin') {
+        } elseif (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
             $contact = Device::find($contact_id);
                 if ($request->get('user_id')) {
-                    if ($prev_uid == '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
-                    {
-                        $contact->master_id = auth()->id();
-                        $contact->user_id = $request->get('user_id');
-                        // Reset hierarchy chain for direct Admin assignment
-                        $contact->assign_to_ids = (string)auth()->id();
-                    } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) /// BEFORE WAS ASSIGNED AND NOW CHANGED
-                    {
-                        $contact->master_id = auth()->id();
-                        $contact->user_id = $request->get('user_id');
-                        // Reset hierarchy chain when Admin reassigns
-                        $contact->assign_to_ids = (string)auth()->id();
-                    }
+                    $contact->master_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
+                    $contact->user_id = $request->get('user_id');
+                    // Reset hierarchy chain for direct Admin/Support assignment
+                    $contact->assign_to_ids = (string)(Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id());
+                } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) /// BEFORE WAS ASSIGNED AND NOW CHANGED
+                {
+                    $contact->master_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
+                    $contact->user_id = $request->get('user_id');
+                    // Reset hierarchy chain when Admin/Support reassigns
+                    $contact->assign_to_ids = (string)(Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id());
                 } else {
                 if ($prev_uid != '') /// DEVICE IS BEING UNASSIGNED
                 {
@@ -1070,14 +1083,14 @@ class DeviceController extends Controller
                 }
             }
             $contact->configurations = json_encode($request->get('configuration'));
-            if (Auth::user()->user_type == 'Admin') {
+            if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
                 $contact->is_editable = $request->get('is_editable');
             }
             $contact->update();
         } else {
             return redirect()->back()->with('error', 'you do not have permission to update');
         }
-        if (Auth::user()->user_type == 'Admin') {
+        if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
             return redirect()->back()->with('success', $request->imei . '-Device updated Successfully');
         } else {
             return redirect()->back()->with('success', $request->imei . '-Device updated Successfully');
@@ -1122,18 +1135,19 @@ class DeviceController extends Controller
                 $device_uid = '';
             }
             $device_array = array();
-            if (Auth::user()->user_type == 'Admin') {
+            if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
+                $root_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
                 if ($user_id) {
                     if ($device_uid == '') {
-                        $device_array['master_id'] = auth()->id();
+                        $device_array['master_id'] = $root_id;
                         $device_array['user_id'] = $user_id;
-                        // Build proper chain for Admin (Root is Admin)
-                        $device_array['assign_to_ids'] = (string)auth()->id();
+                        // Build proper chain for Admin/Support (Root is Admin)
+                        $device_array['assign_to_ids'] = (string)$root_id;
                     } else if ($device_uid != '' && $device_uid != $user_id) {
-                        $device_array['master_id'] = auth()->id();
+                        $device_array['master_id'] = $root_id;
                         $device_array['user_id'] = $user_id;
-                        // Reset chain for Admin (Root is Admin)
-                        $device_array['assign_to_ids'] = (string)auth()->id();
+                        // Reset chain for Admin/Support (Root is Admin)
+                        $device_array['assign_to_ids'] = (string)$root_id;
                     }
                 } else {
                     if ($device_uid != '') /// DEVICE IS BEING UNASSIGNED
@@ -2546,22 +2560,22 @@ class DeviceController extends Controller
                     'is_active' => 1,
                 ]);
             }
-        } elseif (Auth::user()->user_type == 'Admin') {
+        } elseif (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
 
             $contact = Device::find($contact_id);
             if ($request->get('user_id')) {
                 if ($prev_uid == '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
                 {
-                    $contact->master_id = auth()->id();
+                    $contact->master_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
                     $contact->user_id = $request->get('user_id');
-                    // Reset hierarchy chain for direct Admin assignment
-                    $contact->assign_to_ids = (string)auth()->id();
+                    // Reset hierarchy chain for direct Admin/Support assignment
+                    $contact->assign_to_ids = (string)(Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id());
                 } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) /// BEFORE WAS ASSIGNED AND NOW CHANGED
                 {
-                    $contact->master_id = auth()->id();
+                    $contact->master_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
                     $contact->user_id = $request->get('user_id');
-                    // Reset hierarchy chain when Admin reassigns
-                    $contact->assign_to_ids = (string)auth()->id();
+                    // Reset hierarchy chain when Admin/Support reassigns
+                    $contact->assign_to_ids = (string)(Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id());
                 }
             } else {
                 // echo "hello";

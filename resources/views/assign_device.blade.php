@@ -121,7 +121,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     </select>
                                 </div>
                             </div>
-                            <div id="isUserSelected" style="display:none;">
+                            <div id="isUserSelected">
                                 <div class="form-group ">
                                     <label for="curl" class="control-label col-lg-3 ">Device Category <span class="require">*</span></label>
                                     <div class="col-lg-6">
@@ -258,7 +258,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
             var user_id = this.value;
             if (user_id == '') {
-                $('#isUserSelected').hide();
+                var categoryId = $('#s2example-2').val();
+                if (categoryId) {
+                    var selectedOptionText = $('#s2example-2 option:selected').text();
+                    $('#modelName').val(selectedOptionText);
+                    $('#VendorId').val("JSD");
+                    $(".vendor_error").hide();
+                    $(".modelName_error").hide();
+                    $('.btn-disable-after-submit').attr('disabled', false);
+                }
                 return false;
             }
             $.ajax({
@@ -307,8 +315,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             var firmwareId = $('#firmware').val();
             var categoryId = $('#s2example-2').val();
 
-            if (firmwareId) {
+            if (firmwareId && userId) {
                 checkModalNameExist(userId, firmwareId, categoryId);
+            } else if (!userId && categoryId) {
+                $('#modelName').val($('#s2example-2 option:selected').text());
+                $('#VendorId').val("JSD");
+                $(".vendor_error").hide();
+                $(".modelName_error").hide();
+                $('.btn-disable-after-submit').attr('disabled', false);
             }
         });
     });

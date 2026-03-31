@@ -11,19 +11,41 @@ $canConfigurations = $device['can_configurations'] != "" ? json_decode($device['
 $getCanEnableByDeviceCategory = DeviceCategory::select('is_can_protocol')->where('id', $device['device_category_id'])->first();
 $parameters = json_decode($device['parameters'], true);
 $assignToIds = $device['assign_to_ids'];
-$assignToIdsArray = explode(',', $assignToIds);
+$assignToIdsArray = array_filter(explode(',', $assignToIds));
 $assignToIdsArray = array_values($assignToIdsArray); // ensure proper indexing
 $loggedInUserId = auth()->id(); // or your user ID variable
 $nextId = null;
-$index = array_search($loggedInUserId, $assignToIdsArray);
-if($index !== false){
-if (isset($assignToIdsArray[$index + 1])) {
-    $nextId = $assignToIdsArray[$index + 1];
+
+if (!empty($assignToIdsArray)) {
+    $index = array_search($loggedInUserId, $assignToIdsArray);
+    
+    // Bridge logic for Admin to bridge legacy Support assignments
+    if ($index === false && Auth::user()->user_type == 'Admin') {
+        $rootId = $assignToIdsArray[0];
+        $rootWriter = DB::table('writers')->select('user_type')->where('id', $rootId)->first();
+        if ($rootWriter && $rootWriter->user_type == 'Support') {
+            $index = 0; // We resolve starting from the Support account's index
+        }
+    }
+
+    if ($index !== false) {
+        if (isset($assignToIdsArray[$index + 1])) {
+            $nextId = $assignToIdsArray[$index + 1];
+        } else {
+            $nextId = $device['user_id']; 
+        }
+    } else {
+        // Ultimate fallback for end users (like Dealers) or broken chains
+        $nextId = $device['user_id'];
+    }
 } else {
-    $nextId = $device['user_id']; // or 0 if you prefer
+    $nextId = $device['user_id'];
 }
-}else{
-    $nextId = null; // or 0 if you prefer
+
+// Reseller view tweak: If the device is currently resting with the Reseller (not assigned further), 
+// it should show "Unassigned" instead of their own name.
+if ($nextId == auth()->id() && Auth::user()->user_type == 'Reseller') {
+    $nextId = null;
 }
 
 

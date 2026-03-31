@@ -34,14 +34,18 @@ if (!empty($assignToIdsArray)) {
         } else {
             $nextId = $device['user_id']; 
         }
-    } else if (Auth::user()->user_type == 'Admin') {
-        // Ultimate fallback for Admin if chain is totally broken but user_id exists
+    } else {
+        // Ultimate fallback for end users (like Dealers) or broken chains
         $nextId = $device['user_id'];
     }
 } else {
-    if (Auth::user()->user_type == 'Admin') {
-        $nextId = $device['user_id'];
-    }
+    $nextId = $device['user_id'];
+}
+
+// Reseller view tweak: If the device is currently resting with the Reseller (not assigned further), 
+// it should show "Unassigned" instead of their own name.
+if ($nextId == auth()->id() && Auth::user()->user_type == 'Reseller') {
+    $nextId = null;
 }
 
 

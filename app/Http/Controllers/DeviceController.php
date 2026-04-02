@@ -120,9 +120,9 @@ class DeviceController extends Controller
             }
         }
         $firmware = Firmware::select('configurations')->where(['id' => $request->firmware])->first();
-        $device_array =  $converted;
+        $device_array = $converted;
         $fimwareArr = json_decode($firmware->configurations, true);
-        $device_array['firmware_id']['value'] =  $request->firmware;
+        $device_array['firmware_id']['value'] = $request->firmware;
         $device_array['firmware_file']['value'] = $fimwareArr['filename'];
         $device_array['firmware_version']['value'] = $fimwareArr['version'];
         $device_array['firmwareFileSize']['value'] = $fimwareArr['fileSize'];
@@ -271,6 +271,17 @@ class DeviceController extends Controller
             // Get next assigned user ID relative to current user
             if (!empty($aids)) {
                 $next_id = self::getNextValue($aids, Auth::user()->id);
+                
+                if (empty($next_id) && Auth::user()->user_type == 'Admin') {
+                    $root_id = $aids[0];
+                    $root_writer = DB::table('writers')->select('user_type')->where('id', $root_id)->first();
+                    if ($root_writer && $root_writer->user_type == 'Support') {
+                        $next_id = self::getNextValue($aids, $root_id);
+                        if (empty($next_id)) {
+                            $next_id = $device->user_id;
+                        }
+                    }
+                }
             }
 
             // Direct assignment
@@ -864,16 +875,13 @@ class DeviceController extends Controller
                 })
                 ->get();
         } else {
-            // Reseller: devices with master_id = reseller or included in assign_to_ids
+            // Reseller: devices that are assigned TO this reseller (user_id = reseller_id)
+            // These are devices Reseller can manage and reassign/unassign
             $devices = DB::table('devices')
                 ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
                 ->select('devices.*')
                 ->where('devices.is_deleted', '0')
-                ->where(function ($q) use ($master_id) {
-                    $q->where('devices.user_id', $master_id);
-                    // ->orWhereRaw('FIND_IN_SET(' . $master_id . ', devices.assign_to_ids)');
-                    // ->Where('devices.user_id', $master_id);
-                })
+                ->where('devices.user_id', $master_id)  // Currently assigned to this Reseller
                 ->get();
         }
 
@@ -884,8 +892,13 @@ class DeviceController extends Controller
             $template_info = DB::table('templates')->select('templates.*')->where('templates.is_deleted', '0')->where('verify', '1')->get();
         }
         if (count($devices) > 0) {
-            foreach ($devices as $device) {
-                $device->username = 'Unassigned';
+            foreach ($devices as $dkey => $device) {
+                if ($device->user_id) {
+                    $u_info = DB::table('writers')->select('name')->where('id', $device->user_id)->first();
+                    $device->username = $u_info->name ?? 'Unassigned';
+                } else {
+                    $device->username = 'Unassigned';
+                }
             }
             // foreach ($devices as $dkey => $device) {
             //     $uname = 'Unassigned'; // default
@@ -963,6 +976,8 @@ class DeviceController extends Controller
         } else {
             $users = DB::table('writers')
                 ->select('id', 'name')
+                ->where('created_by', $currentUser->id)
+                ->where('is_deleted', 0)
                 ->get();
         }
         if (Auth::user()->user_type == 'Admin') {
@@ -1001,66 +1016,81 @@ class DeviceController extends Controller
         $contact_id = $request->input('id');
         $is_editable = DB::table('devices')->where('id', $contact_id)->first();
         $prev_uid = $request->input('prev_uid');
-        if (Auth::user()->user_type != 'Admin' and $is_editable->is_editable == '1') {
+        if (Auth::user()->user_type != 'Admin' && Auth::user()->user_type != 'Support' && $is_editable->is_editable == '1') {
             $contact = Device::find($contact_id);
             if (Auth::user()->user_type == 'Reseller') {
                 if ($request->get('user_id')) {
                     if ($prev_uid == '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
                     {
-                        $contact->master_id = auth()->id();
-                        $contact->user_id =  $request->get('user_id');
-                        $assign_to_ids = self::getDeviceAssignToList($contact_id);
-                        $contact->assign_to_ids =  $assign_to_ids;
+                        // When assigning an unassigned device, keep original master_id
+                        $contact->user_id = $request->get('user_id');
+                        // Build proper chain when assigning from unassigned state
+                        $contact->assign_to_ids = self::buildAssignToIdsChain(auth()->id(), $is_editable->assign_to_ids);
                     } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) /// BEFORE WAS ASSIGNED AND NOW CHANGED
                     {
-                        $new_assing_ids = self::getAssignsIdsForChangeDeviceUser($uid, $is_editable->assign_to_ids, 'no');
-                        $contact->master_id = auth()->id();
-                        $contact->user_id =  $request->get('user_id');
-                        $contact->assign_to_ids =  $new_assing_ids;
+                        // When reassigning a device currently assigned to this Reseller, they become the master for their sub-hierarchy
+                        if ($prev_uid == auth()->id()) {
+                            $contact->master_id = auth()->id();
+                        }
+                        $contact->user_id = $request->get('user_id');
+                        // Build proper chain when reassigning to different user
+                        $contact->assign_to_ids = self::buildAssignToIdsChain(auth()->id(), $is_editable->assign_to_ids);
                     }
                 } else {
-                    if ($prev_uid != '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
+                    if ($prev_uid != '') /// DEVICE IS BEING UNASSIGNED FROM CHILD
                     {
-                        $new_assing_ids = self::getAssignsIdsForChangeDeviceUser($uid, $is_editable->assign_to_ids, 'yes');
-                        $parent_acc = self::getUserParent(auth()->id());
-                        $contact->master_id = $parent_acc;
-                        $contact->user_id =  auth()->id();
-                        $contact->assign_to_ids =  $new_assing_ids;
+                        // When unassigning, reset to the Reseller and recalculate chain
+                        $new_assign_ids = self::getAssignsIdsForChangeDeviceUser(auth()->id(), $is_editable->assign_to_ids, 'yes');
+
+                        // Extract root owner from the new chain
+                        $chain_array = !empty($new_assign_ids) ? explode(',', $new_assign_ids) : [];
+                        $root_owner = !empty($chain_array) ? intval($chain_array[0]) : 1;
+
+                        // Reset master_id to root owner and assign back to Reseller
+                        $contact->master_id = $root_owner;
+                        $contact->user_id = auth()->id();  // Assign back to Reseller
+                        $contact->assign_to_ids = $new_assign_ids;  // Update chain to remove current user
                     }
                 }
             }
             $contact->configurations = json_encode($request->get('configuration'));
             $contact->update();
-        } elseif (Auth::user()->user_type == 'Admin') {
+        } elseif (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
             $contact = Device::find($contact_id);
-            if ($request->get('user_id')) {
-                if ($prev_uid == '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
-                {
-                    $contact->master_id = auth()->id();
-                    $contact->user_id =  $request->get('user_id');
-                    $assign_to_ids = self::getDeviceAssignToList($contact_id);
-                    $contact->assign_to_ids =  $assign_to_ids;
+                if ($request->get('user_id')) {
+                    $contact->master_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
+                    $contact->user_id = $request->get('user_id');
+                    // Reset hierarchy chain for direct Admin/Support assignment
+                    $contact->assign_to_ids = (string)(Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id());
                 } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) /// BEFORE WAS ASSIGNED AND NOW CHANGED
                 {
-                    $contact->master_id = auth()->id();
-                    $contact->user_id =  $request->get('user_id');
-                    $assign_to_ids = self::getDeviceAssignToList($contact_id);
-                    $contact->assign_to_ids =  $assign_to_ids;
+                    $contact->master_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
+                    $contact->user_id = $request->get('user_id');
+                    // Reset hierarchy chain when Admin/Support reassigns
+                    $contact->assign_to_ids = (string)(Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id());
+                } else {
+                if ($prev_uid != '') /// DEVICE IS BEING UNASSIGNED
+                {
+                    // When unassigning, only change user_id and chain - keep master_id as original owner
+                    // Don't change master_id - it's the original owner
+                    $contact->user_id = null;  // Unassign the device
+                    $contact->assign_to_ids = '';  // Clear chain for Admin unassignment
+                } else {
+                    // Device was never assigned, set to default state
+                    $contact->master_id = 0;
+                    $contact->user_id = NULL;
+                    $contact->assign_to_ids = '';
                 }
-            } else {
-                $contact->master_id = 0;
-                $contact->user_id =  NULL;
-                $contact->assign_to_ids =  '';
             }
             $contact->configurations = json_encode($request->get('configuration'));
-            if (Auth::user()->user_type == 'Admin') {
+            if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
                 $contact->is_editable = $request->get('is_editable');
             }
             $contact->update();
         } else {
             return redirect()->back()->with('error', 'you do not have permission to update');
         }
-        if (Auth::user()->user_type == 'Admin') {
+        if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
             return redirect()->back()->with('success', $request->imei . '-Device updated Successfully');
         } else {
             return redirect()->back()->with('success', $request->imei . '-Device updated Successfully');
@@ -1105,48 +1135,67 @@ class DeviceController extends Controller
                 $device_uid = '';
             }
             $device_array = array();
-            if (Auth::user()->user_type == 'Admin') {
+            if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
+                $root_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
                 if ($user_id) {
                     if ($device_uid == '') {
-                        $assign_to_ids = self::getDeviceAssignToList($id);
-                        $device_array['master_id'] = auth()->id();
+                        $device_array['master_id'] = $root_id;
                         $device_array['user_id'] = $user_id;
-                        $device_array['assign_to_ids'] = $assign_to_ids;
+                        // Build proper chain for Admin/Support (Root is Admin)
+                        $device_array['assign_to_ids'] = (string)$root_id;
                     } else if ($device_uid != '' && $device_uid != $user_id) {
-                        $assign_to_ids = self::getDeviceAssignToList($id);
-                        $device_array['master_id'] = auth()->id();
+                        $device_array['master_id'] = $root_id;
                         $device_array['user_id'] = $user_id;
-                        $device_array['assign_to_ids'] = $assign_to_ids;
+                        // Reset chain for Admin/Support (Root is Admin)
+                        $device_array['assign_to_ids'] = (string)$root_id;
                     }
                 } else {
-                    $device_array['master_id'] = 0;
-                    $device_array['user_id'] = NULL;
-                    $device_array['assign_to_ids'] = '';
+                    if ($device_uid != '') /// DEVICE IS BEING UNASSIGNED
+                    {
+                        // When unassigning, only change user_id and chain - keep master_id as original owner
+                        // Don't change master_id - it's the original owner
+                        $device_array['user_id'] = null;  // Unassign the device
+                        $device_array['assign_to_ids'] = '';  // Clear chain for Admin unassignment
+                    } else {
+                        // Device was never assigned, set to default state
+                        $device_array['master_id'] = 0;
+                        $device_array['user_id'] = NULL;
+                        $device_array['assign_to_ids'] = '';
+                    }
                 }
             } else {
                 if ($user_id) {
                     if ($device_uid == '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
                     {
-                        $assign_to_ids = self::getDeviceAssignToList($id);
-                        $device_array['master_id'] = auth()->id();
+                        // When assigning an unassigned device, keep original master_id
                         $device_array['user_id'] = $user_id;
-                        $device_array['assign_to_ids'] = $assign_to_ids;
+                        // Build proper chain when assigning from unassigned state
+                        $device_array['assign_to_ids'] = self::buildAssignToIdsChain(auth()->id(), $device_info->assign_to_ids);
                     } else if ($device_uid != '' && $device_uid != $user_id) /// BEFORE WAS ASSIGNED AND NOW CHANGED
                     {
-                        $new_assing_ids = self::getAssignsIdsForChangeDeviceUser($master_id, $device_info->assign_to_ids, 'no');
-                        $device_array['master_id'] = auth()->id();
+                        // When reassigning a device currently assigned to this Reseller, they become the master for their sub-hierarchy
+                        if ($device_uid == auth()->id()) {
+                            $device_array['master_id'] = auth()->id();
+                        }
                         $device_array['user_id'] = $user_id;
+                        // Build proper chain when reassigning to different user
+                        $new_assing_ids = self::buildAssignToIdsChain(auth()->id(), $device_info->assign_to_ids);
                         $device_array['assign_to_ids'] = $new_assing_ids;
                     }
                 } else {
-                    if ($device_uid != '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
+                    if ($device_uid != '') /// DEVICE IS BEING UNASSIGNED FROM CHILD
                     {
-                        $new_assing_ids = self::getAssignsIdsForChangeDeviceUser($master_id, $device_info->assign_to_ids, 'yes');
-                        $parent_acc = self::getUserParent(auth()->id());
+                        // When unassigning, reset to the Reseller and recalculate chain
+                        $new_assing_ids = self::getAssignsIdsForChangeDeviceUser(auth()->id(), $device_info->assign_to_ids, 'yes');
 
-                        $device_array['master_id'] = $parent_acc;
-                        $device_array['user_id'] = auth()->id();
-                        $device_array['assign_to_ids'] = $new_assing_ids;
+                        // Extract root owner from the new chain
+                        $chain_array = !empty($new_assing_ids) ? explode(',', $new_assing_ids) : [];
+                        $root_owner = !empty($chain_array) ? intval($chain_array[0]) : 1;
+
+                        // Reset master_id to root owner and assign back to Reseller
+                        $device_array['master_id'] = $root_owner;
+                        $device_array['user_id'] = auth()->id();  // Assign back to Reseller
+                        $device_array['assign_to_ids'] = $new_assing_ids;  // Update chain to remove current user
                     }
                 }
             }
@@ -1205,7 +1254,7 @@ class DeviceController extends Controller
             foreach ($errors as $error) {
                 $errorMessage .= "$error" . ',';
             }
-            $errorMessage  .= "Model name is not assigned to this " . CommonHelper::getFirmwareName($configurations['firmware_id']) . " firmware. Please contact the administrator.";
+            $errorMessage .= "Model name is not assigned to this " . CommonHelper::getFirmwareName($configurations['firmware_id']) . " firmware. Please contact the administrator.";
         }
 
         return response()->json([
@@ -1273,7 +1322,7 @@ class DeviceController extends Controller
                 Devicelog::create([
                     'device_id' => $device->id,
                     'user_id' => auth()->id(),
-                    'log' => 'Device with IMEI no ' . $device->imei . ' Assigned a New Templaten ' .  $template->template_name,
+                    'log' => 'Device with IMEI no ' . $device->imei . ' Assigned a New Templaten ' . $template->template_name,
                     'action' => 'Updated Template',
                     'is_active' => 1
                 ]);
@@ -1304,7 +1353,7 @@ class DeviceController extends Controller
             foreach ($errors as $error) {
                 $errorMessage .= "$error" . ',';
             }
-            $errorMessage  .= "Model name is not assigned to this " . CommonHelper::getFirmwareName($templateConfig['firmware_id']) . " firmware. Please contact the administrator.";
+            $errorMessage .= "Model name is not assigned to this " . CommonHelper::getFirmwareName($templateConfig['firmware_id']) . " firmware. Please contact the administrator.";
         }
 
 
@@ -1341,10 +1390,10 @@ class DeviceController extends Controller
                 ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
                 ->select('devices.*', 'writers.name as username')
                 ->where('devices.is_deleted', '0')
-                ->where(function($q) use ($authId) {
+                ->where(function ($q) use ($authId) {
                     $q->where('devices.user_id', $authId)
-                      ->orWhere('devices.master_id', $authId)
-                      ->orWhereRaw("FIND_IN_SET(?, devices.assign_to_ids)", [$authId]);
+                        ->orWhere('devices.master_id', $authId)
+                        ->orWhereRaw("FIND_IN_SET(?, devices.assign_to_ids)", [$authId]);
                 })
                 ->get();
         }
@@ -1497,7 +1546,7 @@ class DeviceController extends Controller
             foreach ($data as $row) {
 
                 $sr_no = trim($row[0] ?? '');
-                $name  = trim($row[1] ?? '');
+                $name = trim($row[1] ?? '');
 
                 // --- FIX 1: Clean IMEI ---
                 $imei = isset($row[2]) ? preg_replace('/\D/', '', trim($row[2])) : '';
@@ -1852,19 +1901,19 @@ class DeviceController extends Controller
         $dup_type = $request->get('dup_type');
         $config = $request->configuration;
         $converted = [];
-        if ($dup_type != 'overwrite') {
-            $commonFields = DB::table("data_fields")->where(["is_common" => 1])->get();
-            foreach ($commonFields as $index => $value) {
-                if (strpos($value->fieldName, ' ') !== false) {
-                    $key = strtolower(str_replace(' ', '_', $value->fieldName));
-                } else {
-                    $key = lcfirst(str_replace(' ', '_', $value->fieldName));
-                }
-                $converted[$key] = [
-                    'id' => $value->id,
-                    'value' => $config[$key] ?? ''
-                ];
+        $commonFields = DB::table("data_fields")->where(["is_common" => 1])->get();
+        foreach ($commonFields as $index => $value) {
+            if (strpos($value->fieldName, ' ') !== false) {
+                $key = strtolower(str_replace(' ', '_', $value->fieldName));
+            } else {
+                $key = lcfirst(str_replace(' ', '_', $value->fieldName));
             }
+            // Check for both snake_case and camelCase in $config
+            $camelKey = lcfirst(str_replace('_', '', ucwords($key, '_')));
+            $converted[$key] = [
+                'id' => $value->id,
+                'value' => $config[$key] ?? $config[$camelKey] ?? ''
+            ];
         }
 
 
@@ -1891,6 +1940,17 @@ class DeviceController extends Controller
                 }
             }
         }
+        $firmwareId = $request->firmware;
+        if ($firmwareId) {
+            $firmware = DB::table('firmware')->select('configurations')->where(['id' => $firmwareId])->first();
+            if ($firmware) {
+                $fimwareArr = json_decode($firmware->configurations, true);
+                $converted['firmware_id'] = ['value' => $firmwareId];
+                $converted['firmware_file'] = ['value' => $fimwareArr['filename'] ?? ''];
+                $converted['firmware_version'] = ['value' => $fimwareArr['version'] ?? ''];
+                $converted['firmwareFileSize'] = ['value' => $fimwareArr['fileSize'] ?? ''];
+            }
+        }
         // dd($converted);
         if ($request->get('new_imei_list')) {
             $new_imei_list = explode(',', $request->get('new_imei_list'));
@@ -1913,41 +1973,42 @@ class DeviceController extends Controller
                     $arr = [];
                     $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
                     if (!is_array($oldConfig)) {
-                         $oldConfig = [];
+                        $oldConfig = [];
                     }
                     $newConfig = array_merge($oldConfig, $converted);
                     $arr['configurations'] = json_encode($newConfig);
                     $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
                     $arr['can_configurations'] = json_encode($canConverted);
+                    $master_id = Auth::user()->id;
                     if (in_array($imei, $new_imei_list)) {
-                        $master_id = Auth::user()->id;
-                        // $mid = $master_id;
-                        $mid = $assign_to_ids = '';
+                        $mid = null;
+                        $assign_to_ids = '';
                         if ($request->user_id) {
                             $mid = $master_id;
-                            $assign_to_ids = $request->user_id;
+                            $assign_to_ids = $master_id;
                         }
 
                         $arr['name'] = $name;
                         $arr['imei'] = $imei;
-                        $arr['master_id'] = $master_id;
+                        $arr['master_id'] = $mid;
+                        $arr['user_id'] = $request->user_id;
                         $arr['assign_to_ids'] = $assign_to_ids;
                         $arr['device_category_id'] = $request->deviceCategory;
                         Device::create($arr);
                     }
 
                     if (in_array($imei, $dup_imei_list) && $dup_type == 'overwrite') {
-                        $master_id = Auth::user()->id;
-                        $mid = $assign_to_ids = '';
+                        $mid = null;
+                        $assign_to_ids = '';
 
                         if ($request->user_id) {
                             $mid = $master_id;
-                            $assign_to_ids = $request->user_id;
+                            $assign_to_ids = $master_id;
                         }
                         $arr['name'] = $name;
                         $arr['master_id'] = $mid;
                         $arr['assign_to_ids'] = $assign_to_ids;
-                        $arr['user_id'] =  $request->user_id;
+                        $arr['user_id'] = $request->user_id;
                         // $arr['device_category_id'] = $request->deviceCategory;
                         // dd($arr);
                         // dd($imei);
@@ -1976,19 +2037,19 @@ class DeviceController extends Controller
         $dup_type = $request->get('dup_type');
         $config = $request->configuration;
         $converted = [];
-        if ($dup_type != 'overwrite') {
-            $commonFields = DB::table("data_fields")->where(["is_common" => 1])->get();
-            foreach ($commonFields as $index => $value) {
-                if (strpos($value->fieldName, ' ') !== false) {
-                    $key = strtolower(str_replace(' ', '_', $value->fieldName));
-                } else {
-                    $key = lcfirst(str_replace(' ', '_', $value->fieldName));
-                }
-                $converted[$key] = [
-                    'id' => $value->id,
-                    'value' => $config[$key] ?? ''
-                ];
+        $commonFields = DB::table("data_fields")->where(["is_common" => 1])->get();
+        foreach ($commonFields as $index => $value) {
+            if (strpos($value->fieldName, ' ') !== false) {
+                $key = strtolower(str_replace(' ', '_', $value->fieldName));
+            } else {
+                $key = lcfirst(str_replace(' ', '_', $value->fieldName));
             }
+            // Check for both snake_case and camelCase in $config
+            $camelKey = lcfirst(str_replace('_', '', ucwords($key, '_')));
+            $converted[$key] = [
+                'id' => $value->id,
+                'value' => $config[$key] ?? $config[$camelKey] ?? ''
+            ];
         }
 
 
@@ -2015,6 +2076,17 @@ class DeviceController extends Controller
                 }
             }
         }
+        $firmwareId = $request->firmware;
+        if ($firmwareId) {
+            $firmware = DB::table('firmware')->select('configurations')->where(['id' => $firmwareId])->first();
+            if ($firmware) {
+                $fimwareArr = json_decode($firmware->configurations, true);
+                $converted['firmware_id'] = ['value' => $firmwareId];
+                $converted['firmware_file'] = ['value' => $fimwareArr['filename'] ?? ''];
+                $converted['firmware_version'] = ['value' => $fimwareArr['version'] ?? ''];
+                $converted['firmwareFileSize'] = ['value' => $fimwareArr['fileSize'] ?? ''];
+            }
+        }
         // dd($converted);
         if ($request->get('new_imei_list')) {
             $new_imei_list = explode(',', $request->get('new_imei_list'));
@@ -2037,41 +2109,42 @@ class DeviceController extends Controller
                     $arr = [];
                     $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
                     if (!is_array($oldConfig)) {
-                         $oldConfig = [];
+                        $oldConfig = [];
                     }
                     $newConfig = array_merge($oldConfig, $converted);
                     $arr['configurations'] = json_encode($newConfig);
                     $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
                     $arr['can_configurations'] = json_encode($canConverted);
+                    $master_id = Auth::user()->id;
                     if (in_array($imei, $new_imei_list)) {
-                        $master_id = Auth::user()->id;
-                        // $mid = $master_id;
-                        $mid = $assign_to_ids = '';
+                        $mid = null;
+                        $assign_to_ids = '';
                         if ($request->user_id) {
                             $mid = $master_id;
-                            $assign_to_ids = $request->user_id;
+                            $assign_to_ids = $master_id;
                         }
 
                         $arr['name'] = $name;
                         $arr['imei'] = $imei;
-                        $arr['master_id'] = $master_id;
+                        $arr['master_id'] = $mid;
+                        $arr['user_id'] = $request->user_id;
                         $arr['assign_to_ids'] = $assign_to_ids;
                         $arr['device_category_id'] = $request->deviceCategory;
                         Device::create($arr);
                     }
 
                     if (in_array($imei, $dup_imei_list) && $dup_type == 'overwrite') {
-                        $master_id = Auth::user()->id;
-                        $mid = $assign_to_ids = '';
+                        $mid = null;
+                        $assign_to_ids = '';
 
                         if ($request->user_id) {
                             $mid = $master_id;
-                            $assign_to_ids = $request->user_id;
+                            $assign_to_ids = $master_id;
                         }
                         $arr['name'] = $name;
                         $arr['master_id'] = $mid;
                         $arr['assign_to_ids'] = $assign_to_ids;
-                        $arr['user_id'] =  $request->user_id;
+                        $arr['user_id'] = $request->user_id;
                         // $arr['device_category_id'] = $request->deviceCategory;
                         // dd($arr);
                         // dd($imei);
@@ -2099,6 +2172,15 @@ class DeviceController extends Controller
         $device = Device::Find($id);
         $url_type = self::getURLType();
         $currentUser = Auth::user();
+
+        // Helper function to check if user is in assign_to_ids chain
+        $isInChain = function ($userId, $chainString) {
+            if (empty($chainString))
+                return false;
+            $chain = explode(',', $chainString);
+            return in_array($userId, $chain);
+        };
+
         if ($currentUser->user_type == 'Reseller') {
             $checkUser = DB::table('devices')->where('master_id', $currentUser->id)->pluck('user_id')->toArray();
             $users = DB::table('writers')
@@ -2108,11 +2190,22 @@ class DeviceController extends Controller
                 ->where('is_deleted', 0)
                 ->where('created_by', $currentUser->id)
                 ->get();
-            if (!in_array($device->user_id, $checkUser) && $currentUser->id != $device->user_id) {
+
+            // Allow access if: user is in assign_to_ids chain, OR assigned to this Reseller, OR user is current assignment
+            $hasAccess = $isInChain($currentUser->id, $device->assign_to_ids)
+                || in_array($device->user_id, $checkUser)
+                || $currentUser->id == $device->user_id
+                || $currentUser->id == $device->master_id;
+
+            if (!$hasAccess) {
                 return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
             }
         } else if ($currentUser->user_type == "User") {
-            if ($currentUser->id != $device->user_id) {
+            // Allow access if: user is in assign_to_ids chain OR currently assigned to user
+            $hasAccess = $isInChain($currentUser->id, $device->assign_to_ids)
+                || $currentUser->id == $device->user_id;
+
+            if (!$hasAccess) {
                 return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
             }
             $users = DB::table('writers')
@@ -2145,7 +2238,33 @@ class DeviceController extends Controller
             $query->where('id_user', Auth::user()->id)
                 ->where('verify', '2');
         }
-        $templates  = $query->get();
+        $templates = $query->get();
+
+        // Dynamically override device configurations with Master Hierarchy model bindings
+        $deviceConfigs = json_decode($device->configurations, true);
+        if ($deviceConfigs && isset($deviceConfigs['firmware_id']['value'])) {
+            $hierarchyModel = \App\Helper\CommonHelper::getModelByHierarchy($device, $deviceConfigs['firmware_id']['value']);
+            if ($hierarchyModel != null) {
+                if (isset($deviceConfigs['modelName'])) {
+                    $deviceConfigs['modelName']['value'] = $hierarchyModel->name;
+                }
+                if (isset($deviceConfigs['vendorId'])) {
+                    $deviceConfigs['vendorId']['value'] = $hierarchyModel->vendorId;
+                }
+            } else {
+                // Not in master model table — fallback to device category name + JSD
+                $categoryName = \App\Helper\CommonHelper::getDeviceCategoryName($device->device_category_id);
+                if (isset($deviceConfigs['modelName'])) {
+                    $deviceConfigs['modelName']['value'] = $categoryName;
+                }
+                if (isset($deviceConfigs['vendorId'])) {
+                    $deviceConfigs['vendorId']['value'] = 'JSD';
+                }
+            }
+            $device->configurations = json_encode($deviceConfigs);
+        }
+
+
         return view('view_device_configurations', ["users" => $users, 'uid' => $uid, 'device' => $device, 'template_info' => $templates, 'url_type' => $url_type, 'firmware' => $firmware]);
     }
     public function updateDeviceConfigurations(Request $request, $id)
@@ -2208,7 +2327,7 @@ class DeviceController extends Controller
 
             Devicelog::create([
                 'device_id' => $device->id,
-                'user_id' =>  auth()->id(),
+                'user_id' => auth()->id(),
                 'log' => 'Device with IMEI no ' . $device->imei . ' Configuration updated. Changes: ' . rtrim($changeLogMessage, '; '),
                 'action' => 'Updated',
                 'is_active' => 1
@@ -2294,6 +2413,7 @@ class DeviceController extends Controller
     }
     public function updateDeviceInfoConfigurations(Request $request, $id)
     {
+        // dd($request);
         $params = $request->configuration;
         $dataFields = DataFields::select("*")->where(['is_common' => 1])->get();
 
@@ -2332,29 +2452,49 @@ class DeviceController extends Controller
             if (Auth::user()->user_type == 'Reseller') {
                 if ($request->get('user_id')) {
                     if ($prev_uid == '') {
-                        $contact->master_id = Auth::user()->id;
-                        $contact->user_id =   $request->get('user_id') != null ? $request->get('user_id') : auth()->id();
-                        $assign_to_ids = self::getDeviceAssignToList($contact->user_id);
-                        $contact->assign_to_ids =  $assign_to_ids;
+                        // When assigning an unassigned device, keep original master_id
+                        $contact->user_id = $request->get('user_id') != null ? $request->get('user_id') : auth()->id();
+                        // Build proper chain when assigning from unassigned state
+                        $contact->assign_to_ids = self::buildAssignToIdsChain(Auth::user()->id, $is_editable->assign_to_ids);
                     } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) {
-                        $new_assing_ids = self::getAssignsIdsForChangeDeviceUser(Auth::user()->id, $is_editable->assign_to_ids, 'no');
-                        $contact->master_id = Auth::user()->id;
-                        $contact->user_id =  $request->get('user_id');
-                        $contact->assign_to_ids =  $new_assing_ids;
+                        // When reassigning a device currently assigned to this Reseller, they become the master for their sub-hierarchy
+                        if ($prev_uid == Auth::user()->id) {
+                            $contact->master_id = Auth::user()->id;
+                        }
+                        $contact->user_id = $request->get('user_id');
+                        // Build proper chain when reassigning to different user
+                        $contact->assign_to_ids = self::buildAssignToIdsChain(Auth::user()->id, $is_editable->assign_to_ids);
                     }
                 } else {
                     if ($prev_uid != '') {
-                        // echo "hi";
-                        // dd(auth()->id());
+                        // When unassigning, reset to the Reseller and recalculate chain
                         $new_assing_ids = self::getAssignsIdsForChangeDeviceUser(Auth::user()->id, $is_editable->assign_to_ids, 'yes');
-                        $parent_acc = self::getUserParent(Auth::user()->id);
-                        // echo $parent_acc;
-                        $contact->master_id = $parent_acc;
-                        $contact->user_id =  $prev_uid;
-                        $contact->assign_to_ids =  $new_assing_ids;
+
+                        // Extract root owner from the new chain
+                        $loggedInUserId = Auth::user()->id;
+                        $old_chain_array = explode(",", $is_editable->assign_to_ids);
+                        $chain_array = !empty($new_assing_ids) ? explode(',', $new_assing_ids) : [];
+                        print_r($old_chain_array);
+                        echo "<br>";
+                        $index = array_search($loggedInUserId, $old_chain_array);
+                        echo "index ===>" . $index;
+                        $root_owner = !empty($old_chain_array) ? intval($old_chain_array[$index - 1]) : 1;
+                        echo "current  user" . Auth::user()->id;
+                        // echo "prev uid ==>" . $prev_uid;
+                        // echo "root_owner ===>" . $root_owner;
+                        // die("im here 1");
+
+
+                        // Reset master_id to root owner and assign back to Reseller
+                        $contact->master_id = $root_owner;
+                        $contact->user_id = Auth::user()->id;  // Assign back to Reseller
+                        $contact->assign_to_ids = $new_assing_ids;  // Update chain to remove current user
                     }
                 }
+
+
             }
+            // die("im here 2");
             //  dd($contact->assign_to_ids);
             // $contact->name  = $request->name;
             $firmwareChanges = json_decode($firmware->configurations, true);
@@ -2377,7 +2517,7 @@ class DeviceController extends Controller
 
             $old_editable = (isset($oldChanges['is_editable']) && is_array($oldChanges['is_editable'])) ? ($oldChanges['is_editable']['value'] ?? '') : ($oldChanges['is_editable'] ?? '');
             $converted['is_editable']['value'] = $params['is_editable'] ?? $old_editable;
-            
+
             $newChanges = $converted;
             // dd($newChanges);
             $changedFields = [];
@@ -2395,7 +2535,7 @@ class DeviceController extends Controller
             $result = array_replace($oldChanges, $newChanges);
 
 
-            $contact->name  = $request->get('name');
+            $contact->name = $request->get('name');
             $contact->configurations = json_encode($result);
             $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
             $contact->timestamps = false; // disable auto timestamps temporarily
@@ -2420,28 +2560,41 @@ class DeviceController extends Controller
                     'is_active' => 1,
                 ]);
             }
-        } elseif (Auth::user()->user_type == 'Admin') {
+        } elseif (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
 
             $contact = Device::find($contact_id);
             if ($request->get('user_id')) {
                 if ($prev_uid == '') /// BEFORE WAS UNASSIGNED FOR THIS RESELLER
                 {
-                    $contact->master_id = auth()->id();
-                    $contact->user_id =  $request->get('user_id');
-                    $assign_to_ids = self::getDeviceAssignToList($contact_id);
-                    $contact->assign_to_ids =  $assign_to_ids;
+                    $contact->master_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
+                    $contact->user_id = $request->get('user_id');
+                    // Reset hierarchy chain for direct Admin/Support assignment
+                    $contact->assign_to_ids = (string)(Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id());
                 } else if ($prev_uid != '' && $prev_uid != $request->get('user_id')) /// BEFORE WAS ASSIGNED AND NOW CHANGED
                 {
-                    $contact->master_id = auth()->id();
-                    $contact->user_id =  $request->get('user_id');
-                    $assign_to_ids = self::getDeviceAssignToList($contact_id);
-                    $contact->assign_to_ids =  $assign_to_ids;
+                    $contact->master_id = Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id();
+                    $contact->user_id = $request->get('user_id');
+                    // Reset hierarchy chain when Admin/Support reassigns
+                    $contact->assign_to_ids = (string)(Auth::user()->user_type == 'Support' ? Auth::user()->created_by : auth()->id());
                 }
             } else {
-                $contact->master_id = 0;
-                $contact->user_id =  NULL;
-                $contact->assign_to_ids =  '';
+                // echo "hello";
+                // echo $prev_uid;
+                if ($prev_uid != '') /// DEVICE IS BEING UNASSIGNED
+                {
+                    // When unassigning, only change user_id and chain - keep master_id as original owner
+                    // Don't change master_id - it's the original owner
+                    $contact->master_id = null;
+                    $contact->user_id = null;  // Unassign the device
+                    $contact->assign_to_ids = '';  // Clear chain for Admin unassignment
+                } else {
+                    // Device was never assigned, set to default state
+                    $contact->master_id = null;
+                    $contact->user_id = null;
+                    $contact->assign_to_ids = '';
+                }
             }
+            // die("de");
             $firmwareChanges = json_decode($firmware->configurations, true);
             if (!is_array($firmwareChanges)) {
                 $firmwareChanges = [];
@@ -2477,7 +2630,7 @@ class DeviceController extends Controller
             }
             $result = array_replace($oldChanges, $newChanges);
 
-            $contact->name  = $request->get('name');
+            $contact->name = $request->get('name');
             $contact->configurations = json_encode($result);
             if (Auth::user()->user_type == 'Admin') {
                 $contact->is_editable = $request->get('is_editable');
@@ -2541,7 +2694,7 @@ class DeviceController extends Controller
 
         // Check if a record with the given modalName exists
         $exists = modal::where('name', $request->modalName)->exists();
-        $userexist = modal::where(['name' =>  $request->modalName, 'user_id' => $request->userAssign, 'firmware_id' => $request->firmwareId])->exists();
+        $userexist = modal::where(['name' => $request->modalName, 'user_id' => $request->userAssign, 'firmware_id' => $request->firmwareId])->exists();
         if ($userexist) {
             return response()->json(['status' => 400, 'message' => 'This Model Name is already assigned to this Account']);
         } else {
@@ -2603,10 +2756,10 @@ class DeviceController extends Controller
         try {
             $field = DataFields::updateOrCreate(
                 ['id' => $request->input('dataFieldId')],
-                isset($data['field_type']) && $data['field_type'] == 0  ? [
+                isset($data['field_type']) && $data['field_type'] == 0 ? [
                     'fieldName' => $data['field_name'],
                     'fieldType' => $data['field_type'],
-                    'inputType' => $data['field_type'] == 0 ?  $data['input_type'] : '',
+                    'inputType' => $data['field_type'] == 0 ? $data['input_type'] : '',
                     'is_common' => isset($data['is_common']) && $data['is_common'] == 'on' ? 1 : 0,
                     'is_can_protocol' => isset($data['is_can_protocol']) && $data['is_can_protocol'] == 'on' ? 1 : 0,
                     'validationConfig' => $data['field_type'] == 0 ? json_encode($dataBinding) : '',

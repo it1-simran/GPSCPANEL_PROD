@@ -10,7 +10,6 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Controller extends BaseController
-
 {
 
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
@@ -19,10 +18,14 @@ class Controller extends BaseController
 
     public function getNextValue(array $values, $lastValue)
     {
+        $lastIndex = array_search($lastValue, $values);
+        if ($lastIndex === false) {
+            return '';
+        }
+        
         if ($lastValue == end($values)) {
             return '';
         } else {
-            $lastIndex = array_search($lastValue, $values);
             $nextIndex = ($lastIndex + 1) % count($values);
             return $values[$nextIndex];
         }
@@ -36,7 +39,7 @@ class Controller extends BaseController
             $url_type = 'admin';
         } else if (Auth::user()->user_type == 'Reseller') {
             $url_type = 'reseller';
-        } else if(Auth::user()->user_type == 'Support') {
+        } else if (Auth::user()->user_type == 'Support') {
             $url_type = 'support';
         }
 
@@ -74,11 +77,55 @@ class Controller extends BaseController
                 $acc_ids[] = $child_Acc['uid'];
             }
         }
+        // [1,33,35];
+        // [33,35];
+        //[1]]
 
         $assign_to_ids = explode(',', $assign_to_ids);
 
         $resultArray = array_diff($assign_to_ids, $acc_ids);
         return implode(',', $resultArray);
+    }
+
+    /**
+     * Build correct assign_to_ids chain when assigning device to a child account
+     *
+     * HIERARCHY FLOW:
+     * Admin (1) creates device
+     *   → Device: user_id=null, master_id=0, assign_to_ids=""
+     *
+     * Admin assigns to Reseller (2)  ← Admin is the assigning user
+     *   → Device: user_id=2, master_id=1, assign_to_ids="1"
+     *
+     * Reseller (2) assigns to Dealer (3)
+     *   → Device: user_id=3, master_id=2, assign_to_ids="1,2"
+     *
+     * Dealer (3) assigns to User (4)
+     *   → Device: user_id=4, master_id=3, assign_to_ids="1,2,3"
+     *
+     * @param int $assigningUserId Current user assigning device (e.g., Admin ID = 1)
+     * @param string $currentAssignToIds Current chain before assignment (e.g., "")
+     * @return string New assign_to_ids chain (e.g., "1")
+     */
+    public static function buildAssignToIdsChain($assigningUserId, $currentAssignToIds = '')
+    {
+        // If no assigning user provided, return as-is
+        if (empty($assigningUserId)) {
+            return $currentAssignToIds ?? '';
+        }
+
+        // Parse existing chain and convert to integers
+        $normalized = array_filter(
+            array_map('intval', explode(',', $currentAssignToIds ?: ''))
+        );
+
+        // Append current user if not already present
+        if (!in_array((int) $assigningUserId, $normalized)) {
+            $normalized[] = (int) $assigningUserId;
+        }
+
+        // Return comma-separated chain
+        return implode(',', $normalized);
     }
 
     public function getDeviceAssignToList($device_id)
@@ -284,7 +331,7 @@ class Controller extends BaseController
 
     public function manageEditDelAccs($uid, $rdata, $action_type)
     {
-     
+
         if ($action_type == 'edit') {
             $acc_type_changed = $rdata['acc_type_changed'];
 
@@ -307,7 +354,7 @@ class Controller extends BaseController
                     self::delAllChildAccounts($child_Accs);
                 } else if ($rdata['del_type'] == 'shift_all') /// SHIFT ALL DIRECT CHILDS TO PARENT
                 {
-                  
+
                     $directChildAccs = self::getDirectChildAccounts($uid);
                     self::shiftDirectChildAccToParent($directChildAccs, $uid);
                 }

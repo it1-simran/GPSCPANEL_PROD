@@ -12,6 +12,7 @@ use App\Ccid;
 use App\Device;
 use App\Firmware;
 use App\Writer;
+use App\DeviceCategory;
 use App\Imports\EntriesImport;
 use App\Modal;
 use App\notifications;
@@ -25,7 +26,7 @@ class FirmwareController extends Controller
     public function show()
     {
         // $firmwares = Firmware::get();
-        
+
         $firmwares = Firmware::withCount('modals')->get();
         // dd($firmwares);
         $url_type = self::getURLType();
@@ -96,7 +97,7 @@ class FirmwareController extends Controller
         //                     // }
         //                 }
 
-                        
+
         //                 // echo  $configuration['firmware_file']['value'];
         //                 // echo $filename;
         //                 $converted['firmware_file']['value'] =  $filename;
@@ -111,7 +112,7 @@ class FirmwareController extends Controller
         //                 $config = json_encode($mergedConfig);
         //                 // dd($config);
         //                 $updateDevice = DB::table('devices')->where('id', $device->id)->update(['configurations' => $config]);
-    
+
         //             }
         //         }
         //         // $temp = [
@@ -150,7 +151,7 @@ class FirmwareController extends Controller
 
             $ESim =  esim::create($esim);
             $getESim = esim::orderBy('id', 'desc')->get();
-            return json_encode(['status' => 200, 'status_msg' => $ESim->name . '- Settings Added Successfully','esims'=>$getESim]);
+            return json_encode(['status' => 200, 'status_msg' => $ESim->name . '- Settings Added Successfully', 'esims' => $getESim]);
         } else {
             $edit = 1;
             $ESim =  esim::find($request->esimId);
@@ -178,12 +179,12 @@ class FirmwareController extends Controller
             ];
             $Backend =  backend::create($backend);
             $getBackendAll = backend::orderBy('id', 'desc')->get();
-            return json_encode(['status' => 200, 'status_msg' => $Backend->name . '- Settings Added Successfully','backend'=>$getBackendAll]);
+            return json_encode(['status' => 200, 'status_msg' => $Backend->name . '- Settings Added Successfully', 'backend' => $getBackendAll]);
         } else {
             $Backend =  backend::find($request->backendId);
             $Backend->name = $request->name;
             $Backend->save();
-           
+
             return json_encode(['status' => 200, 'status_msg' => $Backend->name . '- Settings Updated Successfully']);
         }
     }
@@ -202,7 +203,7 @@ class FirmwareController extends Controller
         if (!$firmware) {
             return response()->json(['error' => 'Item not found.'], 404);
         }
-        $devicecategoryName = DB::table('device_categories')->select('device_category_name')->where(['id'=>$firmware->device_category_id])->first();
+        $devicecategoryName = DB::table('device_categories')->select('device_category_name')->where(['id' => $firmware->device_category_id])->first();
         if ($response == "true") {
             $modal = Modal::where(['firmware_id' => $id]);
             $modal->delete();
@@ -227,20 +228,20 @@ class FirmwareController extends Controller
         return redirect()->back()->with(['error' => $firmware->name . ' deleted Successfully']);
     }
     public function deleteModal($id, $response)
-    {   
+    {
         $modal =  modal::find($id);
         // dd($modal);
-        $firmware = DB::table('firmware')->select('device_category_id')->where(['id'=>$modal->firmware_id])->first();
+        $firmware = DB::table('firmware')->select('device_category_id')->where(['id' => $modal->firmware_id])->first();
         $devicecategoryName = DB::table('device_categories')->select('device_category_name')->where(['id' => $firmware->device_category_id])->first();
-            //  dd($devicecategoryName);
+        //  dd($devicecategoryName);
         if (!$modal) {
             return response()->json(['error' => 'Item not found.'], 404);
         }
         if ($response == "true") {
             $devices = DB::table('devices')
-            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.modelName')) = ?", [$modal->name])
-            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.firmware_id')) = ?", [$modal->firmware_id])
-            ->get();
+                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.modelName')) = ?", [$modal->name])
+                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.firmware_id')) = ?", [$modal->firmware_id])
+                ->get();
 
             foreach ($devices as $device) {
                 $configuration  = json_decode($device->configurations);
@@ -278,7 +279,7 @@ class FirmwareController extends Controller
             'firmwareFile' => 'required|file|mimetypes:application/octet-stream|max:20480',
             'firmware_version' => 'required',
         ];
-        
+
         if ($request->esimRequired == 1) {
             $rules['esim'] = 'required';
         }
@@ -309,21 +310,21 @@ class FirmwareController extends Controller
                 $set_val = ($checkifFirst == 0) ? 1 : 0;
 
                 $arr = [
-                  'name' => $request->name,
-                  'device_category_id' => $request->deviceCategory,
-                  'backend_id' => $request->backend,
-                  'configurations' => json_encode([
-                     'deviceCategory' => $request->deviceCategory,
-                     'country' => $request->country,
-                     'state' => $request->state,
-                     'esim' => $request->esimRequired == 1 ? $request->esim : "N/A",
-                     'backend' => $request->backend,
-                     'filename' => $txtFilePath,
-                     'fileSize' => $request->fileSize,
-                     'releasingNotes' => $request->releasingNotes,
-                     'version' => $request->firmware_version,
+                    'name' => $request->name,
+                    'device_category_id' => $request->deviceCategory,
+                    'backend_id' => $request->backend,
+                    'configurations' => json_encode([
+                        'deviceCategory' => $request->deviceCategory,
+                        'country' => $request->country,
+                        'state' => $request->state,
+                        'esim' => $request->esimRequired == 1 ? $request->esim : "N/A",
+                        'backend' => $request->backend,
+                        'filename' => $txtFilePath,
+                        'fileSize' => $request->fileSize,
+                        'releasingNotes' => $request->releasingNotes,
+                        'version' => $request->firmware_version,
                     ]),
-                  'is_default' => $set_val
+                    'is_default' => $set_val
                 ];
                 // dd($arr);
                 $firmware = Firmware::create($arr);
@@ -383,10 +384,10 @@ class FirmwareController extends Controller
         //     DB::table('devices')->where('id', $device->id)->update(['configurations' => $config]);
         // }
         $modal = Modal::create($arr);
-        
+
         return json_encode(['status' => 200, 'status_msg' => $modal->name . '- Modal Added Successfully']);
     }
-  
+
     public function viewModals()
     {
         $modalList = modal::get();
@@ -396,51 +397,50 @@ class FirmwareController extends Controller
     public function getModelName(Request $request)
     {
         $user = Auth::user();
-        $firmware = DB::table('firmware')->where(['id' => $request->firmware_id])->first();
+        $firmware_id = $request->firmware_id;
+        $user_id = $request->user_id; // Selected account ID
+        $category_id = $request->category_id;
+
+        $firmware = Firmware::find($firmware_id);
         $firmwareFileSize = 0;
-        $getmodalifExist = "";
         if ($firmware) {
             $config = json_decode($firmware->configurations);
             $firmwareFileSize = $config->fileSize ?? 0;
-            $getmodalifExist = modal::where(['user_id' => $request->user_id, 'firmware_id' => $request->firmware_id])->first();
-        } else {
-            $writer = Writer::where('id', $user->id)->first();
-            // dd($writer);
-            $firmwareFileSize = $config->fileSize ?? 0;
-            $getmodalifExist = modal::where(['user_id' => $writer->created_by, 'firmware_id' => $request->firmware_id])->first();
         }
-        //  dd($getmodalifExist);
 
-        // if($user->user_type == "Admin"){
-        //   $getmodalifExist = modal::where(['user_id' => $request->user_id, 'firmware_id' => $request->firmware_id])->first();
-        // }else{
-        // //   $device = DB::table("devices")->where(['id'=>$request->device_id])->first();
-        // //   $assingToIds = explode(",",$device->assign_to_ids);
+        $device = $request->device_id ? \App\Device::find($request->device_id) : null;
+        
+        $target_user_id = ($user_id && $user_id != "" && $user_id != "No User Found") ? $user_id : $user->id;
 
-        //   $getmodalifExist = modal::where(['user_id' => $request->user_id, 'firmware_id' => $request->firmware_id])->first();     
-        // }
-        return json_encode(['status' => 200, 'modalList' => json_encode($getmodalifExist), 'firmwareFileSize' => $firmwareFileSize]);
+        $modal = \App\Helper\CommonHelper::getModelByHierarchy($device, $firmware_id, $target_user_id, $category_id);
+
+        if (!$modal) {
+            if ($target_user_id == Auth::id()) {
+                // For Unassigned devices (Admin's hierarchy search), use category name as model and "JSD a" as vendor
+                $categoryName = \App\Helper\CommonHelper::getDeviceCategoryName($category_id);
+                return response()->json([
+                    'status' => 200,
+                    'modal' => [
+                        'name' => $categoryName,
+                        'vendorId' => "JSD"
+                    ],
+                    'firmwareFileSize' => $firmwareFileSize
+                ]);
+            }
+
+            return response()->json([
+                'status' => 400,
+                'message' => 'Model and Firmware combination does not exist. Please contact the administrator.',
+                'firmwareFileSize' => $firmwareFileSize
+            ]);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'modal' => $modal,
+            'firmwareFileSize' => $firmwareFileSize
+        ]);
     }
-    // public function getModelName(Request $request)
-    // {
-    //     $user = Auth::user();
-    //     $firmware = DB::table('firmware')->where(['id' => $request->firmware_id])->first();
-    //     $firmwareFileSize = 0;
-    //     if($firmware){
-    //       $config = json_decode($firmware->configurations);
-    //       $firmwareFileSize = $config->fileSize ?? 0;
-    //     }
-    //     $getmodalifExist = modal::where(['user_id' => $request->user_id, 'firmware_id' => $request->firmware_id])->first();  
-    //     // if($user->user_type == "Admin"){
-    //     //   $getmodalifExist = modal::where(['user_id' => $request->user_id, 'firmware_id' => $request->firmware_id])->first();
-    //     // }else{
-    //     // //   $device = DB::table("devices")->where(['id'=>$request->device_id])->first();
-    //     // //   $assingToIds = explode(",",$device->assign_to_ids);
-          
-    //     //   $getmodalifExist = modal::where(['user_id' => $request->user_id, 'firmware_id' => $request->firmware_id])->first();     
-    //     // }
-    //     return json_encode(['status' => 200, 'modalList' => json_encode($getmodalifExist),'firmwareFileSize'=>$firmwareFileSize]);
-    // }
     public function uploadEsim(Request $request)
     {
         $request->validate([
@@ -493,15 +493,16 @@ class FirmwareController extends Controller
         $ccid->delete();
         return redirect()->back()->with(['error' => $ccid->name . 'Esim deleted Successfully']);
     }
-    public function updateFirmwareDevices(Request $request){
-      
+    public function updateFirmwareDevices(Request $request)
+    {
+
         $notification = notifications::find($request->notification_id);
-         $master_id = Auth::user()->id;
+        $master_id = Auth::user()->id;
         $firmware = Firmware::find($request->firmware_id);
         $firmwareConfiguration = json_decode($firmware->configurations);
-        $devices = Device::whereRaw("JSON_EXTRACT(configurations, '$.firmware_id') = '".$request->firmware_id."'")->where(['user_id'=>$master_id])->get();
-        foreach($devices as $device){
-          
+        $devices = Device::whereRaw("JSON_EXTRACT(configurations, '$.firmware_id') = '" . $request->firmware_id . "'")->where(['user_id' => $master_id])->get();
+        foreach ($devices as $device) {
+
             $configuration = json_decode($device->configurations);
 
             $configuration->firmware_file = $firmwareConfiguration->filename;
@@ -509,19 +510,21 @@ class FirmwareController extends Controller
             $device->configurations = json_encode($configuration);
             // Save the updated device record
             $device->save();
-        }   
+        }
         $notification->is_view = 1;
         $notification->save();
         return json_encode(['status' => 200]);
     }
-    public function getModelById($id,$firmwareId){
-         $modal = Modal::where(['user_id'=> $id,'firmware_id' =>$firmwareId])->first();
-         return json_encode(['status' => 200,'modal'=>$modal]);
+    public function getModelById($id, $firmwareId)
+    {
+        $modal = Modal::where(['user_id' => $id, 'firmware_id' => $firmwareId])->first();
+        return json_encode(['status' => 200, 'modal' => $modal]);
     }
 
-    public function updateModal(Request $request){
+    public function updateModal(Request $request)
+    {
         $record = modal::find($request->modalId);
-    
+
         if ($record) {
             $record->update([
                 'name' => $request->modalName,
@@ -532,10 +535,10 @@ class FirmwareController extends Controller
             // $devices = DB::table('devices')->select('*')->where(['user_id'=>$request->userAssign,'device_category_id' => $firmware->device_category_id])->get();
             // $dataFields = DataFields::select("*")->where(['is_common'=> 1])->get();
             // $converted =[];
-       
+
             // foreach ($dataFields as $value) {
             //     $fieldName = $value->fieldName;
-            
+
             //     // Convert to snake_case
             //     $key = strtolower(str_replace(' ', '_', $fieldName));
 
@@ -544,14 +547,14 @@ class FirmwareController extends Controller
             //         'value' => ''
             //     ];
             // }
-            
+
             // foreach ($devices as $device) {
-                
+
             //     $configuration = array_merge(json_decode($device->configurations, true), $converted);
             //     $configuration['firmware_id']['value'] = $request->firmwareId;
-               
+
             //     $configuration['vendorId']['value'] = $request->vendorId;
-                
+
             //     $configuration['firmware_file']['value'] =  $firmwareConfiguration->filename;
             //     $configuration['firmware_version']['value'] =  $firmwareConfiguration->version;
             //     $configuration['firmwareFileSize']['value'] = $firmwareConfiguration->fileSize ? $firmwareConfiguration->fileSize : 0;
@@ -559,10 +562,10 @@ class FirmwareController extends Controller
             //     $configuration['is_editable']['value'] = 1;
             //     // dd($configuration);
             //     $config = json_encode($configuration);
-                
+
             //     DB::table('devices')->where('id', $device->id)->update(['configurations' => $config]);
             // }
-    
+
             return json_encode([
                 'status' => 200,
                 'message' => 'Record updated successfully',
@@ -576,8 +579,8 @@ class FirmwareController extends Controller
     }
     public function viewFirmwareModel($id)
     {
-        $modalList = modal::where(['firmware_id'=>$id])->get();
-        $deviceCategoryID = DB::table('firmware')->select("device_category_id")->where('id',$id)->first();
+        $modalList = modal::where(['firmware_id' => $id])->get();
+        $deviceCategoryID = DB::table('firmware')->select("device_category_id")->where('id', $id)->first();
         // $getUser = DB::table('writers as w')
         // ->select('w.id', 'w.name')
         // ->leftJoin('modals as ml', 'w.id', '=', 'ml.user_id')
@@ -587,68 +590,84 @@ class FirmwareController extends Controller
         // ->whereNull('ml.user_id')
         // ->get();
         $getUser = Writer::select('id', 'name')
-        //->where('created_by', Auth::user()->id)
-        ->where('created_by', Auth::user()->id)
-        ->where('user_type','!=', 'Support')
-        ->where('is_deleted', '0')
-        ->whereRaw("FIND_IN_SET(?, device_category_id)", [$deviceCategoryID->device_category_id])
-        ->get();
+            //->where('created_by', Auth::user()->id)
+            ->where('created_by', Auth::user()->id)
+            ->where('user_type', '!=', 'Support')
+            ->where('is_deleted', '0')
+            ->whereRaw("FIND_IN_SET(?, device_category_id)", [$deviceCategoryID->device_category_id])
+            ->get();
         $url_type = self::getURLType();
-        return view('view_modal', ['modalList' => $modalList, 'url_type' => $url_type,'firmware_id'=> $id,'users'=>$getUser]);
+        return view('view_modal', ['modalList' => $modalList, 'url_type' => $url_type, 'firmware_id' => $id, 'users' => $getUser]);
     }
     public function getFirmwareWithModel(Request $request)
     {
-        $firmwaresQuery = Firmware::query();
+        $user_id = $request->user_id;
+        $category_id = $request->category_id;
+        $auth_user = Auth::user();
 
-        if ($request->has('user_id') && $request->user_id != "" && $request->user_id != "No User Found") {
-            $firmwaresQuery->whereIn('id', function ($query) use ($request) {
+        // 1. Determine the hierarchy chain for the target user (or current user if none selected)
+        $target_id = ($user_id && $user_id != "" && $user_id != "No User Found") ? $user_id : $auth_user->id;
+        $target_user = Writer::find($target_id);
+
+        $search_ids = [$target_id];
+        if ($target_user) {
+            // Traverse up the created_by chain
+            $current_parent = $target_user->created_by;
+            while ($current_parent && $current_parent != "1" && count($search_ids) < 5) {
+                $search_ids[] = $current_parent;
+                $p_user = Writer::find($current_parent);
+                $current_parent = $p_user ? $p_user->created_by : null;
+            }
+        }
+
+        // 2. Fetch firmwares that have models defined for any user in the hierarchy
+        $firmwares = Firmware::where('is_deleted', 0)
+            ->whereIn('id', function ($query) use ($search_ids) {
                 $query->select('firmware_id')
                     ->from('modals')
-                    ->where('user_id', $request->user_id);
+                    ->whereIn('user_id', $search_ids);
             });
+
+        if ($category_id) {
+            $firmwares->where('device_category_id', $category_id);
         }
 
-        if ($request->has('category_id') && $request->category_id != "") {
-            $firmwaresQuery->where('device_category_id', $request->category_id);
-        }
+        $firmwareList = $firmwares->get(['id', 'name']);
 
-        $firmwares = $firmwaresQuery->where('is_deleted', 0)->get(['id', 'name']);
-
-        if (count($firmwares) == 0 && $request->has('user_id') && $request->user_id != "" && $request->user_id != "No User Found") {
-            if (Auth::user()->user_type != "Admin" && Auth::user()->user_type != "Support") {
-                $writer = Writer::where("id", Auth::user()->id)->first();
-            
-                if ($writer) {
-                    $firmwares = Firmware::whereIn('id', function ($query) use ($writer) {
+        // 3. Fallback for Admin or if list is empty
+        if ($firmwareList->isEmpty()) {
+            if ($auth_user->user_type == 'Admin' || $auth_user->user_type == 'Support') {
+                $query = Firmware::where('is_deleted', 0);
+                if ($category_id) {
+                    $query->where('device_category_id', $category_id);
+                }
+                $firmwareList = $query->get(['id', 'name']);
+            } else {
+                // If it's a reseller/user and still empty, check if Admin has defined models for the direct Reseller (L1)
+                $l1_reseller_id = end($search_ids);
+                $firmwareList = Firmware::where('is_deleted', 0)
+                    ->whereIn('id', function ($query) use ($l1_reseller_id) {
                         $query->select('firmware_id')
                             ->from('modals')
-                            ->where('user_id', $writer->created_by != "1"? $writer->created_by  : Auth::user()->id);
-                    });
-                    
-                    if ($request->has('category_id') && $request->category_id != "") {
-                        $firmwares->where('device_category_id', $request->category_id);
-                    }
-                    
-                    $firmwares = $firmwares->get(['id', 'name']);
-                }
-            } else {
-                $firmwares = Firmware::where('is_deleted', 0);
-                if ($request->has('category_id') && $request->category_id != "") {
-                    $firmwares->where('device_category_id', $request->category_id);
-                }
-                $firmwares = $firmwares->select('id', 'name')->get();
+                            ->where('user_id', $l1_reseller_id);
+                    })
+                    ->when($category_id, function($q) use ($category_id) {
+                        return $q->where('device_category_id', $category_id);
+                    })
+                    ->get(['id', 'name']);
             }
-        } else if (count($firmwares) == 0) {
-             $firmwaresQuery = Firmware::where('is_deleted', 0);
-             if ($request->has('category_id') && $request->category_id != "") {
-                $firmwaresQuery->where('device_category_id', $request->category_id);
-            }
-            $firmwares = $firmwaresQuery->select('id', 'name')->get();
+        }
+
+        // Final fallback: show all category firmwares if Admin and still empty
+        if ($firmwareList->isEmpty() && ($auth_user->user_type == 'Admin' || $auth_user->user_type == 'Support')) {
+             $query = Firmware::where('is_deleted', 0);
+             if ($category_id) $query->where('device_category_id', $category_id);
+             $firmwareList = $query->get(['id', 'name']);
         }
 
         return response()->json([
             'status' => 200,
-            'firmwareList' => $firmwares
+            'firmwareList' => $firmwareList
         ]);
     }
     public function getFirmware(Request $request)
@@ -660,5 +679,4 @@ class FirmwareController extends Controller
             'firmwareList' => $firmwares
         ]);
     }
-
 }

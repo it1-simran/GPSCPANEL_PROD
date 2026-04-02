@@ -348,6 +348,8 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::post('/assigtemplateAll', [DeviceController::class, 'userassigtemplateAll'])->name('device.assigtemplateAll');
     Route::post('/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations']);
     // Template Configuration
+    Route::post('/get-model-name', [FirmwareController::class, 'getModelName']);
+
     Route::post('/get-template-configuration', [DeviceCategoryController::class, 'getTemplateConfiguration']); // only once
     Route::post('/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations']);
     Route::patch('/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations']);

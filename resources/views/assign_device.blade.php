@@ -121,7 +121,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     </select>
                                 </div>
                             </div>
-                            <div id="isUserSelected" style="display:none;">
+                            <div id="isUserSelected">
                                 <div class="form-group ">
                                     <label for="curl" class="control-label col-lg-3 ">Device Category <span class="require">*</span></label>
                                     <div class="col-lg-6">
@@ -197,7 +197,6 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         <span class="req_error text-danger display-block"></span>
                                     </div>
                                 </div>
-                                <!-- @if(Auth::user()->user_type=='Admin')
                                 <div class="form-group " id="FirmwareInput" style='display:none;'>
                                     <label for="firmware" class="control-label col-lg-3 " required>Firmware <span class="require">*</span></label>
                                     <div class="col-lg-6">
@@ -219,7 +218,6 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         <div class="col-sm-12 alert alert-danger vendor_error" role="alert" style="display:none"></div>
                                     </div>
                                 </div>
-                                @endif -->
                                 <div id='deviceCategoryInputFields' style='display:none;'></div>
                                 <div class="form-group">
                                     <div class="col-lg-offset-3 col-lg-6">
@@ -260,7 +258,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
             var user_id = this.value;
             if (user_id == '') {
-                $('#isUserSelected').hide();
+                var categoryId = $('#s2example-2').val();
+                if (categoryId) {
+                    var selectedOptionText = $('#s2example-2 option:selected').text();
+                    $('#modelName').val(selectedOptionText);
+                    $('#VendorId').val("JSD");
+                    $(".vendor_error").hide();
+                    $(".modelName_error").hide();
+                    $('.btn-disable-after-submit').attr('disabled', false);
+                }
                 return false;
             }
             $.ajax({
@@ -307,62 +313,61 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $('#user_id, #firmware').on('change', function() {
             var userId = $('#user_id').val();
             var firmwareId = $('#firmware').val();
-            if (userId && firmwareId) {
-                checkModalNameExist(userId, firmwareId);
+            var categoryId = $('#s2example-2').val();
+
+            if (firmwareId && userId) {
+                checkModalNameExist(userId, firmwareId, categoryId);
+            } else if (!userId && categoryId) {
+                $('#modelName').val($('#s2example-2 option:selected').text());
+                $('#VendorId').val("JSD");
+                $(".vendor_error").hide();
+                $(".modelName_error").hide();
+                $('.btn-disable-after-submit').attr('disabled', false);
             }
         });
     });
 
-    function checkModalNameExist(userId, firmwareId) {
+    function checkModalNameExist(userId, firmwareId, categoryId) {
         let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : (Auth::user()->user_type == 'Support' ? 'support' : 'reseller')) . '/get-model-name') }}";
-
-
         $.ajax({
             url: actionUrl,
             type: "POST",
             data: {
                 user_id: userId,
-                firmware_id: firmwareId
+                firmware_id: firmwareId,
+                category_id: categoryId
             },
             success: function(response) {
-                let result = JSON.parse(response);
-                console.log('Different AJAX result:', result);
+                let result = (typeof response === 'string') ? JSON.parse(response) : response;
                 if (result.status == 200) {
-                    if (result.modalList !== null && result.modalList !== undefined) {
-                        let modal = JSON.parse(result.modalList);
-                        console.log("modal", modal);
-                        if (modal != null) {
-                            $('#modelName').val(modal.name);
-                            $('#VendorId').val(modal.vendorId);
-                            $('#VendorId').show();
-                            $(".vendor_error").hide()
-                            $('#modelName').show();
-                            $(".modelName_error").hide();
-                            $('.btn-disable-after-submit').attr('disabled', false);
-                        } else {
-                            $('#modelName').hide();
-                            $('#VendorId').hide();
-                            $(".modelName_error").show().html('Model Name is not Assigned . Please contact with Administrator');
-                            $(".vendor_error").show().html('Vendor ID is not Assigned . Please contact with Administrator');
-                            $('.btn-disable-after-submit').attr('disabled', true);
-                        }
+                    let modal = result.modal;
+                    if (modal != null) {
+                        $('#modelName').val(modal.name);
+                        $('#VendorId').val(modal.vendorId);
+                        $('#modelName').show();
+                        $('#VendorId').show();
+                        $(".vendor_error").hide()
+                        $(".modelName_error").hide();
+                        $('.btn-disable-after-submit').attr('disabled', false);
                     } else {
                         $('#modelName').hide();
-                        $(".modelName_error").show();
-
+                        $('#VendorId').hide();
+                        $(".modelName_error").show().html('Model Name is not Assigned. Please contact with Administrator');
+                        $(".vendor_error").show().html('Vendor ID is not Assigned. Please contact with Administrator');
                         $('.btn-disable-after-submit').attr('disabled', true);
                     }
                 } else {
-                    // $('.error_msg').append(result.message).show();
+                    $('#modelName').val('').hide();
+                    $('#VendorId').val('').hide();
+                    $(".modelName_error").show().html(result.message || 'Model and Firmware combination does not exist.');
+                    $(".vendor_error").show().html(result.message || 'Model and Firmware combination does not exist.');
+                    $('.btn-disable-after-submit').attr('disabled', true);
                 }
             },
             error: function(xhr) {
-                // Handle error
                 console.error("Error:", xhr.responseText);
-                $('.error_msg').append("An error occurred while processing your request.").show();
-            },
-            complete: function() {
-                $('#loading').hide(); // Hide loading indicator
+                $(".modelName_error").show().html("An error occurred while processing your request.");
+                $('.btn-disable-after-submit').attr('disabled', true);
             }
         });
     }
@@ -378,7 +383,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             type: "POST",
             data: {
                 id: selectedDeviceCategoryId,
-                userId: userId
+                user_id: userId
             },
             success: function(response) {
                 let result = JSON.parse(response);
@@ -387,12 +392,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 let dataFields = JSON.parse(result.dataFields);
                 var selectedOptionText = $('#s2example-2 option:selected').text();
                 $('#modelName').val(selectedOptionText);
+                $('#VendorId').val("JSD");
                 // if ($('#user_id').val() == "") {
                 $('#templateInput').show();
-                // }
-                // $('#FirmwareInput').show();
-                // $('#modalInput').show();
-                // $('#VendorID').show();
+                $('#FirmwareInput').show();
+                $('#modalInput').show();
+                $('#VendorID').show();
 
                 $('#templates').empty();
                 $('#firmware').empty();
@@ -414,6 +419,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     }
                 });
                 $('#templates').trigger('change');
+                $('#firmware').trigger('change');
 
                 // }
                 let htmlContent = '';

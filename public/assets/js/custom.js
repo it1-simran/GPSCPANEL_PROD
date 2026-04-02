@@ -124,6 +124,12 @@ $(document).ready(function () {
             hasError = true;
             return false;
         }
+        var firmwareId = $("#firmware").val();
+        if (!firmwareId || firmwareId == "") {
+            alert("Please select a firmware");
+            hasError = true;
+            return false;
+        }
         if (!hasError) {
             const fileInput = $("#excel_file")[0];
             const formData = new FormData();
@@ -173,6 +179,7 @@ $(document).ready(function () {
                     new_imei_table = parent_modal
                         .find("#new_imei_table")
                         .DataTable({
+                            destroy: true,
                             iDisplayLength: 10,
                             columnDefs: [
                                 {
@@ -184,15 +191,8 @@ $(document).ready(function () {
                         });
 
                     $("body").on("click", "#new_imei_checkall", function (e) {
-                        var rows = new_imei_table
-                            .rows({ search: "applied" })
-                            .nodes();
-                        parent_modal
-                            .find(
-                                '.new_imei_table tbody input[type="checkbox"]',
-                                rows
-                            )
-                            .prop("checked", this.checked);
+                        var rows = new_imei_table.rows({ search: "applied" }).nodes();
+                        $(rows).find('input[type="checkbox"]').prop("checked", this.checked);
                     });
 
                     $("body").on(
@@ -217,6 +217,7 @@ $(document).ready(function () {
                     dup_imei_table = parent_modal
                         .find("#dup_imei_table")
                         .DataTable({
+                            destroy: true,
                             iDisplayLength: 25,
                             columnDefs: [
                                 {
@@ -228,15 +229,8 @@ $(document).ready(function () {
                         });
 
                     $("body").on("click", "#dup_imei_checkall", function (e) {
-                        var rows = dup_imei_table
-                            .rows({ search: "applied" })
-                            .nodes();
-                        parent_modal
-                            .find(
-                                '.dup_imei_table tbody input[type="checkbox"]',
-                                rows
-                            )
-                            .prop("checked", this.checked);
+                        var rows = dup_imei_table.rows({ search: "applied" }).nodes();
+                        $(rows).find('input[type="checkbox"]').prop("checked", this.checked);
                     });
 
                     $("body").on(
@@ -344,6 +338,17 @@ $(document).ready(function () {
 
             return false;
         }
+
+        var firmwareId = $("#firmware").val();
+        if (!firmwareId || firmwareId == "") {
+            alert("Please select a firmware");
+            hasError = true;
+            $btn.prop("disabled", false);
+            $btn.find(".btn-text").removeClass("d-none");
+            $btn.find(".spinner-border").addClass("d-none");
+
+            return false;
+        }
         if (!hasError) {
             const fileInput = $("#excel_file")[0];
             const formData = new FormData();
@@ -393,6 +398,7 @@ $(document).ready(function () {
                     new_imei_table = parent_modal
                         .find("#new_imei_table")
                         .DataTable({
+                            destroy: true,
                             iDisplayLength: 10,
                             columnDefs: [
                                 {
@@ -408,15 +414,8 @@ $(document).ready(function () {
                     $btn.find(".spinner-border").addClass("d-none");
 
                     $("body").on("click", "#new_imei_checkall", function (e) {
-                        var rows = new_imei_table
-                            .rows({ search: "applied" })
-                            .nodes();
-                        parent_modal
-                            .find(
-                                '.new_imei_table tbody input[type="checkbox"]',
-                                rows
-                            )
-                            .prop("checked", this.checked);
+                        var rows = new_imei_table.rows({ search: "applied" }).nodes();
+                        $(rows).find('input[type="checkbox"]').prop("checked", this.checked);
                     });
 
                     $("body").on(
@@ -441,6 +440,7 @@ $(document).ready(function () {
                     dup_imei_table = parent_modal
                         .find("#dup_imei_table")
                         .DataTable({
+                            destroy: true,
                             iDisplayLength: 25,
                             columnDefs: [
                                 {
@@ -452,15 +452,8 @@ $(document).ready(function () {
                         });
 
                     $("body").on("click", "#dup_imei_checkall", function (e) {
-                        var rows = dup_imei_table
-                            .rows({ search: "applied" })
-                            .nodes();
-                        parent_modal
-                            .find(
-                                '.dup_imei_table tbody input[type="checkbox"]',
-                                rows
-                            )
-                            .prop("checked", this.checked);
+                        var rows = dup_imei_table.rows({ search: "applied" }).nodes();
+                        $(rows).find('input[type="checkbox"]').prop("checked", this.checked);
                     });
 
                     $("body").on(

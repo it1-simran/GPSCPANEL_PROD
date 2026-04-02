@@ -4,6 +4,7 @@ use App\Http\Controllers\ApiControllers\AddDeviceThroughJigController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiControllers\DeviceApiController;
+use App\Http\Controllers\Api\TrackerPacketController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +39,7 @@ Route::middleware('check.auth.token.jig')->post('/add-device-through-jig', [AddD
 // IMEI Logs Data Ingestion
 // IMEI Logs Data Ingestion
 Route::post('/packets/ingest', [\App\Http\Controllers\Api\PacketIngestionController::class, 'store']);
+Route::post('/tracker/packets/store', [TrackerPacketController::class, 'store']);
 
 // Live Tracking Log Fetcher
 Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs']);

@@ -150,6 +150,8 @@ Route::middleware('check.role:admin')->group(function () {
     Route::get('/tracker', [\App\Http\Controllers\LiveTrackerController::class, 'index'])->name('tracker.index');
     Route::post('/tracker/{device}/close', [\App\Http\Controllers\LiveTrackerController::class, 'closeConnection'])->name('tracker.close');
     Route::post('/tracker/{device}/test', [\App\Http\Controllers\LiveTrackerController::class, 'testBroadcast'])->name('tracker.test');
+    Route::post('/tracker/{device}/commands', [\App\Http\Controllers\LiveTrackerController::class, 'queueCommand'])->name('tracker.commands.store');
+    Route::get('/tracker/{device}/download', [\App\Http\Controllers\LiveTrackerController::class, 'downloadLogs'])->name('tracker.logs.download');
 
     /* ======================= Firmware Management Routes ======================= */
 

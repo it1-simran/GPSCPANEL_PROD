@@ -69,6 +69,8 @@ class ImeiLogReceived implements ShouldBroadcast
     {
         return [
             'log' => [
+                'id' => $this->log->id,
+                'imei' => $this->log->device->imei ?? null,
                 'logged_at' => $this->log->logged_at->toDateTimeString(),
                 'source_ip' => $this->log->source_ip,
                 'raw_packet' => $this->log->raw_packet,

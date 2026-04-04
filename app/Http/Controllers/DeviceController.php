@@ -119,6 +119,13 @@ class DeviceController extends Controller
                 }
             }
         }
+
+        foreach ($converted as $key => $value) {
+            if (is_object($value)) {
+                $converted[$key] = (array) $value;
+            }
+        }
+
         $firmware = Firmware::select('configurations')->where(['id' => $request->firmware])->first();
         $device_array = $converted;
         $fimwareArr = json_decode($firmware->configurations, true);
@@ -2470,20 +2477,11 @@ class DeviceController extends Controller
                         // When unassigning, reset to the Reseller and recalculate chain
                         $new_assing_ids = self::getAssignsIdsForChangeDeviceUser(Auth::user()->id, $is_editable->assign_to_ids, 'yes');
 
-                        // Extract root owner from the new chain
-                        $loggedInUserId = Auth::user()->id;
-                        $old_chain_array = explode(",", $is_editable->assign_to_ids);
-                        $chain_array = !empty($new_assing_ids) ? explode(',', $new_assing_ids) : [];
-                        print_r($old_chain_array);
-                        echo "<br>";
-                        $index = array_search($loggedInUserId, $old_chain_array);
-                        echo "index ===>" . $index;
-                        $root_owner = !empty($old_chain_array) ? intval($old_chain_array[$index - 1]) : 1;
-                        echo "current  user" . Auth::user()->id;
-                        // echo "prev uid ==>" . $prev_uid;
-                        // echo "root_owner ===>" . $root_owner;
-                        // die("im here 1");
-
+                        // Extract root owner from the recalculated chain safely.
+                        $chain_array = array_values(array_filter(explode(',', (string) $new_assing_ids), function ($value) {
+                            return $value !== '';
+                        }));
+                        $root_owner = !empty($chain_array) ? intval($chain_array[0]) : 1;
 
                         // Reset master_id to root owner and assign back to Reseller
                         $contact->master_id = $root_owner;

@@ -782,21 +782,29 @@ $('#vendorId').show().val(modal.vendorId);
         let initialDeviceId = "{{ $device['id'] }}";
         let deviceCategoryName = "{{ CommonHelper::getDeviceCategoryName($device['device_category_id']) }}";
         const DEFAULT_VENDOR_ID = 'JSD';
+        let authUserId = "{{ Auth::user()->id ?? '' }}"; // Current logged-in user
+
+        // Consolidated userId resolution
+        function resolveUserId(selectedUserId) {
+            return selectedUserId || userId1 || authUserId || null;
+        }
 
         // Central function: resolves model/vendor based on account + firmware state
         function resolveModelAndVendor(userId, firmwareId, deviceId) {
-            if (!userId || userId === '' || userId === 'null') {
-                // UNASSIGNED ACCOUNT — use device category name + JSD
+            userId = resolveUserId(userId); // Apply fallback chain
+            
+            if (!userId) {
+                // NO ACCOUNT — use category name + JSD
                 $('#modelName').val(deviceCategoryName).show();
                 $('#vendorId').val(DEFAULT_VENDOR_ID).show();
                 $('.modelName_error').hide();
                 $('.vendor_error').hide();
                 $('.updateDeviceName').attr('disabled', false);
             } else if (userId && firmwareId) {
-                // ACCOUNT + FIRMWARE selected — fetch from master model table
+                // ACCOUNT + FIRMWARE — fetch from modal table
                 checkModalNameExist(userId, firmwareId, deviceId);
             } else if (userId && !firmwareId) {
-                // ACCOUNT selected but NO firmware
+                // ACCOUNT but NO firmware
                 $('#modelName').val('').show();
                 $('#vendorId').val('').show();
                 $('.modelName_error').show().html('Please select a Firmware.');
@@ -831,7 +839,7 @@ $('#vendorId').show().val(modal.vendorId);
          $('#firmware').on('change', function() {
             const path = window.location.pathname;
             const deviceID = path.split("/").pop();
-            var userId = $('#editDeviceUsers').val() || null;
+            var userId = $('#editDeviceUsers').val() || userId1; // Use current user as fallback for unassigned devices
             var firmwareId = $(this).val();
             resolveModelAndVendor(userId, firmwareId, deviceID);
         });

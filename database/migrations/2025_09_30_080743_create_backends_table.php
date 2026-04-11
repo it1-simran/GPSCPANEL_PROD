@@ -13,12 +13,16 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('backends', function (Blueprint $table) {
+        if (!Schema::hasTable('backends')) {
+            if (!Schema::hasTable('backends')) {
+            Schema::create('backends', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('backend_id')->unique();
             $table->timestamps();
         });
+        }
+        }
     }
 
     /**

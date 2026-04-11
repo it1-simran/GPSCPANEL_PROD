@@ -1,0 +1,21 @@
+﻿Table 'users' exists.
+Table 'password_resets' exists.
+Table 'failed_jobs' does NOT exist.
+Table 'personal_access_tokens' does NOT exist.
+Table 'writers' exists.
+Table 'templates' exists.
+Table 'notifications' exists.
+Table 'modals' exists.
+Table 'firmwares' exists.
+Table 'esims' exists.
+Table 'device_logs' exists.
+Table 'device_categories' exists.
+Table 'devices' exists.
+Table 'data_fields' exists.
+Table 'ccids' exists.
+Table 'backends' exists.
+Table 'imei_devices' exists.
+Table 'imei_logs' does NOT exist.
+Table 'jobs' exists.
+
+Migrations recorded:

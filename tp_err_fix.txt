@@ -1,0 +1,3 @@
+Ignore ALTER TABLE error (might already be fix or not auto inc): SQLSTATE[42000]: Syntax error or access violation: 1075 Incorrect table definition; there can be only one auto column and it must be defined as a key (SQL: ALTER TABLE migrations MODIFY id INT UNSIGNED AUTO_INCREMENT;)
+Dropped tables.
+Error: SQLSTATE[HY000]: General error: 1364 Field 'id' doesn't have a default value (SQL: insert into `migrations` (`migration`, `batch`) values (2026_03_25_081745_create_imei_devices_table, 1))

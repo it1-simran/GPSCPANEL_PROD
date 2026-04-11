@@ -69,8 +69,8 @@
                 <form class="validator form-horizontal" id="commentForm" method="post" action="#" onsubmit="return false">
                   @csrf
                   <div class="form-group">
-                    <label for="curl" class="control-label col-lg-3">Account Type</label>
-                    <div class="col-lg-6">
+                    <label for="curl" class="control-label col-md-3 col-sm-12">Account Type</label>
+                    <div class="col-md-6 col-sm-12">
                       <select class="form-control" id="userType" name="user_type">
                         <option value="Reseller">Manufacturer</option>
                         <option selected="selected" value="User">Dealer</option>
@@ -81,26 +81,26 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="cname" class="control-label col-lg-3">Name <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="cname" class="control-label col-md-3 col-sm-12">Name <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <input class=" form-control" placeholder="Enter Name" id="cname" name="name" type="text" required />
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="cemail" class="control-label col-lg-3">Mobile <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="cemail" class="control-label col-md-3 col-sm-12">Mobile <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <input class="form-control" placeholder="Enter Mobile Number" id="cmobile" type="text" name="mobile" maxlength="10" required />
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="cemail" class="control-label col-lg-3">E-Mail <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="cemail" class="control-label col-md-3 col-sm-12">E-Mail <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <input class="form-control" placeholder="Enter E-Mail" id="cemail" type="email" name="email" required />
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="timezone" class="control-label col-lg-3">TimeZones <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="timezone" class="control-label col-md-3 col-sm-12">TimeZones <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <select name="timezone" class="select2" id="timezone">
                         <option value="">Please Select Time Zone</option>
                         @foreach($timeZones as $timezone)
@@ -115,8 +115,8 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="curl" class="control-label col-lg-3">Login Password <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="curl" class="control-label col-md-3 col-sm-12">Login Password <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <input class="form-control" placeholder="Enter Login password" type="password" name="password" required />
                     </div>
                   </div>
@@ -124,7 +124,7 @@
                   @if($currentUser->user_type =='Admin')
 
                   <div class="form-group bgx-margin-bottom row">
-                    <label for="curl" class="control-label col-lg-3">Device Categories<span class="require">*</span></label>
+                    <label for="curl" class="control-label col-md-3 col-sm-12">Device Categories<span class="require">*</span></label>
                     <div class="col-lg-9 bgx-margin-top row ">
                       @foreach($getDeviceCategory as $deviceCategory)
                       <div class="row col-md-6">
@@ -141,7 +141,7 @@
                   @endif
                   @if($currentUser->user_type == 'Reseller')
                   <div class="form-group bgx-margin-bottom row">
-                    <label for="curl" class="control-label col-lg-3">Device Categories<span class="require">*</span></label>
+                    <label for="curl" class="control-label col-md-3 col-sm-12">Device Categories<span class="require">*</span></label>
                     <div class="col-lg-6 bgx-margin-top row ">
                       @foreach($getDeviceCategory as $deviceCategory)
                       @if(in_array($deviceCategory->id,$deviceCategoryArr))
@@ -186,12 +186,12 @@
                       ->get();
                       @endphp
                       <div class="row">
-                        <div class="col-lg-6">
+                        <div class="col-md-6 col-sm-12">
                           <div class="form-group">
-                            <label for="templates<?= $category->id ?>" class="control-label col-lg-3">
+                            <label for="templates<?= $category->id ?>" class="control-label col-md-3 col-sm-12">
                               Templates <span class="require">*</span>
                             </label>
-                            <div class="col-lg-8">
+                            <div class="col-md-8 col-sm-12">
                               <select class="userAccType form-control "
                                 id="templates<?= $category->id ?>"
                                 name="configuration[<?= $category->id ?>][template]"
@@ -506,7 +506,7 @@
         if (val == 'Support') {
           support.show();
           let html = `<div class="form-group">
-            <label for="curl" class="control-label col-lg-3">Configuration Edit Permission</label>
+            <label for="curl" class="control-label col-md-3 col-sm-12">Configuration Edit Permission</label>
             <div class="col-lg-6"  style="position: absolute;left: 4%;">
               <input type="checkbox" class="form-control" name="is_support_active" style="height:20px;">
             </div>
@@ -668,7 +668,7 @@
                   htmlContent += '<div class="card-details">';
                   htmlContent += '<div class="row">';
                   htmlContent += '<div class="col-lg-6">';
-                  htmlContent += '<div class="form-group"><label for="curl" class="control-label col-lg-3">Templates <span class="require">*</span></label><div class="col-lg-8"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
+                  htmlContent += '<div class="form-group"><label for="curl" class="control-label col-md-3 col-sm-12">Templates <span class="require">*</span></label><div class="col-md-8 col-sm-12"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
                   if (templates[index].length > 0) {
                     templates[index].forEach((temp) => {
                       if (temp.default_template == 1) {
@@ -693,8 +693,8 @@
                     htmlContent += '<input class="form-control inputType" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
                     if (input.type == 'select') {
                       htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-lg-8">';
+                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div class="col-md-8 col-sm-12">';
                       htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
                       // htmlContent += '<option value="">Please Select</option>';
 
@@ -707,8 +707,8 @@
                       htmlContent += '</div>';
                     } else if (input.type == 'multiselect') {
                       htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-lg-8">';
+                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div class="col-md-8 col-sm-12">';
                       htmlContent += '<select class="inputType" id="configval' + index + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? '' : '') + ' multiple>';
                       // htmlContent += '<option value="">Please Select</option>';
 
@@ -729,8 +729,8 @@
                     } else {
                       if (input.key == 'Password') {
                         htmlContent += '<div class="form-group">';
-                        htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                        htmlContent += '<div class="col-lg-8">';
+                        htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                        htmlContent += '<div class="col-md-8 col-sm-12">';
                         htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                         htmlContent += '</div>';
                         htmlContent += '</div>';
@@ -739,8 +739,8 @@
                         let addClassTextArray = input?.type === 'text_array' ? 'text-array-space' : '';
                         let addClassIpUrl = input?.type === 'IP/URL' ? 'ip-url-space' : '';
                         htmlContent += '<div class="form-group">';
-                        htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                        htmlContent += '<div class="col-lg-8">';
+                        htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                        htmlContent += '<div class="col-md-8 col-sm-12">';
                         htmlContent += '<input class="form-control inputType ' + addClassTextArray + ' ' + addClassIpUrl + '" type="' +
                           (input.type === 'number' ? 'number' : 'text') + '" ' +
                           (input.type === 'number' && validation?.numberInput ?
@@ -765,13 +765,13 @@
                   });
                   htmlContent += '<div class="row">';
                   htmlContent += '<div class="col-lg-6"><div class="form-group">';
-                  htmlContent += '<label for="curl" class="control-label col-lg-3">Ping Interval <span class="require">*</span></label>';
-                  htmlContent += '<div class="col-lg-8">';
+                  htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Ping Interval <span class="require">*</span></label>';
+                  htmlContent += '<div class="col-md-8 col-sm-12">';
                   htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value=""/>';
                   htmlContent += '</div></div></div>';
                   htmlContent += '<div class="col-lg-6">';
                   htmlContent += '<div class="form-group">';
-                  htmlContent += '<label for="curl" class="control-label col-lg-3">Device Edit Permission<span class="require">*</span></label>';
+                  htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Device Edit Permission<span class="require">*</span></label>';
                   htmlContent += '<div class="col-lg-6">';
                   htmlContent += '<label class="padding-10">Enable</label><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>';
                   htmlContent += '<label class="padding-10">Disable</label><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>';
@@ -840,7 +840,7 @@
                 htmlContent += '<div class="card-details">';
                 htmlContent += '<div class="row">';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label for="curl" class="control-label col-lg-3">Templates <span class="require">*</span></label><div class="col-lg-8"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
+                htmlContent += '<div class="form-group"><label for="curl" class="control-label col-md-3 col-sm-12">Templates <span class="require">*</span></label><div class="col-md-8 col-sm-12"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
                 if (templates[index].length > 0) {
                   templates[index].forEach((temp) => {
                     if (temp.default_template == 1) {
@@ -857,7 +857,7 @@
                 // Add Firmware selection
                 let firmwares = JSON.parse(result.firmware);
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label for="firmware' + index + '" class="control-label col-lg-3">Firmware <span class="require">*</span></label><div class="col-lg-8"><select class="form-control firmware-select" id="firmware' + index + '" data-index="' + index + '" data-category="' + data.id + '" name="configuration[' + index + '][firmware_id]" onchange="changeFirmware(' + index + ')">';
+                htmlContent += '<div class="form-group"><label for="firmware' + index + '" class="control-label col-md-3 col-sm-12">Firmware <span class="require">*</span></label><div class="col-md-8 col-sm-12"><select class="form-control firmware-select" id="firmware' + index + '" data-index="' + index + '" data-category="' + data.id + '" name="configuration[' + index + '][firmware_id]" onchange="changeFirmware(' + index + ')">';
                 if (firmwares[index] && firmwares[index].length > 0) {
                   firmwares[index].forEach((firmware) => {
                     htmlContent += '<option ' + (firmware.is_default == 1 ? "selected" : "") + ' value="' + firmware.id + '">' + firmware.name + '</option>';
@@ -868,9 +868,9 @@
                 // Add Model and Vendor fields
                 htmlContent += '<div class="row">';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label class="control-label col-lg-3">Model Name <span class="require">*</span></label><div class="col-lg-8"><input type="text" class="form-control" name="configuration[' + index + '][modelName]" id="modelName' + index + '" readonly /></div></div></div>';
+                htmlContent += '<div class="form-group"><label class="control-label col-md-3 col-sm-12">Model Name <span class="require">*</span></label><div class="col-md-8 col-sm-12"><input type="text" class="form-control" name="configuration[' + index + '][modelName]" id="modelName' + index + '" readonly /></div></div></div>';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label class="control-label col-lg-3">Vendor ID <span class="require">*</span></label><div class="col-lg-8"><input type="text" class="form-control" name="configuration[' + index + '][vendorId]" id="vendorId' + index + '" readonly /></div></div></div>';
+                htmlContent += '<div class="form-group"><label class="control-label col-md-3 col-sm-12">Vendor ID <span class="require">*</span></label><div class="col-md-8 col-sm-12"><input type="text" class="form-control" name="configuration[' + index + '][vendorId]" id="vendorId' + index + '" readonly /></div></div></div>';
                 htmlContent += '</div>';
 
                 input.forEach((input, index1) => {
@@ -883,8 +883,8 @@
                   htmlContent += '<input class="form-control inputType" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
                   if (input.type == 'select') {
                     htmlContent += '<div class="form-group">';
-                    htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                    htmlContent += '<div class="col-lg-8">';
+                    htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                    htmlContent += '<div class="col-md-8 col-sm-12">';
                     htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
                     // htmlContent += '<option value="">Please Select</option>';
 
@@ -897,8 +897,8 @@
                     htmlContent += '</div>';
                   } else if (input.type == 'multiselect') {
                     htmlContent += '<div class="form-group">';
-                    htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                    htmlContent += '<div class="col-lg-8">';
+                    htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                    htmlContent += '<div class="col-md-8 col-sm-12">';
                     htmlContent += '<select class="inputType" id="configval' + index + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? '' : '') + ' multiple>';
                     // htmlContent += '<option value="">Please Select</option>';
 
@@ -933,8 +933,8 @@
                   } else {
                     if (input.key == 'Password') {
                       htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-lg-8">';
+                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div class="col-md-8 col-sm-12">';
                       htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                       htmlContent += '</div>';
                       htmlContent += '</div>';
@@ -942,8 +942,8 @@
                       let addClassTextArray = input?.type === 'text_array' ? 'text-array-space' : '';
                       let addClassIpUrl = input?.type === 'IP/URL' ? 'ip-url-space' : '';
                       htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-lg-8">';
+                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div class="col-md-8 col-sm-12">';
                       // htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'min="' + validation?.numberInput?.min + '" max="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '" maxlength="' + validation?.maxValueInput') + '>';
                       htmlContent +=
                         '<input class="form-control inputType ' + addClassTextArray + ' ' + addClassIpUrl + '" type="' +
@@ -970,13 +970,13 @@
                 });
                 htmlContent += '<div class="row">';
                 htmlContent += '<div class="col-lg-6"><div class="form-group">';
-                htmlContent += '<label for="curl" class="control-label col-lg-3">Ping Interval <span class="require">*</span></label>';
-                htmlContent += '<div class="col-lg-8">';
+                htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Ping Interval <span class="require">*</span></label>';
+                htmlContent += '<div class="col-md-8 col-sm-12">';
                 htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value=""/>';
                 htmlContent += '</div></div></div>';
                 htmlContent += '<div class="col-lg-6">';
                 htmlContent += '<div class="form-group">';
-                htmlContent += '<label for="curl" class="control-label col-lg-3">Device Edit Permission<span class="require">*</span></label>';
+                htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Device Edit Permission<span class="require">*</span></label>';
                 htmlContent += '<div class="col-lg-6">';
                 htmlContent += '<label class="padding-10">Enable</label><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>';
                 htmlContent += '<label class="padding-10">Disable</label><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>';

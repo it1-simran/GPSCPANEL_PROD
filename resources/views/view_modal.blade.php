@@ -182,24 +182,46 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     form.action = `/${urlType}/delete-modal/${id}/${response}`;
     form.submit();
   }
-  $(document).ready(function() {
-    $("#esim").dataTable({
-      paging: true,
-      searching: true,
-      info: true,
-      ordering: true,
-      lengthChange: true,
-      // pageLength: 10,
-      // scrollX: true,
-      // scrollY: '500px',
-      scrollCollapse: true,
-      "aLengthMenu": [
-        [25, 50, 100, 500, -1],
-        [25, 50, 100, 500, "All"]
-      ],
-      "iDisplayLength": 25
-    });
 
+
+  // $(document).ready(function() {
+  //   $("#esim").dataTable({
+  //     paging: true,
+  //     searching: true,
+  //     info: true,
+  //     ordering: true,
+  //     lengthChange: true,
+  //     // pageLength: 10,
+  //     // scrollX: true,
+  //     // scrollY: '500px',
+  //     scrollCollapse: true,
+  //     "aLengthMenu": [
+  //       [25, 50, 100, 500, -1],
+  //       [25, 50, 100, 500, "All"]
+  //     ],
+  //     "iDisplayLength": 25
+  //   });
+  // });
+
+  $(document).ready(function () {
+      $('#esim').DataTable({
+          paging: true,
+          searching: true,
+          info: true,
+          ordering: true,
+          lengthChange: true,
+
+          responsive: true,     
+          autoWidth: false,     
+          scrollX: true,     
+          scrollCollapse: true,
+
+          lengthMenu: [
+              [25, 50, 100, 500, -1],
+              [25, 50, 100, 500, "All"]
+          ],
+          pageLength: 25
+      });
   });
 
   function openModel(id) {

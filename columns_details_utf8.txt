@@ -1,0 +1,11 @@
+﻿Columns in 'imei_devices':
+- id
+- imei
+- status
+- schedule_start
+- schedule_end
+- created_at
+- updated_at
+Status column type: enum('active','inactive')
+
+Table 'jobs' exists.

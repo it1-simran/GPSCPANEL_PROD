@@ -171,23 +171,45 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $('#imei').val(imei);
         $('#submitBtn').text('Update');
     }
-    $(document).ready(function() {
-        $("#esim").dataTable({
+
+
+    // $(document).ready(function() {
+    //     $("#esim").dataTable({
+    //         paging: true,
+    //         searching: true,
+    //         info: true,
+    //         ordering: true,
+    //         lengthChange: true,
+    //         // pageLength: 10,
+    //         // scrollX: true,
+    //         // scrollY: '500px',
+    //         scrollCollapse: true,
+    //         "aLengthMenu": [
+    //             [25, 50, 100, 500, -1],
+    //             [25, 50, 100, 500, "All"]
+    //         ],
+    //         "iDisplayLength": 25
+    //     });
+    // });
+
+    $(document).ready(function () {
+        $('#esim').DataTable({
             paging: true,
             searching: true,
             info: true,
             ordering: true,
             lengthChange: true,
-            // pageLength: 10,
-            // scrollX: true,
-            // scrollY: '500px',
+
+            responsive: true,     
+            autoWidth: false,     
+            scrollX: true,        
             scrollCollapse: true,
-            "aLengthMenu": [
+
+            lengthMenu: [
                 [25, 50, 100, 500, -1],
                 [25, 50, 100, 500, "All"]
             ],
-            "iDisplayLength": 25
+            pageLength: 25
         });
-
     });
 </script>

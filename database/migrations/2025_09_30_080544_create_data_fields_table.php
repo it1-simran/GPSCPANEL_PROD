@@ -13,7 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('data_fields', function (Blueprint $table) {
+        if (!Schema::hasTable('data_fields')) {
+            if (!Schema::hasTable('data_fields')) {
+            Schema::create('data_fields', function (Blueprint $table) {
             $table->id();
             $table->string('fieldName');
             $table->string('fieldType')->nullable();
@@ -24,6 +26,8 @@ return new class extends Migration
             $table->boolean('is_can_protocol')->default(0);
             $table->timestamps(); // includes created_at and updated_at
         });
+        }
+        }
     }
 
     /**

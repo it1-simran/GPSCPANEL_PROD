@@ -1,6 +1,20 @@
 @extends('layouts.apps')
 @section('content')
 @include('modals.userEditDelOptions')
+
+<style>
+  @media (max-width: 768px) {
+      .stats-buttons .stat-btn {
+          display: block;
+          width: 90%;
+          max-width: 320px;
+          margin: 8px auto;
+          text-align: center;
+      }
+  }
+</style>
+
+
 <form class="delUserResellerForm" data-action="/{{$url_type}}/delete-user/" action="" method="post">
   @csrf
   @method('DELETE')
@@ -74,9 +88,19 @@
 
             if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller') {
             ?>
-              <span id="span1" class="btn btn-primary">Total Accounts - <?= isset($totalUsers[0]->user_count) ? $totalUsers[0]->user_count : ''; ?></span>|
-              <span id="span2" class="btn btn-success">Total Devices - <?= isset($totalDevices) ? $totalDevices : ''; ?></span>|
-              <span id="span3" class="btn btn-info">Total Pings - <?= isset($totalPings) ? $totalPings : ''; ?></span>
+              <div class="stats-buttons">
+                  <span id="span1" class="btn btn-primary stat-btn">
+                      Total Accounts - <?= isset($totalUsers[0]->user_count) ? $totalUsers[0]->user_count : ''; ?>
+                  </span>
+
+                  <span id="span2" class="btn btn-success stat-btn">
+                      Total Devices - <?= isset($totalDevices) ? $totalDevices : ''; ?>
+                  </span>
+
+                  <span id="span3" class="btn btn-info stat-btn">
+                      Total Pings - <?= isset($totalPings) ? $totalPings : ''; ?>
+                  </span>
+              </div>
             <?php
             }
             ?>
@@ -106,6 +130,7 @@
                 <a href="{{ route('writers.csv') }}" class="btn btn-success">Download CSV</a>
               </div>
               @endif
+            <div>
               <table id="example" class="example view_user_table table table-bordered table-striped table-condensed cf" style="border-spacing:0px; width:100%; font-size:14px;">
                 <thead>
                   <tr>
@@ -222,6 +247,7 @@
                 </tbody>
               </table>
             </div>
+            </div>
           </div><!--/.c_content-->
         </div><!--/.c_panels-->
       </div><!--/col-md-12-->
@@ -236,7 +262,6 @@
 
 <!--****** End Modal Responsive******-->
 @stop
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script>
   function open_asign(id) {
     $("#auser_id").val(id);
@@ -252,6 +277,22 @@
     $('.select2').select();
   }
   $(document).ready(function() {
+    $('#example').DataTable({
+        paging: true,
+        searching: true,
+        info: true,
+        ordering: true,
+        lengthChange: true,
+        responsive: true,
+        autoWidth: false,
+        scrollX: true,
+        scrollCollapse: true,
+        lengthMenu: [
+            [25, 50, 100, 500, -1],
+            [25, 50, 100, 500, "All"]
+        ],
+        pageLength: 25
+    });
 
     $('.assignDevices').each(function() {
       // Get the ID of each element

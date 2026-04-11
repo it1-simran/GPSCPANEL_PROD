@@ -9,9 +9,15 @@ return new class extends Migration
     public function up()
     {
         Schema::table('device_categories', function (Blueprint $table) {
-            $table->string('arai_tac_no')->nullable();
-            $table->date('arai_date')->nullable();
-            $table->string('certification_model_name')->nullable();
+            if (!Schema::hasColumn('device_categories', 'arai_tac_no')) {
+                $table->string('arai_tac_no')->nullable();
+            }
+            if (!Schema::hasColumn('device_categories', 'arai_date')) {
+                $table->date('arai_date')->nullable();
+            }
+            if (!Schema::hasColumn('device_categories', 'certification_model_name')) {
+                $table->string('certification_model_name')->nullable();
+            }
         });
     }
 

@@ -1,0 +1,27 @@
+1. Creating test device...
+- Device ID: 1, IMEI: 123456789012345
+2. Simulating packet dispatch...
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[42S02]: Base table or view not found: 1146 Table 'gps_production.imei_logs' doesn't exist (SQL: insert into `imei_logs` (`imei_id`, `raw_packet`, `source_ip`, `logged_at`, `updated_at`, `created_at`) values (1, START,123456789012345,LAT:12.34,LON:56.78,END, 127.0.0.1, 2026-03-25 09:46:04, 2026-03-25 09:46:04, 2026-03-25 09:46:04))
+
+  at C:\xampp\htdocs\GPSCPANEL_PROD\vendor\laravel\framework\src\Illuminate\Database\Connection.php:760
+    756▕         // If an exception occurs when attempting to run a query, we'll format the error
+    757▕         // message to include the bindings with SQL, which will make this exception a
+    758▕         // lot more helpful to the developer instead of just the database's errors.
+    759▕         catch (Exception $e) {
+  ➜ 760▕             throw new QueryException(
+    761▕                 $query, $this->prepareBindings($bindings), $e
+    762▕             );
+    763▕         }
+    764▕     }
+
+  i   A table was not found: You might have forgotten to run your database migrations. 
+      https://laravel.com/docs/master/migrations#running-migrations
+
+  1   C:\xampp\htdocs\GPSCPANEL_PROD\vendor\laravel\framework\src\Illuminate\Database\Connection.php:539
+      PDOException::("SQLSTATE[42S02]: Base table or view not found: 1146 Table 'gps_production.imei_logs' doesn't exist")
+
+  2   C:\xampp\htdocs\GPSCPANEL_PROD\vendor\laravel\framework\src\Illuminate\Database\Connection.php:539
+      PDO::prepare("insert into `imei_logs` (`imei_id`, `raw_packet`, `source_ip`, `logged_at`, `updated_at`, `created_at`) values (?, ?, ?, ?, ?, ?)")

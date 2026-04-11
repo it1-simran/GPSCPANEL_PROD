@@ -140,14 +140,26 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             @if(Auth::user()->user_type=='Admin')
                             <div class="form-group ">
                                 <label for="curl" class="control-label col-lg-3">Device Edit Permission</label>
-                                <div class="col-lg-6">
+                                <!-- <div class="col-lg-6">
                                     <label>Enable</label>
                                     <input checked type="radio" name="configuration[is_editable]" value="1"
                                         style="height:20px; width:20px; vertical-align: middle;">
                                     <label>Disable</label>
                                     <input type="radio" name="configuration[is_editable]" value="0"
                                         style="height:20px; width:20px; vertical-align: middle;">
+                                </div> -->
+
+                                <div class="col-lg-6">
+                                    <label class="radio-inline">
+                                        <input checked type="radio" name="configuration[is_editable]" value="1">
+                                        Enable
+                                    </label>
+                                    <label class="radio-inline" style="margin-left:15px;">
+                                        <input type="radio" name="configuration[is_editable]" value="0">
+                                        Disable
+                                    </label>
                                 </div>
+
                             </div>
                             @endif
                             <div id="loading" class="bgx-loading" style="display:none;">

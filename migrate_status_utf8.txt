@@ -1,0 +1,26 @@
+﻿
+  Migration name  Batch / Status  
+  2014_10_12_000000_create_users_table  Pending  
+  2014_10_12_100000_create_password_resets_table  Pending  
+  2019_08_19_000000_create_failed_jobs_table  Pending  
+  2019_12_14_000001_create_personal_access_tokens_table  Pending  
+  2025_09_30_075023_create_writers_table  Pending  
+  2025_09_30_075256_create_templates_table  Pending  
+  2025_09_30_075412_create_notifications_table  Pending  
+  2025_09_30_075502_create_modals_table  Pending  
+  2025_09_30_075737_create_firmwares_table  Pending  
+  2025_09_30_080103_create_esims_table  Pending  
+  2025_09_30_080211_create_device_logs_table  Pending  
+  2025_09_30_080312_create_device_categories_table  Pending  
+  2025_09_30_080421_create_devices_table  Pending  
+  2025_09_30_080544_create_data_fields_table  Pending  
+  2025_09_30_080639_create_ccids_table  Pending  
+  2025_09_30_080743_create_backends_table  Pending  
+  2026_01_27_082428_add_is_certification_to_device_categories_table  Pending  
+  2026_02_03_000001_add_certification_fields_to_device_categories_table  Pending  
+  2026_02_27_065853_add_timezone_to_guestapprovaluser_table  Pending  
+  2026_03_25_081745_create_imei_devices_table  Pending  
+  2026_03_25_081803_create_imei_logs_table  Pending  
+  2026_03_26_043442_add_close_status_to_imei_devices_table  Pending  
+  2026_03_26_082050_create_jobs_table  Pending  
+

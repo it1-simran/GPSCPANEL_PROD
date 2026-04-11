@@ -8,6 +8,8 @@ use App\Helper\CommonHelper;
 use Illuminate\Http\Request;
 use App\DataFields;
 use App\Http\Controllers\Controller;
+use App\Services\ImeiTrackerService;
+use App\Services\CommandFetcher;
 use DB;
 use Carbon\Carbon;
 
@@ -28,7 +30,7 @@ class DeviceApiController extends Controller
 			->header('Content-Type', 'text/plain');
 	}
 
-	public function postPacketData(Request $request)
+	public function postPacketData(Request $request, ImeiTrackerService $trackerService)
 	{
 		$data = json_decode($request->getContent(), true);
 		if (count($data) <= 0) {
@@ -41,6 +43,7 @@ class DeviceApiController extends Controller
 		$imei = $data[35];
 		$isCanConfigData = $data[116] ?? 0;
 		$dataFieldsParameters = DataFields::select("*")->where(['is_common' => 0, 'fieldType' => 1])->get()->toArray();
+		$trackerResult = $trackerService->processPayload($request->getContent(), $request->ip(), true);
 
 		// IF imei exists in DB
 		$matchData = DB::table('devices')->where('imei', $imei)->first();
@@ -62,12 +65,6 @@ class DeviceApiController extends Controller
 			/// fetch parameters field names and values
 			$finalResponse = [];
 			foreach ($data as $id => $value) {
-				if ($id == 38 && isset($configurations['modelName'])) {
-					$configurations['modelName']['value'] = $value;
-				}
-				if ($id == 39 && isset($configurations['vendorId'])) {
-					$configurations['vendorId']['value'] = $value;
-				}
 				foreach ($dataFieldsParameters as $field) {
 					if ($field['id'] == $id) {
 						$fieldName = strtolower(str_replace(' ', '_', $field['fieldName']));
@@ -81,9 +78,9 @@ class DeviceApiController extends Controller
 			}
 			// fetch configuration from db
 			$configurations = json_decode($matchData->configurations, true);
-			
-			// Removed master hierarchy overrides for model name and vendor id
-            // as they should come directly from the request payload.
+			if (!is_array($configurations)) {
+				$configurations = [];
+			}
 
 			$inputs = json_decode($deviceCategory->inputs, true);
 			$getFirmwareFromConfigurations = isset($configurations['firmware_id']['value'])
@@ -157,7 +154,7 @@ class DeviceApiController extends Controller
 					'errors' => json_encode($error),
 				]);
 				$baseUrl = url('/');
-				$response = $this->generateResponse($inputs, $configurations, $deviceCategory, $baseUrl, $configurations['firmware_id']['value'], $firmwareId, true, true, $matchData->id, $canCofigurations, $isCanConfigData);
+				$response = $this->appendTrackerCommandToResponse($this->generateResponse($inputs, $configurations, $deviceCategory, $baseUrl, $configurations['firmware_id']['value'], $firmwareId, true, true, $matchData->id, $canCofigurations, $isCanConfigData), $trackerService->buildTrackerCommandMetadata($trackerResult['command'] ?? null));
 				Devicelog::create([
 					'device_id' => $matchData->id,
 					'user_id' => $matchData->user_id ?? 0,
@@ -206,7 +203,7 @@ class DeviceApiController extends Controller
 				}
 				$this->updateWriterStats($matchData->user_id);
 				$baseUrl = url('/');
-				$response = $this->generateResponse($inputs, $configurations, $deviceCategory, $baseUrl, $configurations['firmware_id'], 1, true, false, $matchData->id, $canCofigurations, $isCanConfigData);
+				$response = $this->appendTrackerCommandToResponse($this->generateResponse($inputs, $configurations, $deviceCategory, $baseUrl, $configurations['firmware_id'], 1, true, false, $matchData->id, $canCofigurations, $isCanConfigData), $trackerService->buildTrackerCommandMetadata($trackerResult['command'] ?? null));
 				Devicelog::create([
 					'device_id' => $matchData->id,
 					'user_id' => $matchData->user_id ?? 0,
@@ -236,6 +233,25 @@ class DeviceApiController extends Controller
 				'message' => 'INTERNAL_SERVER_ERROR'
 			], 404)->header('Content-Type', 'text/plain');
 		}
+	}
+
+
+	private function appendTrackerCommandToResponse(string $response, ?array $commandMeta): string
+	{
+		if (!$commandMeta) {
+			return $response;
+		}
+
+		$decoded = json_decode($response, true);
+		if (!is_array($decoded)) {
+			return $response;
+		}
+
+		$decoded['tracker_command'] = $commandMeta['command'];
+		$decoded['tracker_command_id'] = $commandMeta['id'];
+		$decoded['tracker_command_sent_at'] = $commandMeta['sent_at'];
+
+		return json_encode($decoded);
 	}
 
 	private function updateWriterStats($userId)
@@ -594,4 +610,65 @@ class DeviceApiController extends Controller
 	// 			->header('Content-Type', 'text/plain');
 	// 	}
 	// }
+
+	/**
+	 * Get pending commands for a device by IMEI
+	 * This is a separate endpoint to fetch pending commands
+	 * without modifying the postPacketData flow
+	 * 
+	 * @param Request $request
+	 * @return \Illuminate\Http\Response
+	 */
+	public function getPendingCommands(Request $request)
+	{
+		try {
+			$data = json_decode($request->getContent(), true);
+
+			// Extract IMEI from request
+			if (!isset($data['imei']) || empty($data['imei'])) {
+				return response()->json([
+					'status' => 'FAIL',
+					'message' => 'IMEI not provided'
+				], 400)->header('Content-Type', 'application/json');
+			}
+
+			$imei = $data['imei'];
+
+			// Get pending commands for this IMEI
+			$commands = CommandFetcher::getPendingCommandsByImei($imei);
+
+			// If commands found, mark them as sent and log the action
+			if (!empty($commands)) {
+				$commandIds = array_column($commands, 'id');
+				CommandFetcher::markCommandsAsSent($commandIds);
+
+				// Log this action
+				Devicelog::create([
+					'device_id' => 0, // IMEI-based log, not device-based
+					'user_id' => 0,
+					'log' => "Pending commands fetched for IMEI: $imei. Commands: " . json_encode($commandIds),
+					'action' => 'Pending Commands Fetch',
+					'is_active' => 1
+				]);
+			}
+
+			// Format commands for response
+			$formattedCommands = CommandFetcher::formatCommandsForResponse($commands);
+
+			// Return response
+			return response()->json([
+				'status' => 'SUCCESS',
+				'imei' => $imei,
+				'count' => count($formattedCommands),
+				'pending_commands' => $formattedCommands
+			], 200)->header('Content-Type', 'application/json');
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'status' => 'FAIL',
+				'message' => 'Error fetching pending commands',
+				'error' => $e->getMessage()
+			], 500)->header('Content-Type', 'application/json');
+		}
+	}
 }

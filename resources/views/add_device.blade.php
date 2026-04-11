@@ -54,8 +54,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         <form class="validator form-horizontal " id="commentForm" method="post" action="#" onsubmit="return false">
                             @csrf
                             <div class="form-group ">
-                                <label for="cname" class="control-label col-lg-3">Account (optional)</label>
-                                <div class="col-lg-6">
+                                <label for="cname" class="control-label col-md-3 col-sm-12">Account (optional)</label>
+                                <div class="col-md-6 col-sm-12">
                                     <select class="" id="user_id" name="user_id">
                                         @if(count($users) > 0)
                                         <option value="">Unassigned Account</option>
@@ -69,21 +69,21 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 </div>
                             </div>
                             <div class="form-group ">
-                                <label for="cemail" class="control-label col-lg-3">Name (optional)</label>
-                                <div class="col-lg-6">
+                                <label for="cemail" class="control-label col-md-3 col-sm-12">Name (optional)</label>
+                                <div class="col-md-6 col-sm-12">
                                     <input class="form-control" placeholder="Enter Device Name" id="name" type="text" name="name">
                                 </div>
                             </div>
                             <div class="form-group ">
-                                <label for="cemail" class="control-label col-lg-3">IMEI <span class="require">*</span></label>
-                                <div class="col-lg-6">
+                                <label for="cemail" class="control-label col-md-3 col-sm-12">IMEI <span class="require">*</span></label>
+                                <div class="col-md-6 col-sm-12">
                                     <input class="form-control" placeholder="Enter 15 Digit IMEI Number" maxlength="15" id="imei" type="text" name="imei" onkeypress="return blockSpecialChar(event)" required />
                                 </div>
                             </div>
                             @if(Auth::user()->user_type=='Admin')
                             <div class="form-group ">
-                                <label for="curl" class="control-label col-lg-3 ">Device Category <span class="require">*</span></label>
-                                <div class="col-lg-6">
+                                <label for="curl" class="control-label col-md-3 col-sm-12 ">Device Category <span class="require">*</span></label>
+                                <div class="col-md-6 col-sm-12">
                                     <select class="" id="s2example-2" name="deviceCategory" onChange="getSelectedDeviceCategory()" required>
                                         <option value=""> </option>
                                         @foreach($getDeviceCategory as $deviceCategory)
@@ -93,8 +93,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 </div>
                             </div>
                             <div class="form-group isCanEnable" style="display:none;">
-                                <label for="firmware" class="control-label col-lg-3 " required>Can Configuration <span class="require">*</span></label>
-                                <div class="col-lg-6">
+                                <label for="firmware" class="control-label col-md-3 col-sm-12 " required>Can Configuration <span class="require">*</span></label>
+                                <div class="col-md-6 col-sm-12">
                                     <input type="text" class="form-control" name="canConfigurationArr" id="canConfigurationArr" value="" readonly="readonly" />
                                     <div class="col-sm-12 alert alert-danger canConfiguration_error" role="alert" style="display:none"></div>
                                     <button type="button" class="btn btn-primary" onclick="openCanModal()">
@@ -104,30 +104,30 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             </div>
                             @endif
                             <div class="form-group " id="templateInput" style='display:none;'>
-                                <label for="curl" class="control-label col-lg-3 " required>Templates <span class="require">*</span></label>
-                                <div class="col-lg-6">
+                                <label for="curl" class="control-label col-md-3 col-sm-12 " required>Templates <span class="require">*</span></label>
+                                <div class="col-md-6 col-sm-12">
                                     <select id="templates" name="configuration[template]" placeholder='Search and Select' id="templates" onChange="getTemplateConfiguration()">
                                         <option value=""> </option>
                                     </select>
                                 </div>
                             </div>
                             <div class="form-group " id="FirmwareInput" style='display:none;'>
-                                <label for="firmware" class="control-label col-lg-3 " required>Firmware <span class="require">*</span></label>
-                                <div class="col-lg-6">
+                                <label for="firmware" class="control-label col-md-3 col-sm-12 " required>Firmware <span class="require">*</span></label>
+                                <div class="col-md-6 col-sm-12">
                                     <select id="firmware" name="firmware" class="form-control" placeholder='Search and Select'>
                                     </select>
                                 </div>
                             </div>
                             <div class="form-group " id="modalInput" style='display:none;'>
-                                <label for="firmware" class="control-label col-lg-3 " required>Model Name <span class="require">*</span></label>
-                                <div class="col-lg-6">
+                                <label for="firmware" class="control-label col-md-3 col-sm-12 " required>Model Name <span class="require">*</span></label>
+                                <div class="col-md-6 col-sm-12">
                                     <input type="text" class="form-control" name="configuration[modelName]" id="modelName" value="" readonly="readonly" />
                                     <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display:none"></div>
                                 </div>
                             </div>
                             <div class="form-group " id="VendorID" style='display:none;'>
-                                <label for="firmware" class="control-label col-lg-3 " required>Vendor ID <span class="require">*</span></label>
-                                <div class="col-lg-6">
+                                <label for="firmware" class="control-label col-md-3 col-sm-12 " required>Vendor ID <span class="require">*</span></label>
+                                <div class="col-md-6 col-sm-12">
                                     <input type="text" class="form-control" name="configuration[vendorId]" id="VendorId" value="0" readonly="readonly" />
                                     <div class="col-sm-12 alert alert-danger vendor_error" role="alert" style="display:none"></div>
                                 </div>
@@ -135,21 +135,32 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             <div id='deviceCategoryInputFields' style='display:none;'></div>
                             @if(Auth::user()->user_type=='Admin')
                             <div class="form-group ">
-                                <label for="curl" class="control-label col-lg-3">Ping interval <span class="require">*</span></label>
-                                <div class="col-lg-6">
+                                <label for="curl" class="control-label col-md-3 col-sm-12">Ping interval <span class="require">*</span></label>
+                                <div class="col-md-6 col-sm-12">
                                     <input class="form-control" placeholder="Enter Ping Interval" id="ping_interval" type="Number" name="configuration[ping_interval]" value="4" onkeypress="return blockSpecialCharTransmission(event)" required />
                                 </div>
                             </div>
                             @endif
                             @if(Auth::user()->user_type=='Admin')
                             <div class="form-group ">
-                                <label for="curl" class="control-label col-lg-3">Device Edit Permission</label>
-                                <div class="col-lg-6">
+                                <label for="curl" class="control-label col-md-3 col-sm-12">Device Edit Permission</label>
+                                <!-- <div class="col-md-6 col-sm-12">
                                     <label>Enable</label>
                                     <input checked type="radio" name="configuration[is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;">
                                     <label>Disable</label>
                                     <input type="radio" name="configuration[is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;">
+                                </div> -->
+                                <div class="col-md-6 col-sm-12">
+                                    <label class="radio-inline">
+                                        <input type="radio" name="configuration[is_editable]" value="1" checked>
+                                        Enable
+                                    </label>
+                                    <label class="radio-inline" style="margin-left:15px;">
+                                        <input type="radio" name="configuration[is_editable]" value="0">
+                                        Disable
+                                    </label>
                                 </div>
+                                
                             </div>
                             @endif
                             <div id="loading" class="bgx-loading" style="display:none;">
@@ -776,8 +787,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 let field = dataFields.filter((item) => item.fieldName.replace(/\s+/g, '_').toLowerCase() == input.key.replace(/\s+/g, '_').toLowerCase());
                                 let config = JSON.parse(field[0].validationConfig);
                                 htmlContent += '<div class="form-group">';
-                                htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                                htmlContent += '<div class="col-lg-6">';
+                                htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                                htmlContent += '<div class="col-md-6 col-sm-12">';
                                 htmlContent += '<select class="form-control inputType" name="configuration[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? ' required' : '') + '>';
                                 if (config?.selectOptions && config?.selectValues) {
                                     config.selectOptions.forEach((option, index) => {
@@ -790,9 +801,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 htmlContent += '</div>';
                             } else if (input.type == 'multiselect') {
                                 htmlContent += '<div class="form-group">';
-                                htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                                htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                                 let field = dataFields.filter((item) => item.fieldName.replace(/\s+/g, '_').toLowerCase() == input.key.replace(/\s+/g, '_').toLowerCase());
-                                htmlContent += '<div class="col-lg-6">';
+                                htmlContent += '<div class="col-md-6 col-sm-12">';
                                 htmlContent += `<select id="${input.key.replace(/\s+/g, '_').toLowerCase() }" " multiple name=" configuration[` + input.key.replace(/\s+/g, '_').toLowerCase() + `][]" ` + (input.requiredFieldInput ? 'required' : '') + `>`;
                                 let config = JSON.parse(field[0].validationConfig);
                                 if (config.selectOptions && Array.isArray(config.selectOptions)) {
@@ -833,8 +844,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             } else {
                                  if (input.key == "Password") {
                                     htmlContent += '<div class="form-group">';
-                                    htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                                    htmlContent += '<div class="col-lg-6">';
+                                    htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                                    htmlContent += '<div class="col-md-6 col-sm-12">';
                                     let minMaxAttr = '';
                                     if (input.type == 'number' && input.numberRange) {
                                         if (input.numberRange.min !== undefined) minMaxAttr += ' min="' + input.numberRange.min + '"';
@@ -845,8 +856,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     htmlContent += '</div>';
                                 } else {
                                     htmlContent += '<div class="form-group">';
-                                    htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                                    htmlContent += '<div class="col-lg-6">';
+                                    htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                                    htmlContent += '<div class="col-md-6 col-sm-12">';
                                     let minMaxAttr = '';
                                     if (input.type == 'number' && input.numberRange) {
                                         if (input.numberRange.min !== undefined) minMaxAttr += ' min="' + input.numberRange.min + '"';

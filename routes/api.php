@@ -4,6 +4,7 @@ use App\Http\Controllers\ApiControllers\AddDeviceThroughJigController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiControllers\DeviceApiController;
+use App\Http\Controllers\Api\TrackerPacketController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,9 +29,25 @@ Route::post('/generate-token-jig', [AddDeviceThroughJigController::class, 'gener
 // Authenticated route via token
 Route::middleware('check.auth.token')->post('/postPacketData', [DeviceApiController::class, 'postPacketData']);
 
+// Pending commands endpoint - fetch pending commands for device by IMEI
+Route::middleware('check.auth.token')->post('/pending-commands', [DeviceApiController::class, 'getPendingCommands']);
+
 // Authenticated firmware route
 Route::get('/download-firmware/{deviceId}', [DeviceApiController::class, 'downloadFirmware']);
 
 Route::middleware('check.auth.token.jig')->post('/add-device-through-jig', [AddDeviceThroughJigController::class, 'addDevice']);
 
 // Route::get('download-firmware/{filename}/{deviceId}', 'ApiControllers\DeviceApiController@downloadFirmware');
+
+// IMEI Logs Data Ingestion
+// IMEI Logs Data Ingestion
+Route::post('/packets/ingest', [\App\Http\Controllers\Api\PacketIngestionController::class, 'store']);
+Route::post('/tracker/packets/store', [TrackerPacketController::class, 'store']);
+
+// Live Tracking Log Fetcher
+Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs']);
+
+// Command Execution API Routes
+Route::post('/commands/execute', [\App\Http\Controllers\LiveTrackerController::class, 'executeCommand']);
+Route::get('/commands/status', [\App\Http\Controllers\LiveTrackerController::class, 'getCommandStatus']);
+

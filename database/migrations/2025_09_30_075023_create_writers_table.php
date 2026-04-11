@@ -15,6 +15,7 @@ return new class extends Migration
     public function up()
     {
         if (!Schema::hasTable('writers')) {
+            if (!Schema::hasTable('writers')) {
             Schema::create('writers', function (Blueprint $table) {
                 $table->id();
                 $table->string('device_category_id')->nullable();

@@ -14,6 +14,7 @@ return new class extends Migration
     public function up()
     {
         if (!Schema::hasTable('devices')) {
+            if (!Schema::hasTable('devices')) {
             Schema::create('devices', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
@@ -39,6 +40,7 @@ return new class extends Migration
             $table->string('firmware_version')->nullable();
             $table->timestamps();
         });
+        }
         }
     }
 

@@ -14,6 +14,7 @@ return new class extends Migration
     public function up()
     {
         if (!Schema::hasTable('ccids')) {
+            if (!Schema::hasTable('ccids')) {
             Schema::create('ccids', function (Blueprint $table) {
             $table->id();
             $table->string('ccid');
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->string('customer_name')->nullable();
             $table->timestamps();
         });
+        }
         }
     }
 

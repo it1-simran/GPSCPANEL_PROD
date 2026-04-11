@@ -14,6 +14,7 @@ return new class extends Migration
     public function up()
     {
         if (!Schema::hasTable('firmwares')) {
+            if (!Schema::hasTable('firmwares')) {
             Schema::create('firmwares', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -32,6 +33,7 @@ return new class extends Migration
             // $table->foreign('device_category_id')->references('id')->on('device_categories')->onDelete('cascade');
             // $table->foreign('backend_id')->references('id')->on('backends')->onDelete('set null');
         });
+        }
         }
     }
 

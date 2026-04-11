@@ -14,6 +14,7 @@ return new class extends Migration
     public function up()
     {
         if (!Schema::hasTable('device_logs')) {
+            if (!Schema::hasTable('device_logs')) {
             Schema::create('device_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('device_id');
@@ -25,6 +26,7 @@ return new class extends Migration
             $table->foreign('device_id')->references('id')->on('devices')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('writers')->onDelete('set null');
         });
+        }
         }
     }
 

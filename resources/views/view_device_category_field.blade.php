@@ -777,7 +777,11 @@
           pageLength: 10
       });
       setTimeout(function () {
-          table.columns.adjust();
+          if (table && table.columns && typeof table.columns.adjust === 'function') {
+              table.columns.adjust();
+          } else if (table && typeof table.columns === 'function') {
+              table.columns().adjust();
+          }
       }, 300);
   });
 
@@ -844,3 +848,4 @@
     align-items: center;
   }
 </style>
+

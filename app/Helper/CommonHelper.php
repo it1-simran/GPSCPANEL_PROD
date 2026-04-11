@@ -65,13 +65,13 @@ class CommonHelper
                 if ($category->id == $deviceCategoryId) {
                     $html .= ' active';
                 }
-                $html .= '" onclick="openTab(event, \'tab' . $category->id . '\')">' . $category->device_category_name . '</button>';
+                $html .= '" type="button" onclick="return openDeviceTab(this, \'tab' . $category->id . '\')">' . $category->device_category_name . '</button>';
             } else {
                 $html .= '<button class="tablinks';
                 if ($key == 0) {
                     $html .= ' active';
                 }
-                $html .= '" onclick="openTab(event, \'tab' . $category->id . '\')">' . $category->device_category_name . '</button>';
+                $html .= '" type="button" onclick="return openDeviceTab(this, \'tab' . $category->id . '\')">' . $category->device_category_name . '</button>';
             }
         }
         $html .= '</div>';
@@ -3427,3 +3427,6 @@ class CommonHelper
             ->first();
     }
 }
+
+
+

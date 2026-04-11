@@ -14,6 +14,7 @@ return new class extends Migration
     public function up()
     {
         if (!Schema::hasTable('esims')) {
+            if (!Schema::hasTable('esims')) {
             Schema::create('esims', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->string('profile_2')->nullable();
             $table->timestamps();
         });
+        }
         }
     }
 

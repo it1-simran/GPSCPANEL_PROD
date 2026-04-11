@@ -14,6 +14,7 @@ return new class extends Migration
     public function up()
     {
         if (!Schema::hasTable('imei_commands')) {
+            if (!Schema::hasTable('imei_commands')) {
             Schema::create('imei_commands', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('imei_id');
@@ -23,6 +24,7 @@ return new class extends Migration
 
             $table->foreign('imei_id')->references('id')->on('imei_devices')->onDelete('cascade');
         });
+        }
         }
     }
 

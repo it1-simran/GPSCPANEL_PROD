@@ -14,19 +14,16 @@ return new class extends Migration
 public function up()
 {
     if (!Schema::hasTable('templates')) {
+        if (!Schema::hasTable('templates')) {
             Schema::create('templates', function (Blueprint $table) {
             $table->id();
             $table->string('template_name');
-
             $table->unsignedBigInteger('id_user')->nullable();
             $table->unsignedBigInteger('device_category_id')->nullable();
-
             $table->longText('configurations')->nullable();
             $table->longText('can_configurations')->nullable();
-
             $table->tinyInteger('verify')->default(0);
             $table->boolean('default_template')->default(false);
-
             $table->timestamps();
         });
         }

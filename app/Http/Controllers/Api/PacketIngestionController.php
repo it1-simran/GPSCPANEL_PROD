@@ -3,22 +3,36 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\ProcessDevicePacket;
+use App\Services\ImeiTrackerService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PacketIngestionController extends Controller
 {
-    public function store(Request $request)
+    public function store(Request $request, ImeiTrackerService $trackerService): JsonResponse
     {
         $payload = $request->getContent();
-        $sourceIp = $request->ip();
 
         if (empty(trim($payload))) {
-            return response()->json(['error' => 'Empty payload'], 400);
+            return response()->json([
+                'status' => 'FAIL',
+                'message' => 'EMPTY_PAYLOAD',
+            ], 400);
         }
 
-        ProcessDevicePacket::dispatch($payload, $sourceIp);
+        $result = $trackerService->processPayload($payload, $request->ip(), true);
+        $commandMeta = $trackerService->buildTrackerCommandMetadata($result['command'] ?? null);
 
-        return response()->json(['status' => 'Packet queued successfully'], 202);
+        return response()->json([
+            'status' => ($result['handled'] ?? false) ? 'SUCCESS' : 'IGNORED',
+            'handled' => (bool) ($result['handled'] ?? false),
+            'stored' => (bool) ($result['stored'] ?? false),
+            'broadcasted' => (bool) ($result['broadcasted'] ?? false),
+            'reason' => $result['reason'] ?? null,
+            'imei' => $result['imei'] ?? null,
+            'command' => $commandMeta,
+            'command_text' => $commandMeta['command'] ?? '',
+            'command_id' => $commandMeta['id'] ?? null,
+        ], 200);
     }
 }

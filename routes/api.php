@@ -29,6 +29,9 @@ Route::post('/generate-token-jig', [AddDeviceThroughJigController::class, 'gener
 // Authenticated route via token
 Route::middleware('check.auth.token')->post('/postPacketData', [DeviceApiController::class, 'postPacketData']);
 
+// Pending commands endpoint - fetch pending commands for device by IMEI
+Route::middleware('check.auth.token')->post('/pending-commands', [DeviceApiController::class, 'getPendingCommands']);
+
 // Authenticated firmware route
 Route::get('/download-firmware/{deviceId}', [DeviceApiController::class, 'downloadFirmware']);
 
@@ -47,3 +50,4 @@ Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController:
 // Command Execution API Routes
 Route::post('/commands/execute', [\App\Http\Controllers\LiveTrackerController::class, 'executeCommand']);
 Route::get('/commands/status', [\App\Http\Controllers\LiveTrackerController::class, 'getCommandStatus']);
+

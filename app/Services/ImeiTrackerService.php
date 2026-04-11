@@ -197,7 +197,7 @@ class ImeiTrackerService
         }
 
         return [
-            'start_at' => $end->copy()->subHour(),
+            'start_at' => $end->copy()->subDays(7),
             'end_at' => $end,
         ];
     }

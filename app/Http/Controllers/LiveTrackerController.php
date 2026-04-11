@@ -36,7 +36,7 @@ class LiveTrackerController extends Controller
             $endAt = $device->effective_end_at->copy();
         }
         if ($startAt->gt($endAt)) {
-            $startAt = $endAt->copy()->subHour();
+            $startAt = $endAt->copy()->subDays(7);
         }
 
         $initialLogs = collect();
@@ -253,7 +253,7 @@ class LiveTrackerController extends Controller
         }
 
         if ($startAt->gt($endAt)) {
-            $startAt = $endAt->copy()->subHour();
+            $startAt = $endAt->copy()->subDays(7);
         }
 
         return [$startAt, $endAt];

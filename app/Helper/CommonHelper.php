@@ -3380,52 +3380,50 @@ class CommonHelper
 
         if ($device) {
             $categoryId = $device->device_category_id;
+            
+            // Resolve primary user_id based on device assignment hierarchy
             if (!empty($device->assign_to_ids)) {
-                $aids = explode(',', $device->assign_to_ids);
+                $aids = array_map('intval', array_map('trim', explode(',', $device->assign_to_ids)));
                 if (count($aids) >= 2) {
-                    // Level 1 Reseller is always at index[1]
-                    $search_ids[] = (int)trim($aids[1]);
-                } else {
-                    // Only 1 element in chain (e.g. "1" from Admin direct assignment)
-                    // index[1] doesn't exist — use device's user_id to look up the model
-                    if (!empty($device->user_id)) {
-                        $userId = $device->user_id;
-                    } else {
-                        // Last resort: use the single chain element (Admin)
-                        $search_ids[] = (int)trim($aids[0]);
-                    }
+                    // Multi-level: use Level 1 Reseller (aids[1])
+                    $search_ids[] = $aids[1];
+                } elseif (!empty($device->user_id)) {
+                    // Single level with user_id: use device user
+                    $userId = $device->user_id;
+                } elseif (empty($userId)) {
+                    // Single level, no device user, no auth user: use chain root
+                    $search_ids[] = $aids[0];
                 }
-            } else if (!empty($device->user_id)) {
-                // No assign_to_ids at all — use device's user_id
+            } elseif (!empty($device->user_id)) {
+                // No hierarchy: use device user directly
                 $userId = $device->user_id;
             }
         }
 
-        // Trace the `created_by` chain of the resolved user_id
-        // This handles: dealer directly assigned by Admin, Level-1 Reseller, etc.
+        // Build parent chain for resolved userId
         if (empty($search_ids) && $userId && $userId != "No User Found") {
-            $target_user = \App\Writer::find($userId);
-            $search_ids[] = $userId;
-            if ($target_user) {
-                // Traverse up the chain (maximum 5 levels to avoid infinite loops)
-                $current_parent = $target_user->created_by;
-                while ($current_parent && $current_parent != "1" && count($search_ids) < 5) {
-                    $search_ids[] = $current_parent;
-                    $p_user = \App\Writer::find($current_parent);
-                    $current_parent = $p_user ? $p_user->created_by : null;
-                }
+            $search_ids[] = (int)$userId;
+            
+            // Traverse parent chain with early termination
+            $current_id = $userId;
+            for ($depth = 0; $depth < 4; $depth++) {
+                $parent_id = \App\Writer::where('id', $current_id)->pluck('created_by')->first();
+                if (!$parent_id || in_array($parent_id, $search_ids)) break;
+                $search_ids[] = (int)$parent_id;
+                $current_id = $parent_id;
             }
         }
 
+        // Default to Admin if no search ids built
         if (empty($search_ids)) {
-            $search_ids[] = 1; // Admin last resort
+            $search_ids[] = 1;
         }
 
-        $modal = \App\Modal::where('firmware_id', $firmwareId)
+        // Single query with priority ordering
+        $field_case = 'FIELD(user_id, ' . implode(',', $search_ids) . ')';
+        return \App\Modal::where('firmware_id', $firmwareId)
             ->whereIn('user_id', $search_ids)
+            ->orderByRaw($field_case)
             ->first();
-
-        // Return null if no model found — let the caller handle the fallback
-        return $modal ?: null;
     }
 }

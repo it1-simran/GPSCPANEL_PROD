@@ -210,15 +210,15 @@
                               </select>
                             </div>
                           </div>
-                          <div class="col-md-6 col-sm-12">
+                          <div class="col-lg-6">
                             @php
                             $firmwares = \DB::table('firmware')->where('device_category_id', $category->id)->get();
                             @endphp
                             <div class="form-group">
-                              <label for="firmware<?= $category->id ?>" class="control-label col-md-3 col-sm-12">
+                              <label for="firmware<?= $category->id ?>" class="control-label col-lg-3">
                                 Firmware <span class="require">*</span>
                               </label>
-                              <div class="col-md-8 col-sm-12">
+                              <div class="col-lg-8">
                                 <select class="form-control"
                                   id="firmware<?= $category->id ?>"
                                   data-index="<?= $category->id ?>"
@@ -236,18 +236,18 @@
                           </div>
                         </div>
                         <div class="row">
-                          <div class="col-md-6 col-sm-12">
+                          <div class="col-lg-6">
                             <div class="form-group">
-                              <label class="control-label col-md-3 col-sm-12">Model Name <span class="require">*</span></label>
-                              <div class="col-md-8 col-sm-12">
+                              <label class="control-label col-lg-3">Model Name <span class="require">*</span></label>
+                              <div class="col-lg-8">
                                 <input type="text" class="form-control" name="configuration[<?= $category->id ?>][modelName]" id="modelName<?= $category->id ?>" readonly />
                               </div>
                             </div>
                           </div>
-                          <div class="col-md-6 col-sm-12">
+                          <div class="col-lg-6">
                             <div class="form-group">
-                              <label class="control-label col-md-3 col-sm-12">Vendor ID <span class="require">*</span></label>
-                              <div class="col-md-8 col-sm-12">
+                              <label class="control-label col-lg-3">Vendor ID <span class="require">*</span></label>
+                              <div class="col-lg-8">
                                 <input type="text" class="form-control" name="configuration[<?= $category->id ?>][vendorId]" id="vendorId<?= $category->id ?>" readonly />
                               </div>
                             </div>
@@ -272,7 +272,7 @@
                         <div class="row">
                           @endif
                           @if(isset($input['key']))
-                          <div class="col-md-6 col-sm-12">
+                          <div class="col-lg-6">
                             <input class="form-control inputType" type="hidden" placeholder="Enter {{$input['key']}}" name="idParameters[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" value="{{$input['id']}}" />
                             @php
                             $validationConfig = json_decode($input['validationConfig'],true);
@@ -280,8 +280,8 @@
                             @if ($input['type'] == 'select')
 
                             <div class="form-group">
-                              <label class="control-label col-md-3 col-sm-12">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
-                              <div class="col-md-8 col-sm-12">
+                              <label class="control-label col-lg-3">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
+                              <div class="col-lg-8">
                                 <select class="form-control inputType" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }}>
                                   <!-- <option value="">Please Select</option> -->
                                   @foreach($validationConfig['selectOptions'] as $configkey => $option)
@@ -295,10 +295,10 @@
                             $validationConfig = json_decode($input['validationConfig'],true);
                             @endphp
                             <div class="form-group">
-                              <label class="control-label col-md-3 col-sm-12">
+                              <label class="control-label col-lg-3">
                                 {{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}
                               </label>
-                              <div class="col-md-8 col-sm-12">
+                              <div class="col-lg-8">
                                 <select class="inputType" id="configval{{$category->id}}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}][]" multiple {{ $input['requiredFieldInput'] ? 'required' : '' }}>
                                   @foreach($validationConfig['selectOptions'] as $configkey => $option)
                                   @php
@@ -354,8 +354,8 @@
                               $addClassIpUrl = isset($input['type']) && $input['type'] == 'IP/URL' ? "ip-url-space" : '';
                               @endphp
 
-                              <label class="control-label col-md-3 col-sm-12">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
-                              <div class="col-md-8 col-sm-12">
+                              <label class="control-label col-lg-3">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
+                              <div class="col-lg-8">
                                 @php
                                 $configKey = str_replace(' ', '_', strtolower($input['key']));
                                 $configVal = '';

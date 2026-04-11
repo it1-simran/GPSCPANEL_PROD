@@ -42,6 +42,20 @@ class DeviceController extends Controller
             'password' => 'required|string|min:6',
         ]);
     }
+
+    /**
+     * Helper method to find a configuration key supporting both snake_case and camelCase variations
+     */
+    private function findConfigKey($newChanges, $oldChanges, ...$keyVariations)
+    {
+        foreach ($keyVariations as $key) {
+            if (isset($newChanges[$key]) || isset($oldChanges[$key])) {
+                return $key;
+            }
+        }
+        return null;
+    }
+
     public function index()
     {
         $users = DB::table('writers')
@@ -119,6 +133,13 @@ class DeviceController extends Controller
                 }
             }
         }
+
+        foreach ($converted as $key => $value) {
+            if (is_object($value)) {
+                $converted[$key] = (array) $value;
+            }
+        }
+
         $firmware = Firmware::select('configurations')->where(['id' => $request->firmware])->first();
         $device_array = $converted;
         $fimwareArr = json_decode($firmware->configurations, true);
@@ -2243,7 +2264,7 @@ class DeviceController extends Controller
         // Dynamically override device configurations with Master Hierarchy model bindings
         $deviceConfigs = json_decode($device->configurations, true);
         if ($deviceConfigs && isset($deviceConfigs['firmware_id']['value'])) {
-            $hierarchyModel = \App\Helper\CommonHelper::getModelByHierarchy($device, $deviceConfigs['firmware_id']['value']);
+            $hierarchyModel = \App\Helper\CommonHelper::getModelByHierarchy($device, $deviceConfigs['firmware_id']['value'], Auth::user()->id);
             if ($hierarchyModel != null) {
                 if (isset($deviceConfigs['modelName'])) {
                     $deviceConfigs['modelName']['value'] = $hierarchyModel->name;
@@ -2297,6 +2318,40 @@ class DeviceController extends Controller
         if (!is_array($oldChanges)) {
             $oldChanges = [];
         }
+
+        // Ensure firmware_id is properly captured for comparison
+        // It might be in params but not processed if not in DataFields
+        $firmwareIdKey = null;
+        // Check for firmware change: capture and compare firmware_id
+        if (isset($params['firmware_id']) && isset($oldChanges['firmware_id'])) {
+            $newFirmwareId = (int)$params['firmware_id'];
+            $oldFirmwareId = (int)($oldChanges['firmware_id']['value'] ?? 0);
+            
+            if ($newFirmwareId && $newFirmwareId != $oldFirmwareId) {
+                // Firmware changed: update model and vendor from hierarchy
+                $hierarchyModel = \App\Helper\CommonHelper::getModelByHierarchy($device, $newFirmwareId, auth()->id());
+                
+                // Get configuration field keys
+                $modelNameKey = $this->findConfigKey($newChanges, $oldChanges, 'modelName', 'model_name', 'model name');
+                $vendorIdKey = $this->findConfigKey($newChanges, $oldChanges, 'vendorId', 'vendor_id', 'vendor id');
+                
+                // Update model and vendor using helper method
+                if ($modelNameKey) {
+                    $this->updateConfigField($newChanges, $oldChanges, $modelNameKey, $hierarchyModel ? $hierarchyModel->name : \App\Helper\CommonHelper::getDeviceCategoryName($device->device_category_id));
+                }
+                if ($vendorIdKey) {
+                    $this->updateConfigField($newChanges, $oldChanges, $vendorIdKey, $hierarchyModel ? $hierarchyModel->vendorId : 'JSD');
+                }
+            }
+            // Ensure firmware_id is in newChanges for save
+            if (!isset($newChanges['firmware_id'])) {
+                $newChanges['firmware_id'] = [
+                    'id' => $oldChanges['firmware_id']['id'] ?? null,
+                    'value' => $newFirmwareId
+                ];
+            }
+        }
+
         $changedFields = [];
         foreach ($newChanges as $key => $value) {
             if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $value['value']) {
@@ -2470,20 +2525,11 @@ class DeviceController extends Controller
                         // When unassigning, reset to the Reseller and recalculate chain
                         $new_assing_ids = self::getAssignsIdsForChangeDeviceUser(Auth::user()->id, $is_editable->assign_to_ids, 'yes');
 
-                        // Extract root owner from the new chain
-                        $loggedInUserId = Auth::user()->id;
-                        $old_chain_array = explode(",", $is_editable->assign_to_ids);
-                        $chain_array = !empty($new_assing_ids) ? explode(',', $new_assing_ids) : [];
-                        print_r($old_chain_array);
-                        echo "<br>";
-                        $index = array_search($loggedInUserId, $old_chain_array);
-                        echo "index ===>" . $index;
-                        $root_owner = !empty($old_chain_array) ? intval($old_chain_array[$index - 1]) : 1;
-                        echo "current  user" . Auth::user()->id;
-                        // echo "prev uid ==>" . $prev_uid;
-                        // echo "root_owner ===>" . $root_owner;
-                        // die("im here 1");
-
+                        // Extract root owner from the recalculated chain safely.
+                        $chain_array = array_values(array_filter(explode(',', (string) $new_assing_ids), function ($value) {
+                            return $value !== '';
+                        }));
+                        $root_owner = !empty($chain_array) ? intval($chain_array[0]) : 1;
 
                         // Reset master_id to root owner and assign back to Reseller
                         $contact->master_id = $root_owner;

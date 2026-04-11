@@ -6,13 +6,17 @@ use App\Models\ImeiCommand;
 use App\Models\ImeiDevice;
 use App\Models\ImeiLog;
 use App\Services\ImeiTrackerService;
+use App\Services\CommandExecutionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LiveTrackerController extends Controller
 {
-    public function __construct(protected ImeiTrackerService $trackerService)
+    public function __construct(
+        protected ImeiTrackerService $trackerService,
+        protected CommandExecutionService $commandExecutionService
+    )
     {
     }
 
@@ -92,10 +96,104 @@ class LiveTrackerController extends Controller
         ImeiCommand::create([
             'imei_id' => $device->id,
             'command' => $validated['command'],
-            'status' => 0,
+            'status' => ImeiCommand::STATUS_PENDING,
         ]);
 
         return back()->with('success', 'Command queued successfully.');
+    }
+
+    /**
+     * Execute a queued command and update its status
+     * API Endpoint: POST /api/commands/execute
+     */
+    public function executeCommand(Request $request)
+    {
+        $validated = $request->validate([
+            'imei' => ['required', 'string'],
+            'command_name' => ['nullable', 'string'],
+            'command' => ['required', 'string'],
+        ]);
+
+        // Find device by IMEI
+        $device = ImeiDevice::where('imei', $validated['imei'])->first();
+        if (!$device) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Device not found',
+            ], 404);
+        }
+
+        // Find the latest pending command matching this command text
+        $command = ImeiCommand::where('imei_id', $device->id)
+            ->where('command', $validated['command'])
+            ->where('status', ImeiCommand::STATUS_PENDING)
+            ->latest()
+            ->first();
+
+        if (!$command) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No pending command found',
+            ], 404);
+        }
+
+        // Execute the command
+        $result = $this->commandExecutionService->executeCommand($command, $device);
+
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => [
+                'command_id' => $command->id,
+                'command' => $command->command,
+                'status' => $command->status_label,
+                'response_time' => $command->response_time,
+                'executed_at' => optional($command->executed_at)->toDateTimeString(),
+            ]
+        ]);
+    }
+
+    /**
+     * Get command status
+     * API Endpoint: GET /api/commands/status?imei=xxx&command=yyy
+     */
+    public function getCommandStatus(Request $request)
+    {
+        $imei = $request->query('imei');
+        $commandText = $request->query('command');
+
+        $device = ImeiDevice::where('imei', $imei)->first();
+        if (!$device) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Device not found',
+            ], 404);
+        }
+
+        $commands = ImeiCommand::where('imei_id', $device->id);
+        
+        if ($commandText) {
+            $commands->where('command', $commandText);
+        }
+
+        $commands = $commands->latest()->limit(10)->get();
+
+        return response()->json([
+            'success' => true,
+            'device_imei' => $imei,
+            'commands' => $commands->map(function ($cmd) {
+                return [
+                    'id' => $cmd->id,
+                    'command' => $cmd->command,
+                    'status' => $cmd->status_label,
+                    'status_code' => $cmd->status,
+                    'sent_at' => optional($cmd->sent_at)->toDateTimeString(),
+                    'executed_at' => optional($cmd->executed_at)->toDateTimeString(),
+                    'response_time' => $cmd->response_time,
+                    'response' => $cmd->device_response ? json_decode($cmd->device_response, true) : null,
+                ];
+            })
+        ]);
     }
 
     public function downloadLogs(Request $request, ImeiDevice $device)

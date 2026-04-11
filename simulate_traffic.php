@@ -14,7 +14,7 @@
 // Configuration
 $baseUrl = "http://localhost:8000";
 $apiIngestUrl = "$baseUrl/api/packets/ingest";
-$imei = "490154203237518";
+$imei = isset($argv[1]) ? $argv[1] : "123456789012345";
 $trafficIterations = 15;
 $trafficDelay = 3; // Seconds between traffic packets
 

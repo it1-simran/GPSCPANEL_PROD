@@ -58,11 +58,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             <div class="tabs">
               @foreach ($getDeviceCategory as $key => $category)
               @if( Session::get('device_category_id'))
-              <button class="tablinks {{Session::get('device_category_id') == $category->id ? 'active' : '' }}" onclick="openTab(event, 'tab{{ $category->id }}')">
+              <button class="tablinks {{Session::get('device_category_id') == $category->id ? 'active' : '' }}" type="button" onclick="return openDeviceTab(this, 'tab{{ $category->id }}')">
                 {{ $category->device_category_name }}
               </button>
               @else
-              <button class="tablinks {{ $key==0 ? 'active' : '' }}" onclick="openTab(event, 'tab{{ $category->id }}')">
+              <button class="tablinks {{ $key==0 ? 'active' : '' }}" type="button" onclick="return openDeviceTab(this, 'tab{{ $category->id }}')">
                 {{ $category->device_category_name }}
               </button>
               @endif
@@ -369,8 +369,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
       if (!isValid) {
         e.preventDefault(); // stop action
-        alert("hello");
-        return;
+          return;
       }
       var $errorMsg = $modal.find('.error_msg_firmware');
       var formData = new FormData($form[0]);
@@ -463,16 +462,47 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       }
   });
   
-  function openTab(evt, tabName) {
+  function openDeviceTab(evt, tabName) {
+      if (evt && typeof evt.preventDefault === 'function') {
+          evt.preventDefault();
+      }
+
       $('.tabcontent').hide();
       $('.tablinks').removeClass('active');
       $('#' + tabName).show();
-      $(evt.currentTarget).addClass('active');
+
+      var currentBtn = null;
+      if (evt && evt.currentTarget) {
+          currentBtn = $(evt.currentTarget);
+      } else if (evt && evt.nodeType === 1) {
+          currentBtn = $(evt);
+      } else {
+          currentBtn = $('.tablinks[onclick*="' + tabName + '"]').first();
+      }
+      if (currentBtn && currentBtn.length) {
+          currentBtn.addClass('active');
+      }
 
       if ($.fn.DataTable) {
-          $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+          var dtTables = $.fn.dataTable.tables({ visible: true, api: true });
+          if (dtTables && dtTables.columns && typeof dtTables.columns.adjust === 'function') {
+              dtTables.columns.adjust();
+          } else if (dtTables && typeof dtTables.columns === 'function') {
+              dtTables.columns().adjust();
+          }
       }
+
+      return false;
   }
 </script>
 
 <!-- nav-collapse md-box-shadowed hide-left-bar show-left-bar-mobile -->
+
+
+
+
+
+
+
+
+

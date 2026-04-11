@@ -24,7 +24,7 @@ $currentEmail = Auth::user()->email;
             <li class="active"><a href="#">View Unassigned Devices</a></li>
             @endif
           </ul>
-        </nav>
+        </nav>           
       </div>
     </div>
     <div class="row">
@@ -125,6 +125,11 @@ $currentEmail = Auth::user()->email;
     </div>
   </div>
   </div>
+<style>
+  .example th, .example td {
+      white-space: nowrap !important;
+  }
+</style>
 <script>
   $(document).ready(function() {
     function initializeDataTables() {
@@ -141,6 +146,8 @@ $currentEmail = Auth::user()->email;
           pageLength: 10,
           scrollX: true,
           scrollY: '500px',
+          autoWidth: false,
+          scrollCollapse: true,
           "aLengthMenu": [
             [25, 50, 100, 500, -1],
             [25, 50, 100, 500, "All"]
@@ -150,17 +157,38 @@ $currentEmail = Auth::user()->email;
       });
       $('#loading').hide();
     }
-    initializeDataTables();
 
-    $('.tablinks').on('click', function() {
-      $('#loading').show();
-      initializeDataTables();
-    });
+    // Initialize tabs: hide all, show first
+    $('.tabcontent').hide();
+    let firstTab = $('.tablinks').first();
+    let activeTab = $('.tablinks.active').first(); 
+    if(activeTab.length == 0 && firstTab.length) {
+        firstTab.addClass('active');
+        activeTab = firstTab;
+    }
+    if (activeTab.length) {
+        let onclick = activeTab.attr('onclick');
+        if(onclick) {
+            let tabMatch = onclick.match(/'([^']+)'/);
+            if(tabMatch) {
+                $('#' + tabMatch[1]).show();
+            }
+        }
+    }
+
+    // Initialize datatables AFTER making the active tab visible!
+    // This allows DataTables to correctly calculate columns width for the visible tab.
+    initializeDataTables();
+    
+    // Explicitly adjust columns just in case
+    setTimeout(function() {
+        if ($.fn.DataTable) {
+            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+        }
+    }, 100);
+
     $('.dataTables_filter input').attr("placeholder", "Zoeken...");
-    //$(document).on('click', '.certificate-button', function() {
-      //var deviceId = $(this).data('device-id');
-      //window.open('/user/device/' + deviceId + '/certificate', '_blank');
-    //});
+    
     $('#certificatePreviewBtn').on('click', function() {
       var deviceId = $('#certificateForm').data('deviceId');
       if (!deviceId) return;
@@ -343,6 +371,9 @@ $currentEmail = Auth::user()->email;
         });
       }
     });
+
+    $("#temp_id").select2();
+    $(".select2").select2();
   });
 
   function dataTableCheckAll(dataId) {
@@ -352,28 +383,15 @@ $currentEmail = Auth::user()->email;
       $(".sub_chk"+ dataId).prop('checked', false);
     }
   }
-  $(document).ready(function() {
-    // Initialize select2
-    // $('.assignDeviceUser').each(function() {
-    //   // Get the ID of each element
-    //   var id = $(this).attr('id');
 
-    //   $('#' + id).select2({
-    //     'placeholder': 'Select and Search ',
-    //     'allowClear': true,
-    //   })
-    // });
-    // $('.assignDeviceTemp').each(function() {
-    //   // Get the ID of each element
-    //   var id = $(this).attr('id');
-
-    //   $('#' + id).select2({
-    //     'placeholder': 'Select and Search ',
-    //     'allowClear': true,
-
-    //   })
-    // });
-    $("#temp_id").select2();
-    $(".select2").select2();
-  });
+  function openTab(evt, tabName) {
+      $('.tabcontent').hide();
+      $('.tablinks').removeClass('active');
+      $('#' + tabName).show();
+      $(evt.currentTarget).addClass('active');
+      
+      if ($.fn.DataTable) {
+          $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+      }
+  }
 </script>

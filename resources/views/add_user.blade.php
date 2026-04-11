@@ -69,8 +69,8 @@
                 <form class="validator form-horizontal" id="commentForm" method="post" action="#" onsubmit="return false">
                   @csrf
                   <div class="form-group">
-                    <label for="curl" class="control-label col-lg-3">Account Type</label>
-                    <div class="col-lg-6">
+                    <label for="curl" class="control-label col-md-3 col-sm-12">Account Type</label>
+                    <div class="col-md-6 col-sm-12">
                       <select class="form-control" id="userType" name="user_type">
                         <option value="Reseller">Manufacturer</option>
                         <option selected="selected" value="User">Dealer</option>
@@ -81,26 +81,26 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="cname" class="control-label col-lg-3">Name <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="cname" class="control-label col-md-3 col-sm-12">Name <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <input class=" form-control" placeholder="Enter Name" id="cname" name="name" type="text" required />
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="cemail" class="control-label col-lg-3">Mobile <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="cemail" class="control-label col-md-3 col-sm-12">Mobile <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <input class="form-control" placeholder="Enter Mobile Number" id="cmobile" type="text" name="mobile" maxlength="10" required />
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="cemail" class="control-label col-lg-3">E-Mail <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="cemail" class="control-label col-md-3 col-sm-12">E-Mail <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <input class="form-control" placeholder="Enter E-Mail" id="cemail" type="email" name="email" required />
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="timezone" class="control-label col-lg-3">TimeZones <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="timezone" class="control-label col-md-3 col-sm-12">TimeZones <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <select name="timezone" class="select2" id="timezone">
                         <option value="">Please Select Time Zone</option>
                         @foreach($timeZones as $timezone)
@@ -115,8 +115,8 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="curl" class="control-label col-lg-3">Login Password <span class="require">*</span></label>
-                    <div class="col-lg-6">
+                    <label for="curl" class="control-label col-md-3 col-sm-12">Login Password <span class="require">*</span></label>
+                    <div class="col-md-6 col-sm-12">
                       <input class="form-control" placeholder="Enter Login password" type="password" name="password" required />
                     </div>
                   </div>
@@ -124,7 +124,7 @@
                   @if($currentUser->user_type =='Admin')
 
                   <div class="form-group bgx-margin-bottom row">
-                    <label for="curl" class="control-label col-lg-3">Device Categories<span class="require">*</span></label>
+                    <label for="curl" class="control-label col-md-3 col-sm-12">Device Categories<span class="require">*</span></label>
                     <div class="col-lg-9 bgx-margin-top row ">
                       @foreach($getDeviceCategory as $deviceCategory)
                       <div class="row col-md-6">
@@ -141,7 +141,7 @@
                   @endif
                   @if($currentUser->user_type == 'Reseller')
                   <div class="form-group bgx-margin-bottom row">
-                    <label for="curl" class="control-label col-lg-3">Device Categories<span class="require">*</span></label>
+                    <label for="curl" class="control-label col-md-3 col-sm-12">Device Categories<span class="require">*</span></label>
                     <div class="col-lg-6 bgx-margin-top row ">
                       @foreach($getDeviceCategory as $deviceCategory)
                       @if(in_array($deviceCategory->id,$deviceCategoryArr))
@@ -186,12 +186,12 @@
                       ->get();
                       @endphp
                       <div class="row">
-                        <div class="col-lg-6">
+                        <div class="col-md-6 col-sm-12">
                           <div class="form-group">
-                            <label for="templates<?= $category->id ?>" class="control-label col-lg-3">
+                            <label for="templates<?= $category->id ?>" class="control-label col-md-3 col-sm-12">
                               Templates <span class="require">*</span>
                             </label>
-                            <div class="col-lg-8">
+                            <div class="col-md-8 col-sm-12">
                               <select class="userAccType form-control "
                                 id="templates<?= $category->id ?>"
                                 name="configuration[<?= $category->id ?>][template]"
@@ -208,280 +208,280 @@
                                   <option>No Template Found</option>
                                 <?php endif; ?>
                               </select>
+                            </div>
                           </div>
-                        </div>
-                        <div class="col-lg-6">
-                          @php
+                          <div class="col-md-6 col-sm-12">
+                            @php
                             $firmwares = \DB::table('firmware')->where('device_category_id', $category->id)->get();
-                          @endphp
-                          <div class="form-group">
-                            <label for="firmware<?= $category->id ?>" class="control-label col-lg-3">
-                              Firmware <span class="require">*</span>
-                            </label>
-                            <div class="col-lg-8">
-                              <select class="form-control" 
-                                id="firmware<?= $category->id ?>" 
-                                data-index="<?= $category->id ?>" 
-                                data-category="<?= $category->id ?>"
-                                name="configuration[<?= $category->id ?>][firmware_id]" 
-                                onchange="changeFirmware(<?= $category->id ?>)">
-                                @foreach($firmwares as $firmware)
+                            @endphp
+                            <div class="form-group">
+                              <label for="firmware<?= $category->id ?>" class="control-label col-md-3 col-sm-12">
+                                Firmware <span class="require">*</span>
+                              </label>
+                              <div class="col-md-8 col-sm-12">
+                                <select class="form-control"
+                                  id="firmware<?= $category->id ?>"
+                                  data-index="<?= $category->id ?>"
+                                  data-category="<?= $category->id ?>"
+                                  name="configuration[<?= $category->id ?>][firmware_id]"
+                                  onchange="changeFirmware(<?= $category->id ?>)">
+                                  @foreach($firmwares as $firmware)
                                   <option value="{{ $firmware->id }}" {{ $firmware->is_default == 1 ? 'selected' : '' }}>
                                     {{ $firmware->name }}
                                   </option>
-                                @endforeach
-                              </select>
+                                  @endforeach
+                                </select>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="row">
-                        <div class="col-lg-6">
-                          <div class="form-group">
-                            <label class="control-label col-lg-3">Model Name <span class="require">*</span></label>
-                            <div class="col-lg-8">
-                              <input type="text" class="form-control" name="configuration[<?= $category->id ?>][modelName]" id="modelName<?= $category->id ?>" readonly />
+                        <div class="row">
+                          <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-12">Model Name <span class="require">*</span></label>
+                              <div class="col-md-8 col-sm-12">
+                                <input type="text" class="form-control" name="configuration[<?= $category->id ?>][modelName]" id="modelName<?= $category->id ?>" readonly />
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-12">Vendor ID <span class="require">*</span></label>
+                              <div class="col-md-8 col-sm-12">
+                                <input type="text" class="form-control" name="configuration[<?= $category->id ?>][vendorId]" id="vendorId<?= $category->id ?>" readonly />
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <div class="col-lg-6">
-                          <div class="form-group">
-                            <label class="control-label col-lg-3">Vendor ID <span class="require">*</span></label>
-                            <div class="col-lg-8">
-                              <input type="text" class="form-control" name="configuration[<?= $category->id ?>][vendorId]" id="vendorId<?= $category->id ?>" readonly />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <script>
-                        $(document).ready(function() {
-                          setTimeout(function() {
-                             changeFirmware(<?= $category->id ?>);
-                          }, 500);
-                        });
-                      </script>
-                      @foreach($enhancedInputs as $index => $input)
-                      @if(isset($input['key']))
-                      @php
-
-                      // Check if $configurations is defined and has the current index
-                      $config = json_decode($currentUser['configurations'],true);
-                      $configurationValue = isset($configurations[$key]) ? $configurations[$key]: null;
-                      @endphp
-                      @if($index % 2 === 0)
-                      <div class="row">
-                        @endif
+                        <script>
+                          $(document).ready(function() {
+                            setTimeout(function() {
+                              changeFirmware(<?= $category->id ?>);
+                            }, 500);
+                          });
+                        </script>
+                        @foreach($enhancedInputs as $index => $input)
                         @if(isset($input['key']))
-                        <div class="col-lg-6">
-                          <input class="form-control inputType" type="hidden" placeholder="Enter {{$input['key']}}" name="idParameters[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" value="{{$input['id']}}" />
-                          @php
-                          $validationConfig = json_decode($input['validationConfig'],true);
-                          @endphp
-                          @if ($input['type'] == 'select')
+                        @php
 
-                          <div class="form-group">
-                            <label class="control-label col-lg-3">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
-                            <div class="col-lg-8">
-                              <select class="form-control inputType" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }}>
-                                <!-- <option value="">Please Select</option> -->
-                                @foreach($validationConfig['selectOptions'] as $configkey => $option)
-                                <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
-                                @endforeach
-                              </select>
-                            </div>
-                          </div>
-                          @elseif ($input['type'] == 'multiselect')
-                          @php
-                          $validationConfig = json_decode($input['validationConfig'],true);
-                          @endphp
-                          <div class="form-group">
-                            <label class="control-label col-lg-3">
-                              {{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}
-                            </label>
-                            <div class="col-lg-8">
-                              <select class="inputType" id="configval{{$category->id}}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}][]" multiple {{ $input['requiredFieldInput'] ? 'required' : '' }}>
-                                @foreach($validationConfig['selectOptions'] as $configkey => $option)
-                                @php
-                                $inputKey = str_replace(' ', '_', strtolower($input['key']));
-                                $rawValue = $configurationValue[$inputKey]['value'] ?? [];
-                                if (is_string($rawValue)) {
-                                $decoded = json_decode($rawValue, true);
-                                $selectedValues = is_array($decoded) ? $decoded : explode(',', $rawValue);
-                                } elseif (is_array($rawValue)) {
-                                $selectedValues = $rawValue;
-                                } else {
-                                $selectedValues = [];
-                                }
-                                $selectedValues = array_map('strval', $selectedValues);
-                                @endphp
-                                <option value="{{ $validationConfig['selectValues'][$configkey] }}"
-                                  {{ in_array($validationConfig['selectValues'][$configkey], $selectedValues) ? 'selected' : '' }}>
-                                  {{ $option }}
-                                </option>
-                                @endforeach
-                              </select>
-                            </div>
-                          </div>
-                          <script>
-                            $(document).ready(function() {
-                              var $select = $("#configval{{$category->id}}");
-
-                              $select.select2({
-                                placeholder: "Select up to " + <?= $validationConfig['maxSelectValue'] ?> + " options",
-                                width: "100%"
-                              });
-                              $select.on("change", function() {
-                                var selected = $(this).select2("val");
-                                if (selected && selected.length > <?= $validationConfig['maxSelectValue'] ?>) {
-                                  selected.splice(<?= $validationConfig['maxSelectValue'] ?>);
-                                  $(this).select2("val", selected);
-                                  alert("You can only select up to {{$validationConfig['maxSelectValue']}} options.");
-                                }
-                              });
-                            });
-                            // $(document).ready(function() {
-                            //   $("#configval{{$category->id}}").select2({
-                            //     placeholder: "Select options",
-                            //     allowClear: true,
-                            //     width: "100%"
-                            //   });
-                            // });
-                          </script>
-                          @else
-                          <div class="form-group">
+                        // Check if $configurations is defined and has the current index
+                        $config = json_decode($currentUser['configurations'],true);
+                        $configurationValue = isset($configurations[$key]) ? $configurations[$key]: null;
+                        @endphp
+                        @if($index % 2 === 0)
+                        <div class="row">
+                          @endif
+                          @if(isset($input['key']))
+                          <div class="col-md-6 col-sm-12">
+                            <input class="form-control inputType" type="hidden" placeholder="Enter {{$input['key']}}" name="idParameters[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" value="{{$input['id']}}" />
                             @php
-                            $addClassTextArray = isset($input['type']) && $input['type'] == 'text' ? "text-array-space": '';
-                            $addClassIpUrl = isset($input['type']) && $input['type'] == 'IP/URL' ? "ip-url-space" : '';
+                            $validationConfig = json_decode($input['validationConfig'],true);
                             @endphp
+                            @if ($input['type'] == 'select')
 
-                            <label class="control-label col-lg-3">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
-                            <div class="col-lg-8">
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-12">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
+                              <div class="col-md-8 col-sm-12">
+                                <select class="form-control inputType" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }}>
+                                  <!-- <option value="">Please Select</option> -->
+                                  @foreach($validationConfig['selectOptions'] as $configkey => $option)
+                                  <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
+                                  @endforeach
+                                </select>
+                              </div>
+                            </div>
+                            @elseif ($input['type'] == 'multiselect')
+                            @php
+                            $validationConfig = json_decode($input['validationConfig'],true);
+                            @endphp
+                            <div class="form-group">
+                              <label class="control-label col-md-3 col-sm-12">
+                                {{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}
+                              </label>
+                              <div class="col-md-8 col-sm-12">
+                                <select class="inputType" id="configval{{$category->id}}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}][]" multiple {{ $input['requiredFieldInput'] ? 'required' : '' }}>
+                                  @foreach($validationConfig['selectOptions'] as $configkey => $option)
+                                  @php
+                                  $inputKey = str_replace(' ', '_', strtolower($input['key']));
+                                  $rawValue = $configurationValue[$inputKey]['value'] ?? [];
+                                  if (is_string($rawValue)) {
+                                  $decoded = json_decode($rawValue, true);
+                                  $selectedValues = is_array($decoded) ? $decoded : explode(',', $rawValue);
+                                  } elseif (is_array($rawValue)) {
+                                  $selectedValues = $rawValue;
+                                  } else {
+                                  $selectedValues = [];
+                                  }
+                                  $selectedValues = array_map('strval', $selectedValues);
+                                  @endphp
+                                  <option value="{{ $validationConfig['selectValues'][$configkey] }}"
+                                    {{ in_array($validationConfig['selectValues'][$configkey], $selectedValues) ? 'selected' : '' }}>
+                                    {{ $option }}
+                                  </option>
+                                  @endforeach
+                                </select>
+                              </div>
+                            </div>
+                            <script>
+                              $(document).ready(function() {
+                                var $select = $("#configval{{$category->id}}");
+
+                                $select.select2({
+                                  placeholder: "Select up to " + <?= $validationConfig['maxSelectValue'] ?> + " options",
+                                  width: "100%"
+                                });
+                                $select.on("change", function() {
+                                  var selected = $(this).select2("val");
+                                  if (selected && selected.length > <?= $validationConfig['maxSelectValue'] ?>) {
+                                    selected.splice(<?= $validationConfig['maxSelectValue'] ?>);
+                                    $(this).select2("val", selected);
+                                    alert("You can only select up to {{$validationConfig['maxSelectValue']}} options.");
+                                  }
+                                });
+                              });
+                              // $(document).ready(function() {
+                              //   $("#configval{{$category->id}}").select2({
+                              //     placeholder: "Select options",
+                              //     allowClear: true,
+                              //     width: "100%"
+                              //   });
+                              // });
+                            </script>
+                            @else
+                            <div class="form-group">
                               @php
+                              $addClassTextArray = isset($input['type']) && $input['type'] == 'text' ? "text-array-space": '';
+                              $addClassIpUrl = isset($input['type']) && $input['type'] == 'IP/URL' ? "ip-url-space" : '';
+                              @endphp
+
+                              <label class="control-label col-md-3 col-sm-12">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
+                              <div class="col-md-8 col-sm-12">
+                                @php
                                 $configKey = str_replace(' ', '_', strtolower($input['key']));
                                 $configVal = '';
                                 if (isset($configurationValue) && isset($configurationValue[$configKey]) && array_key_exists('value', $configurationValue[$configKey])) {
-                                  $configVal = is_array($configurationValue[$configKey]['value'])
-                                    ? json_encode($configurationValue[$configKey]['value'])
-                                    : $configurationValue[$configKey]['value'];
+                                $configVal = is_array($configurationValue[$configKey]['value'])
+                                ? json_encode($configurationValue[$configKey]['value'])
+                                : $configurationValue[$configKey]['value'];
                                 }
-                              @endphp
-                              <input class="form-control {{$addClassTextArray}} {{$addClassIpUrl}}" type="{{ $input['type'] == 'number' ? 'number' : 'text' }}"
-                                {!! $input['type']=='number' ? 'min="' . ($input['numberRange']['min'] ?? '' ) . '" max="' . ($input['numberRange']['max'] ?? '' ) . '"' : '' !!}
-                                placeholder="Enter {{ isset($input['key']) ? $input['key'] :''  }}" name="configuration[{{ $category->id }}][{{ $configKey }}]"
-                                value="{{ $configVal }}"
+                                @endphp
+                                <input class="form-control {{$addClassTextArray}} {{$addClassIpUrl}}" type="{{ $input['type'] == 'number' ? 'number' : 'text' }}"
+                                  {!! $input['type']=='number' ? 'min="' . ($input['numberRange']['min'] ?? '' ) . '" max="' . ($input['numberRange']['max'] ?? '' ) . '"' : '' !!}
+                                  placeholder="Enter {{ isset($input['key']) ? $input['key'] :''  }}" name="configuration[{{ $category->id }}][{{ $configKey }}]"
+                                  value="{{ $configVal }}"
 
-                                {{ $input['requiredFieldInput'] ? 'required' : '' }}>
+                                  {{ $input['requiredFieldInput'] ? 'required' : '' }}>
+                              </div>
+
                             </div>
-
+                            @endif
                           </div>
                           @endif
+                          @if ($index % 2 === 1 || $index === $totalInputs - 1)
                         </div>
                         @endif
-                        @if ($index % 2 === 1 || $index === $totalInputs - 1)
-                      </div>
-                      @endif
-                      @endif
-                      @endforeach
-                      @if( $category->is_can_protocol == 1 )
-                      <div class="row">
-                        <div class="isCanEnable{{$category->id}}" style="padding: 0px 25px;">
-                          <label for="canConfigurationArr" class="control-label">
-                            CAN Configuration <span class="require">*</span>
-                          </label>
-                          <div class="col-lg-12 padding-1">
-                            @php
-                            $value = isset($canConfigurations[$category->id] ) ?$canConfigurations[$category->id]: [];
-                            $result = is_array($value) ? json_encode($value) : $value;
-                            @endphp
-                            <input type="text" class="form-control" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value="{{$result}}" readonly />
-                            <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display: none;"></div>
-                            <button type="button" class="btn btn-primary" onclick="openCanModal('{{ $category->id }}')">
-                              Configure CAN Protocol
-                            </button>
+                        @endif
+                        @endforeach
+                        @if( $category->is_can_protocol == 1 )
+                        <div class="row">
+                          <div class="isCanEnable{{$category->id}}" style="padding: 0px 25px;">
+                            <label for="canConfigurationArr" class="control-label">
+                              CAN Configuration <span class="require">*</span>
+                            </label>
+                            <div class="col-lg-12 padding-1">
+                              @php
+                              $value = isset($canConfigurations[$category->id] ) ?$canConfigurations[$category->id]: [];
+                              $result = is_array($value) ? json_encode($value) : $value;
+                              @endphp
+                              <input type="text" class="form-control" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value="{{$result}}" readonly />
+                              <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display: none;"></div>
+                              <button type="button" class="btn btn-primary" onclick="openCanModal('{{ $category->id }}')">
+                                Configure CAN Protocol
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        <div class="modal" id="canModal{{$category->id}}">
-                          <div class="modal-dialog modal-md">
-                            <div class="modal-content">
-                              <div class="modal-header">
-                                <button type="button" class="close" data-dismiss="modal">
-                                  <i class="fa fa-times"></i>
-                                </button>
-                                <h5 class="modal-title">CAN Protocol Configuration</h5>
-                              </div>
-                              <div class="modal-body">
-                                <div class="row">
-                                  <div class="col-md-12" style="padding: 0px 25px;">
-                                    <div id="canForm">
-                                      <!-- Protocol Selection -->
-                                      <div class="form-group isCanEnable">
-                                        <div style="margin:10px 0px;">
-                                          <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                          <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]">
-                                            <option value="">-- Select CAN Channel --</option>
-                                            <option value="1">CAN 1</option>
-                                            <option value="2">CAN 2</option>
-                                            <option value="3">CAN 3</option>
-                                            <option value="4">CAN 4</option>
-                                          </select>
-                                        </div>
-                                        <div style="margin:10px 0px;">
-                                          <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                          <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control">
-                                            <option value="">-- Select Baud Rate --</option>
-                                            <option value="500">500 kbps</option>
-                                            <option value="250">250 kbps</option>
-                                          </select>
-                                        </div>
-                                        <div style="margin:10px 0px;">
-                                          <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                          <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control">
-                                            <option value="">-- Select Can ID --</option>
-                                            <option value="0">Standard</option>
-                                            <option value="1">Extended</option>
-                                          </select>
-                                        </div>
-                                        <div style="margin:10px 0px;">
-                                          <label for="can_protocol" class="control-label padding-left-3">
-                                            CAN Protocol <span class="require">*</span>
-                                          </label>
-                                          <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control" onchange="selectedCanProtocol(
+                          <div class="modal" id="canModal{{$category->id}}">
+                            <div class="modal-dialog modal-md">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <button type="button" class="close" data-dismiss="modal">
+                                    <i class="fa fa-times"></i>
+                                  </button>
+                                  <h5 class="modal-title">CAN Protocol Configuration</h5>
+                                </div>
+                                <div class="modal-body">
+                                  <div class="row">
+                                    <div class="col-md-12" style="padding: 0px 25px;">
+                                      <div id="canForm">
+                                        <!-- Protocol Selection -->
+                                        <div class="form-group isCanEnable">
+                                          <div style="margin:10px 0px;">
+                                            <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
+                                            <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]">
+                                              <option value="">-- Select CAN Channel --</option>
+                                              <option value="1">CAN 1</option>
+                                              <option value="2">CAN 2</option>
+                                              <option value="3">CAN 3</option>
+                                              <option value="4">CAN 4</option>
+                                            </select>
+                                          </div>
+                                          <div style="margin:10px 0px;">
+                                            <label class="control-label">Can Baud Rate <span class="require">*</span></label>
+                                            <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control">
+                                              <option value="">-- Select Baud Rate --</option>
+                                              <option value="500">500 kbps</option>
+                                              <option value="250">250 kbps</option>
+                                            </select>
+                                          </div>
+                                          <div style="margin:10px 0px;">
+                                            <label class="control-label">Can ID Type <span class="require">*</span></label>
+                                            <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control">
+                                              <option value="">-- Select Can ID --</option>
+                                              <option value="0">Standard</option>
+                                              <option value="1">Extended</option>
+                                            </select>
+                                          </div>
+                                          <div style="margin:10px 0px;">
+                                            <label for="can_protocol" class="control-label padding-left-3">
+                                              CAN Protocol <span class="require">*</span>
+                                            </label>
+                                            <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control" onchange="selectedCanProtocol(
                                           '{{$category->id}}')">
-                                            <option value="">Select Protocol</option>
-                                            <option value="1">J1979</option>
-                                            <option value="2">J1939</option>
-                                            <option value="3">Custom CAN</option>
-                                          </select>
+                                              <option value="">Select Protocol</option>
+                                              <option value="1">J1979</option>
+                                              <option value="2">J1939</option>
+                                              <option value="3">Custom CAN</option>
+                                            </select>
+                                          </div>
                                         </div>
+                                        <div id="dynamicCanFields{{$category->id}}"></div>
                                       </div>
-                                      <div id="dynamicCanFields{{$category->id}}"></div>
                                     </div>
-                                  </div>
-                                  <div class="col-md-12 text-right">
-                                    <button type="button" class="btn btn-success mt-4" onclick="generateJSON('{{$category->id}}')">Submit</button>
+                                    <div class="col-md-12 text-right">
+                                      <button type="button" class="btn btn-success mt-4" onclick="generateJSON('{{$category->id}}')">Submit</button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
+                        @endif
                       </div>
-                      @endif
                     </div>
-                  </div>
-                  @endif
+                    @endif
 
-                  <input type="hidden" name="configuration[{{$category->id}}][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['ping_interval']['value'])  ? $configurationValue['ping_interval']['value'] : 4 }}" />
-                  <input type="hidden" name="configuration[{{$category->id}}][is_editable]" class="form-control inputType" placeholder="Is Editable" value="{{ isset($configurationValue) && isset($configurationValue['is_editable']['value'])  ? $configurationValue['is_editable']['value'] : 1 }}" />
-                  @endforeach
+                    <input type="hidden" name="configuration[{{$category->id}}][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['ping_interval']['value'])  ? $configurationValue['ping_interval']['value'] : 4 }}" />
+                    <input type="hidden" name="configuration[{{$category->id}}][is_editable]" class="form-control inputType" placeholder="Is Editable" value="{{ isset($configurationValue) && isset($configurationValue['is_editable']['value'])  ? $configurationValue['is_editable']['value'] : 1 }}" />
+                    @endforeach
 
-                  @endif
-                  <div id="deviceCategoryInputFields"></div>
-                  <div class="form-group">
-                    <div class="bgx-save-button col-lg-11">
-                      <button class="btn btn-primary btn-flat" type="submit">Save</button>
+                    @endif
+                    <div id="deviceCategoryInputFields"></div>
+                    <div class="form-group">
+                      <div class="bgx-save-button col-lg-11">
+                        <button class="btn btn-primary btn-flat" type="submit">Save</button>
+                      </div>
                     </div>
-                  </div>
                 </form>
                 <hr>
               </div><!--/.c_content-->
@@ -493,7 +493,6 @@
   </section>
 
   <!--======== Main Content End ========-->
-  @stop
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script type="text/javascript">
     // if ({{Auth::user()->user_type == 'Reseller'}}) {
@@ -507,7 +506,7 @@
         if (val == 'Support') {
           support.show();
           let html = `<div class="form-group">
-            <label for="curl" class="control-label col-lg-3">Configuration Edit Permission</label>
+            <label for="curl" class="control-label col-md-3 col-sm-12">Configuration Edit Permission</label>
             <div class="col-lg-6"  style="position: absolute;left: 4%;">
               <input type="checkbox" class="form-control" name="is_support_active" style="height:20px;">
             </div>
@@ -669,11 +668,14 @@
                   htmlContent += '<div class="card-details">';
                   htmlContent += '<div class="row">';
                   htmlContent += '<div class="col-lg-6">';
-                  htmlContent += '<div class="form-group"><label for="curl" class="control-label col-lg-3">Templates <span class="require">*</span></label><div class="col-lg-8"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
+                  htmlContent += '<div class="form-group"><label for="curl" class="control-label col-md-3 col-sm-12">Templates <span class="require">*</span></label><div class="col-md-8 col-sm-12"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
                   if (templates[index].length > 0) {
                     templates[index].forEach((temp) => {
                       if (temp.default_template == 1) {
-                        defaultTemplatesToTrigger.push({index: index, id: temp.id});
+                        defaultTemplatesToTrigger.push({
+                          index: index,
+                          id: temp.id
+                        });
                       }
                       htmlContent += '<option ' + (temp.default_template == 1 ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + ' ' + (temp.default_template == 1 ? ' (Default)' : '') + '</option>';
                     });
@@ -691,8 +693,8 @@
                     htmlContent += '<input class="form-control inputType" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
                     if (input.type == 'select') {
                       htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-lg-8">';
+                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div class="col-md-8 col-sm-12">';
                       htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
                       // htmlContent += '<option value="">Please Select</option>';
 
@@ -705,8 +707,8 @@
                       htmlContent += '</div>';
                     } else if (input.type == 'multiselect') {
                       htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-lg-8">';
+                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div class="col-md-8 col-sm-12">';
                       htmlContent += '<select class="inputType" id="configval' + index + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? '' : '') + ' multiple>';
                       // htmlContent += '<option value="">Please Select</option>';
 
@@ -727,8 +729,8 @@
                     } else {
                       if (input.key == 'Password') {
                         htmlContent += '<div class="form-group">';
-                        htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                        htmlContent += '<div class="col-lg-8">';
+                        htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                        htmlContent += '<div class="col-md-8 col-sm-12">';
                         htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                         htmlContent += '</div>';
                         htmlContent += '</div>';
@@ -737,8 +739,8 @@
                         let addClassTextArray = input?.type === 'text_array' ? 'text-array-space' : '';
                         let addClassIpUrl = input?.type === 'IP/URL' ? 'ip-url-space' : '';
                         htmlContent += '<div class="form-group">';
-                        htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                        htmlContent += '<div class="col-lg-8">';
+                        htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                        htmlContent += '<div class="col-md-8 col-sm-12">';
                         htmlContent += '<input class="form-control inputType ' + addClassTextArray + ' ' + addClassIpUrl + '" type="' +
                           (input.type === 'number' ? 'number' : 'text') + '" ' +
                           (input.type === 'number' && validation?.numberInput ?
@@ -763,13 +765,13 @@
                   });
                   htmlContent += '<div class="row">';
                   htmlContent += '<div class="col-lg-6"><div class="form-group">';
-                  htmlContent += '<label for="curl" class="control-label col-lg-3">Ping Interval <span class="require">*</span></label>';
-                  htmlContent += '<div class="col-lg-8">';
+                  htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Ping Interval <span class="require">*</span></label>';
+                  htmlContent += '<div class="col-md-8 col-sm-12">';
                   htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value=""/>';
                   htmlContent += '</div></div></div>';
                   htmlContent += '<div class="col-lg-6">';
                   htmlContent += '<div class="form-group">';
-                  htmlContent += '<label for="curl" class="control-label col-lg-3">Device Edit Permission<span class="require">*</span></label>';
+                  htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Device Edit Permission<span class="require">*</span></label>';
                   htmlContent += '<div class="col-lg-6">';
                   htmlContent += '<label class="padding-10">Enable</label><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>';
                   htmlContent += '<label class="padding-10">Disable</label><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>';
@@ -780,7 +782,7 @@
                 });
 
                 $('#deviceCategoryInputFields').html(htmlContent);
-                
+
                 setTimeout(() => {
                   if (typeof defaultTemplatesToTrigger !== 'undefined') {
                     defaultTemplatesToTrigger.forEach(task => {
@@ -838,21 +840,24 @@
                 htmlContent += '<div class="card-details">';
                 htmlContent += '<div class="row">';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label for="curl" class="control-label col-lg-3">Templates <span class="require">*</span></label><div class="col-lg-8"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
+                htmlContent += '<div class="form-group"><label for="curl" class="control-label col-md-3 col-sm-12">Templates <span class="require">*</span></label><div class="col-md-8 col-sm-12"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
                 if (templates[index].length > 0) {
                   templates[index].forEach((temp) => {
                     if (temp.default_template == 1) {
-                      defaultTemplatesToTrigger.push({index: index, id: temp.id});
+                      defaultTemplatesToTrigger.push({
+                        index: index,
+                        id: temp.id
+                      });
                     }
                     htmlContent += '<option ' + (temp.default_template == 1 ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + ' ' + (temp.default_template == 1 ? ' (Default)' : '') + '</option>';
                   });
                 }
                 htmlContent += '</select></div></div></div>';
-                
+
                 // Add Firmware selection
                 let firmwares = JSON.parse(result.firmware);
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label for="firmware' + index + '" class="control-label col-lg-3">Firmware <span class="require">*</span></label><div class="col-lg-8"><select class="form-control firmware-select" id="firmware' + index + '" data-index="' + index + '" data-category="' + data.id + '" name="configuration[' + index + '][firmware_id]" onchange="changeFirmware(' + index + ')">';
+                htmlContent += '<div class="form-group"><label for="firmware' + index + '" class="control-label col-md-3 col-sm-12">Firmware <span class="require">*</span></label><div class="col-md-8 col-sm-12"><select class="form-control firmware-select" id="firmware' + index + '" data-index="' + index + '" data-category="' + data.id + '" name="configuration[' + index + '][firmware_id]" onchange="changeFirmware(' + index + ')">';
                 if (firmwares[index] && firmwares[index].length > 0) {
                   firmwares[index].forEach((firmware) => {
                     htmlContent += '<option ' + (firmware.is_default == 1 ? "selected" : "") + ' value="' + firmware.id + '">' + firmware.name + '</option>';
@@ -863,9 +868,9 @@
                 // Add Model and Vendor fields
                 htmlContent += '<div class="row">';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label class="control-label col-lg-3">Model Name <span class="require">*</span></label><div class="col-lg-8"><input type="text" class="form-control" name="configuration[' + index + '][modelName]" id="modelName' + index + '" readonly /></div></div></div>';
+                htmlContent += '<div class="form-group"><label class="control-label col-md-3 col-sm-12">Model Name <span class="require">*</span></label><div class="col-md-8 col-sm-12"><input type="text" class="form-control" name="configuration[' + index + '][modelName]" id="modelName' + index + '" readonly /></div></div></div>';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label class="control-label col-lg-3">Vendor ID <span class="require">*</span></label><div class="col-lg-8"><input type="text" class="form-control" name="configuration[' + index + '][vendorId]" id="vendorId' + index + '" readonly /></div></div></div>';
+                htmlContent += '<div class="form-group"><label class="control-label col-md-3 col-sm-12">Vendor ID <span class="require">*</span></label><div class="col-md-8 col-sm-12"><input type="text" class="form-control" name="configuration[' + index + '][vendorId]" id="vendorId' + index + '" readonly /></div></div></div>';
                 htmlContent += '</div>';
 
                 input.forEach((input, index1) => {
@@ -878,8 +883,8 @@
                   htmlContent += '<input class="form-control inputType" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
                   if (input.type == 'select') {
                     htmlContent += '<div class="form-group">';
-                    htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                    htmlContent += '<div class="col-lg-8">';
+                    htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                    htmlContent += '<div class="col-md-8 col-sm-12">';
                     htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
                     // htmlContent += '<option value="">Please Select</option>';
 
@@ -892,8 +897,8 @@
                     htmlContent += '</div>';
                   } else if (input.type == 'multiselect') {
                     htmlContent += '<div class="form-group">';
-                    htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                    htmlContent += '<div class="col-lg-8">';
+                    htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                    htmlContent += '<div class="col-md-8 col-sm-12">';
                     htmlContent += '<select class="inputType" id="configval' + index + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? '' : '') + ' multiple>';
                     // htmlContent += '<option value="">Please Select</option>';
 
@@ -928,8 +933,8 @@
                   } else {
                     if (input.key == 'Password') {
                       htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-lg-8">';
+                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div class="col-md-8 col-sm-12">';
                       htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                       htmlContent += '</div>';
                       htmlContent += '</div>';
@@ -937,8 +942,8 @@
                       let addClassTextArray = input?.type === 'text_array' ? 'text-array-space' : '';
                       let addClassIpUrl = input?.type === 'IP/URL' ? 'ip-url-space' : '';
                       htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-lg-8">';
+                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div class="col-md-8 col-sm-12">';
                       // htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'min="' + validation?.numberInput?.min + '" max="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '" maxlength="' + validation?.maxValueInput') + '>';
                       htmlContent +=
                         '<input class="form-control inputType ' + addClassTextArray + ' ' + addClassIpUrl + '" type="' +
@@ -965,13 +970,13 @@
                 });
                 htmlContent += '<div class="row">';
                 htmlContent += '<div class="col-lg-6"><div class="form-group">';
-                htmlContent += '<label for="curl" class="control-label col-lg-3">Ping Interval <span class="require">*</span></label>';
-                htmlContent += '<div class="col-lg-8">';
+                htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Ping Interval <span class="require">*</span></label>';
+                htmlContent += '<div class="col-md-8 col-sm-12">';
                 htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value=""/>';
                 htmlContent += '</div></div></div>';
                 htmlContent += '<div class="col-lg-6">';
                 htmlContent += '<div class="form-group">';
-                htmlContent += '<label for="curl" class="control-label col-lg-3">Device Edit Permission<span class="require">*</span></label>';
+                htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Device Edit Permission<span class="require">*</span></label>';
                 htmlContent += '<div class="col-lg-6">';
                 htmlContent += '<label class="padding-10">Enable</label><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>';
                 htmlContent += '<label class="padding-10">Disable</label><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>';
@@ -1065,15 +1070,15 @@
 
               $('#deviceCategoryInputFields').html(htmlContent);
 
-            setTimeout(() => {
-               if (typeof defaultTemplatesToTrigger !== 'undefined') {
-                 defaultTemplatesToTrigger.forEach(task => {
-                   changeTemplate(task.index, task.id);
-                   changeFirmware(task.index);
-                 });
-               }
-            }, 300);
-          } else {
+              setTimeout(() => {
+                if (typeof defaultTemplatesToTrigger !== 'undefined') {
+                  defaultTemplatesToTrigger.forEach(task => {
+                    changeTemplate(task.index, task.id);
+                    changeFirmware(task.index);
+                  });
+                }
+              }, 300);
+            } else {
               $('#deviceCategoryInputFields').html('<p>No input fields found.</p>');
               alert(result.message);
             }
@@ -1085,13 +1090,16 @@
             $('#loading').hide(); // Hide loading indicator regardless of success or error
           }
         });
+      }
+
+    }
 
     function changeFirmware(index) {
       let firmwareSelect = $('#firmware' + index);
       let firmwareId = firmwareSelect.val();
       let categoryId = firmwareSelect.data('category');
       let userId = ''; // Add Account always has empty user at creation
-      
+
       if (firmwareId && categoryId) {
         checkUserModalNameExist(index, userId, firmwareId, categoryId);
       }
@@ -1368,8 +1376,8 @@
               };
             } else {
               canConfigData[fieldId] = {
-                 id: parseInt(id),
-                 value: value
+                id: parseInt(id),
+                value: value
               };
             }
           }
@@ -1428,7 +1436,7 @@
                 .filter((key) => key !== 'template')
                 .forEach(function(key) {
                   let val = (typeof template[key] === 'object' && template[key] !== null && 'value' in template[key]) ? template[key]['value'] : template[key];
-                  
+
                   // Normalize the key from template
                   let normKey = key.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
 
@@ -1442,17 +1450,17 @@
                         // Handle cases like configuration[0][ip][] (multiselect)
                         matches = name.match(/\[([^\]]+)\]\[\]$/);
                       }
-                      
+
                       if (matches && matches[1]) {
                         let fieldPart = matches[1];
                         let normFieldPart = fieldPart.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
-                        
+
                         // Check for direct match or normalized match
                         if (normFieldPart === normKey || fieldPart.toLowerCase() === key.toLowerCase() || fieldPart.toLowerCase().replace(/\s+/g, '_') === key.toLowerCase().replace(/\s+/g, '_')) {
                           if ($(this).is(':radio')) {
-                             if ($(this).val() == val) {
-                               $(this).prop('checked', true);
-                             }
+                            if ($(this).val() == val) {
+                              $(this).prop('checked', true);
+                            }
                           } else {
                             $(this).val(val);
                             if ($(this).is('select')) {
@@ -1481,3 +1489,4 @@
       });
     }
   </script>
+  @stop

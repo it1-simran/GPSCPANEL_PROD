@@ -76,31 +76,27 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             @endphp
 
             <div id="tab{{ $category->id }}" class="tabcontent">
-              <?php
-              $i = 1;
-
-              ?>
+              <?php $i = 1; ?>
               @if(Auth::user()->user_type == "Admin")
               <div class="col-lg-12 text-right margin-bottom-10">
-                  <a href="{{ route('export.excel') }}" class="btn btn-success">Download Excel</a>
+                <a href="{{ route('export.excel') }}" class="btn btn-success">Download Excel</a>
                 <a href="{{ route('export.csv') }}" class="btn btn-success">Download CSV</a>
               </div>
               @endif
-                <table id="datable{{ $category->id }}"  class="example table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 14px;">
+              <table id="datable{{ $category->id }}"  class="example table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 13px;">
                 <thead>
                   <tr>
-                    <th>Sr. No.</th>
-                    <th>Template Name</th>
-                    <th>Device Category</th>
-                    <th style="width: 12px;">Created at</th>
-                    <th>Last Edit</th>
-                    <th>Default Template</th>
-                    <th>View</th>
+                    <th style="min-width: 60px;">Sr. No.</th>
+                    <th style="min-width: 180px;">Template Name</th>
+                    <th style="min-width: 150px;">Device Category</th>
+                    <th style="min-width: 150px;">Created at</th>
+                    <th style="min-width: 150px;">Last Edit</th>
+                    <th style="min-width: 120px;">Default Template</th>
+                    <th style="min-width: 120px;">View</th>
                     @if(Auth::user()->user_type == "Admin")
-                    <th>Apply Setting</th>
+                    <th style="min-width: 120px;">Apply Setting</th>
                     @endif
-                    <!-- <th>Edit</th> -->
-                    <th>Delete</th>
+                    <th style="min-width: 80px;">Delete</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -212,34 +208,60 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     $('.selectDevice').each(function() {
       // Get the ID of each element
       var id = $(this).attr('id');
-      console.log("id",id);
       $('#' + id).select2();
     });
-  })
-    $(document).ready(function() {
+
     $('.example').each(function() {
-      var elementId = $(this).attr('id');
-      $("#"+elementId).dataTable({
-        paging: true,
-        searching: true,
-        info: true,
-        ordering: true,
-        lengthChange: true,
-        // pageLength: 10,
-        // scrollX: true,
-        // scrollY: '500px',
-        scrollCollapse: true,
-        "aLengthMenu": [
-          [25, 50, 100, 500, -1],
-          [25, 50, 100, 500, "All"]
-        ],
-        "iDisplayLength": 25
-      });
+        var elementId = $(this).attr('id');
+
+        $("#" + elementId).DataTable({
+            paging: true,
+            searching: true,
+            info: true,
+            ordering: true,
+            lengthChange: true,
+
+            responsive: true,
+            autoWidth: false,
+            scrollX: true,
+            scrollCollapse: true,
+
+            lengthMenu: [
+                [25, 50, 100, 500, -1],
+                [25, 50, 100, 500, "All"]
+            ],
+            pageLength: 25
+        });
     });
+
+    // Initialize tabs: hide all, show first
+    $('.tabcontent').hide();
+    let firstTab = $('.tablinks').first();
+    if(firstTab.length){
+        firstTab.addClass('active');
+        let onclick = firstTab.attr('onclick');
+        if(onclick) {
+            let tabMatch = onclick.match(/'([^']+)'/);
+            if(tabMatch) {
+                $('#' + tabMatch[1]).show();
+            }
+        }
+    }
   });
+
+  function openTab(evt, tabName) {
+      $('.tabcontent').hide();
+      $('.tablinks').removeClass('active');
+      $('#' + tabName).show();
+      $(evt.currentTarget).addClass('active');
+      
+      if ($.fn.DataTable) {
+          $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+      }
+  }
+
   function open_model(id, key) {
     $("#test_id").val(id);
     $("#modal-responsive-" + id).modal();
   };
- 
 </script>

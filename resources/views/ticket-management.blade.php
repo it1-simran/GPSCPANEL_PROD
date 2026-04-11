@@ -226,19 +226,41 @@ use App\Helper\CommonHelper;
 
 
 
-    $(document).ready(function() {
-        $("#ticketTable").DataTable({
+
+
+    // $(document).ready(function() {
+    //     $("#ticketTable").DataTable({
+    //         paging: true,
+    //         searching: true,
+    //         info: true,
+    //         ordering: true,
+    //         lengthChange: true,
+    //         scrollCollapse: true,
+    //         aLengthMenu: [
+    //             [25, 50, 100, 500, -1],
+    //             [25, 50, 100, 500, "All"]
+    //         ],
+    //         iDisplayLength: 25
+    //     });
+    // });
+
+
+    $(document).ready(function () {
+        $('#ticketTable').DataTable({
             paging: true,
             searching: true,
             info: true,
             ordering: true,
             lengthChange: true,
+            responsive: true,         
+            autoWidth: false,          
+            scrollX: true,          
             scrollCollapse: true,
-            aLengthMenu: [
+            lengthMenu: [
                 [25, 50, 100, 500, -1],
                 [25, 50, 100, 500, "All"]
             ],
-            iDisplayLength: 25
+            pageLength: 25
         });
     });
 </script>

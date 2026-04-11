@@ -6,7 +6,7 @@
  */
 
 $url = "http://localhost:8000/api/packets/ingest";
-$imei = "123456789012345";
+$imei = "356377028429232";
 $iterations = 50; // Number of packets to send
 $delay = 2; // Seconds between packets
 

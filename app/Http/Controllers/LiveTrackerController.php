@@ -17,7 +17,7 @@ class LiveTrackerController extends Controller
     }
 
     public function index(Request $request)
-    {
+    { 
         $imei = $request->query('imei');
         $device = $imei ? ImeiDevice::with(['commands' => function ($query) {
             $query->latest();

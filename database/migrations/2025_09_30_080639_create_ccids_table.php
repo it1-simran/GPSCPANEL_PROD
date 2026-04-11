@@ -13,13 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('ccids', function (Blueprint $table) {
+        if (!Schema::hasTable('ccids')) {
+            Schema::create('ccids', function (Blueprint $table) {
             $table->id();
             $table->string('ccid');
             $table->foreignId('esim')->constrained('esims')->onDelete('cascade');
             $table->string('customer_name')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**

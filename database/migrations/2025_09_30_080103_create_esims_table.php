@@ -13,13 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('esims', function (Blueprint $table) {
+        if (!Schema::hasTable('esims')) {
+            Schema::create('esims', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('profile_1')->nullable();
             $table->string('profile_2')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**

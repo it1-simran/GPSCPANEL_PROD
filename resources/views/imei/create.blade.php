@@ -43,12 +43,24 @@
                                 <label class="control-label col-lg-3">End Date &amp; Time *</label>
                                 <div class="col-lg-6"><input type="datetime-local" name="end_at" value="{{ old('end_at', now()->addDays(7)->format('Y-m-d\\TH:i')) }}" class="form-control" required></div>
                             </div>
-                            <div class="form-group">
+
+                            <!-- <div class="form-group">
                                 <div class="col-lg-offset-3 col-lg-9">
                                     <button type="submit" class="btn btn-success">Save</button>
                                     <a href="{{ route('imei-devices.index') }}" class="btn btn-default">Cancel</a>
                                 </div>
+                            </div> -->
+                            <div class="form-group">
+                                <div class="col-lg-offset-3 col-lg-9">
+                                    <button type="submit" class="btn btn-success">Save</button>
+                                    <button type="button" 
+                                            onclick="window.location='{{ route('imei-devices.index') }}'" 
+                                            class="btn btn-default">
+                                        Cancel
+                                    </button>
+                                </div>
                             </div>
+                            
                         </form>
                     </div>
                 </div>

@@ -69,14 +69,11 @@
         <!--======== START LOGIN ========-->
         <div class="row page-login">
 
-            <div class="col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2"> 
+            <div class="col-md-6 col-md-offset-3 col-sm-10 col-sm-offset-1 col-xs-12"> 
 
                 <div class="form-body bg-white padding-20">
                     <div class="row">
-                        <div class="col-md-3">
-                            
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
 
                             <div class="form-header bg-white padding-10 text-center">
                                 <h2><strong>Admin Login</strong></h2>
@@ -112,9 +109,6 @@
 
                         </div><!--/col-md-6-->
 
-                         <div class="col-md-3">
-                            
-                        </div>
                        
 
                     </div><!--/row-->    

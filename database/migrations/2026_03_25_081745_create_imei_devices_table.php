@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('imei_devices', function (Blueprint $table) {
+        if (!Schema::hasTable('imei_devices')) {
+            Schema::create('imei_devices', function (Blueprint $table) {
             $table->id();
             $table->string('imei')->unique();
             $table->enum('status', ['active', 'inactive'])->default('active');
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->timestamp('schedule_end')->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**

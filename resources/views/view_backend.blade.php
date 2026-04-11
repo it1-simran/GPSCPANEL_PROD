@@ -153,26 +153,51 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     $('#backendId').val('');
     $("#addBackend").modal();
   }
+  
   $(document).ready(function() {
-    $('.example').each(function() {
-      var elementId = $(this).attr('id');
-      $("#" + elementId).dataTable({
-        paging: true,
-        searching: true,
-        info: true,
-        ordering: true,
-        lengthChange: true,
-        // pageLength: 10,
-        // scrollX: true,
-        // scrollY: '500px',
-        scrollCollapse: true,
-        "aLengthMenu": [
-          [25, 50, 100, 500, -1],
-          [25, 50, 100, 500, "All"]
-        ],
-        "iDisplayLength": 25
-      });
+
+      $('.example').each(function () {
+        var elementId = $(this).attr('id');
+        $('#' + elementId).DataTable({
+            paging: true,
+            searching: true,
+            info: true,
+            ordering: true,
+            lengthChange: true,
+            responsive: true,     
+            autoWidth: false,     
+            scrollX: true,        
+            scrollCollapse: true,
+
+            lengthMenu: [
+                [25, 50, 100, 500, -1],
+                [25, 50, 100, 500, "All"]
+            ],
+            pageLength: 25
+        });
     });
+
+    // $('.example').each(function() {
+    //   var elementId = $(this).attr('id');
+    //   $("#" + elementId).dataTable({
+    //     paging: true,
+    //     searching: true,
+    //     info: true,
+    //     ordering: true,
+    //     lengthChange: true,
+    //     // pageLength: 10,
+    //     // scrollX: true,
+    //     // scrollY: '500px',
+    //     scrollCollapse: true,
+    //     "aLengthMenu": [
+    //       [25, 50, 100, 500, -1],
+    //       [25, 50, 100, 500, "All"]
+    //     ],
+    //     "iDisplayLength": 25
+    //   });
+    // });
+
+
     $('#SubmitBackend').on('click', function() {
       function validateForm() {
         let isValid = true;

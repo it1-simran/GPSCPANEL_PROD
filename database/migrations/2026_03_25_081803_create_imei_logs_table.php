@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('imei_logs', function (Blueprint $table) {
+        if (!Schema::hasTable('imei_logs')) {
+            Schema::create('imei_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('imei_id')->constrained('imei_devices')->onDelete('cascade');
             $table->text('raw_packet');
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->timestamp('logged_at')->useCurrent();
             $table->timestamps();
         });
+        }
     }
 
     /**

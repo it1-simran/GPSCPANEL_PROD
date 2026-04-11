@@ -165,7 +165,7 @@
             ?>
          @if(Auth::user()->user_type=='Admin')
          <div class="row">
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -185,7 +185,7 @@
              </div>
              @endif
              @if(Auth::user()->user_type=='Admin')
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -199,12 +199,12 @@
                      <div class="progress progress-xs">
                          <div class="progress-bar bg-green-sea bg-opacity-8" role="progressbar" data-transitiongoal="57"></div>
                      </div>
-                     <a href="{{url('admin/view-device-assign')}}" class="padding-8 hvr-bounce-to-right bg-green-sea bg-opacity-8" style="width:100%;">View<i class="fa fa-arrow-circle-right"></i></a>
+                     <a href="{{url('admin/view-device-assign')}}" class="padding-8 hvr-bounce-to-right bg-green-sea bg-opacity-8" style="width:100%;">View <i class="fa fa-arrow-circle-right"></i></a>
                  </div>
              </div>
              @endif
              @if(Auth::user()->user_type=='Admin')
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -218,11 +218,11 @@
                      <div class="progress progress-xs">
                          <div class="progress-bar bg-green-sea bg-opacity-8" role="progressbar" data-transitiongoal="57"></div>
                      </div>
-                     <a href="#" class="padding-8 hvr-bounce-to-right bg-green-sea bg-opacity-8" style="width:100%;">View<i class="fa fa-arrow-circle-right"></i></a>
+                     <a href="#" class="padding-8 hvr-bounce-to-right bg-green-sea bg-opacity-8" style="width:100%;">View <i class="fa fa-arrow-circle-right"></i></a>
                  </div>
              </div>
              @endif
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -247,7 +247,7 @@
                      @endif
                  </div>
              </div>
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -275,7 +275,7 @@
                      @endif
                  </div>
              </div>
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -317,7 +317,7 @@
                      @endif
                  </div>
              </div>
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -358,7 +358,7 @@
                  </div>
              </div>
              @if(Auth::user()->user_type=='Admin')
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -382,7 +382,7 @@
                      <a href="/admin/view-firmware" class="padding-8 hvr-bounce-to-right bg-amethyst bg-opacity-8" style="width:100%;">View <i class="fa fa-arrow-circle-right"></i></a>
                  </div>
              </div>
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -404,7 +404,7 @@
                      <a href="/admin/View-device-category" class="padding-8 hvr-bounce-to-right bg-amethyst bg-opacity-8" style="width:100%;">View <i class="fa fa-arrow-circle-right"></i></a>
                  </div>
              </div>
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -436,7 +436,7 @@
                      <a href="/admin/view-esim" class="padding-8 hvr-bounce-to-right bg-dribbble bg-opacity-8" style="width:100%;">View <i class="fa fa-arrow-circle-right"></i></a>
                  </div>
              </div>
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -467,7 +467,7 @@
                      <a href="/admin/view-esim-customers" class="padding-8 hvr-bounce-to-right bg-dribbble bg-opacity-8" style="width:100%;">View <i class="fa fa-arrow-circle-right"></i></a>
                  </div>
              </div>
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">
@@ -491,7 +491,7 @@
 
                  </div>
              </div>
-             <div class="col-md-3 widget">
+             <div class="col-md-3 col-sm-6 widget">
                  <div class="widget-content bg-white">
                      <div class="row">
                          <div class="col-xs-6">

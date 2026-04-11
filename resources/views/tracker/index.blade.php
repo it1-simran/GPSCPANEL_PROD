@@ -1,7 +1,92 @@
 @extends('layouts.apps')
 @section('content')
+<style>
+/* ===== FULL PAGE WIDTH FIX ===== */
+#main-content .tracker-page {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* Remove side gaps */
+#main-content .tracker-page .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+#main-content .tracker-page [class*="col-"] {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+/* Panels full width */
+#main-content .tracker-page .c_panel,
+#main-content .tracker-page .panel {
+    width: 100%;
+}
+
+/* ===== TABLE RESPONSIVE ===== */
+#main-content .tracker-page .panel-body {
+    overflow-x: auto;
+}
+
+#main-content .tracker-page table {
+    width: 100%;
+    min-width: 600px;
+}
+
+/* ===== FORM RESPONSIVE ===== */
+#main-content .tracker-page .form-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* ===== MOBILE FIX ===== */
+@media (max-width: 768px) {
+
+    /* Full width layout */
+    #main-content .tracker-page {
+        padding: 5px;
+    }
+
+    /* Stack columns */
+    #main-content .tracker-page [class*="col-"] {
+        width: 100% !important;
+        max-width: 100%;
+        flex: 100%;
+    }
+
+    /* Forms stack */
+    #main-content .tracker-page .form-inline {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    /* Buttons full width */
+    #main-content .tracker-page .btn {
+        width: 100%;
+    }
+
+    /* Inputs and Form Groups full width */
+    #main-content .tracker-page input,
+    #main-content .tracker-page select,
+    #main-content .tracker-page .form-group {
+        width: 100% !important;
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    /* Logs height fix */
+    #main-content .tracker-page #logContainer {
+        max-height: 300px;
+    }
+}
+</style>
+
 <section id="main-content">
     <section class="wrapper">
+        <div class="tracker-page">
         <div class="top-page-header">
             <div class="page-breadcrumb">
                 <nav class="c_breadcrumbs">
@@ -58,9 +143,9 @@
 
                             <div class="row" style="margin-bottom:15px;">
                                 <div class="col-md-8">
-                                    <form method="POST" action="{{ route('tracker.commands.store', $device->id) }}" class="form-inline" style="display:flex; gap:10px; align-items:end; flex-wrap:wrap;">
+                                    <form method="POST" action="{{ route('tracker.commands.store', $device->id) }}" class="form-inline tracker-command-form" style="display:flex; gap:10px; align-items:end; flex-wrap:wrap;">
                                         @csrf
-                                        <div class="form-group" style="flex:1; min-width:280px;">
+                                        <div class="form-group command-input-group">
                                             <label>Send Command</label>
                                             <input type="text" name="command" class="form-control" style="width:100%;" placeholder="Enter command to queue">
                                         </div>
@@ -140,6 +225,8 @@
                     </div>
                 </div>
             </div>
+        </div>
+
         </div>
     </section>
 </section>

@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 
@@ -22,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
     }
     public function boot()
     {
+        Schema::defaultStringLength(191);
         Carbon::macro('utc', function () {
             return Carbon::now('UTC')->format('Y-m-d H:i:s');
         });

@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-         Schema::create('device_categories', function (Blueprint $table) {
+         if (!Schema::hasTable('device_categories')) {
+            Schema::create('device_categories', function (Blueprint $table) {
             $table->id();
             $table->string('device_category_name');
             $table->text('inputs')->nullable();
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->boolean('is_can_protocol')->default(0);
             $table->timestamps();
         });
+        }
     }
 
     /**

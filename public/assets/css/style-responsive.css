@@ -286,7 +286,7 @@
 
     #sidebar{
         margin-left:-240px;
-        margin-top: -2px;
+        margin-top: -20px;
         border-right:1px solid #F5EFF5;
         -webkit-transition:all .3s ease-in-out;
         -moz-transition:all .3s ease-in-out;
@@ -302,7 +302,7 @@
         margin-left:0px!important;
     }
     ul.sidebar-menu{
-        padding-top: 0px;
+        padding-top: 20px;
     }
     /*-*/
     .prd-row .action {
@@ -465,18 +465,14 @@
         margin-right: 0px !important;
     }
 
-    
-
     .brand{
         width: 100%;
         float: none;
         position: fixed;
         top: 0px;
         z-index: 1005;
-        border-bottom: 1px solid #eee;
+        border-bottom: 0px solid #eee;
     }
-    
-
 
     .top-nav{
         margin-bottom: 20px;

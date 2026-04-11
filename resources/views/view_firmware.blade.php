@@ -82,33 +82,32 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
               ?>
             <div id="tab{{ $category->id }}" class="tabcontent">
-
               @if(Auth::user()->user_type == "Admin")
               <div class="col-lg-12 text-right margin-bottom-10">
                 <a href="{{ route('firmware.excel') }}" class="btn btn-success">Download Excel</a>
                 <a href="{{ route('firmware.csv') }}" class="btn btn-success">Download CSV</a>
               </div>
               @endif
-              <table id="firmware{{ $category->id }}" class="firmwareData table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 14px;">
+              <table id="firmware{{ $category->id }}" class="firmwareData table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 13px;">
                 <thead>
                   <tr>
-                    <th>Sr. No.</th>
-                    <th>U ID</th>
-                    <th>Firmware Name</th>
-                    <th>Country</th>
-                    <th>State</th>
-                    <th>ESIM</th>
-                    <th>Backend</th>
-                    <th>Firmware File</th>
-                    <th>Firmware File Size</th>
-                    <th>Version</th>
-                    <th>Add Firmware</th>
-                    <th>Default Firmware</th>
-                    <th>No of Models</th>
-                    <th style="width: 12px;">Created at</th>
-                    <th>Last Edit</th>
-                    <th>Edit </th>
-                    <th>Delete</th>
+                    <th style="min-width: 60px;">Sr. No.</th>
+                    <th style="min-width: 60px;">U ID</th>
+                    <th style="min-width: 150px;">Firmware Name</th>
+                    <th style="min-width: 100px;">Country</th>
+                    <th style="min-width: 100px;">State</th>
+                    <th style="min-width: 60px;">ESIM</th>
+                    <th style="min-width: 80px;">Backend</th>
+                    <th style="min-width: 180px;">Firmware File</th>
+                    <th style="min-width: 100px;">Firmware File Size</th>
+                    <th style="min-width: 80px;">Version</th>
+                    <th style="min-width: 120px;">Add Firmware</th>
+                    <th style="min-width: 100px;">Default Firmware</th>
+                    <th style="min-width: 100px;">No of Models</th>
+                    <th style="min-width: 150px;">Created at</th>
+                    <th style="min-width: 150px;">Last Edit</th>
+                    <th style="min-width: 80px;">Edit </th>
+                    <th style="min-width: 80px;">Delete</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -119,13 +118,30 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     <td><?php echo $i; ?></td>
                     <td>{{$firmware->id}}</td>
                     <td>{{$firmware->name}}</td>
-                    <td>{{CommonHelper::getCountryName($config->country)}}</td>
-                    <td>{{CommonHelper::getStateName($config->state)}}</td>
-                    <td>{{ $category->is_esim == 1 ? CommonHelper::getEsim($config->esim) : $config->esim }}</td>
-                    <td>{{CommonHelper::getBackend($config->backend)}}</td>
+                    <?php /* <td>{{CommonHelper::getCountryName($config->country)}}</td> <?php */ ?>
+                    <td>{{ isset($config->country) ? CommonHelper::getCountryName($config->country) : '-' }}</td>
+                    <?php /* <td>{{CommonHelper::getStateName($config->state)}} </td> <?php */ ?>
+                    <td>{{ isset($config->state) ? CommonHelper::getStateName($config->state) : '-' }}</td>
+                    <?php /* <td>{{ $category->is_esim == 1 ? CommonHelper::getEsim($config->esim) : $config->esim }}</td> */ ?>
+                    <td>
+                      {{ isset($config->esim) 
+                          ? ($category->is_esim == 1 
+                              ? CommonHelper::getEsim($config->esim) 
+                              : $config->esim) 
+                          : '-' 
+                      }}
+                    </td>
+                    <?php /* <td>{{CommonHelper::getBackend($config->backend)}}</td> */ ?>
+                    <td>{{ isset($config->backend) ? CommonHelper::getBackend($config->backend) : '-' }}</td>
+                    <?php /*
                     <td>{{$config->filename??0}}</td>
                     <td>{{$config->fileSize?? 0}}</td>
-                    <td>{{$config->version}}</td>
+                    <td>{{$config->version}}</td>  */ ?>
+
+                    <td>{{ $config->filename ?? '-' }}</td>
+                    <td>{{ $config->fileSize ?? '-' }}</td>
+                    <td>{{ $config->version ?? '-' }}</td>
+
                     <td>
                        <a href="/admin/view-firmware-models/{{$firmware->id}}"  class="btn btn-primary" >View Modal</a>
                     </td>
@@ -234,7 +250,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             </div>
                             <div class="margin-bottom-10">
                               <label for="userAssign" class="form-label col-12">Firmware Version</label>
-                              <input class="form-control " type="text" placeholder="Firmware version" name="firmware_version" value="{{$config->version}}" required />
+                              <input class="form-control " type="text" placeholder="Firmware version" name="firmware_version" value="{{ $config->version ?? '-' }}" required />
                             </div>
                             <div class="margin-bottom-10">
                                  <label for="releasingNotes" class="form-label">Releasing Notes</label>
@@ -254,11 +270,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       </div>
                     </div>
                   </div>
+                  <?php $i++; ?>
                   @endif
-                
-                  <?php
-                  $i++;
-                  ?>
                   @endforeach
                  
                 </tbody>
@@ -288,12 +301,16 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     form.action = `/{{$url_type}}/delete-firmware/${id}/${response}`;
     form.submit();
   }
+
   $(document).ready(function (){
        
-    $('.tablinks').on('click', function() {
-      $('#loading').show();
-      initializeDataTables();
-    });
+    // $('.tablinks').on('click', function() {
+    //   $('#loading').show();
+    //   initializeDataTables();
+    // });
+    
+    // Default tab logic handled below
+
       function initializeDataTables() {
       $('.firmwareData').each(function() {
         var elementId = $(this).attr('id');
@@ -319,6 +336,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     }
     initializeDataTables();
   });
+
+
   function openModel(id) {
     $('.error_msg').hide().text();
     $('#firmwareId' + id).val(id);
@@ -423,4 +442,37 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       })
     });
   })
+
+
+  // default load pe first tab show karo
+  $(document).ready(function () {
+      $('.tabcontent').hide();
+      
+      let firstTab = $('.tablinks').first();
+      if(firstTab.length){
+          firstTab.addClass('active');
+          let onclick = firstTab.attr('onclick');
+          if(onclick) {
+              let tabMatch = onclick.match(/'([^']+)'/);
+              if(tabMatch) {
+                  $('#' + tabMatch[1]).show();
+              }
+          }
+      } else {
+        $('.tabcontent:first').show();
+      }
+  });
+  
+  function openTab(evt, tabName) {
+      $('.tabcontent').hide();
+      $('.tablinks').removeClass('active');
+      $('#' + tabName).show();
+      $(evt.currentTarget).addClass('active');
+
+      if ($.fn.DataTable) {
+          $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+      }
+  }
 </script>
+
+<!-- nav-collapse md-box-shadowed hide-left-bar show-left-bar-mobile -->

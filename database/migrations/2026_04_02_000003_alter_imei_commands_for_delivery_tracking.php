@@ -10,7 +10,9 @@ return new class extends Migration
     {
         Schema::table('imei_commands', function (Blueprint $table) {
             if (!Schema::hasColumn('imei_commands', 'sent_at')) {
+                if (!Schema::hasColumn('imei_commands', 'sent_at')) {
                 $table->timestamp('sent_at')->nullable()->after('status');
+            }
             }
             $table->index(['imei_id', 'status']);
         });

@@ -70,7 +70,7 @@
                                             <td>{{ optional($device->effective_start_at)->format('d-M-Y H:i:s') ?? 'N/A' }}</td>
                                             <td>{{ optional($device->effective_end_at)->format('d-M-Y H:i:s') ?? 'N/A' }}</td>
                                             <td>{{ $device->pending_commands_count ?? 0 }}</td>
-                                            <td>
+                                            <!-- <td>
                                                 <a href="{{ route('imei-devices.edit', $device->id) }}" class="btn btn-info btn-sm">Edit</a>
                                                 <form action="{{ route('imei-devices.toggle-status', $device->id) }}" method="POST" style="display:inline;">
                                                     @csrf @method('PATCH')
@@ -81,6 +81,28 @@
                                                     @csrf @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                                 </form>
+                                            </td> -->
+                                            <td style="min-width:320px;">
+                                                <div style="align-items:center; gap:6px; white-space:nowrap;">
+                                                    <a href="{{ route('imei-devices.edit', $device->id) }}" class="btn btn-info btn-sm">
+                                                        Edit
+                                                    </a>
+                                                    <form action="{{ route('imei-devices.toggle-status', $device->id) }}" method="POST" style="display:inline-flex; margin:0;">
+                                                        @csrf @method('PATCH')
+                                                        <button type="submit" class="btn btn-warning btn-sm">
+                                                            {{ $device->status === \App\Models\ImeiDevice::STATUS_ON ? 'Turn OFF' : 'Turn ON' }}
+                                                        </button>
+                                                    </form>
+                                                    <a href="{{ route('tracker.index', ['imei' => $device->imei]) }}" class="btn btn-primary btn-sm">
+                                                        Logs View
+                                                    </a>
+                                                    <form action="{{ route('imei-devices.destroy', $device->id) }}" method="POST" style="display:inline-flex; margin:0;" onsubmit="return confirm('Delete this IMEI recording?');">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm">
+                                                            Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach

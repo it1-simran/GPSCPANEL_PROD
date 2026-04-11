@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-         Schema::create('notifications', function (Blueprint $table) {
+         if (!Schema::hasTable('notifications')) {
+            Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->string('name')->nullable();
 
@@ -30,6 +31,7 @@ return new class extends Migration
             // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             // $table->foreign('firmware_id')->references('id')->on('firmwares')->onDelete('set null');
         });
+        }
     }
 
     /**

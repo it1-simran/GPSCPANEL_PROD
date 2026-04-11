@@ -439,10 +439,10 @@ var App = function () {
                 $('#right-sidebar').toggleClass('hide-right-sidebar');
 
                 e.stopPropagation();
-
-
             });
 
+
+            
             $('.sidebar-toggle-box .fa-bars').on('click', function(e) {
 
                 $(".leftside-navigation-scroll").niceScroll({
@@ -457,7 +457,8 @@ var App = function () {
                     $('#main-content').removeClass('merge-right-sidebar-notifications');
                 }
 
-                
+               $(this).closest('.sidebar-toggle-box').toggleClass('active');
+
 
                 $('#sidebar').toggleClass('hide-left-bar show-left-bar-mobile');
                 if ($('#sidebar').hasClass('hide-left-bar')) {
@@ -1233,22 +1234,41 @@ function appendMarkers(zoomLevel){
     });
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-    // Get all tab links
-    let tabLinks = document.querySelectorAll(".tablinks");
+// document.addEventListener("DOMContentLoaded", function() {
+//     // Get all tab links
+//     let tabLinks = document.querySelectorAll(".tablinks");
 
-    // Add event listener to each tab link
-    tabLinks.forEach(function(link) {
-        link.addEventListener("click", function(event) {
-            let tabId = this.getAttribute("onclick").match(/'([^']+)'/)[1]; // Extract tabId from onclick attribute
+//     // Add event listener to each tab link
+//     tabLinks.forEach(function(link) {
+//         link.addEventListener("click", function(event) {
+//             let tabId = this.getAttribute("onclick").match(/'([^']+)'/)[1]; // Extract tabId from onclick attribute
+//             openTab(event, tabId);
+//         });
+//     });
+
+//     // Show the default active tab content on page load
+//     let defaultTab = document.querySelector(".tablinks.active");
+//     if (defaultTab) {
+//         // Extract tabId from onclick attribute
+//         let tabId = defaultTab.getAttribute("onclick").match(/'([^']+)'/)[1]; 
+//         showTab(tabId);
+//     }
+// });
+
+document.addEventListener("DOMContentLoaded", function () {
+    let tabLinks = document.querySelectorAll(".tablinks");
+    tabLinks.forEach(function (link) {
+        link.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            let tabId = this.getAttribute("data-tab");
             openTab(event, tabId);
         });
     });
-
-    // Show the default active tab content on page load
+    // Default active tab
     let defaultTab = document.querySelector(".tablinks.active");
     if (defaultTab) {
-        let tabId = defaultTab.getAttribute("onclick").match(/'([^']+)'/)[1]; // Extract tabId from onclick attribute
+        let tabId = defaultTab.getAttribute("data-tab");
         showTab(tabId);
     }
 });
@@ -1279,6 +1299,6 @@ function showTab(tabId) {
     if (selectedTab) {
         selectedTab.classList.add("active");
     } else {
-        console.error("Tab content with ID '" + tabId + "' not found.");
+        // console.error("Tab content with ID '" + tabId + "' not found.");
     }
 }

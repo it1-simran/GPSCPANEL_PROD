@@ -11,13 +11,19 @@ return new class extends Migration
     {
         Schema::table('imei_devices', function (Blueprint $table) {
             if (!Schema::hasColumn('imei_devices', 'start_at')) {
+                if (!Schema::hasColumn('imei_devices', 'start_at')) {
                 $table->timestamp('start_at')->nullable()->after('status');
             }
+            }
             if (!Schema::hasColumn('imei_devices', 'end_at')) {
+                if (!Schema::hasColumn('imei_devices', 'end_at')) {
                 $table->timestamp('end_at')->nullable()->after('start_at');
             }
+            }
             if (!Schema::hasColumn('imei_devices', 'last_log_id')) {
+                if (!Schema::hasColumn('imei_devices', 'last_log_id')) {
                 $table->unsignedBigInteger('last_log_id')->nullable()->after('end_at');
+            }
             }
         });
 

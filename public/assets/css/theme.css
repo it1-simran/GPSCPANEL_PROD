@@ -6682,6 +6682,7 @@ ul.list-unstyled {
 .modal-header .close {
     opacity: .3;
     text-shadow: none;
+    margin-top: -20px;
 }
 
 .modal-header i {

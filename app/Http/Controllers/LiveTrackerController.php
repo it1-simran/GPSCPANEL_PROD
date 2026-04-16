@@ -29,8 +29,8 @@ class LiveTrackerController extends Controller
         $allDevices = ImeiDevice::orderBy('imei')->get();
         $defaults = $this->trackerService->buildDefaultFilters($device);
 
-        $startAt = $request->query('start_at') ? Carbon::parse($request->query('start_at')) : $defaults['start_at'];
-        $endAt = $request->query('end_at') ? Carbon::parse($request->query('end_at')) : $defaults['end_at'];
+        $startAt = $request->query('start_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('start_at')) : $defaults['start_at'];
+        $endAt = $request->query('end_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('end_at')) : $defaults['end_at'];
 
         if ($device && $device->effective_end_at && $endAt->gt($device->effective_end_at)) {
             $endAt = $device->effective_end_at->copy();
@@ -78,12 +78,19 @@ class LiveTrackerController extends Controller
 
         $logs = $query->orderBy('id', 'asc')->limit(200)->get();
 
+        $formattedLogs = $logs->map(function ($log) {
+            $logArray = $log->toArray();
+            $logArray['logged_at_formatted'] = $log->logged_at?->timezone('UTC')?->format('Y-m-d H:i:s');
+            $logArray['logged_at'] = $log->logged_at?->timezone('UTC')?->format('Y-m-d H:i:s');
+            return $logArray;
+        });
+
         return response()->json([
-            'logs' => $logs,
+            'logs' => $formattedLogs,
             'last_id' => $logs->max('id') ?: $lastId,
             'status' => $device->status,
             'status_label' => $device->status_label,
-            'effective_end_at' => optional($device->effective_end_at)->toDateTimeString(),
+            'effective_end_at' => $device->effective_end_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
         ]);
     }
 
@@ -148,7 +155,7 @@ class LiveTrackerController extends Controller
                 'command' => $command->command,
                 'status' => $command->status_label,
                 'response_time' => $command->response_time,
-                'executed_at' => optional($command->executed_at)->toDateTimeString(),
+                'executed_at' => $command->executed_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
             ]
         ]);
     }
@@ -187,8 +194,8 @@ class LiveTrackerController extends Controller
                     'command' => $cmd->command,
                     'status' => $cmd->status_label,
                     'status_code' => $cmd->status,
-                    'sent_at' => optional($cmd->sent_at)->toDateTimeString(),
-                    'executed_at' => optional($cmd->executed_at)->toDateTimeString(),
+                    'sent_at' => $cmd->sent_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
+                    'executed_at' => $cmd->executed_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
                     'response_time' => $cmd->response_time,
                     'response' => $cmd->device_response ? json_decode($cmd->device_response, true) : null,
                 ];
@@ -209,7 +216,7 @@ class LiveTrackerController extends Controller
                 fputcsv($handle, [
                     $log->id,
                     optional($log->device)->imei,
-                    optional($log->logged_at)->toDateTimeString(),
+                    $log->logged_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
                     $log->source_ip,
                     $log->raw_packet,
                 ]);
@@ -245,10 +252,10 @@ class LiveTrackerController extends Controller
     protected function validatedWindow(ImeiDevice $device, Request $request): array
     {
         $defaults = $this->trackerService->buildDefaultFilters($device);
-        $startAt = $request->query('start_at') ? Carbon::parse($request->query('start_at')) : $defaults['start_at'];
-        $endAt = $request->query('end_at') ? Carbon::parse($request->query('end_at')) : $defaults['end_at'];
+        $startAt = $request->query('start_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('start_at')) : $defaults['start_at'];
+        $endAt = $request->query('end_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('end_at')) : $defaults['end_at'];
 
-        if ($device->effective_end_at && $endAt->gt($device->effective_end_at)) {
+        if ($device && $device->effective_end_at && $endAt->gt($device->effective_end_at)) {
             $endAt = $device->effective_end_at->copy();
         }
 

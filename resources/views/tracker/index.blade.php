@@ -1,3 +1,7 @@
+@php
+use App\Helper\CommonHelper;
+@endphp
+
 @extends('layouts.apps')
 @section('content')
 <style>
@@ -82,6 +86,16 @@
         max-height: 300px;
     }
 }
+
+/* Logs Wrapping Fix */
+.log-entry {
+    /* word-wrap: break-word; */
+    overflow-wrap: break-word;
+    /* word-break: break-all; */
+}
+#logContainer {
+    overflow-x: hidden !important;
+}
 </style>
 
 <section id="main-content">
@@ -122,11 +136,11 @@
                             </div>
                             <div class="form-group">
                                 <label>Start Date &amp; Time</label><br>
-                                <input type="datetime-local" name="start_at" value="{{ $filters['start_at'] ?? '' }}" class="form-control">
+                                <input type="datetime-local" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '' }}" class="form-control">
                             </div>
                             <div class="form-group">
                                 <label>End Date &amp; Time</label><br>
-                                <input type="datetime-local" name="end_at" value="{{ $filters['end_at'] ?? '' }}" class="form-control" @if($device && $device->effective_end_at) max="{{ $device->effective_end_at->format('Y-m-d\\TH:i') }}" @endif>
+                                <input type="datetime-local" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '' }}" class="form-control" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i') }}" @endif>
                             </div>
                             <div class="form-group">
                                 <button type="submit" class="btn btn-primary">Apply Filters</button>
@@ -137,8 +151,22 @@
                             <div class="row" style="margin-bottom:15px;">
                                 <div class="col-md-3"><div class="alert alert-info"><strong>IMEI:</strong> {{ $device->imei }}</div></div>
                                 <div class="col-md-3"><div class="alert {{ $device->status === 'active' ? 'alert-success' : ($device->status === 'inactive' ? 'alert-warning' : 'alert-danger') }}"><strong>Status:</strong> {{ $device->status_label }}</div></div>
-                                <div class="col-md-3"><div class="alert alert-default"><strong>Start:</strong> {{ optional($device->effective_start_at)->format('d-M-Y H:i:s') ?? 'N/A' }}</div></div>
-                                <div class="col-md-3"><div class="alert alert-default"><strong>End:</strong> {{ optional($device->effective_end_at)->format('d-M-Y H:i:s') ?? 'N/A' }}</div></div>
+
+
+                                <div class="col-md-3">
+                                    <div class="alert alert-default">
+                                        <strong>Start:</strong> 
+                                        {{ $device->effective_start_at ? CommonHelper::getDateAsTimeZone($device->effective_start_at) : 'N/A' }}
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="alert alert-default">
+                                        <strong>End:</strong> 
+                                        {{ $device->effective_end_at ? CommonHelper::getDateAsTimeZone($device->effective_end_at) : 'N/A' }}
+                                    </div>
+                                </div>
+
                             </div>
 
                             <div class="row" style="margin-bottom:15px;">
@@ -151,7 +179,7 @@
                                         </div>
                                         <button type="submit" class="btn btn-warning">Queue Command</button>
                                         <a href="{{ route('tracker.logs.download', ['device' => $device->id, 'start_at' => $filters['start_at'], 'end_at' => $filters['end_at']]) }}" class="btn btn-success">Download Logs</a>
-                                        <button type="button" class="btn btn-default" id="clearLogsBtn">Clear Logs (Front End)</button>
+                                        <button type="button" class="btn btn-default" id="clearLogsBtn" style="background-color: #f1280d;padding: 7px;" >Clear Logs (Front End)</button>
                                     </form>
                                 </div>
                                 <div class="col-md-4 text-right">
@@ -174,10 +202,10 @@
                                 <div class="col-md-12">
                                     <div class="panel panel-default">
                                         <div class="panel-heading"><strong>History + Live Logs</strong></div>
-                                        <div class="panel-body" id="logContainer" style="max-height:520px; overflow:auto; background:#111; color:#66ff66; font-family:monospace;">
+                                        <div class="panel-body" id="logContainer" style="max-height:520px; overflow-y:auto; overflow-x:hidden; background:#111; color:#66ff66; font-family:monospace;">
                                             @forelse($initialLogs as $log)
-                                                <div class="log-entry" data-log-id="{{ $log->id }}" style="padding:8px 0; border-bottom:1px dashed #333;">
-                                                    <div style="color:#9ea7ad; font-size:12px;">[#{{ $log->id }}] [{{ optional($log->logged_at)->format('Y-m-d H:i:s') }}] IP: {{ $log->source_ip ?? 'N/A' }}</div>
+                                                <div class="log-entry" data-log-id="{{ $log->id }}" style="padding:4px 0; border-bottom:1px dashed #333;">
+                                                    <div style="color:#9ea7ad; font-size:12px;">[#{{ $log->id }}] [{{ $log->logged_at?->timezone('UTC')?->format('Y-m-d H:i:s') }}] IP: {{ $log->source_ip ?? 'N/A' }}</div>
                                                     <div>{{ $log->raw_packet }}</div>
                                                 </div>
                                             @empty
@@ -197,6 +225,7 @@
                                                 <thead>
                                                     <tr>
                                                         <th>ID</th>
+                                                        <th>Queued At</th>
                                                         <th>Command</th>
                                                         <th>Status</th>
                                                         <th>Sent At</th>
@@ -206,12 +235,13 @@
                                                     @forelse($device->commands->take(20) as $command)
                                                         <tr>
                                                             <td>{{ $command->id }}</td>
+                                                            <td>{{ $command->created_at?->timezone('UTC')?->format('d-M-Y H:i:s') ?? 'N/A' }}</td>
                                                             <td><code>{{ $command->command }}</code></td>
                                                             <td>{{ $command->status == 0 ? 'Pending' : 'Sent' }}</td>
-                                                            <td>{{ optional($command->sent_at)->format('d-M-Y H:i:s') ?? 'N/A' }}</td>
+                                                            <td>{{ $command->sent_at?->timezone('UTC')?->format('d-M-Y H:i:s') ?? 'N/A' }}</td>
                                                         </tr>
                                                     @empty
-                                                        <tr><td colspan="4" class="text-center">No commands queued yet.</td></tr>
+                                                        <tr><td colspan="5" class="text-center">No commands queued yet.</td></tr>
                                                     @endforelse
                                                 </tbody>
                                             </table>
@@ -250,8 +280,8 @@
         }
         $('#emptyLogState').remove();
         $('#logContainer').append(`
-            <div class="log-entry" data-log-id="${log.id}" style="padding:8px 0; border-bottom:1px dashed #333;">
-                <div style="color:#9ea7ad; font-size:12px;">[#${log.id}] [${log.logged_at}] IP: ${log.source_ip || 'N/A'}</div>
+            <div class="log-entry" data-log-id="${log.id}" style="padding:4px 0; border-bottom:1px dashed #333;">
+                <div style="color:#9ea7ad; font-size:12px;">[#${log.id}] [${log.logged_at_formatted || log.logged_at}] IP: ${log.source_ip || 'N/A'}</div>
                 <div>${$('<div>').text(log.raw_packet).html()}</div>
             </div>
         `);
@@ -261,10 +291,14 @@
     }
 
     function loadLatestLogs() {
-        $.get(`/api/tracker/logs/${imei}`, {
-            last_id: lastLogId,
-            start_at: startAt,
-            end_at: endAt
+        $.ajax({
+            url: `/api/tracker/logs/${imei}`,
+            data: {
+                last_id: lastLogId,
+                start_at: startAt,
+                end_at: endAt
+            },
+            cache: false
         }).done(function(response) {
             (response.logs || []).forEach(appendLog);
         });

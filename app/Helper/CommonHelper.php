@@ -43,10 +43,16 @@ class CommonHelper
         }
         return $getDeviceCategory;
     }
-    public static function getDateAsTimeZone($date)
+    public static function getDateAsTimeZone($date, $format = 'd-M-y H:i:s')
     {
         $userTimezone = Auth::check() && !empty(Auth::user()->timezone)? Auth::user()->timezone: 'UTC';
-        return \Carbon\Carbon::parse($date)->timezone($userTimezone)->format('d-M-y H:i:s');
+        return \Illuminate\Support\Carbon::parse($date)->timezone($userTimezone)->format($format);
+    }
+
+    public static function convertLocalToUTC($date)
+    {
+        $userTimezone = Auth::check() && !empty(Auth::user()->timezone) ? Auth::user()->timezone : 'UTC';
+        return \Illuminate\Support\Carbon::parse($date, $userTimezone)->timezone('UTC');
     }
     public static function getDeviceCategoryTabs($device, $show_acc_wise, $urlType, $deviceCategoryId)
     {

@@ -238,7 +238,7 @@ use App\Helper\CommonHelper;
                                                             <td>{{ $command->created_at?->timezone('UTC')?->format('d-M-Y H:i:s') ?? 'N/A' }}</td>
                                                             <td><code>{{ $command->command }}</code></td>
                                                             <td>{{ $command->status == 0 ? 'Pending' : 'Sent' }}</td>
-                                                            <td>{{ $command->sent_at?->timezone('UTC')?->format('d-M-Y H:i:s') ?? 'N/A' }}</td>
+                                                            <td>{{ $command->status == 0 ? 'N/A' : ($command->updated_at?->timezone('UTC')?->format('d-M-Y H:i:s') ?? 'N/A') }}</td>
                                                         </tr>
                                                     @empty
                                                         <tr><td colspan="5" class="text-center">No commands queued yet.</td></tr>

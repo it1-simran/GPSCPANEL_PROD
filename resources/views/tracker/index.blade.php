@@ -220,7 +220,7 @@ use App\Helper\CommonHelper;
                                 <div class="col-md-12">
                                     <div class="panel panel-default">
                                         <div class="panel-heading"><strong>Queued / Sent Commands</strong></div>
-                                        <div class="panel-body">
+                                        <div class="panel-body" id="commandsTableContainer">
                                             <table class="table table-bordered table-striped">
                                                 <thead>
                                                     <tr>
@@ -302,6 +302,10 @@ use App\Helper\CommonHelper;
         }).done(function(response) {
             (response.logs || []).forEach(appendLog);
         });
+
+        // Use jQuery's load method to refresh just the commands table section in the background
+        const currentUrl = window.location.href.split('#')[0];
+        $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
     }
 
     function resetAutoReload() {

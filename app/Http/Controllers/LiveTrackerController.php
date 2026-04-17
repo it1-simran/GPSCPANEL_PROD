@@ -209,37 +209,20 @@ class LiveTrackerController extends Controller
 
     public function downloadLogs(Request $request, ImeiDevice $device)
     {
-        [$startAt, $endAt] = $this->validatedWindow($device, $request);
-        $logs = $this->baseLogsQuery($device, $startAt, $endAt)->orderBy('id')->get();
-        $filename = 'tracker-logs-' . $device->imei . '-' . now()->format('Ymd_His') . '.csv';
+        // Increase limits for large Excel exports
+        set_time_limit(300); // 5 minutes execution time
+        ini_set('memory_limit', '512M');
 
-        return new StreamedResponse(function () use ($logs, $device, $startAt, $endAt) {
-            $handle = fopen('php://output', 'w');
-            
-            // CSV Header Metadata
-            $count = $logs->count();
-            fputcsv($handle, ['# TRACKER SYSTEM LOG EXPORT']);
-            fputcsv($handle, ['# Device IMEI:', $device->imei]);
-            fputcsv($handle, ['# Exported On:', \App\Helper\CommonHelper::getDateAsTimeZone(now(), 'd-M-Y h:i:s A')]);
-            fputcsv($handle, ['# Status Details:', "You have successfully downloaded {$count} logs."]);
-            fputcsv($handle, []); // empty row divider
-            
-            // Table Headers
-            fputcsv($handle, ['ID', 'IMEI', 'Logged At', 'Source IP', 'Raw Packet']);
-            foreach ($logs as $log) {
-                fputcsv($handle, [
-                    $log->id,
-                    optional($log->device)->imei,
-                    $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d h:i:s A') : null,
-                    $log->source_ip,
-                    $log->raw_packet,
-                ]);
-            }
-            fclose($handle);
-        }, 200, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
+        [$startAt, $endAt] = $this->validatedWindow($device, $request);
+        
+        $query = $this->baseLogsQuery($device, $startAt, $endAt)->orderBy('id');
+        $count = $query->count();
+        $filename = 'tracker-logs-' . $device->imei . '-' . now()->format('Ymd_His') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\TrackerLogsExport($query, $device, $count),
+            $filename
+        );
     }
 
     public function closeConnection(ImeiDevice $device)

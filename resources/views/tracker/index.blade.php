@@ -4,6 +4,7 @@ use App\Helper\CommonHelper;
 
 @extends('layouts.apps')
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
 /* ===== FULL PAGE WIDTH FIX ===== */
 #main-content .tracker-page {
@@ -210,11 +211,11 @@ use App\Helper\CommonHelper;
                             </div>
                             <div class="form-group">
                                 <label>Start Date &amp; Time</label>
-                                <input type="datetime-local" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '' }}" class="form-control">
+                                <input type="text" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '' }}" class="form-control flatpickr-datetime">
                             </div>
                             <div class="form-group">
                                 <label>End Date &amp; Time</label>
-                                <input type="datetime-local" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '' }}" class="form-control" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i') }}" @endif>
+                                <input type="text" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '' }}" class="form-control flatpickr-datetime" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i') }}" @endif>
                             </div>
                             <div class="form-group">
                                 <button type="submit" class="btn btn-primary">Apply Filters</button>
@@ -235,14 +236,14 @@ use App\Helper\CommonHelper;
                                 <div class="col-md-3">
                                     <div class="alert alert-default">
                                         <strong>Start:</strong> 
-                                        {{ $device->effective_start_at ? CommonHelper::getDateAsTimeZone($device->effective_start_at, 'd-M-Y h:i:s A') : 'N/A' }}
+                                        {{ $device->effective_start_at ? CommonHelper::getDateAsTimeZone($device->effective_start_at, 'd-M-Y H:i:s') : 'N/A' }}
                                     </div>
                                 </div>
 
                                 <div class="col-md-3">
                                     <div class="alert alert-default">
                                         <strong>End:</strong> 
-                                        {{ $device->effective_end_at ? CommonHelper::getDateAsTimeZone($device->effective_end_at, 'd-M-Y h:i:s A') : 'N/A' }}
+                                        {{ $device->effective_end_at ? CommonHelper::getDateAsTimeZone($device->effective_end_at, 'd-M-Y H:i:s') : 'N/A' }}
                                     </div>
                                 </div>
 
@@ -268,7 +269,8 @@ use App\Helper\CommonHelper;
                                             <div class="form-group" style="text-align:left; margin:0;">
                                                 <label>Auto Reload <span id="reloadCountdown" style="color:#dc3545; font-size:12px; font-weight:bold;"></span></label>
                                                 <select id="autoReloadSeconds" class="form-control" style="min-width:110px;">
-                                                    <option value="10" selected>10 sec</option>
+                                                    <option value="OFF" selected>OFF</option>
+                                                    <option value="10">10 sec</option>
                                                     <option value="20">20 sec</option>
                                                     <option value="30">30 sec</option>
                                                     <option value="60">60 sec</option>
@@ -287,7 +289,7 @@ use App\Helper\CommonHelper;
                                         <div class="panel-body" id="logContainer" style="max-height:520px; overflow-y:auto; overflow-x:hidden; background:#111; color:#66ff66; font-family:monospace;">
                                             @forelse($initialLogs as $log)
                                                 <div class="log-entry" data-log-id="{{ $log->id }}" style="padding:4px 0; border-bottom:1px dashed #333;">
-                                                    <div style="color:#9ea7ad; font-size:12px;">[#{{ $log->id }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d h:i:s A') : 'N/A' }}] IP: {{ $log->source_ip ?? 'N/A' }}</div>
+                                                    <div style="color:#9ea7ad; font-size:12px;">[#{{ $log->id }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : 'N/A' }}] IP: {{ $log->source_ip ?? 'N/A' }}</div>
                                                     <div>{{ $log->raw_packet }}</div>
                                                 </div>
                                             @empty
@@ -317,11 +319,11 @@ use App\Helper\CommonHelper;
                                                     @forelse($device->commands->take(20) as $command)
                                                         <tr>
                                                             <td>{{ $command->id }}</td>
-                                                            <td>{{ $command->created_at ? CommonHelper::getDateAsTimeZone($command->created_at, 'd-M-Y h:i:s A') : 'N/A' }}</td>
+                                                            <td>{{ $command->created_at ? CommonHelper::getDateAsTimeZone($command->created_at, 'd-M-Y H:i:s') : 'N/A' }}</td>
                                                             <td><code>{{ $command->command }}</code></td>
                                                             <td>{{ $command->status == 0 ? 'Pending' : 'Sent' }}</td>
-                                                            <!-- <td>{{ $command->sent_at ? CommonHelper::getDateAsTimeZone($command->sent_at, 'd-M-Y h:i:s A') : 'N/A' }}</td> -->
-                                                            <td>{{ $command->status == 1 && $command->updated_at ? CommonHelper::getDateAsTimeZone($command->updated_at, 'd-M-Y h:i:s A') : 'N/A' }}</td>
+                                                            <!-- <td>{{ $command->sent_at ? CommonHelper::getDateAsTimeZone($command->sent_at, 'd-M-Y H:i:s') : 'N/A' }}</td> -->
+                                                            <td>{{ $command->status == 1 && $command->updated_at ? CommonHelper::getDateAsTimeZone($command->updated_at, 'd-M-Y H:i:s') : 'N/A' }}</td>
                                                         </tr>
                                                     @empty
                                                         <tr><td colspan="5" class="text-center">No commands queued yet.</td></tr>
@@ -352,12 +354,14 @@ $(document).ready(function() {
     const imei = @json($device->imei);
     const pusherKey = @json(config('broadcasting.connections.pusher.key'));
     const pusherCluster = @json(config('broadcasting.connections.pusher.options.cluster'));
-    const startAt = @json($filters['start_at'] ?? '');
-    const endAt = @json($filters['end_at'] ?? '');
+    const urlParams = new URLSearchParams(window.location.search);
+    const startAt = urlParams.get('start_at') || @json($filters['start_at'] ?? '');
+    const endAt = urlParams.get('end_at') || '';
     let lastLogId = {{ $initialLogs->max('id') ?? 0 }};
     let totalLogsCounter = {{ $totalLogsCount ?? 0 }};
     let reloadHandle = null;
-    let secondsLeft = Number($('#autoReloadSeconds').val()) || 10;
+    let valStr = $('#autoReloadSeconds').val();
+    let secondsLeft = valStr === 'OFF' ? 0 : (Number(valStr) || 10);
     
     // Quick initialize right away so it doesn't stay blank
     updateCountdownText();
@@ -402,7 +406,10 @@ $(document).ready(function() {
                 $('a.btn-success:contains("Download Logs")').text('Download Logs (' + totalLogsCounter + ')');
             }
         }).always(function() {
-            secondsLeft = Number($('#autoReloadSeconds').val()) || 10;
+            let val = $('#autoReloadSeconds').val();
+            if (val !== 'OFF') {
+                secondsLeft = Number(val) || 10;
+            }
             updateCountdownText();
         });
 
@@ -412,14 +419,24 @@ $(document).ready(function() {
     }
 
     function updateCountdownText() {
-        $('#reloadCountdown').text('(in ' + secondsLeft + 's)');
+        if ($('#autoReloadSeconds').val() === 'OFF') {
+            $('#reloadCountdown').text('(OFF)');
+        } else {
+            $('#reloadCountdown').text('(in ' + secondsLeft + 's)');
+        }
     }
 
     function resetAutoReload() {
         if (reloadHandle) {
             clearInterval(reloadHandle);
+            reloadHandle = null;
         }
-        secondsLeft = Number($('#autoReloadSeconds').val()) || 10;
+        let val = $('#autoReloadSeconds').val();
+        if (val === 'OFF') {
+            updateCountdownText();
+            return;
+        }
+        secondsLeft = Number(val) || 10;
         updateCountdownText();
         
         reloadHandle = setInterval(function() {
@@ -457,5 +474,17 @@ $(document).ready(function() {
 });
 </script>
 @endif
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr('.flatpickr-datetime', {
+        enableTime: true,
+        dateFormat: "Y-m-d\\TH:i",
+        altInput: true,
+        altFormat: "Y-m-d H:i",
+        time_24hr: true
+    });
+});
+</script>
 @endsection
 

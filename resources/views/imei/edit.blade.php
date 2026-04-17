@@ -1,5 +1,6 @@
 @extends('layouts.apps')
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
     .btn-premium {
         padding: 8px 30px;
@@ -73,17 +74,17 @@
                                     <select name="status" class="form-control" required>
                                         <option value="active" {{ old('status', $imei_device->status) === 'active' ? 'selected' : '' }}>ON</option>
                                         <option value="inactive" {{ old('status', $imei_device->status) === 'inactive' ? 'selected' : '' }}>OFF</option>
-                                        <option value="close" {{ old('status', $imei_device->status) === 'close' ? 'selected' : '' }}>CLOSE</option>
+
                                     </select>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label class="control-label col-lg-3">Start Date &amp; Time *</label>
-                                <div class="col-lg-6"><input type="datetime-local" name="start_at" value="{{ old('start_at', optional($imei_device->effective_start_at)->format('Y-m-d\\TH:i')) }}" class="form-control" required></div>
+                                <div class="col-lg-6"><input type="text" name="start_at" value="{{ old('start_at', $imei_device->effective_start_at ? \App\Helper\CommonHelper::getDateAsTimeZone($imei_device->effective_start_at, 'Y-m-d\\TH:i') : '') }}" class="form-control flatpickr-datetime" required></div>
                             </div>
                             <div class="form-group">
                                 <label class="control-label col-lg-3">End Date &amp; Time *</label>
-                                <div class="col-lg-6"><input type="datetime-local" name="end_at" value="{{ old('end_at', optional($imei_device->effective_end_at)->format('Y-m-d\\TH:i')) }}" class="form-control" required></div>
+                                <div class="col-lg-6"><input type="text" name="end_at" value="{{ old('end_at', $imei_device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($imei_device->effective_end_at, 'Y-m-d\\TH:i') : '') }}" class="form-control flatpickr-datetime" required></div>
                             </div>
                             <div class="form-group">
                                 <div class="col-lg-offset-3 col-lg-9">
@@ -98,4 +99,17 @@
         </div>
     </section>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr('.flatpickr-datetime', {
+        enableTime: true,
+        dateFormat: "Y-m-d\\TH:i",
+        altInput: true,
+        altFormat: "Y-m-d H:i",
+        time_24hr: true
+    });
+});
+</script>
 @endsection

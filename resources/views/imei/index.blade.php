@@ -31,13 +31,11 @@
                         @php
                             $activeCount = $devices->where('status', \App\Models\ImeiDevice::STATUS_ON)->count();
                             $inactiveCount = $devices->where('status', \App\Models\ImeiDevice::STATUS_OFF)->count();
-                            $closedCount = $devices->where('status', \App\Models\ImeiDevice::STATUS_CLOSE)->count();
                         @endphp
 
                         <div class="row" style="margin-bottom:20px;">
-                            <div class="col-md-4"><div class="alert alert-success">ON: {{ $activeCount }}</div></div>
-                            <div class="col-md-4"><div class="alert alert-warning">OFF: {{ $inactiveCount }}</div></div>
-                            <div class="col-md-4"><div class="alert alert-danger">CLOSE: {{ $closedCount }}</div></div>
+                            <div class="col-md-6"><div class="alert alert-success">ON: {{ $activeCount }}</div></div>
+                            <div class="col-md-6"><div class="alert alert-warning">OFF: {{ $inactiveCount }}</div></div>
                         </div>
 
                         <div class="table-responsive">
@@ -67,8 +65,8 @@
                                                     <span class="label label-danger">CLOSE</span>
                                                 @endif
                                             </td>
-                                            <td>{{ optional($device->effective_start_at)->format('d-M-Y H:i:s') ?? 'N/A' }}</td>
-                                            <td>{{ optional($device->effective_end_at)->format('d-M-Y H:i:s') ?? 'N/A' }}</td>
+                                            <td>{{ $device->effective_start_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_start_at, 'd-M-Y H:i:s') : 'N/A' }}</td>
+                                            <td>{{ $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'd-M-Y H:i:s') : 'N/A' }}</td>
                                             <td>{{ $device->pending_commands_count ?? 0 }}</td>
                                             <!-- <td>
                                                 <a href="{{ route('imei-devices.edit', $device->id) }}" class="btn btn-info btn-sm">Edit</a>

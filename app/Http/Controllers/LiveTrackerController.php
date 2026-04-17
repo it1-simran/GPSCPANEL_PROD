@@ -84,8 +84,8 @@ class LiveTrackerController extends Controller
 
         $formattedLogs = $logs->map(function ($log) {
             $logArray = $log->toArray();
-            $logArray['logged_at_formatted'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d h:i:s A') : null;
-            $logArray['logged_at'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d h:i:s A') : null;
+            $logArray['logged_at_formatted'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null;
+            $logArray['logged_at'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null;
             return $logArray;
         });
 
@@ -94,7 +94,7 @@ class LiveTrackerController extends Controller
             'last_id' => $logs->max('id') ?: $lastId,
             'status' => $device->status,
             'status_label' => $device->status_label,
-            'effective_end_at' => $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d h:i:s A') : null,
+            'effective_end_at' => $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d H:i:s') : null,
         ]);
     }
 
@@ -159,7 +159,7 @@ class LiveTrackerController extends Controller
                 'command' => $command->command,
                 'status' => $command->status_label,
                 'response_time' => $command->response_time,
-                'executed_at' => $command->executed_at ? \App\Helper\CommonHelper::getDateAsTimeZone($command->executed_at, 'Y-m-d h:i:s A') : null,
+                'executed_at' => $command->executed_at ? \App\Helper\CommonHelper::getDateAsTimeZone($command->executed_at, 'Y-m-d H:i:s') : null,
             ]
         ]);
     }
@@ -198,8 +198,8 @@ class LiveTrackerController extends Controller
                     'command' => $cmd->command,
                     'status' => $cmd->status_label,
                     'status_code' => $cmd->status,
-                    'sent_at' => $cmd->sent_at ? \App\Helper\CommonHelper::getDateAsTimeZone($cmd->sent_at, 'Y-m-d h:i:s A') : null,
-                    'executed_at' => $cmd->executed_at ? \App\Helper\CommonHelper::getDateAsTimeZone($cmd->executed_at, 'Y-m-d h:i:s A') : null,
+                    'sent_at' => $cmd->sent_at ? \App\Helper\CommonHelper::getDateAsTimeZone($cmd->sent_at, 'Y-m-d H:i:s') : null,
+                    'executed_at' => $cmd->executed_at ? \App\Helper\CommonHelper::getDateAsTimeZone($cmd->executed_at, 'Y-m-d H:i:s') : null,
                     'response_time' => $cmd->response_time,
                     'response' => $cmd->device_response ? json_decode($cmd->device_response, true) : null,
                 ];

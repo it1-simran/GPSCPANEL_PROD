@@ -310,7 +310,7 @@ use App\Helper\CommonHelper;
                                                         <th>Queued At</th>
                                                         <th>Command</th>
                                                         <th>Status</th>
-                                                        <th>Sent At</th>
+                                                        <th>Updated At</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -320,7 +320,8 @@ use App\Helper\CommonHelper;
                                                             <td>{{ $command->created_at ? CommonHelper::getDateAsTimeZone($command->created_at, 'd-M-Y h:i:s A') : 'N/A' }}</td>
                                                             <td><code>{{ $command->command }}</code></td>
                                                             <td>{{ $command->status == 0 ? 'Pending' : 'Sent' }}</td>
-                                                            <td>{{ $command->sent_at ? CommonHelper::getDateAsTimeZone($command->sent_at, 'd-M-Y h:i:s A') : 'N/A' }}</td>
+                                                            <!-- <td>{{ $command->sent_at ? CommonHelper::getDateAsTimeZone($command->sent_at, 'd-M-Y h:i:s A') : 'N/A' }}</td> -->
+                                                            <td>{{ $command->status == 1 && $command->updated_at ? CommonHelper::getDateAsTimeZone($command->updated_at, 'd-M-Y h:i:s A') : 'N/A' }}</td>
                                                         </tr>
                                                     @empty
                                                         <tr><td colspan="5" class="text-center">No commands queued yet.</td></tr>

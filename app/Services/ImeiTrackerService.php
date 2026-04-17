@@ -196,8 +196,13 @@ class ImeiTrackerService
             $end = $device->effective_end_at->copy();
         }
 
+        $start = $end->copy()->subDays(7);
+        if ($device && $device->effective_start_at) {
+            $start = $device->effective_start_at->copy();
+        }
+
         return [
-            'start_at' => $end->copy()->subDays(7),
+            'start_at' => $start,
             'end_at' => $end,
         ];
     }

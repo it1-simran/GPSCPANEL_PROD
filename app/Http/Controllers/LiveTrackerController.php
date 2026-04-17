@@ -40,8 +40,11 @@ class LiveTrackerController extends Controller
         }
 
         $initialLogs = collect();
+        $totalLogsCount = 0;
         if ($device) {
-            $initialLogs = $this->baseLogsQuery($device, $startAt, $endAt)
+            $baseQuery = $this->baseLogsQuery($device, $startAt, $endAt);
+            $totalLogsCount = $baseQuery->count();
+            $initialLogs = $baseQuery
                 ->orderBy('id', 'desc')
                 ->limit(200)
                 ->get()
@@ -54,6 +57,7 @@ class LiveTrackerController extends Controller
             'imei' => $imei,
             'allDevices' => $allDevices,
             'initialLogs' => $initialLogs,
+            'totalLogsCount' => $totalLogsCount,
             'filters' => [
                 'start_at' => $startAt->format('Y-m-d\TH:i'),
                 'end_at' => $endAt->format('Y-m-d\TH:i'),
@@ -80,8 +84,8 @@ class LiveTrackerController extends Controller
 
         $formattedLogs = $logs->map(function ($log) {
             $logArray = $log->toArray();
-            $logArray['logged_at_formatted'] = $log->logged_at?->timezone('UTC')?->format('Y-m-d H:i:s');
-            $logArray['logged_at'] = $log->logged_at?->timezone('UTC')?->format('Y-m-d H:i:s');
+            $logArray['logged_at_formatted'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d h:i:s A') : null;
+            $logArray['logged_at'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d h:i:s A') : null;
             return $logArray;
         });
 
@@ -90,7 +94,7 @@ class LiveTrackerController extends Controller
             'last_id' => $logs->max('id') ?: $lastId,
             'status' => $device->status,
             'status_label' => $device->status_label,
-            'effective_end_at' => $device->effective_end_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
+            'effective_end_at' => $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d h:i:s A') : null,
         ]);
     }
 
@@ -155,7 +159,7 @@ class LiveTrackerController extends Controller
                 'command' => $command->command,
                 'status' => $command->status_label,
                 'response_time' => $command->response_time,
-                'executed_at' => $command->executed_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
+                'executed_at' => $command->executed_at ? \App\Helper\CommonHelper::getDateAsTimeZone($command->executed_at, 'Y-m-d h:i:s A') : null,
             ]
         ]);
     }
@@ -194,8 +198,8 @@ class LiveTrackerController extends Controller
                     'command' => $cmd->command,
                     'status' => $cmd->status_label,
                     'status_code' => $cmd->status,
-                    'sent_at' => $cmd->sent_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
-                    'executed_at' => $cmd->executed_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
+                    'sent_at' => $cmd->sent_at ? \App\Helper\CommonHelper::getDateAsTimeZone($cmd->sent_at, 'Y-m-d h:i:s A') : null,
+                    'executed_at' => $cmd->executed_at ? \App\Helper\CommonHelper::getDateAsTimeZone($cmd->executed_at, 'Y-m-d h:i:s A') : null,
                     'response_time' => $cmd->response_time,
                     'response' => $cmd->device_response ? json_decode($cmd->device_response, true) : null,
                 ];
@@ -209,14 +213,24 @@ class LiveTrackerController extends Controller
         $logs = $this->baseLogsQuery($device, $startAt, $endAt)->orderBy('id')->get();
         $filename = 'tracker-logs-' . $device->imei . '-' . now()->format('Ymd_His') . '.csv';
 
-        return new StreamedResponse(function () use ($logs) {
+        return new StreamedResponse(function () use ($logs, $device, $startAt, $endAt) {
             $handle = fopen('php://output', 'w');
+            
+            // CSV Header Metadata
+            $count = $logs->count();
+            fputcsv($handle, ['# TRACKER SYSTEM LOG EXPORT']);
+            fputcsv($handle, ['# Device IMEI:', $device->imei]);
+            fputcsv($handle, ['# Exported On:', \App\Helper\CommonHelper::getDateAsTimeZone(now(), 'd-M-Y h:i:s A')]);
+            fputcsv($handle, ['# Status Details:', "You have successfully downloaded {$count} logs."]);
+            fputcsv($handle, []); // empty row divider
+            
+            // Table Headers
             fputcsv($handle, ['ID', 'IMEI', 'Logged At', 'Source IP', 'Raw Packet']);
             foreach ($logs as $log) {
                 fputcsv($handle, [
                     $log->id,
                     optional($log->device)->imei,
-                    $log->logged_at?->timezone('UTC')?->format('Y-m-d H:i:s'),
+                    $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d h:i:s A') : null,
                     $log->source_ip,
                     $log->raw_packet,
                 ]);

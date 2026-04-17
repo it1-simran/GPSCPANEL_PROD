@@ -77,8 +77,8 @@ class ImeiDeviceController extends Controller
             'end_at' => ['required', 'date', 'after:start_at'],
         ]);
 
-        $startAt = Carbon::parse($validated['start_at']);
-        $endAt = Carbon::parse($validated['end_at']);
+        $startAt = \App\Helper\CommonHelper::convertLocalToUTC($validated['start_at']);
+        $endAt = \App\Helper\CommonHelper::convertLocalToUTC($validated['end_at']);
 
         if ($endAt->gt($startAt->copy()->addDays(7))) {
             throw ValidationException::withMessages([

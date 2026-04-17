@@ -29,7 +29,7 @@ class TrackerLogsExport implements FromQuery, WithHeadings, WithMapping
 
     public function headings(): array
     {
-        $exportedOn = \App\Helper\CommonHelper::getDateAsTimeZone(now(), 'd-M-Y h:i:s A');
+        $exportedOn = \App\Helper\CommonHelper::getDateAsTimeZone(now(), 'd-M-Y H:i:s');
         return [
             ['# TRACKER SYSTEM LOG EXPORT'],
             ['# Device IMEI:', optional($this->device)->imei],
@@ -45,7 +45,7 @@ class TrackerLogsExport implements FromQuery, WithHeadings, WithMapping
         return [
             $log->id,
             optional($this->device)->imei,
-            $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d h:i:s A') : null,
+            $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null,
             $log->source_ip,
             $log->raw_packet,
         ];

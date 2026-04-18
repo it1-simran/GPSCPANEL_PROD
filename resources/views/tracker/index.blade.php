@@ -3,6 +3,7 @@ use App\Helper\CommonHelper;
 @endphp
 
 @extends('layouts.apps')
+@section('title', $device ? $device->imei . ' (Live Logs)' : 'Tracker Logs')
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
@@ -198,6 +199,11 @@ use App\Helper\CommonHelper;
                         @if(session('success'))
                             <div class="alert alert-success">{{ session('success') }}</div>
                         @endif
+                        
+                        <div id="ajaxSuccessMessage" class="alert alert-success" style="display:none; align-items:center; gap:10px; font-weight:500; border:1px solid #c3e6cb; border-left: 4px solid #198754; background-color: #d4edda; color: #155724; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            <span class="message-text"></span>
+                        </div>
 
                         <form method="GET" action="{{ route('tracker.index') }}" class="filter-container">
                             <div class="form-group">
@@ -211,18 +217,18 @@ use App\Helper\CommonHelper;
                             </div>
                             <div class="form-group">
                                 <label>Start Date &amp; Time</label>
-                                <input type="text" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '' }}" class="form-control flatpickr-datetime">
+                                <input type="text" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime">
                             </div>
                             <div class="form-group">
                                 <label>End Date &amp; Time</label>
-                                <input type="text" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '' }}" class="form-control flatpickr-datetime" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i') }}" @endif>
+                                <input type="text" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i:s') }}" @endif>
                             </div>
                             <div class="form-group">
                                 <button type="submit" class="btn btn-primary">Apply Filters</button>
                             </div>
                             @if($device)
                             <div class="form-group">
-                                <a id="downloadLogsBtn" href="{{ route('tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '']) }}" class="btn btn-success">Download Logs ({{ $totalLogsCount }})</a>
+                                <a id="downloadLogsBtn" href="{{ route('tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i:s') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i:s') : '']) }}" class="btn btn-success">Download Logs ({{ $totalLogsCount }})</a>
                             </div>
                             @endif
                         </form>
@@ -230,7 +236,7 @@ use App\Helper\CommonHelper;
                         @if($device)
                             <div class="row" style="margin-bottom:15px;">
                                 <div class="col-md-3"><div class="alert alert-info"><strong>IMEI:</strong> {{ $device->imei }}</div></div>
-                                <div class="col-md-3"><div class="alert {{ $device->status === 'active' ? 'alert-success' : ($device->status === 'inactive' ? 'alert-warning' : 'alert-danger') }}"><strong>Status:</strong> {{ $device->status_label }}</div></div>
+                                <div class="col-md-3"><div id="deviceStatusAlert" class="alert {{ $device->status === 'active' ? 'alert-success' : ($device->status === 'inactive' ? 'alert-warning' : 'alert-danger') }}"><strong>Status:</strong> <span id="deviceStatusLabel">{{ $device->status_label }}</span></div></div>
 
 
                                 <div class="col-md-3">
@@ -268,7 +274,7 @@ use App\Helper\CommonHelper;
                                         <div class="form-inline auto-reload-inner" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin: 0; width: 100%; justify-content: flex-end;">
                                             <div class="form-group" style="text-align:left; margin:0;">
                                                 <label>Auto Reload <span id="reloadCountdown" style="color:#dc3545; font-size:12px; font-weight:bold;"></span></label>
-                                                <select id="autoReloadSeconds" class="form-control" style="min-width:110px;">
+                                                <select id="autoReloadSeconds" class="form-control" style="min-width:110px;" {{ $device->status !== 'active' ? 'disabled' : '' }}>
                                                     <option value="OFF" selected>OFF</option>
                                                     <option value="10">10 sec</option>
                                                     <option value="20">20 sec</option>
@@ -276,7 +282,7 @@ use App\Helper\CommonHelper;
                                                     <option value="60">60 sec</option>
                                                 </select>
                                             </div>
-                                            <button type="button" class="btn btn-info" id="refreshNowBtn">Refresh Now</button>
+                                            <button type="button" class="btn btn-info" id="refreshNowBtn" {{ $device->status !== 'active' ? 'disabled' : '' }}>Refresh Now</button>
                                         </div>
                                     </div>
                                 </div>
@@ -287,9 +293,10 @@ use App\Helper\CommonHelper;
                                     <div class="panel panel-default">
                                         <div class="panel-heading"><strong>History + Live Logs</strong></div>
                                         <div class="panel-body" id="logContainer" style="max-height:520px; overflow-y:auto; overflow-x:hidden; background:#111; color:#66ff66; font-family:monospace;">
+                                            @php $srNo = $totalLogsCount > 0 ? ($totalLogsCount - $initialLogs->count() + 1) : 1; @endphp
                                             @forelse($initialLogs as $log)
                                                 <div class="log-entry" data-log-id="{{ $log->id }}" style="padding:4px 0; border-bottom:1px dashed #333;">
-                                                    <div style="color:#9ea7ad; font-size:12px;">[#{{ $log->id }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : 'N/A' }}] IP: {{ $log->source_ip ?? 'N/A' }}</div>
+                                                    <div style="color:#9ea7ad; font-size:12px;">[#{{ $srNo++ }}] [#{{ $log->id }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : 'N/A' }}] IP: {{ $log->source_ip ?? 'N/A' }}</div>
                                                     <div>{{ $log->raw_packet }}</div>
                                                 </div>
                                             @empty
@@ -355,8 +362,6 @@ $(document).ready(function() {
     const pusherKey = @json(config('broadcasting.connections.pusher.key'));
     const pusherCluster = @json(config('broadcasting.connections.pusher.options.cluster'));
     const urlParams = new URLSearchParams(window.location.search);
-    const startAt = urlParams.get('start_at') || @json($filters['start_at'] ?? '');
-    const endAt = urlParams.get('end_at') || '';
     let lastLogId = {{ $initialLogs->max('id') ?? 0 }};
     let totalLogsCounter = {{ $totalLogsCount ?? 0 }};
     let reloadHandle = null;
@@ -370,29 +375,65 @@ $(document).ready(function() {
         if ($('#logContainer').find('[data-log-id="' + log.id + '"]').length) {
             return;
         }
+        totalLogsCounter++;
         $('#emptyLogState').remove();
         $('#logContainer').append(`
             <div class="log-entry" data-log-id="${log.id}" style="padding:4px 0; border-bottom:1px dashed #333;">
-                <div style="color:#9ea7ad; font-size:12px;">[#${log.id}] [${log.logged_at_formatted || log.logged_at}] IP: ${log.source_ip || 'N/A'}</div>
+                <div style="color:#9ea7ad; font-size:12px;">[#${totalLogsCounter}] [#${log.id}] [${log.logged_at_formatted || log.logged_at}] IP: ${log.source_ip || 'N/A'}</div>
                 <div>${$('<div>').text(log.raw_packet).html()}</div>
             </div>
         `);
         lastLogId = Math.max(lastLogId, Number(log.id || 0));
+
+        // Manage High Log Volume: Keep max 500 logs in DOM so browser doesn't freeze
+        let logEntries = $('#logContainer .log-entry');
+        if (logEntries.length > 500) {
+            logEntries.first().remove();
+        }
+
         const logContainer = document.getElementById('logContainer');
         logContainer.scrollTop = logContainer.scrollHeight;
     }
 
     function loadLatestLogs() {
         $('#reloadCountdown').text('(loading...)');
+        
+        // Update End Date to current time right before fetching new logs
+        let endAtInput = document.querySelector('input[name="end_at"]');
+        if (endAtInput && endAtInput._flatpickr) {
+            endAtInput._flatpickr.setDate(new Date(), false);
+        }
+
+        let currentStartAt = document.querySelector('input[name="start_at"]').value;
+        let currentEndAt = document.querySelector('input[name="end_at"]').value;
+
         $.ajax({
-            url: `/api/tracker/logs/${imei}`,
+            url: `/tracker/logs/${imei}`,
             data: {
                 last_id: lastLogId,
-                start_at: startAt,
-                end_at: endAt
+                start_at: currentStartAt,
+                end_at: currentEndAt
             },
             cache: false
         }).done(function(response) {
+            if (response.status) {
+                let alertClass = response.status === 'active' ? 'alert-success' : (response.status === 'inactive' ? 'alert-warning' : 'alert-danger');
+                $('#deviceStatusAlert').removeClass('alert-success alert-warning alert-danger').addClass(alertClass);
+                $('#deviceStatusLabel').text(response.status_label);
+                
+                if (response.status !== 'active') {
+                    if ($('#autoReloadSeconds').val() !== 'OFF') {
+                        $('#autoReloadSeconds').val('OFF');
+                        resetAutoReload();
+                    }
+                    $('#autoReloadSeconds').prop('disabled', true);
+                    $('#refreshNowBtn').prop('disabled', true);
+                } else {
+                    $('#autoReloadSeconds').prop('disabled', false);
+                    $('#refreshNowBtn').prop('disabled', false);
+                }
+            }
+
             let newlyAddedCount = 0;
             (response.logs || []).forEach(log => {
                 let exists = $('#logContainer').find('[data-log-id="' + log.id + '"]').length > 0;
@@ -402,7 +443,6 @@ $(document).ready(function() {
                 }
             });
             if (newlyAddedCount > 0) {
-                totalLogsCounter += newlyAddedCount;
                 $('a.btn-success:contains("Download Logs")').text('Download Logs (' + totalLogsCounter + ')');
             }
         }).always(function() {
@@ -441,6 +481,7 @@ $(document).ready(function() {
         
         reloadHandle = setInterval(function() {
             secondsLeft--;
+
             if (secondsLeft <= 0) {
                 loadLatestLogs();
             } else {
@@ -455,6 +496,51 @@ $(document).ready(function() {
         $('#logContainer').html('<div id="emptyLogState" style="padding:20px; color:#ccc;">Logs cleared from browser only.</div>');
     });
 
+    $('.tracker-command-form').on('submit', function(e) {
+        e.preventDefault();
+        let form = $(this);
+        let submitBtn = form.find('button[type="submit"]');
+        let originalText = submitBtn.text();
+        submitBtn.prop('disabled', true).text('Queueing...');
+        
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            data: form.serialize(),
+            success: function(response) {
+                if (response.success) {
+                    form.find('input[name="command"]').val('');
+                    // Optional: remove backend alert since we handle via UI
+                    $('.c_content > .alert-success').not('#ajaxSuccessMessage').remove(); 
+                    
+                    // Show global styled success message
+                    let globalSuccess = $('#ajaxSuccessMessage');
+                    globalSuccess.find('.message-text').text('Command queued successfully!');
+                    globalSuccess.css('display', 'flex').hide().fadeIn();
+                    
+                    // Clear any previous timeout to avoid flickering
+                    if (window.ajaxSuccessTimeout) {
+                        clearTimeout(window.ajaxSuccessTimeout);
+                    }
+                    
+                    window.ajaxSuccessTimeout = setTimeout(function() {
+                        globalSuccess.fadeOut();
+                    }, 3000);
+                    
+                    // Reload commands table section
+                    const currentUrl = window.location.href.split('#')[0];
+                    $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
+                }
+            },
+            error: function(xhr) {
+                alert('Failed to queue command.');
+            },
+            complete: function() {
+                submitBtn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+
     if (pusherKey) {
         const pusher = new Pusher(pusherKey, { cluster: pusherCluster, forceTLS: true });
         const channel = pusher.subscribe('tracker.' + imei);
@@ -463,7 +549,6 @@ $(document).ready(function() {
                 let exists = $('#logContainer').find('[data-log-id="' + data.log.id + '"]').length > 0;
                 if (!exists) {
                     appendLog(data.log);
-                    totalLogsCounter++;
                     $('a.btn-success:contains("Download Logs")').text('Download Logs (' + totalLogsCounter + ')');
                 }
             }
@@ -479,9 +564,10 @@ $(document).ready(function() {
 document.addEventListener('DOMContentLoaded', function() {
     flatpickr('.flatpickr-datetime', {
         enableTime: true,
-        dateFormat: "Y-m-d\\TH:i",
+        enableSeconds: true,
+        dateFormat: "Y-m-d\\TH:i:S",
         altInput: true,
-        altFormat: "Y-m-d H:i",
+        altFormat: "Y-m-d H:i:S",
         time_24hr: true
     });
 });

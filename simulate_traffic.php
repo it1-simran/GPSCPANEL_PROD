@@ -14,7 +14,7 @@
 // Configuration
 $baseUrl = "http://localhost:8000";
 $apiIngestUrl = "$baseUrl/api/packets/ingest";
-$imei = isset($argv[1]) ? $argv[1] : "004400981955188";
+$imei = isset($argv[1]) ? $argv[1] : "514400981955188";
 $trafficIterations = 15;
 $trafficDelay = 3; // Seconds between traffic packets
 
@@ -231,9 +231,11 @@ for ($i = 1; $i <= $trafficIterations; $i++) {
     if ($result['success']) {
         $trafficSuccess++;
         echo "✓ [$i/$trafficIterations] Traffic: LAT $lat | LON $lon | Speed ${speed}km/h (HTTP {$result['code']})\n";
+        echo "   ➜ Response: " . $result['response'] . "\n";
     } else {
         $trafficFailed++;
         echo "✗ [$i/$trafficIterations] FAILED: Traffic packet (HTTP {$result['code']})\n";
+        echo "   ➜ Error Response: " . $result['response'] . "\n";
     }
     
     sleep($trafficDelay);

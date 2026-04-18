@@ -45,7 +45,6 @@ Route::post('/packets/ingest', [\App\Http\Controllers\Api\PacketIngestionControl
 Route::post('/tracker/packets/store', [TrackerPacketController::class, 'store']);
 
 // Live Tracking Log Fetcher
-Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs']);
 
 // Command Execution API Routes
 Route::post('/commands/execute', [\App\Http\Controllers\LiveTrackerController::class, 'executeCommand']);

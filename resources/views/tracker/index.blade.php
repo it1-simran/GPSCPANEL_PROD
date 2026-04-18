@@ -113,18 +113,19 @@ use App\Helper\CommonHelper;
 
 /* Filter Box Module */
 .filter-container {
-    background: #fbfbfc;
-    border: 1px solid #eef0f2;
-    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #eaeaea;
+    border-radius: 12px;
     padding: 15px 20px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 15px;
     align-items: flex-end;
 }
-.filter-container .form-group { margin-bottom: 0; }
+.filter-container .form-group { margin-bottom: 0; flex: 1; }
+.filter-container .form-group.action-group { flex: 0 0 auto; display: flex; gap: 10px; }
 
 /* Status Alerts */
 .tracker-page .alert {
@@ -200,9 +201,9 @@ use App\Helper\CommonHelper;
                         @endif
 
                         <form method="GET" action="{{ route('tracker.index') }}" class="filter-container">
-                            <div class="form-group">
-                                <label>IMEI</label>
-                                <select name="imei" class="form-control" style="min-width:240px;">
+                            <div class="form-group" style="min-width: 200px;">
+                                <label style="text-transform:uppercase; letter-spacing:0.5px;">IMEI</label>
+                                <select name="imei" class="form-control" style="width:100%; border-radius:8px;">
                                     <option value="">Select IMEI</option>
                                     @foreach($allDevices as $d)
                                         <option value="{{ $d->imei }}" {{ $imei === $d->imei ? 'selected' : '' }}>{{ $d->imei }} ({{ $d->status_label }})</option>
@@ -210,21 +211,28 @@ use App\Helper\CommonHelper;
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Start Date &amp; Time</label>
-                                <input type="text" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '' }}" class="form-control flatpickr-datetime">
+                                <label style="text-transform:uppercase; letter-spacing:0.5px;">Start Date</label>
+                                <input type="text" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '' }}" class="form-control flatpickr-datetime" style="border-radius:8px;">
                             </div>
                             <div class="form-group">
-                                <label>End Date &amp; Time</label>
-                                <input type="text" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '' }}" class="form-control flatpickr-datetime" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i') }}" @endif>
+                                <label style="text-transform:uppercase; letter-spacing:0.5px;">End Date</label>
+                                <input type="text" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '' }}" class="form-control flatpickr-datetime" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i') }}" @endif style="border-radius:8px;">
                             </div>
-                            <div class="form-group">
-                                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            
+                            <div class="form-group action-group" style="display:flex; flex-direction:column; gap:6px;">
+                                <label style="display:block; visibility:hidden; font-size:12px; margin:0;">Actions</label>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <button type="submit" class="btn btn-primary" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; box-shadow:0 4px 12px rgba(13, 110, 253, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
+                                        <i class="fa fa-filter" style="margin-right:8px;"></i> Apply
+                                    </button>
+                                    
+                                    @if($device)
+                                    <a id="downloadLogsBtn" href="{{ route('tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '']) }}" class="btn btn-success" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; background:#198754; border:none; box-shadow:0 4px 12px rgba(25, 135, 84, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
+                                        <i class="fa fa-download" style="margin-right:8px;"></i> Download ({{ $totalLogsCount }})
+                                    </a>
+                                    @endif
+                                </div>
                             </div>
-                            @if($device)
-                            <div class="form-group">
-                                <a id="downloadLogsBtn" href="{{ route('tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '']) }}" class="btn btn-success">Download Logs ({{ $totalLogsCount }})</a>
-                            </div>
-                            @endif
                         </form>
 
                         @if($device)
@@ -249,37 +257,62 @@ use App\Helper\CommonHelper;
 
                             </div>
 
-                            <div class="row" style="margin-bottom:20px; display:flex; flex-wrap:wrap; align-items:stretch;">
-                                <div class="col-md-7 col-lg-8" style="margin-bottom: 10px;">
-                                    <div class="action-container" style="height: 100%; display: flex; align-items: center;">
-                                        <form method="POST" action="{{ route('tracker.commands.store', $device->id) }}" class="form-inline tracker-command-form" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; width: 100%; margin: 0;">
+                            <div class="row" style="margin-bottom:20px;">
+                                <div class="col-md-12">
+                                    <div class="action-container" style="background:#fff; border:1px solid #eaeaea; border-radius:12px; padding:15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap;">
+                                        
+                                        <!-- Command Section -->
+                                        <form method="POST" action="{{ route('tracker.commands.store', $device->id) }}" style="display:flex; flex-grow:2; gap:10px; align-items:flex-end; margin:0;">
                                             @csrf
-                                            <div class="form-group command-input-group" style="flex-grow:1; min-width: 200px; margin: 0;">
-                                                <label>Send Command</label>
-                                                <input type="text" name="command" class="form-control" style="width:100%;" placeholder="Enter command to queue">
+                                            <div style="flex-grow:1; min-width:200px;">
+                                                <label style="display:block; font-size:12px; font-weight:700; color:#4a5568; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Send Command</label>
+                                                <input type="text" name="command" class="form-control" style="width:100%; border-radius:8px; border:1px solid #cbd5e0;" placeholder="Enter command to queue">
                                             </div>
-                                            <button type="submit" class="btn btn-warning">Queue Command</button>
-                                            <button type="button" class="btn btn-danger" id="clearLogsBtn">Clear Logs (UI)</button>
+                                            <button type="submit" class="btn btn-warning" style="height:38px; border-radius:8px; font-weight:600; padding:0 15px; background:#f6ad55; border:none; color:#fff;">
+                                                <i class="fa fa-paper-plane" style="margin-right:6px;"></i> Queue
+                                            </button>
+                                            <button type="button" class="btn btn-danger" id="clearLogsBtn" style="height:38px; border-radius:8px; font-weight:600; padding:0 15px; background:transparent; border:1px solid #feb2b2; color:#c53030;">
+                                                Clear
+                                            </button>
                                         </form>
-                                    </div>
-                                </div>
-                                <div class="col-md-5 col-lg-4" style="margin-bottom: 10px;">
-                                    <div class="action-container" style="height: 100%; display: flex; align-items: center; justify-content: flex-end;">
-                                        <div class="form-inline auto-reload-inner" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin: 0; width: 100%; justify-content: flex-end;">
-                                            <div class="form-group" style="text-align:left; margin:0;">
-                                                <label>Auto Reload <span id="reloadCountdown" style="color:#dc3545; font-size:12px; font-weight:bold;"></span></label>
-                                                <select id="autoReloadSeconds" class="form-control" style="min-width:110px;">
-                                                    <option value="OFF" selected>OFF</option>
-                                                    <option value="10">10 sec</option>
-                                                    <option value="20">20 sec</option>
-                                                    <option value="30">30 sec</option>
-                                                    <option value="60">60 sec</option>
-                                                </select>
+
+                                        <div style="width:1px; height:40px; background:#edf2f7; margin:0 5px;"></div>
+
+                                        <!-- Controls Section -->
+                                        <div style="display:flex; gap:20px; align-items:flex-end; flex-grow:1; justify-content:flex-end;">
+                                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                                <label style="font-size:12px; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:0.5px;">Tracking</label>
+                                                <div style="display:flex; align-items:center; gap:10px;">
+                                                    <select id="streamToggle" class="form-control" style="width:140px; border-radius:8px; border:1px solid #cbd5e0; font-weight:600;">
+                                                        <option value="ON" selected>LIVE STREAM</option>
+                                                        <option value="OFF">OFF</option>
+                                                    </select>
+                                                    <span id="streamStatus" style="font-size:11px; font-weight:800; color:#718096; width:45px; text-align:center;">(INIT)</span>
+                                                </div>
                                             </div>
-                                            <button type="button" class="btn btn-info" id="refreshNowBtn">Refresh Now</button>
+
+                                            <div id="autoReloadGroup" style="display:flex; flex-direction:column; gap:6px;">
+                                                <label style="font-size:12px; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:0.5px;">Interval</label>
+                                                <div style="display:flex; align-items:center; gap:8px;">
+                                                    <select id="autoReloadSeconds" class="form-control" style="width:90px; border-radius:8px; border:1px solid #cbd5e0;">
+                                                        <option value="OFF" selected>OFF</option>
+                                                        <option value="10">10s</option>
+                                                        <option value="20">20s</option>
+                                                        <option value="30">30s</option>
+                                                        <option value="60">60s</option>
+                                                    </select>
+                                                    <span id="reloadCountdown" style="font-size:11px; font-weight:800; color:#e53e3e; min-width:30px;"></span>
+                                                </div>
+                                            </div>
+
+                                            <button type="button" class="btn btn-info" id="refreshNowBtn" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; background:#4fd1c5; border:none; color:#fff; box-shadow:0 4px 10px rgba(79,209,197,0.3);">
+                                                <i class="fa fa-refresh" style="margin-right:6px;"></i> REFRESH
+                                            </button>
                                         </div>
+
                                     </div>
                                 </div>
+                            </div>
                             </div>
 
                             <div class="row">
@@ -348,23 +381,19 @@ use App\Helper\CommonHelper;
 
 @if($device)
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
 <script>
 $(document).ready(function() {
     const imei = @json($device->imei);
-    const pusherKey = @json(config('broadcasting.connections.pusher.key'));
-    const pusherCluster = @json(config('broadcasting.connections.pusher.options.cluster'));
     const urlParams = new URLSearchParams(window.location.search);
     const startAt = urlParams.get('start_at') || @json($filters['start_at'] ?? '');
     const endAt = urlParams.get('end_at') || '';
+    
     let lastLogId = {{ $initialLogs->max('id') ?? 0 }};
     let totalLogsCounter = {{ $totalLogsCount ?? 0 }};
+    let lastCommandTs = @json(now()->toDateTimeString());
+    let sseSource = null;
     let reloadHandle = null;
-    let valStr = $('#autoReloadSeconds').val();
-    let secondsLeft = valStr === 'OFF' ? 0 : (Number(valStr) || 10);
-    
-    // Quick initialize right away so it doesn't stay blank
-    updateCountdownText();
+    let secondsLeft = 0;
 
     function appendLog(log) {
         if ($('#logContainer').find('[data-log-id="' + log.id + '"]').length) {
@@ -382,95 +411,124 @@ $(document).ready(function() {
         logContainer.scrollTop = logContainer.scrollHeight;
     }
 
-    function loadLatestLogs() {
-        $('#reloadCountdown').text('(loading...)');
-        $.ajax({
-            url: `/api/tracker/logs/${imei}`,
-            data: {
-                last_id: lastLogId,
-                start_at: startAt,
-                end_at: endAt
-            },
-            cache: false
-        }).done(function(response) {
-            let newlyAddedCount = 0;
-            (response.logs || []).forEach(log => {
-                let exists = $('#logContainer').find('[data-log-id="' + log.id + '"]').length > 0;
-                if (!exists) {
-                    appendLog(log);
-                    newlyAddedCount++;
-                }
-            });
-            if (newlyAddedCount > 0) {
-                totalLogsCounter += newlyAddedCount;
+    // --- SSE STREAM LOGIC ---
+    function startSSE() {
+        if (sseSource) sseSource.close();
+        stopAutoReload(); // Disable polling when streaming
+        $('#autoReloadGroup').css('opacity', '0.5').find('select').attr('disabled', true);
+        
+        const streamUrl = `{{ route('tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}`;
+        sseSource = new EventSource(streamUrl);
+        
+        $('#streamStatus').text('(LIVE)').css('color', '#198754');
+
+        sseSource.addEventListener('log', function(e) {
+            try {
+                const data = JSON.parse(e.data);
+                appendLog(data);
+                totalLogsCounter++;
                 $('a.btn-success:contains("Download Logs")').text('Download Logs (' + totalLogsCounter + ')');
-            }
-        }).always(function() {
-            let val = $('#autoReloadSeconds').val();
-            if (val !== 'OFF') {
-                secondsLeft = Number(val) || 10;
-            }
-            updateCountdownText();
+            } catch (err) { console.error("SSE Log Parse Error", err); }
         });
 
-        // Use jQuery's load method to refresh just the commands table section in the background
-        const currentUrl = window.location.href.split('#')[0];
-        $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
+        sseSource.addEventListener('command_update', function(e) {
+            try {
+                const data = JSON.parse(e.data);
+                lastCommandTs = data.ts;
+                const currentUrl = window.location.href.split('#')[0];
+                $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
+            } catch (err) { console.error("SSE Command Parse Error", err); }
+        });
+
+        sseSource.onerror = function() {
+            setTimeout(() => {
+                if ($('#streamToggle').val() === 'ON') startSSE();
+            }, 3000);
+        };
     }
 
+    function stopSSE() {
+        if (sseSource) sseSource.close();
+        sseSource = null;
+        $('#streamStatus').text('(OFF)').css('color', '#6c757d');
+        $('#autoReloadGroup').css('opacity', '1').find('select').attr('disabled', false);
+    }
+
+    // --- POLLING (PING) LOGIC ---
     function updateCountdownText() {
-        if ($('#autoReloadSeconds').val() === 'OFF') {
-            $('#reloadCountdown').text('(OFF)');
+        if ($('#autoReloadSeconds').val() === 'OFF' || $('#streamToggle').val() === 'ON') {
+            $('#reloadCountdown').text('');
         } else {
             $('#reloadCountdown').text('(in ' + secondsLeft + 's)');
         }
     }
 
     function resetAutoReload() {
-        if (reloadHandle) {
-            clearInterval(reloadHandle);
-            reloadHandle = null;
-        }
+        stopAutoReload();
         let val = $('#autoReloadSeconds').val();
-        if (val === 'OFF') {
+        if (val === 'OFF' || $('#streamToggle').val() === 'ON') {
             updateCountdownText();
             return;
         }
-        secondsLeft = Number(val) || 10;
+        secondsLeft = Number(val);
         updateCountdownText();
         
         reloadHandle = setInterval(function() {
             secondsLeft--;
             if (secondsLeft <= 0) {
                 loadLatestLogs();
-            } else {
-                updateCountdownText();
-            }
+                secondsLeft = Number($('#autoReloadSeconds').val());
+            } 
+            updateCountdownText();
         }, 1000);
     }
 
-    $('#refreshNowBtn').on('click', loadLatestLogs);
+    function stopAutoReload() {
+        if (reloadHandle) clearInterval(reloadHandle);
+        reloadHandle = null;
+        $('#reloadCountdown').text('');
+    }
+
+    function loadLatestLogs() {
+        $.ajax({
+            url: `/api/tracker/logs/${imei}`,
+            data: { last_id: lastLogId, start_at: startAt, end_at: endAt },
+            cache: false
+        }).done(function(response) {
+            (response.logs || []).forEach(log => appendLog(log));
+            if (response.logs && response.logs.length > 0) {
+                totalLogsCounter += response.logs.length;
+                $('a.btn-success:contains("Download Logs")').text('Download Logs (' + totalLogsCounter + ')');
+            }
+        });
+        const currentUrl = window.location.href.split('#')[0];
+        $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
+    }
+
+    $('#streamToggle').on('change', function() {
+        if ($(this).val() === 'ON') {
+            startSSE();
+        } else {
+            stopSSE();
+        }
+    });
+
     $('#autoReloadSeconds').on('change', resetAutoReload);
+
+    $('#refreshNowBtn').on('click', function() {
+        loadLatestLogs();
+    });
+
     $('#clearLogsBtn').on('click', function() {
         $('#logContainer').html('<div id="emptyLogState" style="padding:20px; color:#ccc;">Logs cleared from browser only.</div>');
     });
 
-    if (pusherKey) {
-        const pusher = new Pusher(pusherKey, { cluster: pusherCluster, forceTLS: true });
-        const channel = pusher.subscribe('tracker.' + imei);
-        channel.bind('ImeiLogReceived', function(data) {
-            if (data && data.log) {
-                let exists = $('#logContainer').find('[data-log-id="' + data.log.id + '"]').length > 0;
-                if (!exists) {
-                    appendLog(data.log);
-                    totalLogsCounter++;
-                    $('a.btn-success:contains("Download Logs")').text('Download Logs (' + totalLogsCounter + ')');
-                }
-            }
-        });
+    // Initialize state
+    if ($('#streamToggle').val() === 'ON') {
+        startSSE();
+    } else {
+        resetAutoReload();
     }
-
-    resetAutoReload();
 });
 </script>
 @endif

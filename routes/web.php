@@ -148,6 +148,7 @@ Route::middleware('check.role:admin')->group(function () {
     Route::patch('/admin/imei-devices/{imei_device}/toggle-status', [\App\Http\Controllers\ImeiDeviceController::class, 'toggleStatus'])->name('imei-devices.toggle-status');
 
     Route::get('/tracker', [\App\Http\Controllers\LiveTrackerController::class, 'index'])->name('tracker.index');
+    Route::get('/tracker/stream', [\App\Http\Controllers\LiveTrackerController::class, 'stream'])->name('tracker.stream');
     Route::post('/tracker/{device}/close', [\App\Http\Controllers\LiveTrackerController::class, 'closeConnection'])->name('tracker.close');
     Route::post('/tracker/{device}/test', [\App\Http\Controllers\LiveTrackerController::class, 'testBroadcast'])->name('tracker.test');
     Route::post('/tracker/{device}/commands', [\App\Http\Controllers\LiveTrackerController::class, 'queueCommand'])->name('tracker.commands.store');

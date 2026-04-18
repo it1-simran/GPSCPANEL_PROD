@@ -12,11 +12,11 @@
  */
 
 // Configuration
-$baseUrl = "http://localhost:8000";
+$baseUrl = "http://127.0.0.1:8000";
 $apiIngestUrl = "$baseUrl/api/packets/ingest";
-$imei = isset($argv[1]) ? $argv[1] : "004400981955188";
+$imei = isset($argv[1]) ? $argv[1] : "490154203237518";
 $trafficIterations = 15;
-$trafficDelay = 3; // Seconds between traffic packets
+$trafficDelay = 1; // Seconds between traffic packets
 
 // Command scenarios to test
 $commands = [
@@ -63,9 +63,10 @@ echo "Commands to Test: " . count($commands) . "\n";
 echo "═══════════════════════════════════════════════════════════════\n\n";
 
 // Function to send traffic data
-function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0) {
+function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0)
+{
     global $apiIngestUrl;
-    
+
     $payload = [
         "imei" => $imei,
         "latitude" => $lat,
@@ -83,37 +84,40 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0) {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
     curl_close($ch);
-    
+
     return [
         'success' => ($httpCode >= 200 && $httpCode < 300),
         'code' => $httpCode,
+        'error' => $error,
         'response' => $response
     ];
 }
 
 // Function to send command
-function sendCommand($imei, $command, $commandName) {
+function sendCommand($imei, $command, $commandName)
+{
     global $baseUrl;
-    
+
     // Try multiple possible API endpoints
     $endpoints = [
         "$baseUrl/api/commands/queue",
         "$baseUrl/api/devices/$imei/command",
         "$baseUrl/api/command/send"
     ];
-    
+
     $result = [
         'sent' => false,
         'endpoint' => null,
         'status' => 'NOT_FOUND',
         'response' => null
     ];
-    
+
     foreach ($endpoints as $endpoint) {
         $payload = [
             "imei" => $imei,
@@ -121,19 +125,19 @@ function sendCommand($imei, $command, $commandName) {
             "command_name" => $commandName,
             "sent_at" => date('Y-m-d H:i:s')
         ];
-        
+
         $ch = curl_init($endpoint);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
         curl_close($ch);
-        
+
         if ($httpCode >= 200 && $httpCode < 400) {
             $result = [
                 'sent' => true,
@@ -144,25 +148,26 @@ function sendCommand($imei, $command, $commandName) {
             break;
         }
     }
-    
+
     return $result;
 }
 
 // Function to check command status
-function checkCommandStatus($imei, $commandName) {
+function checkCommandStatus($imei, $commandName)
+{
     global $baseUrl;
-    
+
     $endpoint = "$baseUrl/api/commands/status?imei=$imei&command=$commandName";
-    
+
     $ch = curl_init($endpoint);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    
+
     return [
         'code' => $httpCode,
         'response' => json_decode($response, true)
@@ -170,31 +175,32 @@ function checkCommandStatus($imei, $commandName) {
 }
 
 // Function to execute queued command (update status to completed)
-function executeQueuedCommand($imei, $commandName, $command) {
+function executeQueuedCommand($imei, $commandName, $command)
+{
     global $baseUrl;
-    
+
     $endpoint = "$baseUrl/api/commands/execute";
-    
+
     $payload = [
         "imei" => $imei,
         "command_name" => $commandName,
         "command" => $command,
         "executed_at" => date('Y-m-d H:i:s')
     ];
-    
+
     $ch = curl_init($endpoint);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
     $startTime = microtime(true);
     $response = curl_exec($ch);
     $responseTime = (int) ((microtime(true) - $startTime) * 1000);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    
+
     if ($httpCode >= 200 && $httpCode < 400) {
         return [
             'success' => true,
@@ -225,17 +231,18 @@ for ($i = 1; $i <= $trafficIterations; $i++) {
     $lon = $baseLon + (($i / $trafficIterations) * 0.05) + (rand(-50, 50) / 10000);
     $speed = rand(15, 85);
     $bearing = ($i * 10) % 360;
-    
+
     $result = sendTraffic($imei, $lat, $lon, $speed, $bearing);
-    
+
     if ($result['success']) {
         $trafficSuccess++;
         echo "✓ [$i/$trafficIterations] Traffic: LAT $lat | LON $lon | Speed ${speed}km/h (HTTP {$result['code']})\n";
     } else {
         $trafficFailed++;
-        echo "✗ [$i/$trafficIterations] FAILED: Traffic packet (HTTP {$result['code']})\n";
+        $errMsg = $result['error'] ? " | Error: {$result['error']}" : "";
+        echo "✗ [$i/$trafficIterations] FAILED: Traffic packet (HTTP {$result['code']}$errMsg)\n";
     }
-    
+
     sleep($trafficDelay);
 }
 
@@ -250,13 +257,13 @@ foreach ($commands as $index => $cmd) {
     echo "\n[CMD " . ($index + 1) . "/" . count($commands) . "] {$cmd['name']}\n";
     echo "  Description: {$cmd['description']}\n";
     echo "  Command: {$cmd['command']}\n";
-    
+
     // Send command
     $result = sendCommand($imei, $cmd['command'], $cmd['name']);
-    
+
     if ($result['sent']) {
         echo "  ✓ SENT to: {$result['endpoint']} (HTTP {$result['status']})\n";
-        
+
         // Execute the command immediately
         $executedResult = executeQueuedCommand($imei, $cmd['name'], $cmd['command']);
         if ($executedResult['success']) {
@@ -282,7 +289,7 @@ foreach ($commands as $index => $cmd) {
             'response' => $result['response']
         ];
     }
-    
+
     sleep(1);
 }
 
@@ -295,9 +302,9 @@ $failedCommands = 0;
 
 foreach ($commands as $cmd) {
     echo "\nChecking: {$cmd['name']}...\n";
-    
+
     $status = checkCommandStatus($imei, $cmd['name']);
-    
+
     if ($status['code'] == 200 && isset($status['response']['executed'])) {
         if ($status['response']['executed']) {
             echo "  ✓ EXECUTED on device\n";
@@ -313,7 +320,7 @@ foreach ($commands as $cmd) {
         echo "  ⚠ Status Check Failed (HTTP {$status['code']})\n";
         echo "  Note: This may indicate the endpoint doesn't exist or command wasn't found\n";
     }
-    
+
     sleep(1);
 }
 

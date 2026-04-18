@@ -22,7 +22,7 @@ $ticketCount = $tickets->count();
     <meta name="author" content="JSD Electronics">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <link rel="shortcut icon" href="">
-    <title>GPS Control Panel</title>
+    <title>@yield('title', 'GPS Control Panel')</title>
 
     <!-- Start Global plugin css -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

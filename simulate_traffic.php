@@ -237,10 +237,12 @@ for ($i = 1; $i <= $trafficIterations; $i++) {
     if ($result['success']) {
         $trafficSuccess++;
         echo "✓ [$i/$trafficIterations] Traffic: LAT $lat | LON $lon | Speed ${speed}km/h (HTTP {$result['code']})\n";
+        echo "   ➜ Response: " . $result['response'] . "\n";
     } else {
         $trafficFailed++;
         $errMsg = $result['error'] ? " | Error: {$result['error']}" : "";
         echo "✗ [$i/$trafficIterations] FAILED: Traffic packet (HTTP {$result['code']}$errMsg)\n";
+        echo "   ➜ Error Response: " . $result['response'] . "\n";
     }
 
     sleep($trafficDelay);

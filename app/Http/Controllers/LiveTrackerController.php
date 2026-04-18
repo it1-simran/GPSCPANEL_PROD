@@ -202,11 +202,19 @@ class LiveTrackerController extends Controller
             'command' => ['required', 'string', 'max:500'],
         ]);
 
-        ImeiCommand::create([
+        $command = ImeiCommand::create([
             'imei_id' => $device->id,
             'command' => $validated['command'],
             'status' => ImeiCommand::STATUS_PENDING,
         ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Command queued successfully.',
+                'command' => $command
+            ]);
+        }
 
         return back()->with('success', 'Command queued successfully.');
     }

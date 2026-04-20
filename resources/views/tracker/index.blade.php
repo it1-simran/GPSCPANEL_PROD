@@ -148,13 +148,25 @@ use App\Helper\CommonHelper;
     #main-content .tracker-page { padding: 5px; }
     #main-content .tracker-page [class*="col-"] { width: 100% !important; max-width: 100%; flex: 100%; margin-bottom: 10px; }
     
-    .filter-container,
-    .action-container .form-inline {
+    .filter-container {
         flex-direction: column;
         align-items: stretch;
     }
+
+    .action-container, 
+    .action-container > form, 
+    .action-container > div:not([style*="width:1px"]) {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 15px !important;
+    }
+
+    .action-container > div[style*="width:1px"] {
+        display: none !important;
+    }
     
     #main-content .tracker-page .btn { width: 100%; }
+    
     #main-content .tracker-page input,
     #main-content .tracker-page select,
     #main-content .tracker-page .form-group {
@@ -162,6 +174,13 @@ use App\Helper\CommonHelper;
         min-width: 100% !important;
         flex: 1 1 100% !important;
     }
+
+    .action-container select {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
     #main-content .tracker-page #logContainer { max-height: 350px; }
 }
 
@@ -319,7 +338,6 @@ use App\Helper\CommonHelper;
                                     </div>
                                 </div>
                             </div>
-                            </div>
 
                             <div class="row">
                                 <div class="col-md-12">
@@ -332,15 +350,15 @@ use App\Helper\CommonHelper;
                                                     $displayPacket = $log->raw_packet;
                                                     $clientIp = '';
                                                     if (preg_match('/&client_ip=\/?([^"&}\s,]+)/', $displayPacket, $matches)) {
-                                                        $clientIp = ltrim($matches[1], '/');
+                                                        $clientIp = ltrim($matches[1], '\/');
                                                         $displayPacket = preg_replace('/&client_ip=\/?[^"&}\s,]+/', '', $displayPacket);
                                                     }
                                                 @endphp
                                                 <div class="log-entry" data-log-id="{{ $log->id }}" style="padding:4px 0; border-bottom:1px dashed #333;">
                                                     <div style="color:#9ea7ad; font-size:12px;">
                                                         [#{{ $srNo++ }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : 'N/A' }}] 
-                                                        IP: {{ $log->source_ip ?? 'N/A' }} 
-                                                        @if($clientIp) | Device IP: {{ $clientIp }} @endif
+                                                        Server IP: {{ $log->source_ip ?? 'N/A' }} 
+                                                        @if($clientIp) | Client IP: {{ $clientIp }} @endif
                                                     </div>
                                                     <div>{{ $displayPacket }}</div>
                                                 </div>
@@ -434,7 +452,7 @@ $(document).ready(function() {
         let clientIp = '';
         const ipMatch = displayPacket.match(/&client_ip=\/?([^"&}\s,]+)/);
         if (ipMatch) {
-            clientIp = ipMatch[1].replace(/^\/+/, '');
+            clientIp = ipMatch[1].replace(/^[\\\/]+/, '');
             displayPacket = displayPacket.replace(/&client_ip=\/?[^"&}\s,]+/, '');
         }
 
@@ -442,7 +460,7 @@ $(document).ready(function() {
             <div class="log-entry" data-log-id="${log.id}" style="padding:4px 0; border-bottom:1px dashed #333;">
                 <div style="color:#9ea7ad; font-size:12px;">
                     [#${totalLogsCounter}] [${log.logged_at_formatted || log.logged_at}] 
-                    IP: ${log.source_ip || 'N/A'} ${clientIp ? '| Device IP: ' + clientIp : ''}
+                    Server IP: ${log.source_ip || 'N/A'} ${clientIp ? '| Client IP: ' + clientIp : ''}
                 </div>
                 <div>${$('<div>').text(displayPacket).html()}</div>
             </div>
@@ -475,8 +493,9 @@ $(document).ready(function() {
 
     function updateDownloadCount(serverTotal) {
         if (serverTotal !== undefined) {
-            $('#downloadLogsBtn').html('<i class="fa fa-download" style="margin-right:8px;"></i> Download (' + serverTotal + ')');
+            totalLogsCounter = serverTotal;
         }
+        $('#downloadLogsBtn').html('<i class="fa fa-download" style="margin-right:8px;"></i> Download (' + totalLogsCounter + ')');
         updateDownloadUrl();
     }
 
@@ -646,71 +665,80 @@ $(document).ready(function() {
             return;
         }
 
-        isLoadingLogs = true;
-        const $refreshBtn = $('#refreshNowBtn');
-        const originalHtml = $refreshBtn.html();
-        $refreshBtn.prop('disabled', true).html('<i class="fa fa-refresh fa-spin" style="margin-right:6px;"></i> REFRESHING...');
+        let wasStreamOn = false;
+        if ($('#streamToggle').val() === 'ON' && sseSource) {
+            wasStreamOn = true;
+            sseSource.close();
+            sseSource = null;
+            $('#streamStatus').text('(PAUSED)').css('color', '#d97706');
+        }
 
-        const requestData = { last_id: lastLogId };
-        
-        // Auto-extend endAt if it's in the past (only for Today)
-        const $endInput = $('input[name="end_at"]');
-        const endVal = $endInput.val();
-        if (endVal) {
-            const endD = new Date(endVal);
-            const nowD = new Date();
-            // If end date is today and in the past, bump it to now in the UI
-            if (endD < nowD && endD.toDateString() === nowD.toDateString()) {
-                const nowStr = nowD.getFullYear() + '-' + 
-                              String(nowD.getMonth() + 1).padStart(2, '0') + '-' + 
-                              String(nowD.getDate()).padStart(2, '0') + 'T' + 
-                              String(nowD.getHours()).padStart(2, '0') + ':' + 
-                              String(nowD.getMinutes()).padStart(2, '0') + ':' + 
-                              String(nowD.getSeconds()).padStart(2, '0');
-                
-                const endPicker = $endInput[0]._flatpickr;
-                if (endPicker) {
-                    endPicker.setDate(nowD);
-                } else {
-                    $endInput.val(nowStr);
+        setTimeout(function() {
+            isLoadingLogs = true;
+            const $refreshBtn = $('#refreshNowBtn');
+            const originalHtml = $refreshBtn.html();
+            $refreshBtn.prop('disabled', true).html('<i class="fa fa-refresh fa-spin" style="margin-right:6px;"></i> REFRESHING...');
+
+            const requestData = { last_id: lastLogId };
+            
+            // Auto-extend endAt if it's in the past (only for Today)
+            const $endInput = $('input[name="end_at"]');
+            const endVal = $endInput.val();
+            if (endVal) {
+                const endD = new Date(endVal);
+                const nowD = new Date();
+                // If end date is today and in the past, bump it to now in the UI
+                if (endD < nowD && endD.toDateString() === nowD.toDateString()) {
+                    const nowStr = nowD.getFullYear() + '-' + 
+                                  String(nowD.getMonth() + 1).padStart(2, '0') + '-' + 
+                                  String(nowD.getDate()).padStart(2, '0') + 'T' + 
+                                  String(nowD.getHours()).padStart(2, '0') + ':' + 
+                                  String(nowD.getMinutes()).padStart(2, '0') + ':' + 
+                                  String(nowD.getSeconds()).padStart(2, '0');
+                    
+                    const endPicker = $endInput[0]._flatpickr;
+                    if (endPicker) {
+                        endPicker.setDate(nowD);
+                    } else {
+                        $endInput.val(nowStr);
+                    }
                 }
             }
-        }
 
-        // Only include temporal filters if we don't have a starting point (lastLogId = 0)
-        // or if we specifically want to respect the filter.
-        // For live updates/polling, we generally want everything newer than what we have.
-        if (lastLogId === 0) {
             requestData.start_at = startAt;
             requestData.end_at = endAt;
-        }
 
-        $.ajax({
-            url: `{{ route($route_prefix . '.tracker.logs.fetch', ['imei' => '__IMEI__']) }}`.replace('__IMEI__', encodeURIComponent(imei)),
-            data: requestData,
-            cache: false
-        }).done(function(response) {
-            (response.logs || []).forEach(function(log) {
-                appendLog(log);
+            $.ajax({
+                url: `{{ route($route_prefix . '.tracker.logs.fetch', ['imei' => '__IMEI__']) }}`.replace('__IMEI__', encodeURIComponent(imei)),
+                data: requestData,
+                cache: false
+            }).done(function(response) {
+                (response.logs || []).forEach(function(log) {
+                    appendLog(log);
+                });
+
+                if (response.last_id) {
+                    lastLogId = Math.max(lastLogId, Number(response.last_id));
+                }
+
+                syncStatusBadge(response.status, response.status_label);
+                updateDownloadCount(response.total_count);
+                refreshCommandsTable();
+            }).fail(function(xhr) {
+                console.error('Tracker refresh failed', xhr);
+            }).always(function() {
+                isLoadingLogs = false;
+                $refreshBtn.prop('disabled', false).html(originalHtml);
+
+                if (wasStreamOn && $('#streamToggle').val() === 'ON') {
+                    startSSE();
+                }
+
+                if (options.resetTimer !== false && $('#streamToggle').val() !== 'ON') {
+                    resetAutoReload();
+                }
             });
-
-            if (response.last_id) {
-                lastLogId = Math.max(lastLogId, Number(response.last_id));
-            }
-
-            syncStatusBadge(response.status, response.status_label);
-            updateDownloadCount(response.total_count);
-            refreshCommandsTable();
-        }).fail(function(xhr) {
-            console.error('Tracker refresh failed', xhr);
-        }).always(function() {
-            isLoadingLogs = false;
-            $refreshBtn.prop('disabled', false).html(originalHtml);
-
-            if (options.resetTimer !== false && $('#streamToggle').val() !== 'ON') {
-                resetAutoReload();
-            }
-        });
+        }, wasStreamOn ? 500 : 0);
     }
 
     $('#streamToggle').on('change', function() {
@@ -733,8 +761,36 @@ $(document).ready(function() {
         }
     });
 
+    let fetchCountXhr = null;
+    let countUpdateTimeout = null;
     $('input[name="start_at"], input[name="end_at"]').on('change', function() {
         updateDownloadUrl();
+        
+        // Dynamically fetch log count for the new filter without reloading logs
+        clearTimeout(countUpdateTimeout);
+        countUpdateTimeout = setTimeout(function() {
+            const currentStart = $('input[name="start_at"]').val();
+            const currentEnd = $('input[name="end_at"]').val();
+            if (!currentStart || !currentEnd) return;
+            
+            if (fetchCountXhr) fetchCountXhr.abort();
+            
+            // Show a temporary loading text
+            $('#downloadLogsBtn').html('<i class="fa fa-spinner fa-spin" style="margin-right:8px;"></i> Download (...)');
+            
+            fetchCountXhr = $.ajax({
+                url: `{{ route($route_prefix . '.tracker.logs.fetch', ['imei' => '__IMEI__']) }}`.replace('__IMEI__', encodeURIComponent(imei)),
+                data: { start_at: currentStart, end_at: currentEnd, count_only: 1 },
+                cache: false
+            }).done(function(response) {
+                if (response.total_count !== undefined) {
+                    updateDownloadCount(response.total_count);
+                }
+            }).fail(function() {
+                // Return to original value on failure
+                updateDownloadCount();
+            });
+        }, 300);
     });
 
     $('#refreshNowBtn').on('click', function() {
@@ -760,12 +816,23 @@ $(document).ready(function() {
         let originalText = submitBtn.html();
         submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Queueing...');
         
-        $.ajax({
-            url: form.attr('action'),
-            method: 'POST',
-            data: form.serialize(),
-            success: function(response) {
-                form.find('input[name="command"]').val('');
+        let wasStreamOn = false;
+        if ($('#streamToggle').val() === 'ON' && sseSource) {
+            wasStreamOn = true;
+            sseSource.close();
+            sseSource = null;
+            $('#streamStatus').text('(PAUSED)').css('color', '#d97706');
+        }
+
+        // Execute AJAX. A slight delay allows a single-threaded server (php artisan serve) to abort the stream.
+        setTimeout(function() {
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    form.find('input[name="command"]').val('');
+
                 
                 // Show global styled success message
                 let globalSuccess = $('#ajaxSuccessMessage');
@@ -789,8 +856,12 @@ $(document).ready(function() {
             },
             complete: function() {
                 submitBtn.prop('disabled', false).html(originalText);
+                if (wasStreamOn && $('#streamToggle').val() === 'ON') {
+                    startSSE();
+                }
             }
         });
+        }, 500);
     });
 
     // Initial status sync

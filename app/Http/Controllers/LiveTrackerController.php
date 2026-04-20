@@ -40,8 +40,9 @@ class LiveTrackerController extends Controller
         }
 
         $initialLogs = collect();
-        $totalLogsCount = 0; // Will be updated by first JS refresh
+        $totalLogsCount = 0;
         if ($device) {
+            $totalLogsCount = $this->baseLogsQuery($device, $startAt, $endAt)->count();
             $initialLogs = $this->baseLogsQuery($device, $startAt, $endAt)
                 ->orderBy('id', 'desc')
                 ->limit(200)
@@ -102,6 +103,10 @@ class LiveTrackerController extends Controller
             // Disable session blocking to allow other requests (crucial for polling and simulation)
             if (session_status() === PHP_SESSION_ACTIVE) {
                 session_write_close();
+            }
+            // Release Laravel's session lock
+            if (session()->isStarted()) {
+                session()->save();
             }
 
             // Optimization for flushing output
@@ -182,7 +187,14 @@ class LiveTrackerController extends Controller
         [$startAt, $endAt] = $this->validatedWindow($device, $request);
         $lastId = (int) $request->query('last_id', 0);
 
-        $query = $this->baseLogsQuery($device, $startAt, $endAt);
+        $baseQuery = $this->baseLogsQuery($device, $startAt, $endAt);
+        $totalCount = $baseQuery->count();
+
+        if ($request->query('count_only')) {
+            return response()->json(['total_count' => $totalCount]);
+        }
+
+        $query = clone $baseQuery;
         if ($lastId > 0) {
             $query->where('id', '>', $lastId);
         }
@@ -208,7 +220,7 @@ class LiveTrackerController extends Controller
             'last_id' => $logs->max('id') ?: $lastId,
             'status' => $normalizedStatus,
             'status_label' => $device->status_label,
-            'total_count' => $query->count(),
+            'total_count' => $totalCount,
             'effective_end_at' => $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d H:i:s') : null,
         ]);
     }

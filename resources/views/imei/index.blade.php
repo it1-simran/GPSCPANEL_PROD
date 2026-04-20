@@ -111,7 +111,7 @@
                                                         @csrf @method('PATCH')
                                                     </form>
 
-                                                    <a href="{{ route('tracker.index', ['imei' => $device->imei]) }}" class="btn btn-primary btn-sm" style="margin-right: 4px;">
+                                                    <a href="{{ route('admin.tracker.index', ['imei' => $device->imei]) }}" class="btn btn-primary btn-sm" style="margin-right: 4px;">
                                                         <i class="fa fa-list-alt"></i> Logs View
                                                     </a>
 

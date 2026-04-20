@@ -206,7 +206,7 @@ use App\Helper\CommonHelper;
                             <span class="message-text"></span>
                         </div>
 
-                        <form method="GET" action="{{ route('tracker.index') }}" class="filter-container">
+                        <form method="GET" action="{{ route($route_prefix . '.tracker.index') }}" class="filter-container">
                             <div class="form-group" style="min-width: 200px;">
                                 <label style="text-transform:uppercase; letter-spacing:0.5px;">IMEI</label>
                                 <select name="imei" class="form-control" style="width:100%; border-radius:8px;">
@@ -233,7 +233,7 @@ use App\Helper\CommonHelper;
                                     </button>
                                     
                                     @if($device)
-                                    <a id="downloadLogsBtn" href="{{ route('tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '']) }}" class="btn btn-success" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; background:#198754; border:none; box-shadow:0 4px 12px rgba(25, 135, 84, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
+                                    <a id="downloadLogsBtn" href="{{ route($route_prefix . '.tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '']) }}" class="btn btn-success" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; background:#198754; border:none; box-shadow:0 4px 12px rgba(25, 135, 84, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
                                         <i class="fa fa-download" style="margin-right:8px;"></i> Download ({{ $totalLogsCount }})
                                     </a>
                                     @endif
@@ -245,7 +245,7 @@ use App\Helper\CommonHelper;
                         @if($device)
                             <div class="row" style="margin-bottom:15px;">
                                 <div class="col-md-3"><div class="alert alert-info"><strong>IMEI:</strong> {{ $device->imei }}</div></div>
-                                <div class="col-md-3"><div id="deviceStatusAlert" class="alert {{ $device->status === 'active' ? 'alert-success' : ($device->status === 'inactive' ? 'alert-warning' : 'alert-danger') }}"><strong>Status:</strong> <span id="deviceStatusLabel">{{ $device->status_label }}</span></div></div>
+                                <div class="col-md-3"><div id="deviceStatusAlert" class="alert {{ $status === 'active' ? 'alert-success' : ($status === 'inactive' ? 'alert-warning' : 'alert-danger') }}"><strong>Status:</strong> <span id="deviceStatusLabel">{{ $device->status_label }}</span></div></div>
 
 
                                 <div class="col-md-3">
@@ -269,7 +269,7 @@ use App\Helper\CommonHelper;
                                     <div class="action-container" style="background:#fff; border:1px solid #eaeaea; border-radius:12px; padding:15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap;">
                                         
                                         <!-- Command Section -->
-                                        <form method="POST" action="{{ route('tracker.commands.store', $device->id) }}" style="display:flex; flex-grow:2; gap:10px; align-items:flex-end; margin:0;">
+                                        <form method="POST" action="{{ route($route_prefix . '.tracker.commands.store', $device->id) }}" style="display:flex; flex-grow:2; gap:10px; align-items:flex-end; margin:0;">
                                             @csrf
                                             <div style="flex-grow:1; min-width:200px;">
                                                 <label style="display:block; font-size:12px; font-weight:700; color:#4a5568; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Send Command</label>
@@ -327,10 +327,22 @@ use App\Helper\CommonHelper;
                                         <div class="panel-heading"><strong>History + Live Logs</strong></div>
                                         <div class="panel-body" id="logContainer" style="max-height:520px; overflow-y:auto; overflow-x:hidden; background:#111; color:#66ff66; font-family:monospace;">
                                             @php $srNo = $totalLogsCount > 0 ? ($totalLogsCount - $initialLogs->count() + 1) : 1; @endphp
-                                            @forelse($initialLogs as $log)
+                                                    @forelse($initialLogs as $log)
+                                                @php
+                                                    $displayPacket = $log->raw_packet;
+                                                    $clientIp = '';
+                                                    if (preg_match('/&client_ip=\/?([^"&}\s,]+)/', $displayPacket, $matches)) {
+                                                        $clientIp = ltrim($matches[1], '/');
+                                                        $displayPacket = preg_replace('/&client_ip=\/?[^"&}\s,]+/', '', $displayPacket);
+                                                    }
+                                                @endphp
                                                 <div class="log-entry" data-log-id="{{ $log->id }}" style="padding:4px 0; border-bottom:1px dashed #333;">
-                                                    <div style="color:#9ea7ad; font-size:12px;">[#{{ $srNo++ }}] [#{{ $log->id }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : 'N/A' }}] IP: {{ $log->source_ip ?? 'N/A' }}</div>
-                                                    <div>{{ $log->raw_packet }}</div>
+                                                    <div style="color:#9ea7ad; font-size:12px;">
+                                                        [#{{ $srNo++ }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : 'N/A' }}] 
+                                                        IP: {{ $log->source_ip ?? 'N/A' }} 
+                                                        @if($clientIp) | Device IP: {{ $clientIp }} @endif
+                                                    </div>
+                                                    <div>{{ $displayPacket }}</div>
                                                 </div>
                                             @empty
                                                 <div id="emptyLogState" style="padding:20px; color:#ccc;">No logs found for the selected filter.</div>
@@ -393,30 +405,51 @@ $(document).ready(function() {
     const imei = @json($device->imei);
     const urlParams = new URLSearchParams(window.location.search);
     const startAt = urlParams.get('start_at') || @json($filters['start_at'] ?? '');
-    const endAt = urlParams.get('end_at') || '';
+    const endAt = urlParams.get('end_at') || @json($filters['end_at'] ?? '');
     let lastLogId = {{ $initialLogs->max('id') ?? 0 }};
     let totalLogsCounter = {{ $totalLogsCount ?? 0 }};
     let lastCommandTs = @json(now()->toDateTimeString());
     let sseSource = null;
     let reloadHandle = null;
+    let reconnectHandle = null;
+    let isLoadingLogs = false;
     let secondsLeft = 0;
+    const addedLogIds = new Set();
+
+    // Pre-populate with initial log IDs
+    $('.log-entry').each(function() {
+        const id = $(this).data('log-id');
+        if (id) addedLogIds.add(Number(id));
+    });
 
     function appendLog(log) {
-        if ($('#logContainer').find('[data-log-id="' + log.id + '"]').length) {
+        if (!log || !log.id || addedLogIds.has(Number(log.id))) {
             return;
         }
+        addedLogIds.add(Number(log.id));
+
         totalLogsCounter++;
         $('#emptyLogState').remove();
+        let displayPacket = log.raw_packet || '';
+        let clientIp = '';
+        const ipMatch = displayPacket.match(/&client_ip=\/?([^"&}\s,]+)/);
+        if (ipMatch) {
+            clientIp = ipMatch[1].replace(/^\/+/, '');
+            displayPacket = displayPacket.replace(/&client_ip=\/?[^"&}\s,]+/, '');
+        }
+
         $('#logContainer').append(`
             <div class="log-entry" data-log-id="${log.id}" style="padding:4px 0; border-bottom:1px dashed #333;">
-                <div style="color:#9ea7ad; font-size:12px;">[#${totalLogsCounter}] [#${log.id}] [${log.logged_at_formatted || log.logged_at}] IP: ${log.source_ip || 'N/A'}</div>
-                <div>${$('<div>').text(log.raw_packet).html()}</div>
+                <div style="color:#9ea7ad; font-size:12px;">
+                    [#${totalLogsCounter}] [${log.logged_at_formatted || log.logged_at}] 
+                    IP: ${log.source_ip || 'N/A'} ${clientIp ? '| Device IP: ' + clientIp : ''}
+                </div>
+                <div>${$('<div>').text(displayPacket).html()}</div>
             </div>
         `);
         lastLogId = Math.max(lastLogId, Number(log.id || 0));
 
-        // Manage High Log Volume: Keep max 500 logs in DOM so browser doesn't freeze
-        let logEntries = $('#logContainer .log-entry');
+        const logEntries = $('#logContainer .log-entry');
         if (logEntries.length > 500) {
             logEntries.first().remove();
         }
@@ -425,128 +458,302 @@ $(document).ready(function() {
         logContainer.scrollTop = logContainer.scrollHeight;
     }
 
-    // --- SSE STREAM LOGIC ---
+    function updateDownloadUrl() {
+        const $btn = $('#downloadLogsBtn');
+        if (!$btn.length) return;
+
+        const currentStart = $('input[name="start_at"]').val();
+        const currentEnd = $('input[name="end_at"]').val();
+        
+        let href = $btn.attr('href');
+        if (href.indexOf('?') !== -1) {
+            href = href.split('?')[0];
+        }
+        
+        $btn.attr('href', href + '?start_at=' + encodeURIComponent(currentStart) + '&end_at=' + encodeURIComponent(currentEnd));
+    }
+
+    function updateDownloadCount(serverTotal) {
+        if (serverTotal !== undefined) {
+            $('#downloadLogsBtn').html('<i class="fa fa-download" style="margin-right:8px;"></i> Download (' + serverTotal + ')');
+        }
+        updateDownloadUrl();
+    }
+
+    function refreshCommandsTable() {
+        const currentUrl = window.location.href.split('#')[0];
+        $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
+    }
+
+    function clearReconnect() {
+        if (reconnectHandle) {
+            clearTimeout(reconnectHandle);
+            reconnectHandle = null;
+        }
+    }
+
     function startSSE() {
-        if (sseSource) sseSource.close();
-        stopAutoReload(); // Disable polling when streaming
+        clearReconnect();
+        stopAutoReload();
+
+        if (sseSource) {
+            sseSource.close();
+        }
+
         $('#autoReloadGroup').css('opacity', '0.5').find('select').attr('disabled', true);
-        
-        const streamUrl = `{{ route('tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}`;
-        sseSource = new EventSource(streamUrl);
-        
         $('#streamStatus').text('(LIVE)').css('color', '#198754');
+
+        const streamUrl = `{{ route($route_prefix . '.tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}`;
+        sseSource = new EventSource(streamUrl);
 
         sseSource.addEventListener('log', function(e) {
             try {
-                const data = JSON.parse(e.data);
-                appendLog(data);
-                totalLogsCounter++;
-                $('a.btn-success:contains("Download Logs")').text('Download Logs (' + totalLogsCounter + ')');
-            } catch (err) { console.error("SSE Log Parse Error", err); }
+                appendLog(JSON.parse(e.data));
+                updateDownloadCount();
+            } catch (err) {
+                console.error('SSE Log Parse Error', err);
+            }
         });
 
         sseSource.addEventListener('command_update', function(e) {
             try {
                 const data = JSON.parse(e.data);
                 lastCommandTs = data.ts;
-                const currentUrl = window.location.href.split('#')[0];
-                $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
-            } catch (err) { console.error("SSE Command Parse Error", err); }
+                refreshCommandsTable();
+            } catch (err) {
+                console.error('SSE Command Parse Error', err);
+            }
         });
 
         sseSource.onerror = function() {
-            setTimeout(() => {
-                if ($('#streamToggle').val() === 'ON') startSSE();
+            if (sseSource) {
+                sseSource.close();
+                sseSource = null;
+            }
+
+            if ($('#streamToggle').val() !== 'ON') {
+                $('#streamStatus').text('(OFF)').css('color', '#6c757d');
+                return;
+            }
+
+            $('#streamStatus').text('(RETRY)').css('color', '#d97706');
+            clearReconnect();
+            reconnectHandle = setTimeout(function() {
+                if ($('#streamToggle').val() === 'ON') {
+                    startSSE();
+                }
             }, 3000);
         };
     }
 
     function stopSSE() {
-        if (sseSource) sseSource.close();
+        clearReconnect();
+
+        if (sseSource) {
+            sseSource.close();
+        }
+
         sseSource = null;
-        $('#streamStatus').text('(OFF)').css('color', '#6c757d');
+        $('#streamStatus').text('(OFF)').css('color', '#718096');
         $('#autoReloadGroup').css('opacity', '1').find('select').attr('disabled', false);
     }
 
-    // --- POLLING (PING) LOGIC ---
     function updateCountdownText() {
         if ($('#autoReloadSeconds').val() === 'OFF' || $('#streamToggle').val() === 'ON') {
             $('#reloadCountdown').text('');
-        } else {
-            $('#reloadCountdown').text('(in ' + secondsLeft + 's)');
-        }
-    }
-
-    function resetAutoReload() {
-        stopAutoReload();
-        let val = $('#autoReloadSeconds').val();
-        if (val === 'OFF' || $('#streamToggle').val() === 'ON') {
-            updateCountdownText();
             return;
         }
-        secondsLeft = Number(val);
-        updateCountdownText();
-        
-        reloadHandle = setInterval(function() {
-            secondsLeft--;
 
-            if (secondsLeft <= 0) {
-                loadLatestLogs();
-                secondsLeft = Number($('#autoReloadSeconds').val());
-            } 
-            updateCountdownText();
-        }, 1000);
+        $('#reloadCountdown').text('(in ' + secondsLeft + 's)');
     }
 
     function stopAutoReload() {
-        if (reloadHandle) clearInterval(reloadHandle);
+        if (reloadHandle) {
+            clearInterval(reloadHandle);
+        }
+
         reloadHandle = null;
         $('#reloadCountdown').text('');
     }
 
-    function loadLatestLogs() {
+    function resetAutoReload() {
+        stopAutoReload();
+
+        const intervalValue = $('#autoReloadSeconds').val();
+        if (intervalValue === 'OFF' || $('#streamToggle').val() === 'ON') {
+            updateCountdownText();
+            return;
+        }
+
+        secondsLeft = Number(intervalValue);
+        updateCountdownText();
+
+        reloadHandle = setInterval(function() {
+            if ($('#streamToggle').val() === 'ON') {
+                stopAutoReload();
+                return;
+            }
+
+            secondsLeft--;
+
+            if (secondsLeft <= 0) {
+                loadLatestLogs({ resetTimer: false });
+                secondsLeft = Number($('#autoReloadSeconds').val() || 0);
+            }
+
+            updateCountdownText();
+        }, 1000);
+    }
+
+    function syncStatusBadge(status, statusLabel) {
+        if (statusLabel) {
+            $('#deviceStatusLabel').text(statusLabel);
+        }
+
+        if (!status) {
+            return;
+        }
+
+        const $statusAlert = $('#deviceStatusAlert');
+        $statusAlert.removeClass('alert-success alert-warning alert-danger');
+
+        const isInactive = (status === 'inactive' || status === 'closed');
+        
+        // Disable/Enable command and stream controls
+        const $controls = $('input[name="command"], button[type="submit"], #streamToggle, #autoReloadSeconds, #refreshNowBtn');
+        $controls.prop('disabled', isInactive);
+        
+        // Visual feedback for disabled state
+        $('.action-container').css('opacity', isInactive ? '0.6' : '1');
+        $('.action-container').css('pointer-events', isInactive ? 'none' : 'auto');
+
+        if (status === 'active') {
+            $statusAlert.addClass('alert-success');
+        } else if (status === 'inactive') {
+            $statusAlert.addClass('alert-warning');
+            stopSSE();
+            stopAutoReload();
+        } else {
+            $statusAlert.addClass('alert-danger');
+            stopSSE();
+            stopAutoReload();
+        }
+    }
+
+    function loadLatestLogs(options) {
+        options = options || {};
+        if (isLoadingLogs) {
+            return;
+        }
+
+        isLoadingLogs = true;
+        const $refreshBtn = $('#refreshNowBtn');
+        const originalHtml = $refreshBtn.html();
+        $refreshBtn.prop('disabled', true).html('<i class="fa fa-refresh fa-spin" style="margin-right:6px;"></i> REFRESHING...');
+
+        const requestData = { last_id: lastLogId };
+        
+        // Auto-extend endAt if it's in the past (only for Today)
+        const $endInput = $('input[name="end_at"]');
+        const endVal = $endInput.val();
+        if (endVal) {
+            const endD = new Date(endVal);
+            const nowD = new Date();
+            // If end date is today and in the past, bump it to now in the UI
+            if (endD < nowD && endD.toDateString() === nowD.toDateString()) {
+                const nowStr = nowD.getFullYear() + '-' + 
+                              String(nowD.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(nowD.getDate()).padStart(2, '0') + 'T' + 
+                              String(nowD.getHours()).padStart(2, '0') + ':' + 
+                              String(nowD.getMinutes()).padStart(2, '0') + ':' + 
+                              String(nowD.getSeconds()).padStart(2, '0');
+                
+                const endPicker = $endInput[0]._flatpickr;
+                if (endPicker) {
+                    endPicker.setDate(nowD);
+                } else {
+                    $endInput.val(nowStr);
+                }
+            }
+        }
+
+        // Only include temporal filters if we don't have a starting point (lastLogId = 0)
+        // or if we specifically want to respect the filter.
+        // For live updates/polling, we generally want everything newer than what we have.
+        if (lastLogId === 0) {
+            requestData.start_at = startAt;
+            requestData.end_at = endAt;
+        }
+
         $.ajax({
-            url: `/api/tracker/logs/${imei}`,
-            data: { last_id: lastLogId, start_at: startAt, end_at: endAt },
+            url: `{{ route($route_prefix . '.tracker.logs.fetch', ['imei' => '__IMEI__']) }}`.replace('__IMEI__', encodeURIComponent(imei)),
+            data: requestData,
             cache: false
         }).done(function(response) {
-            (response.logs || []).forEach(log => appendLog(log));
-            if (response.logs && response.logs.length > 0) {
-                totalLogsCounter += response.logs.length;
-                $('a.btn-success:contains("Download Logs")').text('Download Logs (' + totalLogsCounter + ')');
+            (response.logs || []).forEach(function(log) {
+                appendLog(log);
+            });
+
+            if (response.last_id) {
+                lastLogId = Math.max(lastLogId, Number(response.last_id));
+            }
+
+            syncStatusBadge(response.status, response.status_label);
+            updateDownloadCount(response.total_count);
+            refreshCommandsTable();
+        }).fail(function(xhr) {
+            console.error('Tracker refresh failed', xhr);
+        }).always(function() {
+            isLoadingLogs = false;
+            $refreshBtn.prop('disabled', false).html(originalHtml);
+
+            if (options.resetTimer !== false && $('#streamToggle').val() !== 'ON') {
+                resetAutoReload();
             }
         });
-        const currentUrl = window.location.href.split('#')[0];
-        $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
     }
 
     $('#streamToggle').on('change', function() {
         if ($(this).val() === 'ON') {
             startSSE();
-        } else {
-            stopSSE();
+            return;
+        }
+
+        stopSSE();
+        // Automatically set a default interval if currently OFF
+        if ($('#autoReloadSeconds').val() === 'OFF') {
+            $('#autoReloadSeconds').val('10');
+        }
+        resetAutoReload();
+    });
+
+    $('#autoReloadSeconds').on('change', function() {
+        if ($('#streamToggle').val() !== 'ON') {
+            resetAutoReload();
         }
     });
 
-    $('#autoReloadSeconds').on('change', resetAutoReload);
+    $('input[name="start_at"], input[name="end_at"]').on('change', function() {
+        updateDownloadUrl();
+    });
 
     $('#refreshNowBtn').on('click', function() {
-        loadLatestLogs();
+        loadLatestLogs({ resetTimer: true });
     });
 
     $('#clearLogsBtn').on('click', function() {
         $('#logContainer').html('<div id="emptyLogState" style="padding:20px; color:#ccc;">Logs cleared from browser only.</div>');
     });
 
-    // Initialize state
+    updateDownloadCount();
+
     if ($('#streamToggle').val() === 'ON') {
         startSSE();
     } else {
         resetAutoReload();
     }
-
     // AJAX Form Submission for Commands
-    $('form[action="{{ route("tracker.commands.store", $device->id) }}"]').on('submit', function(e) {
+    $('form[action="{{ route($route_prefix . ".tracker.commands.store", $device->id) }}"]').on('submit', function(e) {
         e.preventDefault();
         let form = $(this);
         let submitBtn = form.find('button[type="submit"]');
@@ -585,6 +792,16 @@ $(document).ready(function() {
             }
         });
     });
+
+    // Initial status sync
+    syncStatusBadge(@json($status), @json($device ? $device->status_label : 'OFF'));
+
+    // Asynchronously fetch the total count and latest logs to avoid blocking initial page load
+    if (typeof imei !== 'undefined' && imei) {
+        setTimeout(function() {
+            loadLatestLogs({ resetTimer: true });
+        }, 300);
+    }
 });
 </script>
 @endif

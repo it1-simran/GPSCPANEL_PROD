@@ -76,7 +76,7 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0)
         "altitude" => rand(150, 250),
         "accuracy" => rand(5, 15),
         "timestamp" => date('Y-m-d H:i:s'),
-        "data" => "START,LAT:$lat,LON:$lon,SPEED:$speed,TIME:" . date('H:i:s') . ",END"
+        "data" => "START,LAT:$lat,LON:$lon,SPEED:$speed,TIME:" . date('H:i:s') . ",END&client_ip=/106.211.177.176"
     ];
 
     $ch = curl_init($apiIngestUrl);

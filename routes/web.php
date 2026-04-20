@@ -79,7 +79,23 @@ Route::patch('/approval/update/{id}', [GuestUserController::class, 'updateStatus
 Route::post('/send-otp', [GuestUserController::class, 'sendOtp'])->name('send.otp');
 Route::post('/verify-otp', [GuestUserController::class, 'verifyOtp']);
 Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteRequest'])->name('request.delete');
-Route::middleware('check.role:admin')->group(function () {
+    Route::middleware('check.role:admin')->group(function () {
+        /* ======================= IMEI Tracking Management (Live Tracker) ======================= */
+        Route::get('/admin/tracker', [\App\Http\Controllers\LiveTrackerController::class, 'index'])->name('admin.tracker.index');
+        Route::get('/admin/tracker/stream', [\App\Http\Controllers\LiveTrackerController::class, 'stream'])->name('admin.tracker.stream');
+        Route::post('/admin/tracker/{device}/close', [\App\Http\Controllers\LiveTrackerController::class, 'closeConnection'])->name('admin.tracker.close');
+        Route::post('/admin/tracker/{device}/test', [\App\Http\Controllers\LiveTrackerController::class, 'testBroadcast'])->name('admin.tracker.test');
+        Route::post('/admin/tracker/{device}/commands', [\App\Http\Controllers\LiveTrackerController::class, 'queueCommand'])->name('admin.tracker.commands.store');
+        Route::get('/admin/tracker/{device}/download', [\App\Http\Controllers\LiveTrackerController::class, 'downloadLogs'])->name('admin.tracker.logs.download');
+        Route::get('/admin/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs'])->name('admin.tracker.logs.fetch');
+
+        Route::get('/admin/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('imei-devices.index');
+        Route::get('/admin/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('imei-devices.create');
+        Route::post('/admin/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'store'])->name('imei-devices.store');
+        Route::get('/admin/imei-devices/{imei_device}/edit', [\App\Http\Controllers\ImeiDeviceController::class, 'edit'])->name('imei-devices.edit');
+        Route::put('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'update'])->name('imei-devices.update');
+        Route::delete('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'destroy'])->name('imei-devices.destroy');
+        Route::patch('/admin/imei-devices/{imei_device}/toggle-status', [\App\Http\Controllers\ImeiDeviceController::class, 'toggleStatus'])->name('imei-devices.toggle-status');
     Route::get('/admin', fn() => view('dashboard'));
 
     // Export Routes
@@ -138,22 +154,6 @@ Route::middleware('check.role:admin')->group(function () {
     Route::post('/admin/linkResellers', [RegisterController::class, 'linkResellers']);
     Route::get('/admin/view-uncategorized-users', [RegisterController::class, 'viewUncategorized'])->name('users.viewUncategorized');
 
-    /* ======================= IMEI Tracking Management (Live Tracker) ======================= */
-    Route::get('/admin/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('imei-devices.index');
-    Route::get('/admin/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('imei-devices.create');
-    Route::post('/admin/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'store'])->name('imei-devices.store');
-    Route::get('/admin/imei-devices/{imei_device}/edit', [\App\Http\Controllers\ImeiDeviceController::class, 'edit'])->name('imei-devices.edit');
-    Route::put('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'update'])->name('imei-devices.update');
-    Route::delete('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'destroy'])->name('imei-devices.destroy');
-    Route::patch('/admin/imei-devices/{imei_device}/toggle-status', [\App\Http\Controllers\ImeiDeviceController::class, 'toggleStatus'])->name('imei-devices.toggle-status');
-
-    Route::get('/tracker', [\App\Http\Controllers\LiveTrackerController::class, 'index'])->name('tracker.index');
-    Route::get('/tracker/stream', [\App\Http\Controllers\LiveTrackerController::class, 'stream'])->name('tracker.stream');
-    Route::post('/tracker/{device}/close', [\App\Http\Controllers\LiveTrackerController::class, 'closeConnection'])->name('tracker.close');
-    Route::post('/tracker/{device}/test', [\App\Http\Controllers\LiveTrackerController::class, 'testBroadcast'])->name('tracker.test');
-    Route::post('/tracker/{device}/commands', [\App\Http\Controllers\LiveTrackerController::class, 'queueCommand'])->name('tracker.commands.store');
-    Route::get('/tracker/{device}/download', [\App\Http\Controllers\LiveTrackerController::class, 'downloadLogs'])->name('tracker.logs.download');
-    Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs'])->name('tracker.logs.fetch');
 
     /* ======================= Firmware Management Routes ======================= */
 
@@ -368,6 +368,15 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::post('/get-firmware', [FirmwareController::class, 'getFirmware']);
 });
 Route::middleware(['check.role:support'])->prefix('support')->group(function () {
+    /* ======================= IMEI Tracking Management (Live Tracker) ======================= */
+    Route::get('/tracker', [\App\Http\Controllers\LiveTrackerController::class, 'index'])->name('support.tracker.index');
+    Route::get('/tracker/stream', [\App\Http\Controllers\LiveTrackerController::class, 'stream'])->name('support.tracker.stream');
+    Route::post('/tracker/{device}/close', [\App\Http\Controllers\LiveTrackerController::class, 'closeConnection'])->name('support.tracker.close');
+    Route::post('/tracker/{device}/test', [\App\Http\Controllers\LiveTrackerController::class, 'testBroadcast'])->name('support.tracker.test');
+    Route::post('/tracker/{device}/commands', [\App\Http\Controllers\LiveTrackerController::class, 'queueCommand'])->name('support.tracker.commands.store');
+    Route::get('/tracker/{device}/download', [\App\Http\Controllers\LiveTrackerController::class, 'downloadLogs'])->name('support.tracker.logs.download');
+    Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs'])->name('support.tracker.logs.fetch');
+
     Route::view('/', 'dashboard');
     Route::get('/view-device', [DeviceController::class, 'showUserDevice'])->name('device.view');
     Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);

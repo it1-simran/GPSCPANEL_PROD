@@ -24,7 +24,7 @@ class LiveTrackerController extends Controller
     { 
         $imei = $request->query('imei');
         $device = $imei ? ImeiDevice::with(['commands' => function ($query) {
-            $query->latest();
+            $query->latest()->limit(15);
         }])->where('imei', $imei)->first() : null;
         $allDevices = ImeiDevice::orderBy('imei')->get();
         $defaults = $this->trackerService->buildDefaultFilters($device);
@@ -40,16 +40,23 @@ class LiveTrackerController extends Controller
         }
 
         $initialLogs = collect();
-        $totalLogsCount = 0;
+        $totalLogsCount = 0; // Will be updated by first JS refresh
         if ($device) {
-            $baseQuery = $this->baseLogsQuery($device, $startAt, $endAt);
-            $totalLogsCount = $baseQuery->count();
-            $initialLogs = $baseQuery
+            $initialLogs = $this->baseLogsQuery($device, $startAt, $endAt)
                 ->orderBy('id', 'desc')
                 ->limit(200)
                 ->get()
                 ->reverse()
                 ->values();
+        }
+
+        $status = 'closed';
+        if ($device) {
+            if ($device->status === ImeiDevice::STATUS_ON) {
+                $status = 'active';
+            } elseif ($device->status === ImeiDevice::STATUS_OFF) {
+                $status = 'inactive';
+            }
         }
 
         return view('tracker.index', [
@@ -58,10 +65,12 @@ class LiveTrackerController extends Controller
             'allDevices' => $allDevices,
             'initialLogs' => $initialLogs,
             'totalLogsCount' => $totalLogsCount,
+            'status' => $status,
             'filters' => [
                 'start_at' => $startAt->format('Y-m-d\TH:i'),
                 'end_at' => $endAt->format('Y-m-d\TH:i'),
             ],
+            'route_prefix' => auth()->user()->user_type === 'admin' ? 'admin' : 'support',
         ]);
     }
 
@@ -187,11 +196,19 @@ class LiveTrackerController extends Controller
             return $logArray;
         });
 
+        $normalizedStatus = 'closed';
+        if ($device->status === ImeiDevice::STATUS_ON) {
+            $normalizedStatus = 'active';
+        } elseif ($device->status === ImeiDevice::STATUS_OFF) {
+            $normalizedStatus = 'inactive';
+        }
+
         return response()->json([
             'logs' => $formattedLogs,
             'last_id' => $logs->max('id') ?: $lastId,
-            'status' => $device->status,
+            'status' => $normalizedStatus,
             'status_label' => $device->status_label,
+            'total_count' => $query->count(),
             'effective_end_at' => $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d H:i:s') : null,
         ]);
     }
@@ -357,6 +374,11 @@ class LiveTrackerController extends Controller
         $defaults = $this->trackerService->buildDefaultFilters($device);
         $startAt = $request->query('start_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('start_at')) : $defaults['start_at'];
         $endAt = $request->query('end_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('end_at')) : $defaults['end_at'];
+        
+        $now = now();
+        if ($endAt->lt($now) && $endAt->isToday()) {
+            $endAt = $now->copy();
+        }
 
         if ($device && $device->effective_end_at && $endAt->gt($device->effective_end_at)) {
             $endAt = $device->effective_end_at->copy();
@@ -371,8 +393,7 @@ class LiveTrackerController extends Controller
 
     protected function baseLogsQuery(ImeiDevice $device, Carbon $startAt, Carbon $endAt)
     {
-        return ImeiLog::with('device')
-            ->where('imei_id', $device->id)
+        return ImeiLog::where('imei_id', $device->id)
             ->whereBetween('logged_at', [$startAt, $endAt]);
     }
 }

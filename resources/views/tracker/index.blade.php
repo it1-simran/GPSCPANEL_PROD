@@ -824,44 +824,41 @@ $(document).ready(function() {
             $('#streamStatus').text('(PAUSED)').css('color', '#d97706');
         }
 
-        // Execute AJAX. A slight delay allows a single-threaded server (php artisan serve) to abort the stream.
-        setTimeout(function() {
-            $.ajax({
-                url: form.attr('action'),
-                method: 'POST',
-                data: form.serialize(),
-                success: function(response) {
-                    form.find('input[name="command"]').val('');
-
-                
-                // Show global styled success message
-                let globalSuccess = $('#ajaxSuccessMessage');
-                globalSuccess.find('.message-text').text('Command queued successfully!');
-                globalSuccess.css('display', 'flex').hide().fadeIn();
-                
-                if (window.ajaxSuccessTimeout) {
-                    clearTimeout(window.ajaxSuccessTimeout);
-                }
-                
-                window.ajaxSuccessTimeout = setTimeout(function() {
-                    globalSuccess.fadeOut();
-                }, 3000);
-                
-                // Reload commands table section
-                const currentUrl = window.location.href.split('#')[0];
-                $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
-            },
-            error: function(xhr) {
-                alert('Failed to queue command.');
-            },
-            complete: function() {
-                submitBtn.prop('disabled', false).html(originalText);
-                if (wasStreamOn && $('#streamToggle').val() === 'ON') {
-                    startSSE();
-                }
+        // Execute AJAX immediately. The backend uses micro-sleep to quickly release the stream worker.
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            data: form.serialize(),
+            success: function(response) {
+                form.find('input[name="command"]').val('');
+            
+            // Show global styled success message
+            let globalSuccess = $('#ajaxSuccessMessage');
+            globalSuccess.find('.message-text').text('Command queued successfully!');
+            globalSuccess.css('display', 'flex').hide().fadeIn();
+            
+            if (window.ajaxSuccessTimeout) {
+                clearTimeout(window.ajaxSuccessTimeout);
             }
+            
+            window.ajaxSuccessTimeout = setTimeout(function() {
+                globalSuccess.fadeOut();
+            }, 3000);
+            
+            // Reload commands table section
+            const currentUrl = window.location.href.split('#')[0];
+            $('#commandsTableContainer').load(currentUrl + ' #commandsTableContainer > *');
+        },
+        error: function(xhr) {
+            alert('Failed to queue command.');
+        },
+        complete: function() {
+            submitBtn.prop('disabled', false).html(originalText);
+            if (wasStreamOn && $('#streamToggle').val() === 'ON') {
+                startSSE();
+            }
+        }
         });
-        }, 500);
     });
 
     // Initial status sync

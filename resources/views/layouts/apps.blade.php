@@ -573,11 +573,16 @@ $ticketCount = $tickets->count();
                             </ul>
                         </li>
                         
-                        <li class='sub-menu {{ request()->is('support/tracker*') ? 'active' : '' }}'>
-                            <a href="#" class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/tracker*') ? 'active' : '' }}">
+                        <li class='sub-menu {{ request()->is('support/imei-devices*', 'support/tracker*') ? 'active' : '' }}'>
+                            <a href="#" class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/imei-devices*', 'support/tracker*') ? 'active' : '' }}">
                                 <span class='icon-sidebar pe-7s-map-marker fa-2x'></span><span>Live Tracking</span>
                             </a>
                             <ul class='sub'>
+                                <li class="{{ request()->is('support/imei-devices*') ? 'active' : '' }}">
+                                    <a href="{{ url('support/imei-devices') }}" class="{{ request()->is('support/imei-devices*') ? 'active' : '' }}">
+                                        Manage Trackers
+                                    </a>
+                                </li>
                                 <li class="{{ request()->is('support/tracker*') ? 'active' : '' }}">
                                     <a href="{{ url('support/tracker') }}" class="{{ request()->is('support/tracker*') ? 'active' : '' }}">
                                         Live Track / Logs

@@ -71,7 +71,7 @@ class LiveTrackerController extends Controller
                 'start_at' => $startAt->format('Y-m-d\TH:i'),
                 'end_at' => $endAt->format('Y-m-d\TH:i'),
             ],
-            'route_prefix' => auth()->user()->user_type === 'admin' ? 'admin' : 'support',
+            'route_prefix' => strtolower(auth()->user()->user_type) === 'admin' ? 'admin' : 'support',
         ]);
     }
 
@@ -167,7 +167,12 @@ class LiveTrackerController extends Controller
                 if (ob_get_level() > 0) ob_flush();
                 flush();
 
-                usleep(800000); // 0.8 seconds wait
+                for ($i = 0; $i < 8; $i++) {
+                    usleep(100000); // 0.1 seconds wait
+                    if (connection_aborted()) {
+                        break 2;
+                    }
+                }
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',

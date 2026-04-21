@@ -377,6 +377,14 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::get('/tracker/{device}/download', [\App\Http\Controllers\LiveTrackerController::class, 'downloadLogs'])->name('support.tracker.logs.download');
     Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs'])->name('support.tracker.logs.fetch');
 
+    Route::get('/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('support.imei-devices.index');
+    Route::get('/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('support.imei-devices.create');
+    Route::post('/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'store'])->name('support.imei-devices.store');
+    Route::get('/imei-devices/{imei_device}/edit', [\App\Http\Controllers\ImeiDeviceController::class, 'edit'])->name('support.imei-devices.edit');
+    Route::put('/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'update'])->name('support.imei-devices.update');
+    Route::delete('/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'destroy'])->name('support.imei-devices.destroy');
+    Route::patch('/imei-devices/{imei_device}/toggle-status', [\App\Http\Controllers\ImeiDeviceController::class, 'toggleStatus'])->name('support.imei-devices.toggle-status');
+
     Route::view('/', 'dashboard');
     Route::get('/view-device', [DeviceController::class, 'showUserDevice'])->name('device.view');
     Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);

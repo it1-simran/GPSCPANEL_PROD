@@ -32,7 +32,8 @@ class ImeiDeviceController extends Controller
         $validated = $this->validateTracker($request);
         ImeiDevice::create($validated);
 
-        return redirect()->route('imei-devices.index')->with('success', 'Tracker added successfully.');
+        $routePrefix = auth()->check() && strtolower(auth()->user()->user_type) === 'support' ? 'support.' : '';
+        return redirect()->route($routePrefix . 'imei-devices.index')->with('success', 'Tracker added successfully.');
     }
 
     public function edit(ImeiDevice $imei_device)
@@ -45,13 +46,15 @@ class ImeiDeviceController extends Controller
         $validated = $this->validateTracker($request, $imei_device->id);
         $imei_device->update($validated);
 
-        return redirect()->route('imei-devices.index')->with('success', 'Tracker updated successfully.');
+        $routePrefix = auth()->check() && strtolower(auth()->user()->user_type) === 'support' ? 'support.' : '';
+        return redirect()->route($routePrefix . 'imei-devices.index')->with('success', 'Tracker updated successfully.');
     }
 
     public function destroy(ImeiDevice $imei_device)
     {
         $imei_device->delete();
-        return redirect()->route('imei-devices.index')->with('success', 'Tracker deleted successfully.');
+        $routePrefix = auth()->check() && strtolower(auth()->user()->user_type) === 'support' ? 'support.' : '';
+        return redirect()->route($routePrefix . 'imei-devices.index')->with('success', 'Tracker deleted successfully.');
     }
 
     public function toggleStatus(ImeiDevice $imei_device)

@@ -24,7 +24,7 @@ class LiveTrackerController extends Controller
     { 
         $imei = $request->query('imei');
         $device = $imei ? ImeiDevice::with(['commands' => function ($query) {
-            $query->latest();
+            $query->latest()->limit(15);
         }])->where('imei', $imei)->first() : null;
         $allDevices = ImeiDevice::orderBy('imei')->get();
         $defaults = $this->trackerService->buildDefaultFilters($device);
@@ -42,14 +42,22 @@ class LiveTrackerController extends Controller
         $initialLogs = collect();
         $totalLogsCount = 0;
         if ($device) {
-            $baseQuery = $this->baseLogsQuery($device, $startAt, $endAt);
-            $totalLogsCount = $baseQuery->count();
-            $initialLogs = $baseQuery
+            $totalLogsCount = $this->baseLogsQuery($device, $startAt, $endAt)->count();
+            $initialLogs = $this->baseLogsQuery($device, $startAt, $endAt)
                 ->orderBy('id', 'desc')
                 ->limit(200)
                 ->get()
                 ->reverse()
                 ->values();
+        }
+
+        $status = 'closed';
+        if ($device) {
+            if ($device->status === ImeiDevice::STATUS_ON) {
+                $status = 'active';
+            } elseif ($device->status === ImeiDevice::STATUS_OFF) {
+                $status = 'inactive';
+            }
         }
 
         return view('tracker.index', [
@@ -58,10 +66,119 @@ class LiveTrackerController extends Controller
             'allDevices' => $allDevices,
             'initialLogs' => $initialLogs,
             'totalLogsCount' => $totalLogsCount,
+            'status' => $status,
             'filters' => [
                 'start_at' => $startAt->format('Y-m-d\TH:i'),
                 'end_at' => $endAt->format('Y-m-d\TH:i'),
             ],
+            'route_prefix' => strtolower(auth()->user()->user_type) === 'admin' ? 'admin' : 'support',
+        ]);
+    }
+
+    public function stream(Request $request)
+    {
+        $imei = $request->query('imei');
+        if (!$imei) {
+            return response()->stream(function() {
+                echo "event: error\ndata: " . json_encode(['message' => 'IMEI required']) . "\n\n";
+            }, 200, ['Content-Type' => 'text/event-stream']);
+        }
+
+        $device = ImeiDevice::where('imei', $imei)->first();
+        if (!$device) {
+            return response()->stream(function() {
+                echo "event: error\ndata: " . json_encode(['message' => 'Device not found']) . "\n\n";
+            }, 200, ['Content-Type' => 'text/event-stream']);
+        }
+
+        $lastId = (int) $request->query('last_id', 0);
+        $lastCommandTs = $request->query('last_command_ts', now()->toDateTimeString());
+
+        return new StreamedResponse(function () use ($device, $lastId, $lastCommandTs) {
+            $currentLastId = $lastId;
+            $currentLastCommandTs = $lastCommandTs;
+            $startTime = time();
+            $maxExecutionTime = 30; // Shorter cycles (30s) to "unstick" single-threaded development servers
+
+            // Disable session blocking to allow other requests (crucial for polling and simulation)
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
+            // Release Laravel's session lock
+            if (session()->isStarted()) {
+                session()->save();
+            }
+
+            // Optimization for flushing output
+            if (function_exists('apache_setenv')) {
+                @apache_setenv('no-gzip', 1);
+            }
+            @ini_set('output_buffering', 'off');
+            @ini_set('zlib.output_compression', false);
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
+            while (time() - $startTime < $maxExecutionTime) {
+                // More frequent abort checks
+                if (connection_aborted()) {
+                    break;
+                }
+
+                // 1. Fetch NEW Logs
+                $logs = ImeiLog::where('imei_id', $device->id)
+                    ->where('id', '>', $currentLastId)
+                    ->orderBy('id', 'asc')
+                    ->limit(50)
+                    ->get();
+
+                foreach ($logs as $log) {
+                    $payload = [
+                        'id' => $log->id,
+                        'logged_at' => $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null,
+                        'logged_at_formatted' => $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null,
+                        'source_ip' => $log->source_ip,
+                        'raw_packet' => $log->raw_packet,
+                    ];
+
+                    echo "event: log\n";
+                    echo "data: " . json_encode($payload) . "\n\n";
+                    $currentLastId = $log->id;
+                }
+
+                // 2. Check for Command updates (status change or new command)
+                // We check if any command has been updated since our last check
+                $hasCommandUpdate = ImeiCommand::where('imei_id', $device->id)
+                    ->where('updated_at', '>', $currentLastCommandTs)
+                    ->exists();
+
+                if ($hasCommandUpdate) {
+                    $newTs = now()->toDateTimeString();
+                    echo "event: command_update\n";
+                    echo "data: " . json_encode(['ts' => $newTs]) . "\n\n";
+                    $currentLastCommandTs = $newTs;
+                }
+
+                // 3. Status Update (in case device status changed)
+                // This is less frequent but good for UI consistency
+                echo "event: heartbeat\n";
+                echo "data: " . json_encode(['time' => now()->toDateTimeString()]) . "\n\n";
+
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+
+                for ($i = 0; $i < 8; $i++) {
+                    usleep(100000); // 0.1 seconds wait
+                    if (connection_aborted()) {
+                        break 2;
+                    }
+                }
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+            'X-Accel-Buffering' => 'no',
         ]);
     }
 
@@ -75,7 +192,14 @@ class LiveTrackerController extends Controller
         [$startAt, $endAt] = $this->validatedWindow($device, $request);
         $lastId = (int) $request->query('last_id', 0);
 
-        $query = $this->baseLogsQuery($device, $startAt, $endAt);
+        $baseQuery = $this->baseLogsQuery($device, $startAt, $endAt);
+        $totalCount = $baseQuery->count();
+
+        if ($request->query('count_only')) {
+            return response()->json(['total_count' => $totalCount]);
+        }
+
+        $query = clone $baseQuery;
         if ($lastId > 0) {
             $query->where('id', '>', $lastId);
         }
@@ -89,11 +213,19 @@ class LiveTrackerController extends Controller
             return $logArray;
         });
 
+        $normalizedStatus = 'closed';
+        if ($device->status === ImeiDevice::STATUS_ON) {
+            $normalizedStatus = 'active';
+        } elseif ($device->status === ImeiDevice::STATUS_OFF) {
+            $normalizedStatus = 'inactive';
+        }
+
         return response()->json([
             'logs' => $formattedLogs,
             'last_id' => $logs->max('id') ?: $lastId,
-            'status' => $device->status,
+            'status' => $normalizedStatus,
             'status_label' => $device->status_label,
+            'total_count' => $totalCount,
             'effective_end_at' => $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d H:i:s') : null,
         ]);
     }
@@ -259,6 +391,11 @@ class LiveTrackerController extends Controller
         $defaults = $this->trackerService->buildDefaultFilters($device);
         $startAt = $request->query('start_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('start_at')) : $defaults['start_at'];
         $endAt = $request->query('end_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('end_at')) : $defaults['end_at'];
+        
+        $now = now();
+        if ($endAt->lt($now) && $endAt->isToday()) {
+            $endAt = $now->copy();
+        }
 
         if ($device && $device->effective_end_at && $endAt->gt($device->effective_end_at)) {
             $endAt = $device->effective_end_at->copy();
@@ -273,8 +410,7 @@ class LiveTrackerController extends Controller
 
     protected function baseLogsQuery(ImeiDevice $device, Carbon $startAt, Carbon $endAt)
     {
-        return ImeiLog::with('device')
-            ->where('imei_id', $device->id)
+        return ImeiLog::where('imei_id', $device->id)
             ->whereBetween('logged_at', [$startAt, $endAt]);
     }
 }

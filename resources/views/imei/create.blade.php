@@ -21,7 +21,10 @@
                         @if ($errors->any())
                             <div class="alert alert-danger"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
                         @endif
-                        <form class="form-horizontal" method="POST" action="{{ route('imei-devices.store') }}">
+                        @php
+                            $routePrefix = auth()->check() && auth()->user()->user_type === 'Support' ? 'support.' : '';
+                        @endphp
+                        <form class="form-horizontal" method="POST" action="{{ route($routePrefix . 'imei-devices.store') }}">
                             @csrf
                             <div class="form-group">
                                 <label class="control-label col-lg-3">IMEI *</label>
@@ -55,7 +58,7 @@
                                 <div class="col-lg-offset-3 col-lg-9">
                                     <button type="submit" class="btn btn-success">Save</button>
                                     <button type="button" 
-                                            onclick="window.location='{{ route('imei-devices.index') }}'" 
+                                            onclick="window.location='{{ route($routePrefix . 'imei-devices.index') }}'" 
                                             class="btn btn-default">
                                         Cancel
                                     </button>

@@ -20,7 +20,7 @@ class CheckUserType
         'reseller' => ['reseller', 'dealer', 'user'],
         'dealer' => ['dealer', 'user'],
         'user' => ['user'],
-        'support' => ['support', 'admin'],
+        'support' => ['support'],
     ];
 
     public function handle($request, Closure $next, ...$types)

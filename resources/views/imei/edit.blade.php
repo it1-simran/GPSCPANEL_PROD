@@ -61,7 +61,10 @@
                         @if ($errors->any())
                             <div class="alert alert-danger"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
                         @endif
-                        <form class="form-horizontal" method="POST" action="{{ route('imei-devices.update', $imei_device->id) }}">
+                        @php
+                            $routePrefix = auth()->check() && auth()->user()->user_type === 'Support' ? 'support.' : '';
+                        @endphp
+                        <form class="form-horizontal" method="POST" action="{{ route($routePrefix . 'imei-devices.update', $imei_device->id) }}">
                             @csrf
                             @method('PUT')
                             <div class="form-group">
@@ -89,7 +92,7 @@
                             <div class="form-group">
                                 <div class="col-lg-offset-3 col-lg-9">
                                     <button type="submit" class="btn btn-premium btn-premium-success">Update</button>
-                                    <a href="{{ route('imei-devices.index') }}" class="btn btn-premium btn-premium-cancel">Cancel</a>
+                                    <a href="{{ route($routePrefix . 'imei-devices.index') }}" class="btn btn-premium btn-premium-cancel">Cancel</a>
                                 </div>
                             </div>
                         </form>

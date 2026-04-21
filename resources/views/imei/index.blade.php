@@ -22,7 +22,10 @@
                                 <h2>IMEI Recording</h2>
                             </div>
                             <div class="col-lg-6 text-right">
-                                <a href="{{ route('imei-devices.create') }}" class="btn btn-success"><i class="fa fa-plus-circle"></i> Add IMEI Recording</a>
+                                @php
+                                    $routePrefix = auth()->check() && strtolower(auth()->user()->user_type) === 'support' ? 'support.' : '';
+                                @endphp
+                                <a href="{{ route($routePrefix . 'imei-devices.create') }}" class="btn btn-success"><i class="fa fa-plus-circle"></i> Add IMEI Recording</a>
                             </div>
                         </div>
                         <div class="clearfix"></div>
@@ -99,7 +102,7 @@
                                             <td><span class="badge" style="background-color: #3498db; padding: 5px 10px; font-size: 12px;">{{ $device->pending_commands_count ?? 0 }}</span></td>
                                             <td style="min-width:340px;">
                                                 <div style="white-space:nowrap;">
-                                                    <a href="{{ route('imei-devices.edit', $device->id) }}" class="btn btn-info btn-sm" style="margin-right: 4px;">
+                                                    <a href="{{ route($routePrefix . 'imei-devices.edit', $device->id) }}" class="btn btn-info btn-sm" style="margin-right: 4px;">
                                                         <i class="fa fa-pencil"></i> Edit
                                                     </a>
                                                     
@@ -107,18 +110,18 @@
                                                         <i class="fa {{ $device->status === \App\Models\ImeiDevice::STATUS_ON ? 'fa-power-off' : 'fa-plug' }}"></i> 
                                                         {{ $device->status === \App\Models\ImeiDevice::STATUS_ON ? 'Turn OFF' : 'Turn ON' }}
                                                     </a>
-                                                    <form id="toggle-form-{{ $device->id }}" action="{{ route('imei-devices.toggle-status', $device->id) }}" method="POST" style="display: none;">
+                                                    <form id="toggle-form-{{ $device->id }}" action="{{ route($routePrefix . 'imei-devices.toggle-status', $device->id) }}" method="POST" style="display: none;">
                                                         @csrf @method('PATCH')
                                                     </form>
 
-                                                    <a href="{{ route('tracker.index', ['imei' => $device->imei]) }}" class="btn btn-primary btn-sm" style="margin-right: 4px;">
+                                                    <a href="{{ route(auth()->check() && strtolower(auth()->user()->user_type) === 'support' ? 'support.tracker.index' : 'admin.tracker.index', ['imei' => $device->imei]) }}" class="btn btn-primary btn-sm" style="margin-right: 4px;">
                                                         <i class="fa fa-list-alt"></i> Logs View
                                                     </a>
 
                                                     <a href="#" onclick="event.preventDefault(); if(confirm('Are you sure you want to delete this IMEI recording?')) document.getElementById('delete-form-{{ $device->id }}').submit();" class="btn btn-danger btn-sm">
                                                         <i class="fa fa-trash"></i> Delete
                                                     </a>
-                                                    <form id="delete-form-{{ $device->id }}" action="{{ route('imei-devices.destroy', $device->id) }}" method="POST" style="display: none;">
+                                                    <form id="delete-form-{{ $device->id }}" action="{{ route($routePrefix . 'imei-devices.destroy', $device->id) }}" method="POST" style="display: none;">
                                                         @csrf @method('DELETE')
                                                     </form>
                                                 </div>

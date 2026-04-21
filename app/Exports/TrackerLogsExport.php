@@ -14,7 +14,7 @@ class TrackerLogsExport implements FromQuery, WithHeadings, WithMapping
     protected $query;
     protected $device;
     protected $count;
-    protected $serialNumber = 1;
+    protected $rowIndex = 0;
 
     public function __construct($query, $device, $count)
     {
@@ -36,19 +36,27 @@ class TrackerLogsExport implements FromQuery, WithHeadings, WithMapping
             ['# Device IMEI:', optional($this->device)->imei],
             ['# Exported On:', $exportedOn],
             ['# Status Details:', "You have successfully downloaded {$this->count} logs."],
-            ['Sr.No', 'ID', 'IMEI', 'Logged At', 'Source IP', 'Raw Packet']
+            ['Sr. No.', 'ID', 'IMEI', 'Logged At', 'Server IP', 'Client IP', 'Raw Packet']
         ];
     }
 
     public function map($log): array
     {
+        $packet = $log->raw_packet;
+        $clientIp = 'N/A';
+        if (preg_match('/&client_ip=\/?([^"&}\s,]+)/', $packet, $matches)) {
+            $clientIp = ltrim($matches[1], '\/');
+            $packet = preg_replace('/&client_ip=\/?[^"&}\s,]+/', '', $packet);
+        }
+
         return [
-            $this->serialNumber++,
+            ++$this->rowIndex,
             $log->id,
             optional($this->device)->imei,
             $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null,
             $log->source_ip,
-            $log->raw_packet,
+            $clientIp,
+            $packet,
         ];
     }
 }

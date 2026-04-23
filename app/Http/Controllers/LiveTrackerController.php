@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\ImeiCommand;
 use App\Models\ImeiDevice;
 use App\Models\ImeiLog;
+use App\Models\PacketType;
+use App\Models\Protocol;
 use App\Services\ImeiTrackerService;
+use App\Services\PacketParserService;
 use App\Services\CommandExecutionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -15,7 +18,8 @@ class LiveTrackerController extends Controller
 {
     public function __construct(
         protected ImeiTrackerService $trackerService,
-        protected CommandExecutionService $commandExecutionService
+        protected CommandExecutionService $commandExecutionService,
+        protected PacketParserService $packetParserService
     )
     {
     }
@@ -39,6 +43,11 @@ class LiveTrackerController extends Controller
             $startAt = $endAt->copy()->subDays(7);
         }
 
+        $selectedProtocolId = $request->query('protocol_id');
+        $selectedPacketTypeId = $request->query('packet_type_id');
+        $protocols = Protocol::where('is_active', true)->orderBy('name')->get();
+        $packetTypes = $selectedProtocolId ? PacketType::where('protocol_id', $selectedProtocolId)->where('is_active', true)->orderBy('name')->get() : collect();
+
         $initialLogs = collect();
         $totalLogsCount = 0;
         if ($device) {
@@ -48,6 +57,7 @@ class LiveTrackerController extends Controller
                 ->limit(200)
                 ->get()
                 ->reverse()
+                ->map(fn ($log) => $this->attachValidationToLog($log, $selectedProtocolId, $selectedPacketTypeId))
                 ->values();
         }
 
@@ -72,6 +82,10 @@ class LiveTrackerController extends Controller
                 'end_at' => $endAt->format('Y-m-d\TH:i'),
             ],
             'route_prefix' => strtolower(auth()->user()->user_type) === 'admin' ? 'admin' : 'support',
+            'protocols' => $protocols,
+            'packetTypes' => $packetTypes,
+            'selectedProtocolId' => $selectedProtocolId,
+            'selectedPacketTypeId' => $selectedPacketTypeId,
         ]);
     }
 
@@ -93,8 +107,10 @@ class LiveTrackerController extends Controller
 
         $lastId = (int) $request->query('last_id', 0);
         $lastCommandTs = $request->query('last_command_ts', now()->toDateTimeString());
+        $protocolId = $request->query('protocol_id');
+        $packetTypeId = $request->query('packet_type_id');
 
-        return new StreamedResponse(function () use ($device, $lastId, $lastCommandTs) {
+        return new StreamedResponse(function () use ($device, $lastId, $lastCommandTs, $protocolId, $packetTypeId) {
             $currentLastId = $lastId;
             $currentLastCommandTs = $lastCommandTs;
             $startTime = time();
@@ -133,13 +149,7 @@ class LiveTrackerController extends Controller
                     ->get();
 
                 foreach ($logs as $log) {
-                    $payload = [
-                        'id' => $log->id,
-                        'logged_at' => $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null,
-                        'logged_at_formatted' => $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null,
-                        'source_ip' => $log->source_ip,
-                        'raw_packet' => $log->raw_packet,
-                    ];
+                    $payload = $this->formatLogPayload($log, $protocolId, $packetTypeId);
 
                     echo "event: log\n";
                     echo "data: " . json_encode($payload) . "\n\n";
@@ -191,6 +201,8 @@ class LiveTrackerController extends Controller
 
         [$startAt, $endAt] = $this->validatedWindow($device, $request);
         $lastId = (int) $request->query('last_id', 0);
+        $protocolId = $request->query('protocol_id');
+        $packetTypeId = $request->query('packet_type_id');
 
         $baseQuery = $this->baseLogsQuery($device, $startAt, $endAt);
         $totalCount = $baseQuery->count();
@@ -206,12 +218,7 @@ class LiveTrackerController extends Controller
 
         $logs = $query->orderBy('id', 'asc')->limit(200)->get();
 
-        $formattedLogs = $logs->map(function ($log) {
-            $logArray = $log->toArray();
-            $logArray['logged_at_formatted'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null;
-            $logArray['logged_at'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null;
-            return $logArray;
-        });
+        $formattedLogs = $logs->map(fn ($log) => $this->formatLogPayload($log, $protocolId, $packetTypeId));
 
         $normalizedStatus = 'closed';
         if ($device->status === ImeiDevice::STATUS_ON) {
@@ -227,6 +234,37 @@ class LiveTrackerController extends Controller
             'status_label' => $device->status_label,
             'total_count' => $totalCount,
             'effective_end_at' => $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d H:i:s') : null,
+        ]);
+    }
+
+
+    public function packetTypes(Protocol $protocol)
+    {
+        return response()->json([
+            'packet_types' => $protocol->packetTypes()
+                ->where('is_active', true)
+                ->with(['fields' => function ($query) {
+                    $query->orderBy('sequence');
+                }])
+                ->orderBy('name')
+                ->get()
+                ->map(function ($type) {
+                    return [
+                        'id' => $type->id,
+                        'name' => $type->name,
+                        'header_identifier' => $type->header_identifier,
+                        'fields_count' => $type->fields->count(),
+                        'fields' => $type->fields->map(function ($field) {
+                            return [
+                                'name' => $field->name,
+                                'sequence' => $field->sequence,
+                                'data_type' => $field->data_type,
+                                'validation_type' => $field->validation_type,
+                                'is_required' => (bool) $field->is_required,
+                            ];
+                        })->values(),
+                    ];
+                })->values(),
         ]);
     }
 
@@ -384,6 +422,24 @@ class LiveTrackerController extends Controller
         broadcast(new \App\Events\ImeiLogReceived($log));
 
         return response()->json(['success' => true]);
+    }
+
+
+    protected function formatLogPayload(ImeiLog $log, $protocolId = null, $packetTypeId = null): array
+    {
+        $logArray = $log->toArray();
+        $logArray['logged_at_formatted'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null;
+        $logArray['logged_at'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null;
+        $logArray['validation'] = $this->packetParserService->validateLog($log, $protocolId ? (int) $protocolId : null, $packetTypeId ? (int) $packetTypeId : null);
+
+        return $logArray;
+    }
+
+    protected function attachValidationToLog(ImeiLog $log, $protocolId = null, $packetTypeId = null): ImeiLog
+    {
+        $log->validation = $this->packetParserService->validateLog($log, $protocolId ? (int) $protocolId : null, $packetTypeId ? (int) $packetTypeId : null);
+
+        return $log;
     }
 
     protected function validatedWindow(ImeiDevice $device, Request $request): array

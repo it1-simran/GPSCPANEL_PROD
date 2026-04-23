@@ -165,6 +165,11 @@ class LoginController extends Controller
 
         Auth::login($user);
 
+        // ✅ If coming from SMS portal 2FA, set the sms_portal_only flag
+        if (Session::pull('sms_2fa_login')) {
+            Session::put('sms_portal_only', true);
+        }
+
         switch (strtolower($user->user_type)) {
             case 'admin':
                 return redirect()->intended('/admin');
@@ -351,228 +356,77 @@ class LoginController extends Controller
         return view('auth.login_new', ['url' => 'reseller']);
     }
 
-
-
-    /**
-
-     * @param Request $request
-
-     * @return array
-
-     */
-
-    protected function validator(Request $request)
-
+    public function showSmsLoginForm()
     {
-
-        return $this->validate($request, [
-
-            'email'   => 'required|email',
-
-            'password' => 'required|min:6'
-
-        ]);
+        return view('sms.login');
     }
 
-
-
-    /**
-
-     * @param Request $request
-
-     * @param $guard
-
-     * @return bool
-
-     */
-
-    protected function guardLogin(Request $request, $guard)
-
+    public function smsLogin(Request $request)
     {
-
-        $this->validator($request);
-
-
-
-        return Auth::guard($guard)->attempt(
-
-            [
-
-                'email' => $request->email,
-
-                'password' => $request->password
-
-            ],
-
-            $request->get('remember')
-
-        );
-    }
-
-
-
-    /**
-
-     * @param Request $request
-
-     *
-
-     * @return \Illuminate\Http\RedirectResponse
-
-     */
-
-    public function adminLogin(Request $request)
-
-    {
-        $validator  = $this->validate($request, [
-            'email'   => 'required|email',
+        $request->validate([
+            'email' => 'required|email',
             'password' => 'required',
-            'remember' =>  'required:in:on',
+            'remember' => 'required|in:on',
         ], [
-            'remember.required' => 'checkbox must be checked.'
+            'remember.required' => 'Checkbox must be checked.',
         ]);
 
-        if (Auth::guard('admin')->attempt(['email' => $request->email, 'password' => $request->password, 'user_type' => 'Admin'], $request->get('remember'))) {
-            $todatPingsDate = DB::table('writers')->get();
+        $credentials = $request->only('email', 'password');
 
-            foreach ($todatPingsDate as $key => $value) {
-                if ($value->pings_date != Carbon::today()->toDateString()) {
-                    DB::table('writers')->Where('pings_date', '!=', Carbon::today()->toDateString())->update([
-                        'today_pings' => '0'
-                    ]);
-                }
+        if (Auth::attempt($credentials, $request->filled('remember'))) {
+            $user = Auth::user();
+
+            // ✅ Restrict to Admin and Support only
+            if (!in_array(strtolower($user->user_type), ['admin', 'support'])) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Only Admin and Support users can access the SMS portal.',
+                ])->withInput($request->only('email', 'remember'));
             }
-            return redirect()->intended('/admin');
+
+            // ✅ Set session flag to restrict them to SMS portal only
+            Session::put('sms_portal_only', true);
+            
+            // ✅ TWO FACTOR AUTHENTICATION
+            if ($user->twoFactorAuthentication) {
+                // Generate and store 2FA token
+                $token = rand(1000, 9999);
+                DB::table('writers')
+                    ->where('id', '=', $user->id)
+                    ->update(['twoFactorAuthToken' => $token, 'two_factor_expires_at' => now()->addMinutes(10)]);
+
+                // Send token via email
+                Mail::to($user->email)->send(new TwoFactorTokenMail($token, $user));
+
+                // Logout temporarily
+                Auth::logout();
+
+                // Store 2FA session
+                Session::put('email', $user->email);
+                Session::put('2fa:remember', $request->filled('remember'));
+                $prefix = strtolower($user->user_type) == 'support' ? 'support' : 'admin';
+                Session::put('url.intended', "/{$prefix}/sms-portal/dashboard"); // Store intended SMS portal URL
+                Session::put('sms_2fa_login', true); // ✅ Track SMS 2FA
+
+                return redirect()->route('2fa.form');
+            }
+
+            // ✅ Reset today_pings if outdated
+            if ($user->pings_date != Carbon::today()->toDateString()) {
+                DB::table('writers')
+                    ->where('pings_date', '!=', Carbon::today()->toDateString())
+                    ->update(['today_pings' => 0]);
+            }
+
+            $prefix = strtolower($user->user_type) == 'support' ? 'support' : 'admin';
+            return redirect()->intended("/{$prefix}/sms-portal/dashboard");
         }
 
         return back()->withErrors([
-            'password' => 'The provided credentials do not match our records.'
+            'password' => 'The provided credentials do not match our records.',
         ])->withInput($request->only('email', 'remember'));
     }
 
-
-
-
-
-
-
-    /**
-
-     * @param Request $request
-
-     *
-
-     * @return \Illuminate\Http\RedirectResponse
-
-     */
-
-    public function writerLogin(Request $request)
-
-    {
-
-        $this->validate($request, [
-
-            'email'   => 'required|email',
-            'password' => 'required',
-            'remember' =>  'required:in:on',
-        ], [
-            'remember.required' => 'checkbox must be checked.'
-        ]);
-
-
-
-        if (Auth::guard('writer')->attempt(['is_deleted' => 0, 'user_type' => 'User', 'email' => $request->email, 'password' => $request->password], $request->get('remember'))) {
-
-
-
-            $todatPingsDate = DB::table('writers')->get();
-
-            foreach ($todatPingsDate as $key => $value) {
-
-
-
-
-
-
-
-                if ($value->pings_date != Carbon::today()->toDateString()) {
-
-
-
-                    DB::table('writers')->Where('pings_date', '!=', Carbon::today()->toDateString())->update([
-
-                        'today_pings' => '0'
-
-
-
-                    ]);
-                }
-            }
-
-
-
-            return redirect()->intended('/user');
-        }
-
-        return back()->withErrors([
-            'password' => 'The provided credentials do not match our records.'
-        ])->withInput($request->only('email', 'remember'));
-    }
-
-    public function resellerLogin(Request $request)
-
-    {
-
-        $this->validate($request, [
-
-            'email'   => 'required|email',
-
-            'password' => 'required',
-            'remember' =>  'required:in:on',
-        ], [
-            'remember.required' => 'checkbox must be checked.'
-
-
-        ]);
-
-
-
-        if (Auth::guard('reseller')->attempt(['is_deleted' => 0, 'user_type' => 'Reseller', 'email' => $request->email, 'password' => $request->password], $request->get('remember'))) {
-
-
-
-            $todatPingsDate = DB::table('writers')->get();
-
-            foreach ($todatPingsDate as $key => $value) {
-
-
-
-
-
-
-
-                if ($value->pings_date != Carbon::today()->toDateString()) {
-
-
-
-                    DB::table('writers')->Where('pings_date', '!=', Carbon::today()->toDateString())->update([
-
-                        'today_pings' => '0'
-
-
-
-                    ]);
-                }
-            }
-
-
-            return redirect()->intended('/reseller');
-        }
-
-        return back()->withErrors([
-            'password' => 'The provided credentials do not match our records.'
-        ])->withInput($request->only('email', 'remember'));
-    }
     public function sendOtp(Request $request)
     {
         $otp = Str::random(6); // Generate OTP

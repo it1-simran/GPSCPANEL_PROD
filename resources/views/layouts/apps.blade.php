@@ -52,7 +52,11 @@ $ticketCount = $tickets->count();
         <header class="header fixed-top clearfix">
             <!--logo start-->
             <div class="brand">
-                @if(Auth::user()->user_type =='Admin')
+                @if(session('sms_portal_only'))
+                <a href="{{ strtolower(Auth::user()->user_type) == 'support' ? '/support/sms-portal/dashboard' : '/admin/sms-portal/dashboard' }}" class="logo">
+                    <strong>SMS <span style="color: #2ECC71;">Portal</span></strong>
+                </a>
+                @elseif(Auth::user()->user_type =='Admin')
                 <a href="/admin" class="logo">
                     Admin Area
                 </a>
@@ -64,7 +68,7 @@ $ticketCount = $tickets->count();
                 <a href="/user" class="logo">
                     Support Area
                 </a>
-                @else(Auth::user()->user_type!=='User')
+                @elseif(Auth::user()->user_type!=='User')
                 <a href="/user" class="logo">
                     Dealer Area
                 </a>
@@ -82,7 +86,7 @@ $ticketCount = $tickets->count();
                             <span class="font-weight-bold padding-left-6 padding-right-6">v{{$latestVersion->version}}</span>
                         </div>
                     </li>
-
+                    @if(!session('sms_portal_only'))
                     <!-- 🔔 Notification Dropdown -->
                     @if(Auth::user()->user_type == 'Admin')
                     <li class="nav-item dropdown">
@@ -138,7 +142,7 @@ $ticketCount = $tickets->count();
                             </a>
                         </div>
                     </li>
-
+                    @endif
                     @endif
                     <li class="search-box">
                         <input type="text" class="form-control search" placeholder="Search">
@@ -179,6 +183,7 @@ $ticketCount = $tickets->count();
                     <ul class="sidebar-menu" id="nav-accordion">
                         @if (Auth::user()->user_type == 'Admin')
 
+                        @if(!session('sms_portal_only'))
                         <li class="{{ request()->is('admin') ? 'active' : '' }}">
                             <a href="{{ url('/admin') }}" 
                             class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin') ? 'active' : '' }}">
@@ -275,6 +280,11 @@ $ticketCount = $tickets->count();
                             </ul>
                         </li>
 
+                        @endif
+
+
+                        @if(!session('sms_portal_only'))
+
                         <li class='sub-menu {{ request()->is('admin/add-template', 'admin/view-template', 'admin/assign-setting-bulk') ? 'active' : '' }}'>
                             <a href="#" class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/add-template', 'admin/view-template', 'admin/assign-setting-bulk') ? 'active' : '' }}">
                                 <span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span>
@@ -358,6 +368,14 @@ $ticketCount = $tickets->count();
                                 </li>
                             </ul>
                         </li>
+
+                        <li class="{{ request()->is('admin/sms-portal') ? 'active' : '' }}">
+                            <a href="{{ route('admin.sms.dashboard') }}" 
+                            class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/sms-portal') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-comments fa-2x'></span><span>SMS Portal</span>
+                            </a>
+                        </li>
+                        @endif
 
                         @elseif (Auth::user()->user_type == 'Reseller')
 
@@ -505,10 +523,12 @@ $ticketCount = $tickets->count();
                                 </li>
                             </ul>
                         </li>
+                        @endif
 
                         @endif
                         @if (Auth::user()->user_type == 'Support')
 
+                        @if(!session('sms_portal_only'))
                         <li class="{{ request()->is('support') ? 'active' : '' }}">
                             <a href="{{ url('/support') }}" 
                             class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support') ? 'active' : '' }}">
@@ -591,6 +611,17 @@ $ticketCount = $tickets->count();
                             </ul>
                         </li>
 
+                        <li class="{{ request()->is('support/sms-portal') ? 'active' : '' }}">
+                            <a href="{{ route('support.sms.dashboard') }}" 
+                            class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/sms-portal') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-comments fa-2x'></span><span>SMS Portal</span>
+                            </a>
+                        </li>
+
+                        @endif
+
+
+
                         @endif
                         <!--<li class="{{ request()->is('user') ? 'active' : '' }}">-->
                         <!--    <a href="{{ url('/user') }}" class="hvr-bounce-to-right-sidebar-parent">-->
@@ -620,7 +651,6 @@ $ticketCount = $tickets->count();
                         <!--        </li>-->
                         <!--    </ul>-->
                         <!--</li>-->
-                        @endif
                     </ul>
                 </div>
                 <!-- sidebar menu end-->

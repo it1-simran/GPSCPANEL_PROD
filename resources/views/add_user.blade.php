@@ -284,8 +284,12 @@
                               <div class="col-lg-8">
                                 <select class="form-control inputType" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }}>
                                   <!-- <option value="">Please Select</option> -->
+                                  @php
+                                    $inputKey = str_replace(' ', '_', strtolower($input['key']));
+                                    $selectedValue = isset($configurationValue[$inputKey]['value']) ? strtolower((string)$configurationValue[$inputKey]['value']) : null;
+                                  @endphp
                                   @foreach($validationConfig['selectOptions'] as $configkey => $option)
-                                  <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
+                                  <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ $selectedValue !== null && strtolower($validationConfig['selectValues'][$configkey]) == $selectedValue ? 'selected' : '' }}>{{ $option }}</option>
                                   @endforeach
                                 </select>
                               </div>

@@ -34,6 +34,14 @@ class CheckUserType
 
         $userRole = strtolower(Auth::user()->user_type);
         $allowedRoles = $this->roleHierarchy[$userRole] ?? [];
+
+        // ✅ If user logged in via SMS portal, restrict to SMS portal routes only
+        if (session('sms_portal_only') && !$request->is('admin/sms-portal*') && !$request->is('support/sms-portal*')) {
+            return response()->view('unauthorized_access', [
+                'error' => 403,
+                'error_msg' => 'You are logged into the SMS Portal. Access to the main GPS Panel is restricted.'
+            ]);
+        }
         
         // Check if user's role allows access to any of the required types
         $hasAccess = false;

@@ -25,6 +25,8 @@ use App\Http\Controllers\ImeiController;
 use App\Http\Controllers\JigController;
 use App\Http\Controllers\versionController;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\SmsDeviceController;
+use App\Http\Controllers\Webhooks\SmsWebhookController;
 
 Route::get('/clear-cache', function () {
     Artisan::call('config:clear');
@@ -37,6 +39,11 @@ Route::get('/clear-cache', function () {
 
 Route::get('/', function () {
     if (Auth::check()) {
+        if (session('sms_portal_only')) {
+            $prefix = strtolower(Auth::user()->user_type) == 'support' ? 'support' : 'admin';
+            return redirect("/{$prefix}/sms-portal/dashboard");
+        }
+
         switch (strtolower(Auth::user()->user_type)) {
             case 'admin':
                 return redirect('/admin');
@@ -44,6 +51,8 @@ Route::get('/', function () {
                 return redirect('/user');
             case 'reseller':
                 return redirect('/reseller');
+            case 'support':
+                return redirect('/support');
             default:
                 return redirect('/');
         }
@@ -57,6 +66,7 @@ Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
 Route::get('/login/admin', [LoginController::class, 'showAdminLoginForm'])->name('login.admin');
 Route::get('/login/writer', [LoginController::class, 'showWriterLoginForm'])->name('login.writer');
 Route::get('/login/reseller', [LoginController::class, 'showResellerLoginForm'])->name('login.reseller');
+Route::get('/sms-portal/login', [LoginController::class, 'showSmsLoginForm'])->name('login.sms');
 Route::get('/register/admin', [RegisterController::class, 'showAdminRegisterForm'])->name('register.admin');
 Route::get('/register/writer', [RegisterController::class, 'showWriterRegisterForm'])->name('register.writer');
 Route::get('/two-factor', [LoginController::class, 'getTwoFactorAuthentication'])->name('2fa.form');
@@ -68,6 +78,7 @@ Route::post('/reset-password', [LoginController::class, 'resetPassword'])->name(
 Route::post('/login/admin', [LoginController::class, 'adminLogin']);
 Route::post('/login/writer', [LoginController::class, 'writerLogin']);
 Route::post('/login/reseller', [LoginController::class, 'resellerLogin']);
+Route::post('/login/sms-portal', [LoginController::class, 'smsLogin']);
 Route::post('/register/admin', [RegisterController::class, 'createAdmin'])->name('register.admin');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::view('/home', 'home')->middleware('auth');
@@ -97,6 +108,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
         Route::delete('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'destroy'])->name('imei-devices.destroy');
         Route::patch('/admin/imei-devices/{imei_device}/toggle-status', [\App\Http\Controllers\ImeiDeviceController::class, 'toggleStatus'])->name('imei-devices.toggle-status');
     Route::get('/admin', fn() => view('dashboard'));
+
 
     // Export Routes
     Route::get('/export-excel', fn() => Excel::download(new UsersExport, 'templates.xlsx'))->name('export.excel');
@@ -422,3 +434,42 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::post('/get-firmware-with-models', [FirmwareController::class, 'getFirmwareWithModel']);
     Route::post('/get-firmware', [FirmwareController::class, 'getFirmware']);
 });
+
+// SMS Portal for Admin
+Route::prefix('admin/sms-portal')->middleware(['auth', 'check.role:admin'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('sms.dashboard', [
+            'devices' => \App\Models\SmsDevice::with(['logs' => fn($q) => $q->latest()])->get(),
+            'templates' => \App\Models\SmsCommandTemplate::all(),
+        ]);
+    })->name('admin.sms.dashboard');
+
+    Route::post('/devices', [SmsDeviceController::class, 'store'])->name('admin.sms.devices.store');
+    Route::get('/devices/{device}/logs', [SmsDeviceController::class, 'getLogs'])->name('admin.sms.devices.logs');
+    Route::post('/devices/{device}/command', [SmsDeviceController::class, 'sendCommand'])->name('admin.sms.devices.command');
+    Route::post('/devices/{device}/simulate', [SmsDeviceController::class, 'simulateInbound'])->name('admin.sms.devices.simulate');
+    Route::delete('/devices/{device}', [SmsDeviceController::class, 'destroy'])->name('admin.sms.devices.destroy');
+    Route::post('/template', [SmsDeviceController::class, 'saveTemplate'])->name('admin.sms.template.store');
+    Route::delete('/template/{template}', [SmsDeviceController::class, 'deleteTemplate'])->name('admin.sms.template.destroy');
+});
+
+// SMS Portal for Support
+Route::prefix('support/sms-portal')->middleware(['auth', 'check.role:support'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('sms.dashboard', [
+            'devices' => \App\Models\SmsDevice::with(['logs' => fn($q) => $q->latest()])->get(),
+            'templates' => \App\Models\SmsCommandTemplate::all(),
+        ]);
+    })->name('support.sms.dashboard');
+
+    Route::post('/devices', [SmsDeviceController::class, 'store'])->name('support.sms.devices.store');
+    Route::get('/devices/{device}/logs', [SmsDeviceController::class, 'getLogs'])->name('support.sms.devices.logs');
+    Route::post('/devices/{device}/command', [SmsDeviceController::class, 'sendCommand'])->name('support.sms.devices.command');
+    Route::post('/devices/{device}/simulate', [SmsDeviceController::class, 'simulateInbound'])->name('support.sms.devices.simulate');
+    Route::delete('/devices/{device}', [SmsDeviceController::class, 'destroy'])->name('support.sms.devices.destroy');
+    Route::post('/template', [SmsDeviceController::class, 'saveTemplate'])->name('support.sms.template.store');
+    Route::delete('/template/{template}', [SmsDeviceController::class, 'deleteTemplate'])->name('support.sms.template.destroy');
+});
+
+// Sms Webhooks
+Route::post('/webhooks/sms', [SmsWebhookController::class, 'handle']);

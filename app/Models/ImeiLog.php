@@ -24,4 +24,13 @@ class ImeiLog extends Model
     {
         return $this->belongsTo(ImeiDevice::class, 'imei_id');
     }
+
+    /**
+     * Accessor to remove "packet=" from the raw packet string.
+     */
+    public function getRawPacketAttribute($value)
+    {
+        if (empty($value)) return $value;
+        return str_replace(['packet=', 'packet ='], '', $value);
+    }
 }

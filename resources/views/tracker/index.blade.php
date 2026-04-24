@@ -113,12 +113,18 @@ use App\Helper\CommonHelper;
 }
 
 /* Filter Box Module */
+.tracker-filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+}
 .filter-container {
     background: #fff;
     border: 1px solid #eaeaea;
     border-radius: 12px;
     padding: 15px 20px;
-    margin-bottom: 20px;
+    margin-bottom: 0;
     box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     display: flex;
     flex-wrap: nowrap;
@@ -127,6 +133,45 @@ use App\Helper\CommonHelper;
 }
 .filter-container .form-group { margin-bottom: 0; flex: 1; }
 .filter-container .form-group.action-group { flex: 0 0 auto; display: flex; gap: 10px; }
+.protocol-settings-panel {
+    background: linear-gradient(180deg, #fbfdff 0%, #f7fbff 100%);
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.05);
+}
+.protocol-settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.protocol-settings-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1d4ed8;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.protocol-settings-subtitle {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+}
+.protocol-settings-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+.protocol-settings-grid .form-group {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 220px;
+}
+
 
 /* Status Alerts */
 .tracker-page .alert {
@@ -148,11 +193,11 @@ use App\Helper\CommonHelper;
     #main-content .tracker-page { padding: 5px; }
     #main-content .tracker-page [class*="col-"] { width: 100% !important; max-width: 100%; flex: 100%; margin-bottom: 10px; }
     
-    .filter-container {
+    .filter-container,
+    .protocol-settings-grid {
         flex-direction: column;
         align-items: stretch;
     }
-
     .action-container, 
     .action-container > form, 
     .action-container > div:not([style*="width:1px"]) {
@@ -204,6 +249,8 @@ use App\Helper\CommonHelper;
 .validation-modal-table th { width:34%; background:#f8fafc; }
 .validation-error-list { margin:0; padding-left:18px; color:#b91c1c; }
 .protocol-fields-hint { color:#64748b; font-size:11px; margin-top:4px; min-height:14px; }
+.protocol-validation-group.is-hidden { display:none !important; }
+.protocol-validation-toggle-wrap { min-width: 160px; }
 
 </style>
 
@@ -229,68 +276,77 @@ use App\Helper\CommonHelper;
                         <div class="clearfix"></div>
                     </div>
                     <div class="c_content">
-                        @if(session('success'))
-                            <div class="alert alert-success">{{ session('success') }}</div>
-                        @endif
-                        
-                        <div id="ajaxSuccessMessage" class="alert alert-success" style="display:none; align-items:center; gap:10px; font-weight:500; border:1px solid #c3e6cb; border-left: 4px solid #198754; background-color: #d4edda; color: #155724; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                            <span class="message-text"></span>
-                        </div>
 
-                        <form method="GET" action="{{ route($route_prefix . '.tracker.index') }}" class="filter-container">
-                            <div class="form-group" style="min-width: 200px;">
-                                <label style="text-transform:uppercase; letter-spacing:0.5px;">IMEI</label>
-                                <select name="imei" class="form-control" style="width:100%; border-radius:8px;">
-                                    <option value="">Select IMEI</option>
-                                    @foreach($allDevices as $d)
-                                        <option value="{{ $d->imei }}" {{ $imei === $d->imei ? 'selected' : '' }}>{{ $d->imei }} ({{ $d->status_label }})</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="text-transform:uppercase; letter-spacing:0.5px;">Start Date &amp; Time</label>
-                                <input type="text" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime" style="border-radius:8px;">
-                            </div>
-                            <div class="form-group">
-                                <label style="text-transform:uppercase; letter-spacing:0.5px;">End Date &amp; Time</label>
-                                <input type="text" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i:s') }}" @endif style="border-radius:8px;">
-                            </div>
-                            <div class="form-group">
-                                <label style="text-transform:uppercase; letter-spacing:0.5px;">Protocol</label>
-                                <select name="protocol_id" id="protocolSelect" class="form-control" style="width:100%; border-radius:8px;">
-                                    <option value="">No Validation</option>
-                                    @foreach($protocols as $protocol)
-                                        <option value="{{ $protocol->id }}" {{ (string) $selectedProtocolId === (string) $protocol->id ? 'selected' : '' }}>{{ $protocol->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label style="text-transform:uppercase; letter-spacing:0.5px;">Packet Type</label>
-                                <select name="packet_type_id" id="packetTypeSelect" class="form-control" style="width:100%; border-radius:8px;" {{ $selectedProtocolId ? '' : 'disabled' }}>
-                                    <option value="">Auto Detect</option>
-                                    @foreach($packetTypes as $packetType)
-                                        <option value="{{ $packetType->id }}" {{ (string) $selectedPacketTypeId === (string) $packetType->id ? 'selected' : '' }}>{{ $packetType->name }}{{ $packetType->header_identifier ? ' (' . $packetType->header_identifier . ')' : '' }}</option>
-                                    @endforeach
-                                </select>
-                                <div id="packetFieldsHint" class="protocol-fields-hint"></div>
-                            </div>
-                            
-                            <div class="form-group action-group" style="display:flex; flex-direction:column; gap:6px;">
-                                <label style="display:block; visibility:hidden; font-size:12px; margin:0;">Actions</label>
-                                <div style="display:flex; gap:10px; align-items:center;">
-                                    <button type="submit" class="btn btn-primary" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; box-shadow:0 4px 12px rgba(13, 110, 253, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
-                                        <i class="fa fa-filter" style="margin-right:8px;"></i> Apply
-                                    </button>
-                                    
-                                    @if($device)
-                                    <a id="downloadLogsBtn" href="{{ route($route_prefix . '.tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '']) }}" class="btn btn-success" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; background:#198754; border:none; box-shadow:0 4px 12px rgba(25, 135, 84, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
-                                        <i class="fa fa-download" style="margin-right:8px;"></i> Download ({{ $totalLogsCount }})
-                                    </a>
-                                    @endif
+                        <form method="GET" action="{{ route($route_prefix . '.tracker.index') }}" class="tracker-filter-form">
+                            <div class="filter-container">
+                                <div class="form-group" style="min-width: 200px;">
+                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">IMEI</label>
+                                    <select name="imei" class="form-control" style="width:100%; border-radius:8px;">
+                                        <option value="">Select IMEI</option>
+                                        @foreach($allDevices as $d)
+                                            <option value="{{ $d->imei }}" {{ $imei === $d->imei ? 'selected' : '' }}>{{ $d->imei }} ({{ $d->status_label }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">Start Date &amp; Time</label>
+                                    <input type="text" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime" style="border-radius:8px;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">End Date &amp; Time</label>
+                                    <input type="text" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i:s') }}" @endif style="border-radius:8px;">
+                                </div>
+                                <div class="form-group protocol-validation-toggle-wrap">
+                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">Protocol Validation</label>
+                                    <select name="protocol_validation" id="protocolValidationToggle" class="form-control" style="width:100%; border-radius:8px;">
+                                        <option value="0" {{ empty($protocolValidationEnabled) ? 'selected' : '' }}>OFF</option>
+                                        <option value="1" {{ !empty($protocolValidationEnabled) ? 'selected' : '' }}>ON</option>
+                                    </select>
+                                </div>
+                                <div class="form-group action-group" style="display:flex; flex-direction:column; gap:6px;">
+                                    <label style="display:block; visibility:hidden; font-size:12px; margin:0;">Actions</label>
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <button type="submit" class="btn btn-primary" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; box-shadow:0 4px 12px rgba(13, 110, 253, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
+                                            <i class="fa fa-filter" style="margin-right:8px;"></i> Apply
+                                        </button>
+                                        @if($device)
+                                        <a id="downloadLogsBtn" href="{{ route($route_prefix . '.tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '']) }}" class="btn btn-success" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; background:#198754; border:none; box-shadow:0 4px 12px rgba(25, 135, 84, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
+                                            <i class="fa fa-download" style="margin-right:8px;"></i> Download ({{ $totalLogsCount }})
+                                        </a>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
+                            <div id="protocolValidationPanel" class="protocol-settings-panel protocol-validation-group {{ empty($protocolValidationEnabled) ? 'is-hidden' : '' }}">
+                                <div class="protocol-settings-header">
+                                    <div>
+                                        <p class="protocol-settings-title">Protocol Validation Settings</p>
+                                        <p class="protocol-settings-subtitle">Choose the protocol and packet type here when validation mode is enabled.</p>
+                                    </div>
+                                </div>
+                                <div class="protocol-settings-grid">
+                                    <div class="form-group">
+                                        <label style="text-transform:uppercase; letter-spacing:0.5px;">Protocol</label>
+                                        <select name="protocol_id" id="protocolSelect" class="form-control" style="width:100%; border-radius:8px;" {{ !empty($protocolValidationEnabled) ? '' : 'disabled' }}>
+                                            <option value="">Select Protocol</option>
+                                            @foreach($protocols as $protocol)
+                                                <option value="{{ $protocol->id }}" {{ (string) $selectedProtocolId === (string) $protocol->id ? 'selected' : '' }}>{{ $protocol->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="text-transform:uppercase; letter-spacing:0.5px;">Packet Type</label>
+                                        <select name="packet_type_id" id="packetTypeSelect" class="form-control" style="width:100%; border-radius:8px;" {{ (!empty($protocolValidationEnabled) && $selectedProtocolId) ? '' : 'disabled' }}>
+                                            <option value="">Auto Detect</option>
+                                            @foreach($packetTypes as $packetType)
+                                                <option value="{{ $packetType->id }}" {{ (string) $selectedPacketTypeId === (string) $packetType->id ? 'selected' : '' }}>{{ $packetType->name }}{{ $packetType->header_identifier ? ' (' . $packetType->header_identifier . ')' : '' }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div id="packetFieldsHint" class="protocol-fields-hint"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </form>
 
                         @if($device)
@@ -302,14 +358,14 @@ use App\Helper\CommonHelper;
                                 <div class="col-md-3">
                                     <div class="alert alert-default">
                                         <strong>Start:</strong> 
-                                        {{ $device->effective_start_at ? CommonHelper::getDateAsTimeZone($device->effective_start_at, 'd-M-Y H:i:s') : 'N/A' }}
+                                        {{ isset($filters['start_at']) ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'd-M-Y H:i:s') : 'N/A' }}
                                     </div>
                                 </div>
 
                                 <div class="col-md-3">
                                     <div class="alert alert-default">
                                         <strong>End:</strong> 
-                                        {{ $device->effective_end_at ? CommonHelper::getDateAsTimeZone($device->effective_end_at, 'd-M-Y H:i:s') : 'N/A' }}
+                                        {{ isset($filters['end_at']) ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'd-M-Y H:i:s') : 'N/A' }}
                                     </div>
                                 </div>
 
@@ -390,7 +446,7 @@ use App\Helper\CommonHelper;
                                                     $validation = $log->validation ?? ['status' => 'none', 'label' => 'Not validated'];
                                                     $validationStatus = $validation['status'] ?? 'none';
                                                     $validationLabel = $validation['label'] ?? 'Not validated';
-                                                    $validationClass = $validationStatus === 'pass' ? 'validation-pass' : ($validationStatus === 'fail' ? 'validation-fail' : 'validation-neutral');
+                                                    $validationClass = !empty($protocolValidationEnabled) ? ($validationStatus === 'pass' ? 'validation-pass' : ($validationStatus === 'fail' ? 'validation-fail' : 'validation-neutral')) : '';
                                                     $badgeClass = $validationStatus === 'pass' ? 'validation-badge-pass' : ($validationStatus === 'fail' ? 'validation-badge-fail' : 'validation-badge-none');
                                                 @endphp
                                                 <div class="log-entry {{ $validationClass }}" data-log-id="{{ $log->id }}" data-validation='@json($validation)' style="padding:4px 0; border-bottom:1px dashed #333;">
@@ -398,8 +454,10 @@ use App\Helper\CommonHelper;
                                                         [#{{ $srNo++ }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : 'N/A' }}] 
                                                         Server IP: {{ $log->source_ip ?? 'N/A' }} 
                                                         @if($clientIp) | Client IP: {{ $clientIp }} @endif
-                                                        <span class="validation-badge {{ $badgeClass }}">{{ $validationLabel }}</span>
-                                                        @if(!empty($validation['packet_type_name'])) <span style="color:#cbd5e1;">{{ $validation['packet_type_name'] }}</span> @endif
+                                                        @if(!empty($protocolValidationEnabled))
+                                                            <span class="validation-badge {{ $badgeClass }}">{{ $validationLabel }}</span>
+                                                            @if(!empty($validation['packet_type_name'])) <span style="color:#cbd5e1;">{{ $validation['packet_type_name'] }}</span> @endif
+                                                        @endif
                                                     </div>
                                                     <div class="log-raw-packet">{{ $displayPacket }}</div>
                                                 </div>
@@ -459,7 +517,7 @@ use App\Helper\CommonHelper;
 
 
 @if($device)
-<div class="modal fade" id="packetValidationModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal" id="packetValidationModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -491,6 +549,7 @@ $(document).ready(function() {
     let reconnectHandle = null;
     let isLoadingLogs = false;
     let secondsLeft = 0;
+    let validationEnabled = @json(!empty($protocolValidationEnabled));
     let selectedProtocolId = @json($selectedProtocolId ?? '');
     let selectedPacketTypeId = @json($selectedPacketTypeId ?? '');
     const packetTypesUrlTemplate = @json(route($route_prefix . '.tracker.protocol.packet-types', ['protocol' => '__PROTOCOL__']));
@@ -536,19 +595,22 @@ $(document).ready(function() {
             displayPacket = displayPacket.replace(/&client_ip=\/?[^"&}\s,]+/, '');
         }
 
-        const validation = log.validation || null;
+        const validation = validationEnabled ? (log.validation || null) : null;
         const validationClasses = getValidationClasses(validation);
         const packetTypeName = validation && validation.packet_type_name ? validation.packet_type_name : '';
+        const rowClass = validationEnabled ? validationClasses.row : '';
+        const validationMeta = validationEnabled
+            ? `<span class="validation-badge ${validationClasses.badge}">${escapeHtml(validationClasses.label)}</span>${packetTypeName ? ' <span style="color:#cbd5e1;">' + escapeHtml(packetTypeName) + '</span>' : ''}`
+            : '';
 
-        $('#logContainer').append(`
-            <div class="log-entry ${validationClasses.row}" data-log-id="${log.id}" style="padding:4px 0; border-bottom:1px dashed #333;">
+        $("#logContainer").append(`
+            <div class="log-entry ${rowClass}" data-log-id="${log.id}" style="padding:4px 0; border-bottom:1px dashed #333;">
                 <div style="color:#9ea7ad; font-size:12px;">
                     [#${totalLogsCounter}] [${log.logged_at_formatted || log.logged_at}] 
                     Server IP: ${log.source_ip || 'N/A'} ${clientIp ? '| Client IP: ' + clientIp : ''}
-                    <span class="validation-badge ${validationClasses.badge}">${validationClasses.label}</span>
-                    ${packetTypeName ? '<span style="color:#cbd5e1;">' + $('<div>').text(packetTypeName).html() + '</span>' : ''}
+                    ${validationMeta}
                 </div>
-                <div class="log-raw-packet">${$('<div>').text(displayPacket).html()}</div>
+                <div class="log-raw-packet">${$("<div>").text(displayPacket).html()}</div>
             </div>
         `);
         lastLogId = Math.max(lastLogId, Number(log.id || 0));
@@ -574,15 +636,26 @@ $(document).ready(function() {
             href = href.split('?')[0];
         }
         
-        $btn.attr('href', href + '?start_at=' + encodeURIComponent(currentStart) + '&end_at=' + encodeURIComponent(currentEnd));
+        let query = '?start_at=' + encodeURIComponent(currentStart) + '&end_at=' + encodeURIComponent(currentEnd) + '&protocol_validation=' + (validationEnabled ? '1' : '0');
+        if (validationEnabled) {
+            query += '&protocol_id=' + encodeURIComponent(selectedProtocolId || '') + '&packet_type_id=' + encodeURIComponent(selectedPacketTypeId || '');
+        }
+        $btn.attr('href', href + query);
     }
 
     function updateDownloadCount(serverTotal) {
         if (serverTotal !== undefined) {
             totalLogsCounter = serverTotal;
         }
-        $('#downloadLogsBtn').html('<i class="fa fa-download" style="margin-right:8px;"></i> Download (' + totalLogsCounter + ')');
+        $("#downloadLogsBtn").html('<i class="fa fa-download" style="margin-right:8px;"></i> Download (' + totalLogsCounter + ')');
         updateDownloadUrl();
+    }
+
+    function getCurrentFilterWindow() {
+        return {
+            startAt: $('input[name="start_at"]').val() || startAt,
+            endAt: $('input[name="end_at"]').val() || endAt
+        };
     }
 
     function refreshCommandsTable() {
@@ -608,7 +681,10 @@ $(document).ready(function() {
         $('#autoReloadGroup').css('opacity', '0.5').find('select').attr('disabled', true);
         $('#streamStatus').text('(LIVE)').css('color', '#198754');
 
-        const streamUrl = `{{ route($route_prefix . '.tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}&protocol_id=${encodeURIComponent(selectedProtocolId || '')}&packet_type_id=${encodeURIComponent(selectedPacketTypeId || '')}`;
+        let streamUrl = `{{ route($route_prefix . '.tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}&protocol_validation=${validationEnabled ? '1' : '0'}`;
+        if (validationEnabled) {
+            streamUrl += `&protocol_id=${encodeURIComponent(selectedProtocolId || '')}&packet_type_id=${encodeURIComponent(selectedPacketTypeId || '')}`;
+        }
         sseSource = new EventSource(streamUrl);
 
         sseSource.addEventListener('log', function(e) {
@@ -644,7 +720,7 @@ $(document).ready(function() {
             $('#streamStatus').text('(RETRY)').css('color', '#d97706');
             clearReconnect();
             reconnectHandle = setTimeout(function() {
-                if (#streamToggle.val() === 'ON') {
+                if ($('#streamToggle').val() === 'ON') {
                     startSSE();
                 }
             }, 3000);
@@ -765,7 +841,11 @@ $(document).ready(function() {
             const originalHtml = $refreshBtn.html();
             $refreshBtn.prop('disabled', true).html('<i class="fa fa-refresh fa-spin" style="margin-right:6px;"></i> REFRESHING...');
 
-            const requestData = { last_id: lastLogId, protocol_id: selectedProtocolId || '', packet_type_id: selectedPacketTypeId || '' };
+            const requestData = { last_id: lastLogId, protocol_validation: validationEnabled ? 1 : 0 };
+            if (validationEnabled) {
+                requestData.protocol_id = selectedProtocolId || '';
+                requestData.packet_type_id = selectedPacketTypeId || '';
+            }
             
             // Auto-extend endAt if it's in the past (only for Today)
             const $endInput = $('input[name="end_at"]');
@@ -791,8 +871,9 @@ $(document).ready(function() {
                 }
             }
 
-            requestData.start_at = startAt;
-            requestData.end_at = endAt;
+            const currentWindow = getCurrentFilterWindow();
+            requestData.start_at = currentWindow.startAt;
+            requestData.end_at = currentWindow.endAt;
 
             $.ajax({
                 url: `{{ route($route_prefix . '.tracker.logs.fetch', ['imei' => '__IMEI__']) }}`.replace('__IMEI__', encodeURIComponent(imei)),
@@ -833,7 +914,8 @@ $(document).ready(function() {
         Object.keys(validationByLogId).forEach(key => delete validationByLogId[key]);
         lastLogId = 0;
         totalLogsCounter = 0;
-        $('#logContainer').html('<div id="emptyLogState" style="padding:20px; color:#ccc;">Loading logs with selected protocol validation...</div>');
+        $("#packetValidationModal").modal("hide");
+        $("#logContainer").html('<div id="emptyLogState" style="padding:20px; color:#ccc;">' + (validationEnabled ? 'Loading logs with selected protocol validation...' : 'Loading raw logs...') + '</div>');
         loadLatestLogs({ resetTimer: true });
     }
 
@@ -887,6 +969,9 @@ $(document).ready(function() {
     }
 
     function showPacketValidationModal(logId) {
+        if (!validationEnabled) {
+            return;
+        }
         const $row = $('.log-entry[data-log-id="' + logId + '"]');
         const validation = validationByLogId[Number(logId)] || null;
         const rawPacket = $row.find('.log-raw-packet').text();
@@ -930,28 +1015,66 @@ $(document).ready(function() {
         $('#packetValidationModal').modal('show');
     }
 
+    function syncProtocolValidationUI(resetSelection) {
+        const $groups = $('.protocol-validation-group');
+        const $protocolSelect = $('#protocolSelect');
+        if (!validationEnabled) {
+            $groups.addClass('is-hidden');
+            $protocolSelect.prop('disabled', true);
+            $packetSelect.prop('disabled', true).html('<option value="">Auto Detect</option>');
+            $("#packetFieldsHint").text('Protocol validation is disabled.');
+            $("#packetValidationModal").modal('hide');
+            if (resetSelection) {
+                selectedProtocolId = '';
+                selectedPacketTypeId = '';
+                $protocolSelect.val('');
+                $packetSelect.val('');
+            }
+            return;
+        }
+
+        $groups.removeClass('is-hidden');
+        $protocolSelect.prop('disabled', false);
+
+        if (selectedProtocolId) {
+            loadPacketTypes(selectedProtocolId, selectedPacketTypeId);
+        } else {
+            $packetSelect.prop('disabled', true).html('<option value="">Auto Detect</option>');
+            updatePacketFieldsHint();
+        }
+    }
+
+    $('#protocolValidationToggle').on('change', function() {
+        validationEnabled = $(this).val() === '1';
+        syncProtocolValidationUI(true);
+        resetLogListForValidationChange();
+    });
+
     $('#protocolSelect').on('change', function() {
         selectedProtocolId = $(this).val();
         selectedPacketTypeId = '';
         loadPacketTypes(selectedProtocolId, '');
-        resetLogListForValidationChange();
+        if (validationEnabled) {
+            resetLogListForValidationChange();
+        }
     });
 
     $('#packetTypeSelect').on('change', function() {
         selectedPacketTypeId = $(this).val();
         updatePacketFieldsHint();
-        resetLogListForValidationChange();
+        if (validationEnabled) {
+            resetLogListForValidationChange();
+        }
     });
 
     $('#logContainer').on('click', '.log-entry', function() {
+        if (!validationEnabled) {
+            return;
+        }
         showPacketValidationModal($(this).data('log-id'));
     });
 
-    if (selectedProtocolId) {
-        loadPacketTypes(selectedProtocolId, selectedPacketTypeId);
-    } else {
-        updatePacketFieldsHint();
-    }
+    syncProtocolValidationUI(false);
 
     $('#streamToggle').on('change', function() {
         if ($(this).val() === 'ON') {
@@ -992,7 +1115,7 @@ $(document).ready(function() {
             
             fetchCountXhr = $.ajax({
                 url: `{{ route($route_prefix . '.tracker.logs.fetch', ['imei' => '__IMEI__']) }}`.replace('__IMEI__', encodeURIComponent(imei)),
-                data: { start_at: currentStart, end_at: currentEnd, count_only: 1, protocol_id: selectedProtocolId || '', packet_type_id: selectedPacketTypeId || '' },
+                data: Object.assign({ start_at: currentStart, end_at: currentEnd, count_only: 1, protocol_validation: validationEnabled ? 1 : 0 }, validationEnabled ? { protocol_id: selectedProtocolId || '', packet_type_id: selectedPacketTypeId || '' } : {}),
                 cache: false
             }).done(function(response) {
                 if (response.total_count !== undefined) {
@@ -1013,7 +1136,11 @@ $(document).ready(function() {
         $('#logContainer').html('<div id="emptyLogState" style="padding:20px; color:#ccc;">Logs cleared from browser only.</div>');
     });
 
-    updateDownloadCount(); else {
+    updateDownloadCount();
+
+    if ($('#streamToggle').val() === 'ON') {
+        startSSE();
+    } else {
         resetAutoReload();
     }
     // AJAX Form Submission for Commands
@@ -1095,6 +1222,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+
+
+
 
 
 

@@ -65,9 +65,16 @@ echo "════════════════════════�
 // Function to send traffic data
 function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0)
 {
-function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0)
-{
     global $apiIngestUrl;
+
+    $date = date('dmY');
+    $time = date('His');
+    
+    // Construct the raw data packet in the new format
+    $rawData = sprintf(
+        "\$Header,JSDE14A,2.2.5,NR,1,L,%s,0,1,%s,%s,%f,N,%f,E,%0.1f,0.0,5,251.5,1.96,1.70,airtel,1,1,11.6,4.1,0,C,19,404,02,1E97,7CD5816,7AB0117,1E97,15,7AB0115,1E97,14,C61382A,1E97,1,0,0,0,0011,00,002922,0.000,0.000,0.000,()*6E,9671a97277f54791eb42b5764781dfdd0d071d6f0260b79fc2b6e6333b6d69bc",
+        $imei, $date, $time, $lat, $lon, $speed
+    );
 
     $payload = [
         "imei" => $imei,
@@ -78,7 +85,7 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0)
         "altitude" => rand(150, 250),
         "accuracy" => rand(5, 15),
         "timestamp" => date('Y-m-d H:i:s'),
-        "data" => "START,LAT:$lat,LON:$lon,SPEED:$speed,TIME:" . date('H:i:s') . ",END&client_ip=/106.211.177.176"
+        "data" => $rawData . "&client_ip=/106.211.177.176"
     ];
 
     $ch = curl_init($apiIngestUrl);
@@ -103,8 +110,6 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0)
 }
 
 // Function to send command
-function sendCommand($imei, $command, $commandName)
-{
 function sendCommand($imei, $command, $commandName)
 {
     global $baseUrl;
@@ -166,8 +171,6 @@ function sendCommand($imei, $command, $commandName)
 // Function to check command status
 function checkCommandStatus($imei, $commandName)
 {
-function checkCommandStatus($imei, $commandName)
-{
     global $baseUrl;
 
 
@@ -191,8 +194,6 @@ function checkCommandStatus($imei, $commandName)
 }
 
 // Function to execute queued command (update status to completed)
-function executeQueuedCommand($imei, $commandName, $command)
-{
 function executeQueuedCommand($imei, $commandName, $command)
 {
     global $baseUrl;

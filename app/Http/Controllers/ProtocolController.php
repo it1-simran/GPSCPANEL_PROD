@@ -73,6 +73,21 @@ class ProtocolController extends Controller
 
     public function storeFullConfiguration(Request $request, Protocol $protocol)
     {
+        $normalizedFields = collect($request->input('fields', []))
+            ->map(function ($field) {
+                if (!is_array($field)) {
+                    return $field;
+                }
+
+                $field['is_required'] = filter_var($field['is_required'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+
+                return $field;
+            })
+            ->values()
+            ->all();
+
+        $request->merge(['fields' => $normalizedFields]);
+
         $validator = Validator::make($request->all(), [
             'packet' => ['required', 'array'],
             'packet.id' => ['nullable', 'integer', 'exists:packet_types,id'],
@@ -205,5 +220,6 @@ class ProtocolController extends Controller
         return $value === '' ? null : $value;
     }
 }
+
 
 

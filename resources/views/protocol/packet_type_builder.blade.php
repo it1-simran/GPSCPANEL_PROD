@@ -4,6 +4,8 @@
 <link
   href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
   rel="stylesheet">
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <section id="main-content">
   <section class="wrapper protocol-builder-page">
     <div class="top-page-header">
@@ -275,7 +277,12 @@
     const delim = document.getElementById('analyzerDelim').value || ',';
 
     if (!rawInput) {
-      alert('Please paste a sample packet string first.');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Empty Input',
+        text: 'Please paste a sample packet string first.',
+        confirmButtonColor: 'var(--premium-primary)'
+      });
       return;
     }
 
@@ -363,7 +370,12 @@
       box.style.display = 'block';
       box.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
-      alert(messages.join('\n') || fallbackMessage || 'Please correct the validation errors.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: messages.join('\n') || fallbackMessage || 'Please correct the validation errors.',
+        confirmButtonColor: '#ef4444'
+      });
     }
   }
 
@@ -457,7 +469,7 @@
         regex_pattern: row.querySelector('[name="regex_pattern"]').value.trim(),
         min_value: row.querySelector('[name="min_value"]').value.trim(),
         max_value: row.querySelector('[name="max_value"]').value.trim(),
-        is_required: row.querySelector('[name="is_required"]').checked
+        is_required: row.querySelector('[name="is_required"]').checked ? 1 : 0
       });
     });
 
@@ -490,8 +502,16 @@
       data: { _token: "{{ csrf_token() }}", packet: packet, fields: collectBuilderFields() },
       success: function (res) {
         if (res.success) {
-          alert(res.message || 'Configuration saved successfully.');
-          window.location.href = res.redirect;
+          Swal.fire({
+            icon: 'success',
+            title: 'Saved!',
+            text: res.message || 'Configuration saved successfully.',
+            showConfirmButton: false,
+            timer: 1500,
+            iconColor: 'var(--premium-success)'
+          }).then(() => {
+            window.location.href = res.redirect;
+          });
           return;
         }
 
@@ -1120,6 +1140,7 @@
   }
 </style>
 @stop
+
 
 
 

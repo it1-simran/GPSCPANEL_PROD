@@ -43,10 +43,11 @@ class LiveTrackerController extends Controller
             $startAt = $endAt->copy()->subDays(7);
         }
 
-        $selectedProtocolId = $request->query('protocol_id');
-        $selectedPacketTypeId = $request->query('packet_type_id');
+        $protocolValidationEnabled = $request->boolean('protocol_validation') || $request->filled('protocol_id') || $request->filled('packet_type_id');
+        $selectedProtocolId = $protocolValidationEnabled ? $request->query('protocol_id') : null;
+        $selectedPacketTypeId = $protocolValidationEnabled ? $request->query('packet_type_id') : null;
         $protocols = Protocol::where('is_active', true)->orderBy('name')->get();
-        $packetTypes = $selectedProtocolId ? PacketType::where('protocol_id', $selectedProtocolId)->where('is_active', true)->orderBy('name')->get() : collect();
+        $packetTypes = ($protocolValidationEnabled && $selectedProtocolId) ? PacketType::where('protocol_id', $selectedProtocolId)->where('is_active', true)->orderBy('name')->get() : collect();
 
         $initialLogs = collect();
         $totalLogsCount = 0;
@@ -57,7 +58,7 @@ class LiveTrackerController extends Controller
                 ->limit(200)
                 ->get()
                 ->reverse()
-                ->map(fn ($log) => $this->attachValidationToLog($log, $selectedProtocolId, $selectedPacketTypeId))
+                ->map(fn ($log) => $this->attachValidationToLog($log, $protocolValidationEnabled, $selectedProtocolId, $selectedPacketTypeId))
                 ->values();
         }
 
@@ -86,6 +87,7 @@ class LiveTrackerController extends Controller
             'packetTypes' => $packetTypes,
             'selectedProtocolId' => $selectedProtocolId,
             'selectedPacketTypeId' => $selectedPacketTypeId,
+            'protocolValidationEnabled' => $protocolValidationEnabled,
         ]);
     }
 
@@ -107,10 +109,11 @@ class LiveTrackerController extends Controller
 
         $lastId = (int) $request->query('last_id', 0);
         $lastCommandTs = $request->query('last_command_ts', now()->toDateTimeString());
-        $protocolId = $request->query('protocol_id');
-        $packetTypeId = $request->query('packet_type_id');
+        $protocolValidationEnabled = $request->boolean('protocol_validation') || $request->filled('protocol_id') || $request->filled('packet_type_id');
+        $protocolId = $protocolValidationEnabled ? $request->query('protocol_id') : null;
+        $packetTypeId = $protocolValidationEnabled ? $request->query('packet_type_id') : null;
 
-        return new StreamedResponse(function () use ($device, $lastId, $lastCommandTs, $protocolId, $packetTypeId) {
+        return new StreamedResponse(function () use ($device, $lastId, $lastCommandTs, $protocolValidationEnabled, $protocolId, $packetTypeId) {
             $currentLastId = $lastId;
             $currentLastCommandTs = $lastCommandTs;
             $startTime = time();
@@ -149,7 +152,7 @@ class LiveTrackerController extends Controller
                     ->get();
 
                 foreach ($logs as $log) {
-                    $payload = $this->formatLogPayload($log, $protocolId, $packetTypeId);
+                    $payload = $this->formatLogPayload($log, $protocolValidationEnabled, $protocolId, $packetTypeId);
 
                     echo "event: log\n";
                     echo "data: " . json_encode($payload) . "\n\n";
@@ -201,8 +204,9 @@ class LiveTrackerController extends Controller
 
         [$startAt, $endAt] = $this->validatedWindow($device, $request);
         $lastId = (int) $request->query('last_id', 0);
-        $protocolId = $request->query('protocol_id');
-        $packetTypeId = $request->query('packet_type_id');
+        $protocolValidationEnabled = $request->boolean('protocol_validation') || $request->filled('protocol_id') || $request->filled('packet_type_id');
+        $protocolId = $protocolValidationEnabled ? $request->query('protocol_id') : null;
+        $packetTypeId = $protocolValidationEnabled ? $request->query('packet_type_id') : null;
 
         $baseQuery = $this->baseLogsQuery($device, $startAt, $endAt);
         $totalCount = $baseQuery->count();
@@ -218,7 +222,7 @@ class LiveTrackerController extends Controller
 
         $logs = $query->orderBy('id', 'asc')->limit(200)->get();
 
-        $formattedLogs = $logs->map(fn ($log) => $this->formatLogPayload($log, $protocolId, $packetTypeId));
+        $formattedLogs = $logs->map(fn ($log) => $this->formatLogPayload($log, $protocolValidationEnabled, $protocolId, $packetTypeId));
 
         $normalizedStatus = 'closed';
         if ($device->status === ImeiDevice::STATUS_ON) {
@@ -425,19 +429,45 @@ class LiveTrackerController extends Controller
     }
 
 
-    protected function formatLogPayload(ImeiLog $log, $protocolId = null, $packetTypeId = null): array
+    protected function formatLogPayload(ImeiLog $log, bool $protocolValidationEnabled = false, $protocolId = null, $packetTypeId = null): array
     {
         $logArray = $log->toArray();
         $logArray['logged_at_formatted'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null;
         $logArray['logged_at'] = $log->logged_at ? \App\Helper\CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : null;
-        $logArray['validation'] = $this->packetParserService->validateLog($log, $protocolId ? (int) $protocolId : null, $packetTypeId ? (int) $packetTypeId : null);
+        $logArray['validation'] = $protocolValidationEnabled
+            ? $this->packetParserService->validateLog($log, $protocolId ? (int) $protocolId : null, $packetTypeId ? (int) $packetTypeId : null)
+            : [
+                'enabled' => false,
+                'status' => 'none',
+                'label' => 'Not validated',
+                'is_valid' => null,
+                'packet_type_id' => null,
+                'packet_type_name' => null,
+                'protocol_name' => null,
+                'parsed_data' => [],
+                'errors' => [],
+                'field_summary' => [],
+            ];
 
         return $logArray;
     }
 
-    protected function attachValidationToLog(ImeiLog $log, $protocolId = null, $packetTypeId = null): ImeiLog
+    protected function attachValidationToLog(ImeiLog $log, bool $protocolValidationEnabled = false, $protocolId = null, $packetTypeId = null): ImeiLog
     {
-        $log->validation = $this->packetParserService->validateLog($log, $protocolId ? (int) $protocolId : null, $packetTypeId ? (int) $packetTypeId : null);
+        $log->validation = $protocolValidationEnabled
+            ? $this->packetParserService->validateLog($log, $protocolId ? (int) $protocolId : null, $packetTypeId ? (int) $packetTypeId : null)
+            : [
+                'enabled' => false,
+                'status' => 'none',
+                'label' => 'Not validated',
+                'is_valid' => null,
+                'packet_type_id' => null,
+                'packet_type_name' => null,
+                'protocol_name' => null,
+                'parsed_data' => [],
+                'errors' => [],
+                'field_summary' => [],
+            ];
 
         return $log;
     }

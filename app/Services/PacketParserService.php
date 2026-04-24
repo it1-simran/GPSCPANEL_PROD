@@ -12,7 +12,6 @@ class PacketParserService
     public function parse($rawData, $protocolId = null, $packetTypeId = null, ?ImeiLog $log = null): array
     {
         $rawData = $this->normalizeRawPacket($rawData);
-        $packetType = null;
 
         if ($packetTypeId) {
             $packetType = PacketType::with(['fields', 'protocol'])
@@ -22,6 +21,15 @@ class PacketParserService
 
             if (!$packetType) {
                 return $this->unmatchedResult('Selected packet type was not found for this protocol.');
+            }
+
+            if (!$this->isMatching($rawData, $packetType)) {
+                return $this->skippedResult(
+                    'Packet header does not match the selected packet type header (' . $packetType->header_identifier . ').',
+                    optional($packetType->protocol)->name,
+                    $packetType->id,
+                    $packetType->name
+                );
             }
 
             return $this->processPacket($rawData, $packetType, $log, true);
@@ -39,7 +47,10 @@ class PacketParserService
             }
         }
 
-        return $this->unmatchedResult('No matching protocol/packet type found.');
+        return $this->skippedResult(
+            'Packet header does not match any packet type for the selected protocol.',
+            $protocolId ? optional($protocols->first())->name : null
+        );
     }
 
     public function validateLog(ImeiLog $log, ?int $protocolId = null, ?int $packetTypeId = null): array
@@ -80,10 +91,6 @@ class PacketParserService
         $fieldSummary = [];
         $delimiter = $packetType->delimiter;
         $parts = $delimiter !== null && $delimiter !== '' ? explode($delimiter, $rawData) : null;
-
-        if ($forcedPacketType && $packetType->header_identifier && !$this->isMatching($rawData, $packetType)) {
-            $errors['_packet'] = 'Packet header does not match selected packet type header (' . $packetType->header_identifier . ').';
-        }
 
         foreach ($fields as $field) {
             $value = $this->extractFieldValue($rawData, $fields, $field, $parts);
@@ -244,6 +251,22 @@ class PacketParserService
         $rawData = trim((string) $rawData);
         $rawData = preg_replace('/&client_ip=\/?[^"&}\s,]+/', '', $rawData);
         return trim($rawData, " \t\n\r\0\x0B\"");
+    }
+
+    protected function skippedResult(string $message, ?string $protocolName = null, ?int $packetTypeId = null, ?string $packetTypeName = null): array
+    {
+        return [
+            'enabled' => true,
+            'status' => 'none',
+            'label' => 'Not applicable',
+            'is_valid' => null,
+            'packet_type_id' => $packetTypeId,
+            'packet_type_name' => $packetTypeName,
+            'protocol_name' => $protocolName,
+            'parsed_data' => [],
+            'errors' => ['_packet' => $message],
+            'field_summary' => [],
+        ];
     }
 
     protected function unmatchedResult(string $message): array

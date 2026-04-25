@@ -145,11 +145,17 @@ class LiveTrackerController extends Controller
                 }
 
                 // 1. Fetch NEW Logs
-                $logs = ImeiLog::where('imei_id', $device->id)
-                    ->where('id', '>', $currentLastId)
-                    ->orderBy('id', 'asc')
-                    ->limit(50)
-                    ->get();
+                $query = ImeiLog::where('imei_id', $device->id);
+                
+                if ($currentLastId === 0) {
+                    // If starting from 0, jump to latest 10 logs to give immediate context
+                    $logs = $query->orderBy('id', 'desc')->limit(10)->get()->reverse();
+                } else {
+                    $logs = $query->where('id', '>', $currentLastId)
+                        ->orderBy('id', 'asc')
+                        ->limit(50)
+                        ->get();
+                }
 
                 foreach ($logs as $log) {
                     $payload = $this->formatLogPayload($log, $protocolValidationEnabled, $protocolId, $packetTypeId);

@@ -100,7 +100,7 @@
               </div>
 
               <div class="form-actions text-right mt-4">
-                <a href="{{ route('protocols.packet-types', $protocol->id) }}"
+                <a href="{{ route('protocols.packet-types', $protocol->id) }}" style="margin-top: 10px;"
                   class="btn btn-glass-secondary">Cancel</a>
                 <button type="button" class="btn btn-premium-success btn-lg" onclick="saveMasterConfiguration(this)">
                   <i class="fa fa-save"></i> Save Configuration
@@ -118,7 +118,7 @@
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content overflow-hidden">
       <div class="modal-header-premium">
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center" style="gap: 10px;">
           <div class="header-icon mr-3">
             <i class="fa fa-magic"></i>
           </div>
@@ -130,8 +130,8 @@
         <button type="button" class="close-premium" data-dismiss="modal">&times;</button>
       </div>
       <div class="modal-body p-4 bg-light-soft">
-        <div class="info-card mb-4">
-          <div class="d-flex align-items-start">
+        <div class="info-card mb-4" style="margin-bottom: 20px;">
+          <div class="d-flex align-items-start" style="align-items: flex-start; gap: 10px;">
             <i class="fa fa-info-circle text-primary mt-1 mr-3 fa-lg"></i>
             <p class="mb-0 text-muted" style="line-height: 1.5;">
               Paste your raw packet string below. The analyzer will detect fields based on the delimiter and populate
@@ -153,7 +153,7 @@
               <label class="premium-label-bold">Separator / Delimiter</label>
               <div class="input-group">
                 <div class="input-group-prepend">
-                  <span class="input-group-text bg-white border-right-0"><i class="fa fa-cut text-muted"></i></span>
+                  <span class="input-group-text bg-white border-right-0"></span>
                 </div>
                 <input type="text" id="analyzerDelim" value=","
                   class="form-control premium-input border-left-0 font-weight-bold text-primary" maxlength="1"

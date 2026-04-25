@@ -163,13 +163,21 @@ use App\Helper\CommonHelper;
 .protocol-settings-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
-    align-items: flex-end;
+    gap: 20px;
+    align-items: flex-start;
 }
 .protocol-settings-grid .form-group {
     margin-bottom: 0;
     flex: 1;
     min-width: 220px;
+}
+.protocol-settings-panel .form-control {
+    border: 1px solid #d1d5db;
+    transition: all 0.2s ease;
+}
+.protocol-settings-panel .form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 
@@ -451,7 +459,7 @@ use App\Helper\CommonHelper;
                                                 @endphp
                                                 <div class="log-entry {{ $validationClass }}" data-log-id="{{ $log->id }}" data-validation='@json($validation)' style="padding:4px 0; border-bottom:1px dashed #333;">
                                                     <div style="color:#9ea7ad; font-size:12px;">
-                                                        [#{{ $srNo++ }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : 'N/A' }}] 
+                                                        [#{{ $srNo++ }}] [#{{ $log->id }}] [{{ $log->logged_at ? CommonHelper::getDateAsTimeZone($log->logged_at, 'Y-m-d H:i:s') : 'N/A' }}] 
                                                         Server IP: {{ $log->source_ip ?? 'N/A' }} 
                                                         @if($clientIp) | Client IP: {{ $clientIp }} @endif
                                                         @if(!empty($protocolValidationEnabled))
@@ -606,7 +614,7 @@ $(document).ready(function() {
         $("#logContainer").append(`
             <div class="log-entry ${rowClass}" data-log-id="${log.id}" style="padding:4px 0; border-bottom:1px dashed #333;">
                 <div style="color:#9ea7ad; font-size:12px;">
-                    [#${totalLogsCounter}] [${log.logged_at_formatted || log.logged_at}] 
+                    [#${totalLogsCounter}] [#${log.id}] [${log.logged_at_formatted || log.logged_at}] 
                     Server IP: ${log.source_ip || 'N/A'} ${clientIp ? '| Client IP: ' + clientIp : ''}
                     ${validationMeta}
                 </div>
@@ -849,25 +857,15 @@ $(document).ready(function() {
             
             // Auto-extend endAt if it's in the past (only for Today)
             const $endInput = $('input[name="end_at"]');
-            const endVal = $endInput.val();
-            if (endVal) {
-                const endD = new Date(endVal);
+            const endPicker = $endInput[0] ? $endInput[0]._flatpickr : null;
+            
+            if (endPicker && endPicker.selectedDates[0]) {
+                const endD = endPicker.selectedDates[0];
                 const nowD = new Date();
-                // If end date is today and in the past, bump it to now in the UI
-                if (endD < nowD && endD.toDateString() === nowD.toDateString()) {
-                    const nowStr = nowD.getFullYear() + '-' + 
-                                  String(nowD.getMonth() + 1).padStart(2, '0') + '-' + 
-                                  String(nowD.getDate()).padStart(2, '0') + 'T' + 
-                                  String(nowD.getHours()).padStart(2, '0') + ':' + 
-                                  String(nowD.getMinutes()).padStart(2, '0') + ':' + 
-                                  String(nowD.getSeconds()).padStart(2, '0');
-                    
-                    const endPicker = $endInput[0]._flatpickr;
-                    if (endPicker) {
-                        endPicker.setDate(nowD);
-                    } else {
-                        $endInput.val(nowStr);
-                    }
+                
+                // If end date is today and more than 30 seconds in the past, bump it
+                if (nowD - endD > 30000 && endD.toDateString() === nowD.toDateString()) {
+                    endPicker.setDate(nowD);
                 }
             }
 
@@ -880,6 +878,9 @@ $(document).ready(function() {
                 data: requestData,
                 cache: false
             }).done(function(response) {
+                if (requestData.last_id === 0 && response.total_count !== undefined) {
+                    totalLogsCounter = response.total_count - (response.logs || []).length;
+                }
                 (response.logs || []).forEach(function(log) {
                     appendLog(log);
                 });
@@ -1018,6 +1019,7 @@ $(document).ready(function() {
     function syncProtocolValidationUI(resetSelection) {
         const $groups = $('.protocol-validation-group');
         const $protocolSelect = $('#protocolSelect');
+        const $packetSelect = $('#packetTypeSelect');
         if (!validationEnabled) {
             $groups.addClass('is-hidden');
             $protocolSelect.prop('disabled', true);
@@ -1100,6 +1102,11 @@ $(document).ready(function() {
     let countUpdateTimeout = null;
     $('input[name="start_at"], input[name="end_at"]').on('change', function() {
         updateDownloadUrl();
+        
+        // Reset tracking state if filter changes
+        lastLogId = 0;
+        addedLogIds.clear();
+        $('#logContainer').html('<div id="emptyLogState" style="padding:20px; color:#ccc;">Filters changed. Click REFRESH or APPLY to update logs.</div>');
         
         // Dynamically fetch log count for the new filter without reloading logs
         clearTimeout(countUpdateTimeout);
@@ -1214,9 +1221,9 @@ document.addEventListener('DOMContentLoaded', function() {
     flatpickr('.flatpickr-datetime', {
         enableTime: true,
         enableSeconds: true,
-        dateFormat: "Y-m-d\\TH:i:S",
+        dateFormat: "Y-m-d\\TH:i:s",
         altInput: true,
-        altFormat: "Y-m-d H:i:S",
+        altFormat: "Y-m-d H:i:s",
         time_24hr: true
     });
 });

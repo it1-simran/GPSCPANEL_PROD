@@ -294,7 +294,7 @@
     }
 
     .protocol-actions {
-        display: flex;
+        /* display: flex; */
         align-items: center;
         justify-content: center;
         gap: 8px;

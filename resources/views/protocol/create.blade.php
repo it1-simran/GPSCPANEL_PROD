@@ -56,7 +56,7 @@
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fa fa-save"></i> Create Protocol
                                     </button>
-                                    <a href="{{ route('protocols.index') }}" class="btn btn-default">Cancel</a>
+                                    <a href="{{ route('protocols.index') }}" class="btn btn-default" style="margin-top: 10px;">Cancel</a>
                                 </div>
                             </div>
                         </form>

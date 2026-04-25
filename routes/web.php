@@ -88,6 +88,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
         Route::post('/admin/tracker/{device}/commands', [\App\Http\Controllers\LiveTrackerController::class, 'queueCommand'])->name('admin.tracker.commands.store');
         Route::get('/admin/tracker/{device}/download', [\App\Http\Controllers\LiveTrackerController::class, 'downloadLogs'])->name('admin.tracker.logs.download');
         Route::get('/admin/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs'])->name('admin.tracker.logs.fetch');
+        Route::get('/admin/tracker/protocols/{protocol}/packet-types', [\App\Http\Controllers\LiveTrackerController::class, 'packetTypes'])->name('admin.tracker.protocol.packet-types');
 
         Route::get('/admin/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('imei-devices.index');
         Route::get('/admin/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('imei-devices.create');
@@ -250,6 +251,21 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::post('/admin/request/send', [GuestUserController::class, 'send'])->name('admin.request.send');
     Route::post('/admin/get-firmware-with-models', [FirmwareController::class, 'getFirmwareWithModel']);
     Route::post('/admin/get-firmware', [FirmwareController::class, 'getFirmware']);
+
+    /* ======================= Protocol Management Routes ======================= */
+    Route::get('/admin/protocols', [App\Http\Controllers\ProtocolController::class, 'index'])->name('protocols.index');
+    Route::get('/admin/protocols/create', [App\Http\Controllers\ProtocolController::class, 'create'])->name('protocols.create');
+    Route::post('/admin/protocols', [App\Http\Controllers\ProtocolController::class, 'store'])->name('protocols.store');
+    Route::get('/admin/protocols/{protocol}/edit', [App\Http\Controllers\ProtocolController::class, 'edit'])->name('protocols.edit');
+    Route::put('/admin/protocols/{protocol}', [App\Http\Controllers\ProtocolController::class, 'update'])->name('protocols.update');
+    Route::delete('/admin/protocols/{protocol}', [App\Http\Controllers\ProtocolController::class, 'destroy'])->name('protocols.destroy');
+    
+    Route::get('/admin/protocols/{protocol}/packet-types', [App\Http\Controllers\ProtocolController::class, 'viewPacketTypes'])->name('protocols.packet-types');
+    Route::get('/admin/protocols/{protocol}/packet-types/create', [App\Http\Controllers\ProtocolController::class, 'createPacketType'])->name('protocols.packet-types.create');
+    Route::post('/admin/protocols/{protocol}/packet-types', [App\Http\Controllers\ProtocolController::class, 'storePacketType'])->name('protocols.packet-types.store');
+    
+    Route::get('/admin/packet-types/{packet_type}/fields', [App\Http\Controllers\ProtocolController::class, 'viewFields'])->name('protocols.fields');
+    Route::post('/admin/protocols/{protocol}/packet-types/store-full', [App\Http\Controllers\ProtocolController::class, 'storeFullConfiguration'])->name('protocols.packet-types.store-full');
 });
 
 Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function () {
@@ -376,6 +392,7 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::post('/tracker/{device}/commands', [\App\Http\Controllers\LiveTrackerController::class, 'queueCommand'])->name('support.tracker.commands.store');
     Route::get('/tracker/{device}/download', [\App\Http\Controllers\LiveTrackerController::class, 'downloadLogs'])->name('support.tracker.logs.download');
     Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs'])->name('support.tracker.logs.fetch');
+    Route::get('/tracker/protocols/{protocol}/packet-types', [\App\Http\Controllers\LiveTrackerController::class, 'packetTypes'])->name('support.tracker.protocol.packet-types');
 
     Route::get('/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('support.imei-devices.index');
     Route::get('/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('support.imei-devices.create');
@@ -422,3 +439,4 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::post('/get-firmware-with-models', [FirmwareController::class, 'getFirmwareWithModel']);
     Route::post('/get-firmware', [FirmwareController::class, 'getFirmware']);
 });
+

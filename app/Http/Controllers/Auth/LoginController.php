@@ -575,33 +575,28 @@ class LoginController extends Controller
     }
     public function sendOtp(Request $request)
     {
-        $otp = Str::random(6); // Generate OTP
         $email = $request->email;
-        // Update OTP for the user
+        $user = DB::table('writers')->where('email', $email)->first();
+        
+        if (!$user) {
+            return json_encode(['status' => 404, 'message' => 'Email not found.']);
+        }
+
+        $otp = rand(100000, 999999);
+        
         $updateCount = DB::table('writers')
             ->where('email', $email)
             ->update(['otp' => $otp]);
-        // $mailText = ' <h2>Your OTP for Login</h2><p>Your OTP is: <strong>'.$otp.'</strong></p><p>This OTP is valid for a limited time and should not be shared with anyone.</p>';
-        // try {
-        //     $otp = strval(random_int(100000, 999999)); // Generate OTP
 
-        //     // Send email with OTP
-        //     Mail::to($email)->send(new OtpMail($otp));
-
-        //     return "OTP sent successfully!";
-        // } catch (Exception $e) {
-        //     // Log the exception or handle it gracefully
-        //     return "Failed to send OTP: " . $e->getMessage();
-        // }
-
-
-        // Mail::send([], [], function($message) use ($request, $otp) {
-        //     $message->to($request->email)
-        //             ->subject('Your OTP for verification')
-        //             ->setBody('Your OTP is: ' . $otp);
-        // });
         if ($updateCount) {
-            return json_encode(['status' => 200, 'success' => 'OTP updated successfully.', 'email' => $email]);
+            try {
+                Mail::to($email)->send(new OtpMail($otp, $user->name));
+                return json_encode(['status' => 200, 'success' => 'OTP sent successfully.', 'email' => $email]);
+            } catch (\Throwable $e) {
+                return json_encode(['status' => 500, 'message' => 'Failed to send email: ' . $e->getMessage()]);
+            }
+        } else {
+            return json_encode(['status' => 500, 'message' => 'Error updating OTP.']);
         }
     }
     public function verifyOtp(Request $request)

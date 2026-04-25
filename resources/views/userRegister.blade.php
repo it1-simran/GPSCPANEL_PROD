@@ -325,7 +325,7 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
             let formData = $('#registerForm').serialize();
 
             $.ajax({
-                url: "{{ route('send.otp') }}",
+                url: "{{ route('guest.send.otp') }}",
                 type: "POST",
                 data: formData + '&_token={{ csrf_token() }}',
                 success: function(res) {
@@ -420,7 +420,7 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
 
             // Verify OTP via AJAX
             $.ajax({
-                url: "{{ url('/verify-otp') }}",
+                url: "{{ route('guest.verify.otp') }}",
                 type: "POST",
                 data: {
                     _token: "{{ csrf_token() }}",

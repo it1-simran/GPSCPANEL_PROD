@@ -76,8 +76,8 @@ Route::get('/register/user', [GuestUserController::class, 'index'])->name('regis
 Route::post('/register/create', [GuestUserController::class, 'store'])->name('register.user.store');
 Route::get('/device-category/config/{id}', [GuestUserController::class, 'getDeviceCategoryConfig']);
 Route::patch('/approval/update/{id}', [GuestUserController::class, 'updateStatus'])->name('approval.update');
-Route::post('/send-otp', [GuestUserController::class, 'sendOtp'])->name('send.otp');
-Route::post('/verify-otp', [GuestUserController::class, 'verifyOtp']);
+Route::post('/guest/send-otp', [GuestUserController::class, 'sendOtp'])->name('guest.send.otp');
+Route::post('/guest/verify-otp', [GuestUserController::class, 'verifyOtp'])->name('guest.verify.otp');
 Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteRequest'])->name('request.delete');
     Route::middleware('check.role:admin')->group(function () {
         /* ======================= IMEI Tracking Management (Live Tracker) ======================= */

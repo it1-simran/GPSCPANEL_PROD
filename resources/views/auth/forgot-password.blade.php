@@ -12,17 +12,17 @@
    <link rel="shortcut icon" href="">
    <title>GPS Control Panel</title>
    <!-- Start Global plugin css -->
-   <link href="../../../assets/css/global-plugins.css" rel="stylesheet">
-   <link href="../../../assets/vendors/jquery-icheck/skins/all.css" rel="stylesheet" />
+   <link href="{{ asset('assets/css/global-plugins.css') }}" rel="stylesheet">
+   <link href="{{ asset('assets/vendors/jquery-icheck/skins/all.css') }}" rel="stylesheet" />
    <!-- Custom styles for this template -->
-   <link href="../../../assets/css/theme.css" rel="stylesheet">
-   <link href="../../../assets/css/style-responsive.css" rel="stylesheet" />
-   <link href="../../../assets/css/class-helpers.css" rel="stylesheet" />
+   <link href="{{ asset('assets/css/theme.css') }}" rel="stylesheet">
+   <link href="{{ asset('assets/css/style-responsive.css') }}" rel="stylesheet" />
+   <link href="{{ asset('assets/css/class-helpers.css') }}" rel="stylesheet" />
    <!--Color schemes-->
-   <link href="../../../assets/css/colors/green.css" rel="stylesheet">
+   <link href="{{ asset('assets/css/colors/green.css') }}" rel="stylesheet">
    <!--Fonts-->
-   <link href="../../../assets/fonts/Indie-Flower/indie-flower.css" rel="stylesheet" />
-   <link href="../../../assets/fonts/Open-Sans/open-sans.css?family=Open+Sans:300,400,700" rel="stylesheet" />
+   <link href="{{ asset('assets/fonts/Indie-Flower/indie-flower.css') }}" rel="stylesheet" />
+   <link href="{{ asset('assets/fonts/Open-Sans/open-sans.css') }}?family=Open+Sans:300,400,700" rel="stylesheet" />
 </head>
 
 <body id="default-scheme" class="form-background">
@@ -40,7 +40,8 @@
                   @csrf
                   <div class="form-group ">
                      <label for="email-address">{{ __('E-Mail Address') }} <sup class='text-danger'>*</sup></label>
-                     <input id="email" type="email" class="form-control{{ $errors->has('email') ? ' is-invalid' : '' }}" name="email" value="{{ old('email') }}" required autofocus @if ($errors->has('email')) />
+                     <input id="email" type="email" class="form-control{{ $errors->has('email') ? ' is-invalid' : '' }}" name="email" value="{{ old('email') }}" required autofocus />
+                     @if ($errors->has('email'))
                      <span class="invalid-feedback" role="alert">
                         <strong>{{ $errors->first('email') }}</strong>
                      </span>
@@ -60,8 +61,7 @@
             </div>
 
             <!--/form-body-->
-         </div>
-         <div class="form-body bg-white padding-20 otpCheckForm" style='display: none;'>
+            <div class="form-body bg-white padding-20 otpCheckForm" style='display: none;'>
             <p class="info">An otp has been sent to <span id="getSendMail"></span></p>
             <form method="POST" name="verifyCode" id="verifyCode" action="" onsubmit="return false" aria-label="{{ __('Login') }}">
                @csrf
@@ -121,25 +121,20 @@
                </div>
             </form>
          </div>
-         <!--/col-md-12-->
+         </div>
+         <!--/col-md-4-->
       </div>
       <!--/row-->
       <!--======== END LOGIN ========-->
       <!--======== END LOGIN ========-->
    </section>
-   <script src="../../../assets/js/global-plugins.js"></script>
+   <script src="{{ asset('assets/js/global-plugins.js') }}"></script>
    <!--common script init for all pages-->
-   <script src="../../../assets/js/theme.js" type="text/javascript"></script>
-   <!-- For Form Elements Page Only -->
-   <script src="../../../assets/js/forms.js"></script>
-   <script src="../../../assets/js/form-validation.js"></script>
-   <script src="../../../assets/js/form-wizard.js"></script>
-   <script src="../../../assets/js/form-plupload.js"></script>
-   <script src="../../../assets/js/form-x-editable.js"></script>
-   <!-- For Login and registration page Only -->
-   <script src="../../../assets/vendors/backstretch/jquery.backstretch.min.js"></script>
-   <script src="../../../assets/js/registration-login.js"></script>
-   <script type="text/javascript">
+    <script src="{{ asset('assets/js/theme.js') }}"></script>
+    <script src="{{ asset('assets/vendors/backstretch/jquery.backstretch.min.js') }}"></script>
+    <script src="{{ asset('assets/js/registration-login.js') }}"></script>
+    <script src="{{ asset('assets/vendors/jquery-icheck/icheck.min.js') }}"></script>
+    <script type="text/javascript">
       $(document).ready(function() {  
          $('#forgotPassword').submit(function() {
             var formData = $(this).serialize();
@@ -163,7 +158,13 @@
                   // Update your HTML with the received data
                },
                error: function(xhr) {
-                  console.log(xhr.responseText); // Handle error
+                  let errorMsg = "Something went wrong. Please try again.";
+                  try {
+                      let res = JSON.parse(xhr.responseText);
+                      if (res.message) errorMsg = res.message;
+                  } catch(e) {}
+                  alert(errorMsg);
+                  console.log(xhr.responseText);
                }
             });
 
@@ -186,7 +187,13 @@
                   // Update your HTML with the received data
                },
                error: function(xhr) {
-                  console.log(xhr.responseText); // Handle error
+                  let errorMsg = "Something went wrong. Please try again.";
+                  try {
+                      let res = JSON.parse(xhr.responseText);
+                      if (res.message) errorMsg = res.message;
+                  } catch(e) {}
+                  alert(errorMsg);
+                  console.log(xhr.responseText);
                }
             });
          });
@@ -212,7 +219,13 @@
                   }
                },
                error: function(xhr) {
-                  console.log(xhr.responseText); // Handle error
+                  let errorMsg = "Something went wrong. Please try again.";
+                  try {
+                      let res = JSON.parse(xhr.responseText);
+                      if (res.message) errorMsg = res.message;
+                  } catch(e) {}
+                  alert(errorMsg);
+                  console.log(xhr.responseText);
                }
             });
          });

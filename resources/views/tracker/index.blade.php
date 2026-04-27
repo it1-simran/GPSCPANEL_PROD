@@ -255,10 +255,224 @@ use App\Helper\CommonHelper;
 .validation-badge-none { background:#e5e7eb; color:#374151; }
 .log-entry { cursor:pointer; }
 .validation-modal-table th { width:34%; background:#f8fafc; }
-.validation-error-list { margin:0; padding-left:18px; color:#b91c1c; }
+.validation-error-list { 
+    margin: 0; 
+    padding: 0; 
+    color: #b91c1c; 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 8px 20px; 
+    list-style: none;
+}
+.validation-error-list li {
+    font-size: 12px;
+    position: relative;
+    padding-left: 15px;
+}
+.validation-error-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #ef4444;
+    font-weight: bold;
+}
+@media (max-width: 768px) {
+    .validation-error-list {
+        grid-template-columns: 1fr;
+    }
+}
 .protocol-fields-hint { color:#64748b; font-size:11px; margin-top:4px; min-height:14px; }
 .protocol-validation-group.is-hidden { display:none !important; }
 .protocol-validation-toggle-wrap { min-width: 160px; }
+
+/* Modern Modal Styles */
+.packet-details-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.packet-stats-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+.stat-item {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+}
+.stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+.stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.raw-packet-wrapper {
+    position: relative;
+}
+.raw-packet-box {
+    max-height: 85px;
+    overflow-y: auto;
+    background: #0f172a;
+    color: #38bdf8;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    border: 1px solid #1e293b;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+}
+.raw-packet-box::-webkit-scrollbar {
+    width: 6px;
+}
+.raw-packet-box::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+.raw-packet-box::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+}
+.raw-packet-box::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+.field-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+.field-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.field-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+}
+.field-card.is-invalid {
+    border-left: 4px solid #ef4444;
+    background: #fffafa;
+}
+.field-card.is-valid {
+    border-left: 4px solid #10b981;
+}
+.field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.field-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.field-value-box {
+    margin: 4px 0;
+}
+.field-value {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 3px 8px;
+    border-radius: 6px;
+    word-break: break-all;
+    display: inline-block;
+    min-width: 40px;
+}
+.field-meta {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: auto;
+    padding-top: 6px;
+    display: flex;
+    justify-content: space-between;
+}
+.error-text {
+    font-size: 11px;
+    color: #dc2626;
+    margin-top: 6px;
+    font-weight: 600;
+    background: #fef2f2;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+#packetValidationModal .modal-lg {
+    max-width: 90% !important;
+}
+#packetValidationModalBody {
+    max-height: 80vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    background: #fdfdfd;
+}
+/* Premium Scrollbar for Modal Body */
+#packetValidationModalBody::-webkit-scrollbar {
+    width: 8px;
+}
+#packetValidationModalBody::-webkit-scrollbar-track {
+    background: #f8fafc;
+    border-radius: 10px;
+}
+#packetValidationModalBody::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+    border: 2px solid #f8fafc;
+}
+#packetValidationModalBody::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+/* Premium Scrollbar for Modal Body */
+#packetValidationModalBody::-webkit-scrollbar {
+    width: 8px;
+}
+#packetValidationModalBody::-webkit-scrollbar-track {
+    background: #f8fafc;
+    border-radius: 10px;
+}
+#packetValidationModalBody::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+    border: 2px solid #f8fafc;
+}
+#packetValidationModalBody::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+.field-status-icon {
+    font-size: 12px;
+}
+.status-pass { color: #10b981; }
+.status-fail { color: #ef4444; }
+
+@media (max-width: 768px) {
+    .field-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
 
 </style>
 
@@ -968,7 +1182,6 @@ $(document).ready(function() {
     function escapeHtml(value) {
         return $('<div>').text(value === null || value === undefined ? '' : value).html();
     }
-
     function showPacketValidationModal(logId) {
         if (!validationEnabled) {
             return;
@@ -976,45 +1189,75 @@ $(document).ready(function() {
         const $row = $('.log-entry[data-log-id="' + logId + '"]');
         const validation = validationByLogId[Number(logId)] || null;
         const rawPacket = $row.find('.log-raw-packet').text();
-        let html = '<p><strong>Raw Packet:</strong></p><pre style="white-space:pre-wrap; background:#f8fafc; border:1px solid #e5e7eb; padding:10px;">' + escapeHtml(rawPacket) + '</pre>';
+        
+        let html = '<div class="packet-details-container" style="display:flex; flex-direction:column; gap:20px;">';
+        
+        // Raw Packet
+        html += '<div class="raw-packet-wrapper">';
+        html += '<p style="margin-bottom:8px; font-weight:700; color:#334155; font-size:13px;"><i class="fa fa-code"></i> Raw Packet:</p>';
+        html += '<div class="raw-packet-box">' + escapeHtml(rawPacket) + '</div>';
+        html += '</div>';
 
         if (!validation || validation.status === 'none') {
-            html += '<div class="alert alert-info">No protocol validation was applied to this packet.</div>';
+            html += '<div class="alert alert-info" style="margin-top:10px;">No protocol validation was applied to this packet.</div>';
+            html += '</div>';
             $('#packetValidationModalBody').html(html);
             $('#packetValidationModal').modal('show');
             return;
         }
 
         const pass = validation.status === 'pass';
-        html += '<div class="alert ' + (pass ? 'alert-success' : 'alert-danger') + '"><strong>Status:</strong> ' + escapeHtml(validation.label || (pass ? 'Pass' : 'Fail')) + '</div>';
-        html += '<table class="table table-bordered validation-modal-table"><tbody>';
-        html += '<tr><th>Protocol</th><td>' + escapeHtml(validation.protocol_name || 'N/A') + '</td></tr>';
-        html += '<tr><th>Packet Type</th><td>' + escapeHtml(validation.packet_type_name || 'N/A') + '</td></tr>';
-        html += '</tbody></table>';
+        
+        // Stats Bar
+        html += '<div class="packet-stats-bar">';
+        html += '<div class="stat-item"><span class="stat-label">Status</span><span class="stat-value ' + (pass ? 'status-pass' : 'status-fail') + '">' + 
+                (pass ? '<i class="fa fa-check-circle"></i> ' : '<i class="fa fa-times-circle"></i> ') + 
+                escapeHtml(validation.label || (pass ? 'Pass' : 'Fail')) + '</span></div>';
+        html += '<div class="stat-item"><span class="stat-label">Protocol</span><span class="stat-value">' + escapeHtml(validation.protocol_name || 'N/A') + '</span></div>';
+        html += '<div class="stat-item"><span class="stat-label">Packet Type</span><span class="stat-value">' + escapeHtml(validation.packet_type_name || 'N/A') + '</span></div>';
+        html += '</div>';
 
+        // Global Errors (if any) - 3 Column Layout
         const errors = validation.errors || {};
         const errorKeys = Object.keys(errors);
         if (errorKeys.length) {
-            html += '<h5>Errors</h5><ul class="validation-error-list">';
+            html += '<div style="background:#fef2f2; border:1px solid #fecaca; padding:12px; border-radius:8px;">';
+            html += '<h5 style="margin:0 0 10px 0; color:#991b1b; font-size:14px; font-weight:700;"><i class="fa fa-warning"></i> Global Validation Errors</h5>';
+            html += '<ul class="validation-error-list">';
             errorKeys.forEach(function(key) { html += '<li><strong>' + escapeHtml(key) + ':</strong> ' + escapeHtml(errors[key]) + '</li>'; });
-            html += '</ul>';
+            html += '</ul></div>';
         }
-
-        html += '<h5 style="margin-top:15px;">Field Summary</h5><table class="table table-bordered table-striped"><thead><tr><th>Field</th><th>Value</th><th>Rule</th><th>Status</th><th>Error</th></tr></thead><tbody>';
+        
+        // Field Summary Section
+        html += '<div>';
+        html += '<h5 style="margin-bottom:12px; font-weight:700; color:#334155; font-size:14px;"><i class="fa fa-list"></i> Field Summary</h5>';
+        html += '<div class="field-summary-grid">';
+        
         (validation.field_summary || []).forEach(function(field) {
-            html += '<tr>' +
-                '<td>' + escapeHtml(field.name) + '</td>' +
-                '<td><code>' + escapeHtml(field.value) + '</code></td>' +
-                '<td>' + escapeHtml((field.data_type || '') + (field.validation_type && field.validation_type !== 'none' ? ' / ' + field.validation_type : '')) + '</td>' +
-                '<td><span class="label ' + (field.is_valid ? 'label-success' : 'label-danger') + '">' + (field.is_valid ? 'Pass' : 'Fail') + '</span></td>' +
-                '<td>' + escapeHtml(field.error || '') + '</td>' +
-            '</tr>';
+            const fieldPass = field.is_valid;
+            html += '<div class="field-card ' + (fieldPass ? 'is-valid' : 'is-invalid') + '">';
+            html += '<div class="field-header">';
+            html += '<span class="field-name" title="' + escapeHtml(field.name) + '">' + escapeHtml(field.name) + '</span>';
+            html += '<span class="field-status-icon ' + (fieldPass ? 'status-pass' : 'status-fail') + '"><i class="fa ' + (fieldPass ? 'fa-check' : 'fa-warning') + '"></i></span>';
+            html += '</div>';
+            html += '<div class="field-value-box"><span class="field-value">' + (field.value === "" ? "<em>empty</em>" : escapeHtml(field.value)) + '</span></div>';
+            
+            const metaStr = (field.data_type || '') + (field.validation_type && field.validation_type !== 'none' ? ' / ' + field.validation_type : '');
+            html += '<div class="field-meta"><span>' + escapeHtml(metaStr) + '</span></div>';
+            
+            if (!fieldPass && field.error) {
+                html += '<div class="error-text">' + escapeHtml(field.error) + '</div>';
+            }
+            html += '</div>';
         });
-        html += '</tbody></table>';
+        
+        html += '</div></div>'; // end grid and field summary div
+        html += '</div>'; // end container
 
         $('#packetValidationModalBody').html(html);
         $('#packetValidationModal').modal('show');
     }
+
 
     function syncProtocolValidationUI(resetSelection) {
         const $groups = $('.protocol-validation-group');

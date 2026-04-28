@@ -439,5 +439,21 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
         ->name('support.request.send');
     Route::post('/get-firmware-with-models', [FirmwareController::class, 'getFirmwareWithModel']);
     Route::post('/get-firmware', [FirmwareController::class, 'getFirmware']);
+
+    /* ======================= Protocol Management Routes ======================= */
+    Route::get('/protocols', [\App\Http\Controllers\ProtocolController::class, 'index'])->name('support.protocols.index');
+    Route::get('/protocols/create', [\App\Http\Controllers\ProtocolController::class, 'create'])->name('support.protocols.create');
+    Route::post('/protocols', [\App\Http\Controllers\ProtocolController::class, 'store'])->name('support.protocols.store');
+    Route::get('/protocols/{protocol}/edit', [\App\Http\Controllers\ProtocolController::class, 'edit'])->name('support.protocols.edit');
+    Route::put('/protocols/{protocol}', [\App\Http\Controllers\ProtocolController::class, 'update'])->name('support.protocols.update');
+    Route::delete('/protocols/{protocol}', [\App\Http\Controllers\ProtocolController::class, 'destroy'])->name('support.protocols.destroy');
+    
+    Route::get('/protocols/{protocol}/packet-types', [\App\Http\Controllers\ProtocolController::class, 'viewPacketTypes'])->name('support.protocols.packet-types');
+    Route::get('/protocols/{protocol}/packet-types/create', [\App\Http\Controllers\ProtocolController::class, 'createPacketType'])->name('support.protocols.packet-types.create');
+    Route::post('/protocols/{protocol}/packet-types', [\App\Http\Controllers\ProtocolController::class, 'storePacketType'])->name('support.protocols.packet-types.store');
+    
+    Route::get('/packet-types/{packet_type}/fields', [\App\Http\Controllers\ProtocolController::class, 'viewFields'])->name('support.protocols.fields');
+    Route::delete('/packet-types/{packetType}', [\App\Http\Controllers\ProtocolController::class, 'destroyPacketType'])->name('support.protocols.packet-types.destroy');
+    Route::post('/protocols/{protocol}/packet-types/store-full', [\App\Http\Controllers\ProtocolController::class, 'storeFullConfiguration'])->name('support.protocols.packet-types.store-full');
 });
 

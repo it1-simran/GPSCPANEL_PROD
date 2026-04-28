@@ -6,7 +6,10 @@
             <div class="page-breadcrumb">
                 <nav class="c_breadcrumbs">
                     <ul>
-                        <li><a href="{{ route('protocols.index') }}">Protocol Management</a></li>
+                        @php
+                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+                        @endphp
+                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
                         <li class="active"><a href="#">Packet Types</a></li>
                     </ul>
                 </nav>
@@ -22,7 +25,7 @@
                                 <h2>Packet Types: <span>{{ $protocol->name }}</span></h2>
                             </div>
                             <div class="col-lg-6 col-md-6 col-sm-6 text-right">
-                                <a href="{{ route('protocols.packet-types.create', $protocol->id) }}" class="btn btn-success protocol-add-btn">
+                                <a href="{{ route($routePrefix . '.packet-types.create', $protocol->id) }}" class="btn btn-success protocol-add-btn">
                                     <i class="fa fa-plus-circle"></i> Add Packet Type
                                 </a>
                             </div>
@@ -100,10 +103,10 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="protocol-actions">
-                                                    <a href="{{ route('protocols.fields', $type->id) }}" class="btn btn-primary btn-sm protocol-manage-btn">
+                                                    <a href="{{ route($routePrefix . '.fields', $type->id) }}" class="btn btn-primary btn-sm protocol-manage-btn">
                                                         <i class="fa fa-cogs"></i> Manage Parameters
                                                     </a>
-                                                    <form action="{{ route('protocols.packet-types.destroy', $type->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this packet type? This will also delete all its associated parameters.');">
+                                                    <form action="{{ route($routePrefix . '.packet-types.destroy', $type->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this packet type? This will also delete all its associated parameters.');">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger btn-sm protocol-delete-btn">

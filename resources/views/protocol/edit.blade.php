@@ -6,7 +6,10 @@
             <div class="page-breadcrumb">
                 <nav class="c_breadcrumbs">
                     <ul>
-                        <li><a href="{{ route('protocols.index') }}">Protocol Management</a></li>
+                        @php
+                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+                        @endphp
+                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
                         <li class="active"><a href="#">Edit Protocol</a></li>
                     </ul>
                 </nav>
@@ -31,7 +34,7 @@
                             </div>
                         @endif
 
-                        <form class="form-horizontal" method="POST" action="{{ route('protocols.update', $protocol->id) }}">
+                        <form class="form-horizontal" method="POST" action="{{ route($routePrefix . '.update', $protocol->id) }}">
                             @csrf
                             @method('PUT')
                             
@@ -57,7 +60,7 @@
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fa fa-save"></i> Update Protocol
                                     </button>
-                                    <a href="{{ route('protocols.index') }}" class="btn btn-default" style="margin-top: 10px;">Cancel</a>
+                                    <a href="{{ route($routePrefix . '.index') }}" class="btn btn-default" style="margin-top: 10px;">Cancel</a>
                                 </div>
                             </div>
                         </form>

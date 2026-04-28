@@ -12,9 +12,12 @@
       <div class="page-breadcrumb">
         <nav class="c_breadcrumbs">
           <ul>
-            <li><a href="{{ route('protocols.index') }}">Protocol Management</a></li>
-            <li><a href="{{ route('protocols.packet-types', $protocol->id) }}">Packet Types</a></li>
-            <li class="active"><a href="#">{{ isset($packetType) ? 'Edit' : 'Create' }} Packet Configuration</a></li>
+                        @php
+                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+                        @endphp
+                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
+                        <li><a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}">Packet Types</a></li>
+                        <li class="active"><a href="#">{{ isset($packetType) ? 'Edit' : 'Create' }} Packet Configuration</a></li>
           </ul>
         </nav>
       </div>
@@ -100,7 +103,7 @@
               </div>
 
               <div class="form-actions text-right mt-4">
-                <a href="{{ route('protocols.packet-types', $protocol->id) }}" style="margin-top: 10px;"
+                <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" style="margin-top: 10px;"
                   class="btn btn-glass-secondary">Cancel</a>
                 <button type="button" class="btn btn-premium-success btn-lg" onclick="saveMasterConfiguration(this)">
                   <i class="fa fa-save"></i> Save Configuration
@@ -549,7 +552,7 @@
     btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
 
     $.ajax({
-      url: "{{ route('protocols.packet-types.store-full', $protocol->id) }}",
+      url: "{{ route($routePrefix . '.packet-types.store-full', $protocol->id) }}",
       method: 'POST',
       data: { _token: "{{ csrf_token() }}", packet: packet, fields: collectBuilderFields() },
       success: function (res) {

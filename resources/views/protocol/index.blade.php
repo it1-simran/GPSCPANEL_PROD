@@ -16,13 +16,15 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel protocol-panel">
-                    <div class="c_title" style="margin-bottom: 10px;">
+                        @php
+                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+                        @endphp
                         <div class="row bgx-title-container">
                             <div class="col-lg-6 col-md-6 col-sm-6">
                                 <h2>Protocol Management</h2>
                             </div>
                             <div class="col-lg-6 col-md-6 col-sm-6 text-right">
-                                <a href="{{ route('protocols.create') }}" class="btn btn-success protocol-add-btn">
+                                <a href="{{ route($routePrefix . '.create') }}" class="btn btn-success protocol-add-btn">
                                     <i class="fa fa-plus-circle"></i> Add New Protocol
                                 </a>
                             </div>
@@ -96,7 +98,7 @@
                                                 </div>
                                             </td>
                                             <td class="text-center">
-                                                <a href="{{ route('protocols.packet-types', $protocol->id) }}" class="btn btn-info btn-sm protocol-packet-btn">
+                                                <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" class="btn btn-info btn-sm protocol-packet-btn">
                                                     <i class="fa fa-list-ul"></i>
                                                     <span>View Packets</span>
                                                     <span class="badge protocol-count-badge">{{ $protocol->packet_types_count }}</span>
@@ -111,10 +113,10 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="protocol-actions">
-                                                    <a href="{{ route('protocols.edit', $protocol->id) }}" class="btn btn-warning btn-sm protocol-icon-btn" title="Edit">
+                                                    <a href="{{ route($routePrefix . '.edit', $protocol->id) }}" class="btn btn-warning btn-sm protocol-icon-btn" title="Edit">
                                                         <i class="fa fa-pencil"></i>
                                                     </a>
-                                                    <form action="{{ route('protocols.destroy', $protocol->id) }}" method="post">
+                                                    <form action="{{ route($routePrefix . '.destroy', $protocol->id) }}" method="post">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button onclick="return confirm('Are you sure you want to delete this protocol?');" class="btn btn-danger btn-sm protocol-icon-btn" type="submit" title="Delete">

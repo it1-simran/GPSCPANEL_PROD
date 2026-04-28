@@ -26,7 +26,7 @@ class ProtocolController extends Controller
     {
         $request->validate(['name' => 'required|unique:protocols,name']);
         Protocol::create($request->all());
-        return redirect()->route('protocols.index')->with('success', 'Protocol created successfully.');
+        return redirect()->route($this->getProtocolRoute('index', $request))->with('success', 'Protocol created successfully.');
     }
 
     public function edit(Protocol $protocol)
@@ -38,13 +38,13 @@ class ProtocolController extends Controller
     {
         $request->validate(['name' => 'required|unique:protocols,name,' . $protocol->id]);
         $protocol->update($request->all());
-        return redirect()->route('protocols.index')->with('success', 'Protocol updated successfully.');
+        return redirect()->route($this->getProtocolRoute('index', $request))->with('success', 'Protocol updated successfully.');
     }
 
     public function destroy(Protocol $protocol)
     {
         $protocol->delete();
-        return redirect()->route('protocols.index')->with('success', 'Protocol deleted successfully.');
+        return redirect()->route($this->getProtocolRoute('index'))->with('success', 'Protocol deleted successfully.');
     }
 
     public function viewPacketTypes(Protocol $protocol)
@@ -205,7 +205,11 @@ class ProtocolController extends Controller
                 ]);
             }
 
-            return response()->json(['success' => true, 'message' => 'Configuration saved.', 'redirect' => route('protocols.packet-types', $protocol->id)]);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Configuration saved.', 
+                'redirect' => route($this->getProtocolRoute('packet-types'), $protocol->id)
+            ]);
         });
     }
 
@@ -213,7 +217,14 @@ class ProtocolController extends Controller
     {
         $protocolId = $packetType->protocol_id;
         $packetType->delete();
-        return redirect()->route('protocols.packet-types', $protocolId)->with('success', 'Packet type deleted successfully.');
+        return redirect()->route($this->getProtocolRoute('packet-types'), $protocolId)->with('success', 'Packet type deleted successfully.');
+    }
+
+    private function getProtocolRoute($suffix, $request = null)
+    {
+        $user = $request ? $request->user() : auth()->user();
+        $prefix = ($user && $user->user_type == 'Support') ? 'support.protocols' : 'protocols';
+        return $prefix . '.' . $suffix;
     }
 
     protected function nullableTrim($value)

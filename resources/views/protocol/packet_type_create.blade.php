@@ -6,8 +6,11 @@
             <div class="page-breadcrumb">
                 <nav class="c_breadcrumbs">
                     <ul>
-                        <li><a href="{{ route('protocols.index') }}">Protocol Management</a></li>
-                        <li><a href="{{ route('protocols.packet-types', $protocol->id) }}">Packet Types</a></li>
+                        @php
+                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+                        @endphp
+                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
+                        <li><a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}">Packet Types</a></li>
                         <li class="active"><a href="#">Add Packet Type</a></li>
                     </ul>
                 </nav>
@@ -18,7 +21,7 @@
                 <div class="c_panel">
                     <div class="c_title"><h2>Add Packet Type for {{ $protocol->name }}</h2><div class="clearfix"></div></div>
                     <div class="c_content">
-                        <form class="form-horizontal" method="POST" action="{{ route('protocols.packet-types.store', $protocol->id) }}">
+                        <form class="form-horizontal" method="POST" action="{{ route($routePrefix . '.packet-types.store', $protocol->id) }}">
                             @csrf
                             <div class="form-group">
                                 <label class="control-label col-lg-3">Packet Name *</label>
@@ -41,7 +44,7 @@
                             <div class="form-group">
                                 <div class="col-lg-offset-3 col-lg-9">
                                     <button type="submit" class="btn btn-success">Save</button>
-                                    <a href="{{ route('protocols.packet-types', $protocol->id) }}" class="btn btn-default">Cancel</a>
+                                    <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" class="btn btn-default">Cancel</a>
                                 </div>
                             </div>
                         </form>

@@ -679,6 +679,13 @@ $ticketCount = $tickets->count();
                                     </ul>
                                 </li>
 
+                                <li class="{{ request()->is('support/protocols*') ? 'active' : '' }}">
+                                    <a href="{{ route('support.protocols.index') }}"
+                                        class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/protocols*') ? 'active' : '' }}">
+                                        <span class='icon-sidebar pe-7s-link fa-2x'></span><span>Protocol Management</span>
+                                    </a>
+                                </li>
+
                             @endif
                             <!--<li class="{{ request()->is('user') ? 'active' : '' }}">-->
                             <!--    <a href="{{ url('/user') }}" class="hvr-bounce-to-right-sidebar-parent">-->

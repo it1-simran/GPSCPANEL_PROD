@@ -265,6 +265,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::post('/admin/protocols/{protocol}/packet-types', [App\Http\Controllers\ProtocolController::class, 'storePacketType'])->name('protocols.packet-types.store');
     
     Route::get('/admin/packet-types/{packet_type}/fields', [App\Http\Controllers\ProtocolController::class, 'viewFields'])->name('protocols.fields');
+    Route::delete('/admin/packet-types/{packetType}', [App\Http\Controllers\ProtocolController::class, 'destroyPacketType'])->name('protocols.packet-types.destroy');
     Route::post('/admin/protocols/{protocol}/packet-types/store-full', [App\Http\Controllers\ProtocolController::class, 'storeFullConfiguration'])->name('protocols.packet-types.store-full');
 });
 

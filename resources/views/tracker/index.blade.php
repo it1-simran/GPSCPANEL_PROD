@@ -123,16 +123,25 @@ use App\Helper\CommonHelper;
     background: #fff;
     border: 1px solid #eaeaea;
     border-radius: 12px;
-    padding: 15px 20px;
+    padding: 18px 20px;
     margin-bottom: 0;
     box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     display: flex;
-    flex-wrap: nowrap;
-    gap: 15px;
+    flex-wrap: wrap;
+    gap: 15px 20px;
     align-items: flex-end;
 }
-.filter-container .form-group { margin-bottom: 0; flex: 1; }
-.filter-container .form-group.action-group { flex: 0 0 auto; display: flex; gap: 10px; }
+.filter-container .form-group { margin-bottom: 0; flex: 1; min-width: 180px; }
+.filter-container .form-group:has(.flatpickr-datetime) { flex: 1.5; min-width: 220px; }
+.filter-container .form-group.action-group { 
+    flex: 1 1 100%; 
+    display: flex; 
+    gap: 12px; 
+    justify-content: flex-end;
+    margin-top: 5px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+}
 .protocol-settings-panel {
     background: linear-gradient(180deg, #fbfdff 0%, #f7fbff 100%);
     border: 1px solid #dbeafe;
@@ -525,8 +534,7 @@ use App\Helper\CommonHelper;
                                         <option value="1" {{ !empty($protocolValidationEnabled) ? 'selected' : '' }}>ON</option>
                                     </select>
                                 </div>
-                                <div class="form-group action-group" style="display:flex; flex-direction:column; gap:6px;">
-                                    <label style="display:block; visibility:hidden; font-size:12px; margin:0;">Actions</label>
+                                <div class="form-group action-group">
                                     <div style="display:flex; gap:10px; align-items:center;">
                                         <button type="submit" class="btn btn-primary" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; box-shadow:0 4px 12px rgba(13, 110, 253, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
                                             <i class="fa fa-filter" style="margin-right:8px;"></i> Apply

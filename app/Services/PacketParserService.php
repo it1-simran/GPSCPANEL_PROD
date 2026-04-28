@@ -90,7 +90,7 @@ class PacketParserService
         $errors = [];
         $fieldSummary = [];
         $delimiter = $packetType->delimiter;
-        $parts = $delimiter !== null && $delimiter !== '' ? explode($delimiter, $rawData) : null;
+        $parts = $this->splitPacket($rawData, $delimiter);
 
         foreach ($fields as $field) {
             $value = $this->extractFieldValue($rawData, $fields, $field, $parts);
@@ -112,8 +112,15 @@ class PacketParserService
                 $errors[$field->name] = implode(' ', $fieldErrors);
             }
 
+            $displayName = $field->name;
+            if ($field->validation_type === 'nmea_checksum') {
+                $displayName = 'XOR Checksum';
+            } elseif ($field->validation_type === 'sha256') {
+                $displayName = 'SHA-256 Hash';
+            }
+
             $fieldSummary[] = [
-                'name' => $field->name,
+                'name' => $displayName,
                 'value' => $value,
                 'data_type' => $field->data_type,
                 'validation_type' => $field->validation_type,
@@ -122,6 +129,71 @@ class PacketParserService
                 'error' => implode(' ', $fieldErrors),
             ];
         }
+        
+        // Automatic Security Validation (XOR and SHA-256) if '*' is present and not already defined
+        if (str_contains($rawData, '*')) {
+            $hasXor = collect($fieldSummary)->contains('validation_type', 'nmea_checksum');
+            $hasSha = collect($fieldSummary)->contains('validation_type', 'sha256');
+
+            if (!$hasXor || !$hasSha) {
+                $starPos = strpos($rawData, '*');
+            $rawPayload = substr($rawData, 0, $starPos);
+            if (str_starts_with($rawPayload, '$')) {
+                $rawPayload = substr($rawPayload, 1);
+            }
+
+            $afterStar = trim(substr($rawData, $starPos + 1));
+            
+            // Flexible extraction: Handle *XX,hash or *XX hash or *XXhash
+            // XOR is usually 2 chars. We look for the first 2 chars, then any separator, then the rest.
+            $receivedXor = strtoupper(substr($afterStar, 0, 2));
+            $receivedSha = '';
+            
+            $remaining = trim(substr($afterStar, 2));
+            // Remove leading commas or whitespace from the hash part
+            $receivedSha = ltrim($remaining, ", \t\n\r\0\x0B");
+
+            // 1. XOR Checksum Validation
+            if (!$hasXor) {
+                // 1. XOR Checksum Validation
+                $computedXorInt = 0;
+                for ($i = 0; $i < strlen($rawPayload); $i++) {
+                    $computedXorInt ^= ord($rawPayload[$i]);
+                }
+                $computedXor = str_pad(strtoupper(dechex($computedXorInt)), 2, '0', STR_PAD_LEFT);
+                $xorValid = ($computedXor === $receivedXor);
+
+                $fieldSummary[] = [
+                    'name' => 'XOR Checksum',
+                    'value' => $receivedXor,
+                    'data_type' => 'HEX',
+                    'validation_type' => 'nmea_checksum',
+                    'is_required' => true,
+                    'is_valid' => $xorValid,
+                    'error' => $xorValid ? '' : "Invalid XOR (Expected: $computedXor)",
+                ];
+
+                if (!$xorValid) $errors['xor_checksum'] = 'Invalid XOR checksum.';
+            }
+
+            if (!$hasSha && !empty($receivedSha)) {
+                $computedSha = hash('sha256', $rawPayload);
+                $shaValid = (strtolower($receivedSha) === strtolower($computedSha));
+
+                $fieldSummary[] = [
+                    'name' => 'SHA-256 Hash',
+                    'value' => substr($receivedSha, 0, 8) . '...',
+                    'data_type' => 'STRING',
+                    'validation_type' => 'sha256',
+                    'is_required' => true,
+                    'is_valid' => $shaValid,
+                    'error' => $shaValid ? '' : 'Hash mismatch.',
+                ];
+
+                if (!$shaValid) $errors['sha256_hash'] = 'SHA-256 integrity check failed.';
+            }
+        }
+    }
 
         $isValid = empty($errors);
         $result = [
@@ -149,6 +221,22 @@ class PacketParserService
 
     protected function extractFieldValue(string $rawData, $fields, $field, ?array $parts): ?string
     {
+        // Special handling for security fields (they are after the asterisk)
+        if ($field->validation_type === 'nmea_checksum' || $field->validation_type === 'sha256') {
+            $starPos = strpos($rawData, '*');
+            if ($starPos === false) return null;
+            
+            $afterStar = trim(substr($rawData, $starPos + 1));
+            $xor = strtoupper(substr($afterStar, 0, 2));
+            
+            if ($field->validation_type === 'nmea_checksum') {
+                return $xor;
+            } else {
+                $remaining = trim(substr($afterStar, 2));
+                return ltrim($remaining, ", \t\n\r\0\x0B");
+            }
+        }
+
         if ($parts !== null) {
             $index = max(0, (int) $field->sequence - 1);
             return array_key_exists($index, $parts) ? trim((string) $parts[$index]) : null;
@@ -204,8 +292,21 @@ class PacketParserService
                 }
                 break;
             case 'nmea_checksum':
-                if (!$this->validateNmeaChecksum($rawData)) {
-                    return 'Invalid NMEA checksum.';
+            case 'xor8':
+                return $this->validateXorChecksum($rawData, $value, 8) ? null : 'Invalid XOR8 checksum.';
+            case 'xor16':
+                return $this->validateXorChecksum($rawData, $value, 16) ? null : 'Invalid XOR16 checksum.';
+            case 'xor32':
+                return $this->validateXorChecksum($rawData, $value, 32) ? null : 'Invalid XOR32 checksum.';
+            case 'sha256':
+                $starPos = strpos($rawData, '*');
+                $rawPayload = ($starPos !== false) ? substr($rawData, 0, $starPos) : $rawData;
+                if (str_starts_with($rawPayload, '$')) {
+                    $rawPayload = substr($rawPayload, 1);
+                }
+                $computedSha = hash('sha256', $rawPayload);
+                if (strtolower($value) !== strtolower($computedSha)) {
+                    return 'SHA-256 hash mismatch.';
                 }
                 break;
             case 'regex':
@@ -226,6 +327,45 @@ class PacketParserService
         return null;
     }
 
+    protected function splitPacket(string $rawData, ?string $delimiter): ?array
+    {
+        if ($delimiter === null || $delimiter === '') {
+            return null;
+        }
+
+        // 1. Handle * as end marker: ignore everything after the first *
+        $starPos = strpos($rawData, '*');
+        $parsingData = ($starPos !== false) ? substr($rawData, 0, $starPos) : $rawData;
+
+        $parts = [];
+        $current = '';
+        $depth = 0;
+        $len = strlen($parsingData);
+        $delimLen = strlen($delimiter);
+
+        for ($i = 0; $i < $len; $i++) {
+            $char = $parsingData[$i];
+
+            if ($char === '(') {
+                $depth++;
+                $current .= $char;
+            } elseif ($char === ')') {
+                $depth--;
+                $current .= $char;
+            } elseif ($depth === 0 && substr($parsingData, $i, $delimLen) === $delimiter) {
+                $parts[] = $current;
+                $current = '';
+                $i += $delimLen - 1; // Skip the rest of the multi-char delimiter
+            } else {
+                $current .= $char;
+            }
+        }
+
+        $parts[] = $current;
+
+        return $parts;
+    }
+
     protected function validateNmeaChecksum(string $data): bool
     {
         if (!str_contains($data, '*')) {
@@ -244,6 +384,63 @@ class PacketParserService
         }
 
         return str_pad(strtoupper(dechex($checksum)), 2, '0', STR_PAD_LEFT) === $received;
+    }
+
+    protected function validateXorChecksum(string $rawData, string $receivedHex, int $bits = 8): bool
+    {
+        $starPos = strpos($rawData, '*');
+        $payload = $rawData;
+
+        if ($starPos !== false) {
+            $beforeStar = substr($rawData, 0, $starPos);
+            $afterStar = substr($rawData, $starPos + 1);
+            
+            // If the received value is at the very beginning (before *), 
+            // then the payload is what comes after.
+            if (trim($beforeStar) === trim($receivedHex)) {
+                $payload = $afterStar;
+            } else {
+                // Otherwise, the payload is what's before the *
+                $payload = $beforeStar;
+            }
+        } else {
+            // No star? Just remove the checksum value from the raw string to get payload
+            $payload = str_replace($receivedHex, '', $rawData);
+        }
+
+        // Strip NMEA $ prefix if present
+        if (str_starts_with($payload, '$')) {
+            $payload = substr($payload, 1);
+        }
+
+        $xor = 0;
+        $len = strlen($payload);
+
+        if ($bits === 8) {
+            for ($i = 0; $i < $len; $i++) {
+                $xor ^= ord($payload[$i]);
+            }
+            $computed = str_pad(strtoupper(dechex($xor & 0xFF)), 2, '0', STR_PAD_LEFT);
+        } elseif ($bits === 16) {
+            for ($i = 0; $i < $len; $i += 2) {
+                $val = ord($payload[$i]) << 8;
+                if ($i + 1 < $len) $val |= ord($payload[$i + 1]);
+                $xor ^= $val;
+            }
+            $computed = str_pad(strtoupper(dechex($xor & 0xFFFF)), 4, '0', STR_PAD_LEFT);
+        } else {
+            // 32-bit XOR
+            for ($i = 0; $i < $len; $i += 4) {
+                $val = (ord($payload[$i]) << 24);
+                if ($i + 1 < $len) $val |= (ord($payload[$i + 1]) << 16);
+                if ($i + 2 < $len) $val |= (ord($payload[$i + 2]) << 8);
+                if ($i + 3 < $len) $val |= ord($payload[$i + 3]);
+                $xor ^= $val;
+            }
+            $computed = str_pad(strtoupper(dechex($xor & 0xFFFFFFFF)), 8, '0', STR_PAD_LEFT);
+        }
+
+        return strtoupper(trim($receivedHex)) === $computed;
     }
 
     protected function normalizeRawPacket($rawData): string

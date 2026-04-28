@@ -220,7 +220,11 @@
                 <option value="imei" ${data.validation_type == 'imei' ? 'selected' : ''}>IMEI</option>
                 <option value="date_ddmmyyyy" ${data.validation_type == 'date_ddmmyyyy' ? 'selected' : ''}>Date (DDMMYYYY)</option>
                 <option value="time_hhmmss" ${data.validation_type == 'time_hhmmss' ? 'selected' : ''}>Time (HHMMSS)</option>
-                <option value="nmea_checksum" ${data.validation_type == 'nmea_checksum' ? 'selected' : ''}>NMEA Checksum</option>
+                <option value="nmea_checksum" ${data.validation_type == 'nmea_checksum' ? 'selected' : ''}>NMEA Checksum (XOR8)</option>
+                <option value="xor8" ${data.validation_type == 'xor8' ? 'selected' : ''}>XOR8 Checksum</option>
+                <option value="xor16" ${data.validation_type == 'xor16' ? 'selected' : ''}>XOR16 Checksum</option>
+                <option value="xor32" ${data.validation_type == 'xor32' ? 'selected' : ''}>XOR32 Checksum</option>
+                <option value="sha256" ${data.validation_type == 'sha256' ? 'selected' : ''}>SHA-256 Hash</option>
                 <option value="regex" ${data.validation_type == 'regex' ? 'selected' : ''}>Custom Regex</option>
             </select>
             <input type="text" name="regex_pattern" value="${data.regex_pattern || ''}" 
@@ -295,13 +299,21 @@
       }
     }
 
-    // Robust parser that ignores delimiters inside parentheses
+    // Robust parser that ignores delimiters inside parentheses and stops at *
     const parts = [];
     let currentPart = "";
     let parenLevel = 0;
+    let foundAsterisk = false;
 
     for (let i = 0; i < rawInput.length; i++) {
       const char = rawInput[i];
+      
+      // If we hit *, we stop and treat everything from here as the last part (checksum)
+      if (char === '*') {
+        foundAsterisk = true;
+        break;
+      }
+
       if (char === '(') parenLevel++;
       else if (char === ')') parenLevel--;
 
@@ -312,31 +324,71 @@
         currentPart += char;
       }
     }
-    parts.push(currentPart); // Push the last part
+    
+    if (foundAsterisk) {
+      if (currentPart !== "" || parts.length > 0) parts.push(currentPart);
+    } else {
+      parts.push(currentPart);
+    }
+
+    // Handle data after asterisk if found
+    let securityParts = [];
+    if (foundAsterisk) {
+      const starIndex = rawInput.indexOf('*');
+      const afterStar = rawInput.substring(starIndex + 1).trim();
+      
+      if (afterStar.length >= 2) {
+        securityParts.push({
+          name: 'XOR Checksum',
+          val: afterStar.substring(0, 2),
+          type: 'HEX',
+          vType: 'nmea_checksum'
+        });
+        
+        let hashVal = afterStar.substring(2).trim();
+        if (hashVal.startsWith(',')) hashVal = hashVal.substring(1).trim();
+        
+        if (hashVal.length > 0) {
+          securityParts.push({
+            name: 'SHA-256 Hash',
+            val: hashVal,
+            type: 'STRING',
+            vType: 'sha256'
+          });
+        }
+      }
+    }
 
     const tbody = document.getElementById('sortableBody');
     tbody.innerHTML = '';
 
+    // Add regular parts
     parts.forEach((val, i) => {
       let type = 'String';
       let vType = 'none';
-
-      // Basic type guessing
       const trimmedVal = val.trim();
       if (!isNaN(trimmedVal) && trimmedVal !== '') type = 'Numeric';
       else if (/^[0-9a-fA-F]+$/.test(trimmedVal) && trimmedVal.length > 2) type = 'HEX';
 
-      // Validation guessing
       if (trimmedVal.length === 15 && /^\d+$/.test(trimmedVal)) vType = 'imei';
       else if (trimmedVal.length === 8 && /^\d+$/.test(trimmedVal) && i > 5) vType = 'date_ddmmyyyy';
       else if (trimmedVal.length === 6 && /^\d+$/.test(trimmedVal) && i > 5) vType = 'time_hhmmss';
-      else if (trimmedVal.includes('*')) vType = 'nmea_checksum';
 
       addNewRow({
-        name: i === 0 ? 'Header' : (i === parts.length - 1 ? 'Checksum' : `Param ${i + 1}`),
+        name: i === 0 ? 'Header' : `Param ${i + 1}`,
         length: val.length,
         data_type: type,
         validation_type: vType
+      });
+    });
+
+    // Add security parts
+    securityParts.forEach(sp => {
+      addNewRow({
+        name: sp.name,
+        length: sp.val.length,
+        data_type: sp.type,
+        validation_type: sp.vType
       });
     });
 

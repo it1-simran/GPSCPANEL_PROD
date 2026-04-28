@@ -103,6 +103,13 @@
                                                     <a href="{{ route('protocols.fields', $type->id) }}" class="btn btn-primary btn-sm protocol-manage-btn">
                                                         <i class="fa fa-cogs"></i> Manage Parameters
                                                     </a>
+                                                    <form action="{{ route('protocols.packet-types.destroy', $type->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this packet type? This will also delete all its associated parameters.');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm protocol-delete-btn">
+                                                            <i class="fa fa-trash"></i> Delete
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>
@@ -332,6 +339,14 @@ padding: 6px 10px;
             text-align: left !important;
             margin-top: 10px;
         }
+    }
+    .protocol-delete-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        padding: 5px 12px;
+        white-space: nowrap;
     }
 </style>
 

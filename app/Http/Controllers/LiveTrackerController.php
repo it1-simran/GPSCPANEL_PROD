@@ -33,8 +33,8 @@ class LiveTrackerController extends Controller
         $allDevices = ImeiDevice::orderBy('imei')->get();
         $defaults = $this->trackerService->buildDefaultFilters($device);
 
-        $startAt = $request->query('start_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('start_at')) : $defaults['start_at'];
-        $endAt = $request->query('end_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('end_at')) : $defaults['end_at'];
+        $startAt = $request->filled('start_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('start_at')) : $defaults['start_at'];
+        $endAt = $request->filled('end_at') ? \App\Helper\CommonHelper::convertLocalToUTC($request->query('end_at')) : $defaults['end_at'];
 
         if ($device && $device->effective_end_at && $endAt->gt($device->effective_end_at)) {
             $endAt = $device->effective_end_at->copy();
@@ -117,13 +117,12 @@ class LiveTrackerController extends Controller
             $currentLastId = $lastId;
             $currentLastCommandTs = $lastCommandTs;
             $startTime = time();
-            $maxExecutionTime = 30; // Shorter cycles (30s) to "unstick" single-threaded development servers
+            $maxExecutionTime = 7; // Reduced from 30s to 7s for better concurrency on artisan serve
 
-            // Disable session blocking to allow other requests (crucial for polling and simulation)
+            // Disable session blocking immediately
             if (session_status() === PHP_SESSION_ACTIVE) {
                 session_write_close();
             }
-            // Release Laravel's session lock
             if (session()->isStarted()) {
                 session()->save();
             }
@@ -203,6 +202,13 @@ class LiveTrackerController extends Controller
 
     public function fetchLogs(Request $request, $imei)
     {
+        if (session()->isStarted()) {
+            session()->save();
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
         $device = ImeiDevice::where('imei', $imei)->first();
         if (!$device) {
             return response()->json(['error' => 'Device not found'], 404);

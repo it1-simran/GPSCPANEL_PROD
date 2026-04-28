@@ -98,7 +98,7 @@ class ProtocolController extends Controller
             'fields.*.name' => ['required', 'string', 'max:100'],
             'fields.*.data_type' => ['required', 'in:String,Numeric,ASCII,HEX'],
             'fields.*.length' => ['nullable', 'integer', 'min:1', 'max:65535'],
-            'fields.*.validation_type' => ['required', 'in:none,imei,date_ddmmyyyy,time_hhmmss,nmea_checksum,regex'],
+            'fields.*.validation_type' => ['required', 'in:none,imei,date_ddmmyyyy,time_hhmmss,nmea_checksum,xor8,xor16,xor32,sha256,regex'],
             'fields.*.regex_pattern' => ['nullable', 'string', 'max:255'],
             'fields.*.min_value' => ['nullable', 'numeric'],
             'fields.*.max_value' => ['nullable', 'numeric'],
@@ -207,6 +207,13 @@ class ProtocolController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Configuration saved.', 'redirect' => route('protocols.packet-types', $protocol->id)]);
         });
+    }
+
+    public function destroyPacketType(PacketType $packetType)
+    {
+        $protocolId = $packetType->protocol_id;
+        $packetType->delete();
+        return redirect()->route('protocols.packet-types', $protocolId)->with('success', 'Packet type deleted successfully.');
     }
 
     protected function nullableTrim($value)

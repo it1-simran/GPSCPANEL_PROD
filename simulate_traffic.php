@@ -62,19 +62,74 @@ echo "Traffic Packets: $trafficIterations | Traffic Delay: ${trafficDelay}s\n";
 echo "Commands to Test: " . count($commands) . "\n";
 echo "═══════════════════════════════════════════════════════════════\n\n";
 
+// Helper to calculate NMEA checksum
+function calculateChecksum($data)
+{
+    if (str_starts_with($data, '$')) {
+        $data = substr($data, 1);
+    }
+    if (str_contains($data, '*')) {
+        $data = explode('*', $data)[0];
+    }
+    $checksum = 0;
+    for ($i = 0; $i < strlen($data); $i++) {
+        $checksum ^= ord($data[$i]);
+    }
+    return str_pad(strtoupper(dechex($checksum)), 2, '0', STR_PAD_LEFT);
+}
+
 // Function to send traffic data
-function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0)
+function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0, $templateIndex = 0)
 {
     global $apiIngestUrl;
 
     $date = date('dmY');
     $time = date('His');
+    $dateTime = date('dmYHis');
+    $alt = rand(150, 350) + (rand(0, 999) / 1000);
+
+    // Select Template based on index (alternate between two types)
+    $type = $templateIndex % 2;
+
+    if ($type === 0) {
+        // Template 1: $NMP (CSV format with XOR)
+        $payloadStr = sprintf(
+            "\$NMP,JSDE14A,2.2.4,NR,1,L,%s,0,1,%s,%s,%0.6f,N,%0.6f,E,000.0,%0.2f,%d,270.313,0.84,0.50,airtel,1,1,12.6,4.0,0,C,31,404,02,1E84,DC6711F,DC45021,1E84,35,7D3440C,1E84,23,C3FD10F,1E84,20,7D3440D,1E84,20,0010,00,000535,00.0,00.1,0,(0,0,0)",
+            $imei,
+            $date,
+            $time,
+            $lat,
+            $lon,
+            $speed,
+            $bearing
+        );
+    } else {
+        // Template 2: $Header (Secure format with XOR and SHA-256)
+        $payloadStr = sprintf(
+            "\$Header,JSD,2.2.5,EA,10,L,%s,PB01GY0101,1,%s,%s,%0.6f,N,%0.6f,E,%0.1f,%0.1f,%d,268.5,1.38,0.80,airtel,1,1,12.9,0.0,1,C,26,404,02,1E84,7ABF115,DC6711F,1E84,38,7ABF118,1E84,27,C3FD12D,1E84,16,0,0,0,0011,00,000351,%0.3f,%0.3f,%0.3f,()",
+            $imei,
+            $date,
+            $time,
+            $lat,
+            $lon,
+            rand(0, 100) / 10, // Random speed for this template
+            rand(0, 360),      // Random bearing
+            $bearing,
+            rand(0, 1), rand(0, 1), rand(0, 1) // Random extra params
+        );
+    }
+
+    // Calculate Security Suffixes
+    $xor = calculateChecksum($payloadStr);
     
-    // Construct the raw data packet in the new format
-    $rawData = sprintf(
-        "\$Header,JSDE14A,2.2.5,NR,1,L,%s,0,1,%s,%s,%f,N,%f,E,%0.1f,0.0,5,251.5,1.96,1.70,airtel,1,1,11.6,4.1,0,C,19,404,02,1E97,7CD5816,7AB0117,1E97,15,7AB0115,1E97,14,C61382A,1E97,1,0,0,0,0011,00,002922,0.000,0.000,0.000,()*6E,9671a97277f54791eb42b5764781dfdd0d071d6f0260b79fc2b6e6333b6d69bc",
-        $imei, $date, $time, $lat, $lon, $speed
-    );
+    // Prepare payload for SHA-256 (everything between $ and *)
+    $hashPayload = $payloadStr;
+    if (str_starts_with($hashPayload, '$')) {
+        $hashPayload = substr($hashPayload, 1);
+    }
+    $sha = hash('sha256', $hashPayload);
+
+    $fullPacket = $payloadStr . '*' . $xor . $sha;
 
     $payload = [
         "imei" => $imei,
@@ -82,17 +137,17 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0)
         "longitude" => $lon,
         "speed" => $speed,
         "bearing" => $bearing,
-        "altitude" => rand(150, 250),
+        "altitude" => $alt,
         "accuracy" => rand(5, 15),
         "timestamp" => date('Y-m-d H:i:s'),
-        "data" => $rawData . "&client_ip=/106.211.177.176"
+        "data" => $fullPacket
     ];
 
     $ch = curl_init($apiIngestUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $fullPacket);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: text/plain']);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
     $response = curl_exec($ch);
@@ -105,7 +160,8 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0)
         'success' => ($httpCode >= 200 && $httpCode < 300),
         'code' => $httpCode,
         'error' => $error,
-        'response' => $response
+        'response' => $response,
+        'packet' => $fullPacket
     ];
 }
 
@@ -255,12 +311,12 @@ for ($i = 1; $i <= $trafficIterations; $i++) {
     $speed = rand(15, 85);
     $bearing = ($i * 10) % 360;
 
-    $result = sendTraffic($imei, $lat, $lon, $speed, $bearing);
-
+    $result = sendTraffic($imei, $lat, $lon, $speed, $bearing, $i);
 
     if ($result['success']) {
         $trafficSuccess++;
-        echo "✓ [$i/$trafficIterations] Traffic: LAT $lat | LON $lon | Speed ${speed}km/h (HTTP {$result['code']})\n";
+        $packetHeader = explode(',', $result['packet'])[0];
+        echo "✓ [$i/$trafficIterations] $packetHeader: LAT $lat | LON $lon | Speed ${speed}km/h (HTTP {$result['code']})\n";
         echo "   ➜ Response: " . $result['response'] . "\n";
     } else {
         $trafficFailed++;

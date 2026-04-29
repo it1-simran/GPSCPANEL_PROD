@@ -14,7 +14,7 @@
 // Configuration
 $baseUrl = "http://127.0.0.1:8000";
 $apiIngestUrl = "$baseUrl/api/packets/ingest";
-$imei = isset($argv[1]) ? $argv[1] : "490154203237518";
+$imei = isset($argv[1]) ? $argv[1] : "925456677644555";
 $trafficIterations = 15;
 $trafficDelay = 1; // Seconds between traffic packets
 
@@ -75,7 +75,8 @@ function calculateChecksum($data)
     for ($i = 0; $i < strlen($data); $i++) {
         $checksum ^= ord($data[$i]);
     }
-    return str_pad(strtoupper(dechex($checksum)), 2, '0', STR_PAD_LEFT);
+    return $checksum; // Return as decimal integer
+
 }
 
 // Function to send traffic data
@@ -88,8 +89,8 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0, $templateIndex = 0
     $dateTime = date('dmYHis');
     $alt = rand(150, 350) + (rand(0, 999) / 1000);
 
-    // Select Template based on index (alternate between two types)
-    $type = $templateIndex % 2;
+    // Select Template based on index (Forced to 0 for NMP only as per request)
+    $type = 0; // $templateIndex % 2;
 
     if ($type === 0) {
         // Template 1: $NMP (CSV format with XOR)
@@ -103,7 +104,7 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0, $templateIndex = 0
             $speed,
             $bearing
         );
-    } else {
+    } /* else {
         // Template 2: $Header (Secure format with XOR and SHA-256)
         $payloadStr = sprintf(
             "\$Header,JSD,2.2.5,EA,10,L,%s,PB01GY0101,1,%s,%s,%0.6f,N,%0.6f,E,%0.1f,%0.1f,%d,268.5,1.38,0.80,airtel,1,1,12.9,0.0,1,C,26,404,02,1E84,7ABF115,DC6711F,1E84,38,7ABF118,1E84,27,C3FD12D,1E84,16,0,0,0,0011,00,000351,%0.3f,%0.3f,%0.3f,()",
@@ -117,7 +118,7 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0, $templateIndex = 0
             $bearing,
             rand(0, 1), rand(0, 1), rand(0, 1) // Random extra params
         );
-    }
+    } */
 
     // Calculate Security Suffixes
     $xor = calculateChecksum($payloadStr);
@@ -129,7 +130,22 @@ function sendTraffic($imei, $lat, $lon, $speed, $bearing = 0, $templateIndex = 0
     }
     $sha = hash('sha256', $hashPayload);
 
-    $fullPacket = $payloadStr . '*' . $xor . $sha;
+    // For NMP (NWP) packets, support two types of checksum patterns:
+    // 1. $NMP...*1703e... (symbol before XOR)
+    // 2. $NMP...17*03e... (symbol between XOR and SHA)
+    if ($type === 0) { // NMP Template
+        $variant = $templateIndex % 2;
+        if ($variant === 0) {
+            // Type 1: Standard (* before XOR)
+            $fullPacket = $payloadStr . '*' . $xor . $sha;
+        } else {
+            // Type 2: Custom (* between XOR and SHA)
+            $fullPacket = $payloadStr . $xor . '*' . $sha;
+        }
+    } else {
+        // Standard packets (Header etc): Symbol before checksum
+        $fullPacket = $payloadStr . '*' . $xor . $sha;
+    }
 
     $payload = [
         "imei" => $imei,

@@ -595,7 +595,7 @@ use App\Helper\CommonHelper;
                                 <div class="col-md-3">
                                     <div class="alert alert-default">
                                         <strong>End:</strong> 
-                                        {{ isset($filters['end_at']) ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'd-M-Y H:i:s') : 'N/A' }}
+                                        {{ $device->effective_end_at ? CommonHelper::getDateAsTimeZone($device->effective_end_at, 'd-M-Y H:i:s') : 'N/A' }}
                                     </div>
                                 </div>
 

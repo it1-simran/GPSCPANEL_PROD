@@ -67,6 +67,12 @@ class PacketParserService
                 'parsed_data' => [],
                 'errors' => [],
                 'field_summary' => [],
+                'alert_report' => [
+                    'has_alerts' => false,
+                    'status' => 'none',
+                    'summary' => 'Protocol validation not enabled.',
+                    'alerts' => []
+                ],
             ];
         }
 
@@ -196,6 +202,30 @@ class PacketParserService
     }
 
         $isValid = empty($errors);
+        
+        $alertReport = [
+            'has_alerts' => false,
+            'status' => 'none',
+            'summary' => 'Alert validation disabled.',
+            'alerts' => []
+        ];
+
+        if ($packetType && !empty($parsedData)) {
+            try {
+                $alertService = app(\App\Services\AlertService::class);
+                
+                // 1. Existing behavior: Trigger actual alerts/tickets (Only for valid packets to avoid false alarms)
+                if ($isValid) {
+                    $alertService->evaluate($packetType->id, $parsedData, $log);
+                }
+                
+                // 2. New behavior: Generate a report for the UI (Always show if we have data)
+                $alertReport = $alertService->validate($packetType->id, $parsedData);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Alert Evaluation/Validation Failed: " . $e->getMessage());
+            }
+        }
+
         $result = [
             'enabled' => true,
             'status' => $isValid ? 'pass' : 'fail',
@@ -207,6 +237,7 @@ class PacketParserService
             'parsed_data' => $parsedData,
             'errors' => $errors,
             'field_summary' => $fieldSummary,
+            'alert_report' => $alertReport,
         ];
 
         if ($log) {
@@ -463,6 +494,12 @@ class PacketParserService
             'parsed_data' => [],
             'errors' => ['_packet' => $message],
             'field_summary' => [],
+            'alert_report' => [
+                'has_alerts' => false,
+                'status' => 'none',
+                'summary' => 'Not applicable.',
+                'alerts' => []
+            ],
         ];
     }
 
@@ -479,6 +516,12 @@ class PacketParserService
             'parsed_data' => [],
             'errors' => ['_packet' => $message],
             'field_summary' => [],
+            'alert_report' => [
+                'has_alerts' => false,
+                'status' => 'none',
+                'summary' => 'Unmatched packet.',
+                'alerts' => []
+            ],
         ];
     }
 }

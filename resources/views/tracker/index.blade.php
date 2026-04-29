@@ -477,6 +477,77 @@ use App\Helper\CommonHelper;
 .status-pass { color: #10b981; }
 .status-fail { color: #ef4444; }
 
+/* Alert Validation Specific Styles */
+.alert-report-container {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f1f5f9;
+}
+.alert-report-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+.alert-report-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.alert-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.alert-card.triggered {
+    border-left: 5px solid #ef4444;
+    background: #fffafb;
+}
+.alert-card.cleared {
+    border-left: 5px solid #10b981;
+    background: #f0fdf4;
+}
+.alert-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+.alert-condition-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px dashed #e2e8f0;
+}
+.alert-condition-row:last-child { border-bottom: none; }
+.cond-field { font-weight: 700; color: #475569; width: 120px; }
+.cond-op { color: #94a3b8; font-family: monospace; width: 30px; text-align: center; }
+.cond-exp { color: #64748b; width: 80px; font-weight: 600; }
+.cond-arrow { color: #cbd5e1; }
+.cond-act { font-weight: 800; padding: 2px 8px; border-radius: 4px; }
+.cond-act.match { background: #dcfce7; color: #15803d; }
+.cond-act.mismatch { background: #fee2e2; color: #b91c1c; }
+
+.alert-badge-tracker {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+.alert-badge-triggered { background: #ef4444; color: #fff; }
+.alert-badge-cleared { background: #10b981; color: #fff; }
+
 @media (max-width: 768px) {
     .field-summary-grid {
         grid-template-columns: 1fr;
@@ -532,6 +603,13 @@ use App\Helper\CommonHelper;
                                     <select name="protocol_validation" id="protocolValidationToggle" class="form-control" style="width:100%; border-radius:8px;">
                                         <option value="0" {{ empty($protocolValidationEnabled) ? 'selected' : '' }}>OFF</option>
                                         <option value="1" {{ !empty($protocolValidationEnabled) ? 'selected' : '' }}>ON</option>
+                                    </select>
+                                </div>
+                                <div class="form-group protocol-validation-toggle-wrap">
+                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">Alert Validation</label>
+                                    <select name="alert_validation" id="alertValidationToggle" class="form-control" style="width:100%; border-radius:8px;">
+                                        <option value="0" {{ empty($alertValidationEnabled) ? 'selected' : '' }}>OFF</option>
+                                        <option value="1" {{ !empty($alertValidationEnabled) ? 'selected' : '' }}>ON</option>
                                     </select>
                                 </div>
                                 <div class="form-group action-group">
@@ -687,6 +765,17 @@ use App\Helper\CommonHelper;
                                                         @if(!empty($protocolValidationEnabled))
                                                             <span class="validation-badge {{ $badgeClass }}">{{ $validationLabel }}</span>
                                                             @if(!empty($validation['packet_type_name'])) <span style="color:#cbd5e1;">{{ $validation['packet_type_name'] }}</span> @endif
+                                                            @if(!empty($alertValidationEnabled))
+                                                                @if(!empty($validation['alert_report']['has_alerts']))
+                                                                    <span class="alert-badge-tracker {{ $validation['alert_report']['status'] === 'fail' ? 'alert-badge-triggered' : 'alert-badge-cleared' }}">
+                                                                        <i class="fa fa-bell-o"></i> {{ $validation['alert_report']['status'] === 'fail' ? 'ALERT TRIGGERED' : 'ALERTS CLEARED' }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="alert-badge-tracker" style="background:#4a5568; color:#cbd5e1; border:1px solid #718096; opacity:0.8;">
+                                                                        <i class="fa fa-bell-slash-o"></i> NO RULES
+                                                                    </span>
+                                                                @endif
+                                                            @endif
                                                         @endif
                                                     </div>
                                                     <div class="log-raw-packet">{{ $displayPacket }}</div>
@@ -780,6 +869,7 @@ $(document).ready(function() {
     let isLoadingLogs = false;
     let secondsLeft = 0;
     let validationEnabled = @json(!empty($protocolValidationEnabled));
+    let alertValidationEnabled = @json(!empty($alertValidationEnabled));
     let selectedProtocolId = @json($selectedProtocolId ?? '');
     let selectedPacketTypeId = @json($selectedPacketTypeId ?? '');
     const packetTypesUrlTemplate = @json(route($route_prefix . '.tracker.protocol.packet-types', ['protocol' => '__PROTOCOL__']));
@@ -828,10 +918,23 @@ $(document).ready(function() {
         const validation = validationEnabled ? (log.validation || null) : null;
         const validationClasses = getValidationClasses(validation);
         const packetTypeName = validation && validation.packet_type_name ? validation.packet_type_name : '';
+        const alertReport = validation && validation.alert_report ? validation.alert_report : null;
+        
         const rowClass = validationEnabled ? validationClasses.row : '';
-        const validationMeta = validationEnabled
+        
+        let validationMeta = validationEnabled
             ? `<span class="validation-badge ${validationClasses.badge}">${escapeHtml(validationClasses.label)}</span>${packetTypeName ? ' <span style="color:#cbd5e1;">' + escapeHtml(packetTypeName) + '</span>' : ''}`
             : '';
+
+        if (alertValidationEnabled) {
+            if (alertReport && alertReport.has_alerts) {
+                const alertStatus = alertReport.status === 'fail' ? 'alert-badge-triggered' : 'alert-badge-cleared';
+                const alertLabel = alertReport.status === 'fail' ? 'ALERT TRIGGERED' : 'ALERTS CLEARED';
+                validationMeta += ` <span class="alert-badge-tracker ${alertStatus}"><i class="fa fa-bell-o"></i> ${alertLabel}</span>`;
+            } else {
+                validationMeta += ` <span class="alert-badge-tracker" style="background:#4a5568; color:#cbd5e1; border:1px solid #718096; opacity:0.8;"><i class="fa fa-bell-slash-o"></i> NO RULES</span>`;
+            }
+        }
 
         $("#logContainer").append(`
             <div class="log-entry ${rowClass}" data-log-id="${log.id}" style="padding:4px 0; border-bottom:1px dashed #333;">
@@ -866,7 +969,7 @@ $(document).ready(function() {
             href = href.split('?')[0];
         }
         
-        let query = '?start_at=' + encodeURIComponent(currentStart) + '&end_at=' + encodeURIComponent(currentEnd) + '&protocol_validation=' + (validationEnabled ? '1' : '0');
+        let query = '?start_at=' + encodeURIComponent(currentStart) + '&end_at=' + encodeURIComponent(currentEnd) + '&protocol_validation=' + (validationEnabled ? '1' : '0') + '&alert_validation=' + (alertValidationEnabled ? '1' : '0');
         if (validationEnabled) {
             query += '&protocol_id=' + encodeURIComponent(selectedProtocolId || '') + '&packet_type_id=' + encodeURIComponent(selectedPacketTypeId || '');
         }
@@ -911,7 +1014,7 @@ $(document).ready(function() {
         $('#autoReloadGroup').css('opacity', '0.5').find('select').attr('disabled', true);
         $('#streamStatus').text('(LIVE)').css('color', '#198754');
 
-        let streamUrl = `{{ route($route_prefix . '.tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}&protocol_validation=${validationEnabled ? '1' : '0'}`;
+        let streamUrl = `{{ route($route_prefix . '.tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}&protocol_validation=${validationEnabled ? '1' : '0'}&alert_validation=${alertValidationEnabled ? '1' : '0'}`;
         if (validationEnabled) {
             streamUrl += `&protocol_id=${encodeURIComponent(selectedProtocolId || '')}&packet_type_id=${encodeURIComponent(selectedPacketTypeId || '')}`;
         }
@@ -1071,7 +1174,11 @@ $(document).ready(function() {
             const originalHtml = $refreshBtn.html();
             $refreshBtn.prop('disabled', true).html('<i class="fa fa-refresh fa-spin" style="margin-right:6px;"></i> REFRESHING...');
 
-            const requestData = { last_id: lastLogId, protocol_validation: validationEnabled ? 1 : 0 };
+            const requestData = { 
+                last_id: lastLogId, 
+                protocol_validation: validationEnabled ? 1 : 0,
+                alert_validation: alertValidationEnabled ? 1 : 0
+            };
             if (validationEnabled) {
                 requestData.protocol_id = selectedProtocolId || '';
                 requestData.packet_type_id = selectedPacketTypeId || '';
@@ -1260,6 +1367,38 @@ $(document).ready(function() {
         });
         
         html += '</div></div>'; // end grid and field summary div
+
+        // Alert Validation Report Section
+        if (alertValidationEnabled && validation.alert_report && validation.alert_report.has_alerts) {
+            const report = validation.alert_report;
+            html += '<div class="alert-report-container">';
+            html += '<div class="alert-report-header">';
+            html += '<h5 class="alert-report-title"><i class="fa fa-bell"></i> Alert Validation Report</h5>';
+            html += '<span class="validation-badge ' + (report.status === 'fail' ? 'validation-badge-fail' : 'validation-badge-pass') + '">' + 
+                    (report.status === 'fail' ? 'FAIL - ALERTS TRIGGERED' : 'PASS - ALL CLEAR') + '</span>';
+            html += '</div>';
+            
+            report.alerts.forEach(function(alert) {
+                html += '<div class="alert-card ' + (alert.triggered ? 'triggered' : 'cleared') + '">';
+                html += '<div class="alert-name">' + escapeHtml(alert.name) + 
+                        '<span class="alert-badge-tracker ' + (alert.triggered ? 'alert-badge-triggered' : 'alert-badge-cleared') + '">' + 
+                        (alert.triggered ? 'TRIGGERED' : 'CLEARED') + '</span></div>';
+                
+                alert.conditions.forEach(function(cond) {
+                    html += '<div class="alert-condition-row">';
+                    html += '<span class="cond-field">' + escapeHtml(cond.field) + '</span>';
+                    html += '<span class="cond-op">' + escapeHtml(cond.operator) + '</span>';
+                    html += '<span class="cond-exp">' + escapeHtml(cond.expected) + '</span>';
+                    html += '<span class="cond-arrow"><i class="fa fa-long-arrow-right"></i></span>';
+                    html += '<span class="cond-act ' + (cond.is_satisfied ? 'match' : 'mismatch') + '">' + 
+                            escapeHtml(cond.actual) + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
         html += '</div>'; // end container
 
         $('#packetValidationModalBody').html(html);
@@ -1271,10 +1410,19 @@ $(document).ready(function() {
         const $groups = $('.protocol-validation-group');
         const $protocolSelect = $('#protocolSelect');
         const $packetSelect = $('#packetTypeSelect');
+        const $alertToggle = $('#alertValidationToggle');
+
         if (!validationEnabled) {
             $groups.addClass('is-hidden');
             $protocolSelect.prop('disabled', true);
             $packetSelect.prop('disabled', true).html('<option value="">Auto Detect</option>');
+            
+            $alertToggle.prop('disabled', true);
+            if (resetSelection) {
+                $alertToggle.val('0');
+                alertValidationEnabled = false;
+            }
+            
             $("#packetFieldsHint").text('Protocol validation is disabled.');
             $("#packetValidationModal").modal('hide');
             if (resetSelection) {
@@ -1288,6 +1436,7 @@ $(document).ready(function() {
 
         $groups.removeClass('is-hidden');
         $protocolSelect.prop('disabled', false);
+        $alertToggle.prop('disabled', false);
 
         if (selectedProtocolId) {
             loadPacketTypes(selectedProtocolId, selectedPacketTypeId);
@@ -1328,6 +1477,11 @@ $(document).ready(function() {
     });
 
     syncProtocolValidationUI(false);
+
+    $('#alertValidationToggle').on('change', function() {
+        alertValidationEnabled = $(this).val() === '1';
+        resetLogListForValidationChange();
+    });
 
     $('#streamToggle').on('change', function() {
         if ($(this).val() === 'ON') {
@@ -1373,7 +1527,13 @@ $(document).ready(function() {
             
             fetchCountXhr = $.ajax({
                 url: `{{ route($route_prefix . '.tracker.logs.fetch', ['imei' => '__IMEI__']) }}`.replace('__IMEI__', encodeURIComponent(imei)),
-                data: Object.assign({ start_at: currentStart, end_at: currentEnd, count_only: 1, protocol_validation: validationEnabled ? 1 : 0 }, validationEnabled ? { protocol_id: selectedProtocolId || '', packet_type_id: selectedPacketTypeId || '' } : {}),
+                data: Object.assign({ 
+                    start_at: currentStart, 
+                    end_at: currentEnd, 
+                    count_only: 1, 
+                    protocol_validation: validationEnabled ? 1 : 0,
+                    alert_validation: alertValidationEnabled ? 1 : 0
+                }, validationEnabled ? { protocol_id: selectedProtocolId || '', packet_type_id: selectedPacketTypeId || '' } : {}),
                 cache: false
             }).done(function(response) {
                 if (response.total_count !== undefined) {

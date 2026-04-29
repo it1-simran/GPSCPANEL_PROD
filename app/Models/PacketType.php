@@ -15,4 +15,9 @@ class PacketType extends BaseModel
     {
         return $this->hasMany(PacketField::class)->orderBy('sequence');
     }
+
+    public function alerts()
+    {
+        return $this->hasMany(PacketAlert::class);
+    }
 }

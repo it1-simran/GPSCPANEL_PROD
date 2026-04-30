@@ -39,9 +39,9 @@
             <form id="alertForm" class="ultra-premium-form">
                 <input type="hidden" name="alert_id" value="{{ $alert->id ?? '' }}">
                 
-                <div class="row">
+                <div class="row custom-layout-row">
                     <!-- Sidebar: Alert Identity -->
-                    <div class="col-lg-4">
+                    <div class="col-lg-4 col-xl-3">
                         <div class="config-sidebar-card">
                             <div class="sidebar-header">
                                 <span class="step-num">01</span>
@@ -86,16 +86,14 @@
                     </div>
 
                     <!-- Main Area: Condition Grid -->
-                    <div class="col-lg-8">
+                    <div class="col-lg-8 col-xl-9">
                         <div class="config-main-area">
-                            <div class="main-area-header">
-                                <div class="d-flex align-items-center justify-content-between w-100">
-                                    <div class="d-flex align-items-center">
-                                        <span class="step-num">02</span>
-                                        <h4>Rule Conditions</h4>
-                                    </div>
-                                    <div id="conditionCount" class="badge-count">0 Fields Active</div>
+                            <div class="main-area-header d-flex justify-content-between align-items-center w-100">
+                                <div class="d-flex align-items-center">
+                                    <span class="step-num">02</span>
+                                    <h4 style="padding-right: 10px; padding-top:10px">Rule Conditions</h4>
                                 </div>
+                                <div id="conditionCount" class="badge-count">0 Fields Active</div>
                             </div>
 
                             <div id="conditionsContainer" class="u-conditions-grid">
@@ -113,8 +111,8 @@
                                                 </button>
                                             </div>
                                             <div class="u-card-body">
-                                                <div class="row no-gutters align-items-center">
-                                                    <div class="col-5">
+                                                <div class="condition-inputs">
+                                                    <div class="c-input-group">
                                                         <select class="u-minimal-select operator-select">
                                                             <option value="==" {{ $cond->operator == '==' ? 'selected' : '' }}>Equals</option>
                                                             <option value="!=" {{ $cond->operator == '!=' ? 'selected' : '' }}>Not Equal</option>
@@ -122,10 +120,10 @@
                                                             <option value=">=" {{ $cond->operator == '>=' ? 'selected' : '' }}>Great/Equal</option>
                                                         </select>
                                                     </div>
-                                                    <div class="col-2 text-center text-muted opacity-50">
+                                                    <div class="c-arrow">
                                                         <i class="fa fa-long-arrow-right"></i>
                                                     </div>
-                                                    <div class="col-5">
+                                                    <div class="c-input-group">
                                                         <input type="text" class="u-minimal-input value-input" value="{{ $cond->value }}" placeholder="Value">
                                                     </div>
                                                 </div>
@@ -144,8 +142,8 @@
                             </div>
 
                             <div class="u-form-footer mt-5">
-                                <a href="{{ route($routePrefix . '.packet-types.alerts', $packetType->id) }}" class="btn-u-secondary">Discard Changes</a>
-                                <button type="button" class="btn-u-primary" onclick="saveAlertConfiguration(this)">
+                                <a href="{{ route($routePrefix . '.packet-types.alerts', $packetType->id) }}" class="btn-u-secondary" style="margin-top: 10px;">Discard Changes</a>
+                                <button type="button" class="btn-u-primary" onclick="saveAlertConfiguration(this)" style="font-size: 15px;">
                                     <i class="fa fa-check-circle"></i> Save Alert Rule
                                 </button>
                             </div>
@@ -159,8 +157,9 @@
 
 <style>
     :root {
-        --u-primary: #6366f1;
-        --u-primary-dark: #4f46e5;
+        --u-primary: #76CF1C;
+        --u-primary-dark: #62b115;
+        --u-primary-light: #eaf7de;
         --u-accent: #f59e0b;
         --u-bg: #fdfdfe;
         --u-text: #1e293b;
@@ -207,8 +206,8 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background: rgba(99, 102, 241, 0.2);
-        color: #a5b4fc;
+        background: rgba(118, 207, 28, 0.2);
+        color: #81e025;
         padding: 6px 16px;
         border-radius: 100px;
         font-size: 0.75rem;
@@ -216,7 +215,7 @@
         text-transform: uppercase;
         letter-spacing: 0.1em;
         margin-bottom: 20px;
-        border: 1px solid rgba(99, 102, 241, 0.3);
+        border: 1px solid rgba(118, 207, 28, 0.3);
     }
 
     .header-content h1 {
@@ -225,18 +224,19 @@
         font-size: 2.5rem;
         margin-bottom: 15px;
         letter-spacing: -0.02em;
+        color: white;
     }
 
     .header-content h1 span {
         color: var(--u-primary);
-        background: linear-gradient(to right, #818cf8, #6366f1);
+        background: linear-gradient(to right, #81e025, #76CF1C);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
 
     .header-content p {
         font-size: 1.1rem;
-        color: #94a3b8;
+        color: #f1f5f9;
         max-width: 600px;
     }
 
@@ -244,7 +244,7 @@
         position: absolute;
         width: 400px;
         height: 400px;
-        background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(118, 207, 28, 0.15) 0%, transparent 70%);
         top: -100px;
         right: -100px;
         border-radius: 50%;
@@ -260,6 +260,12 @@
         border: 1px solid var(--u-border);
         border-radius: 20px;
         padding: 30px;
+        position: sticky;
+        top: 20px;
+    }
+
+    .custom-layout-row {
+        gap: 0;
     }
 
     .sidebar-header {
@@ -270,8 +276,8 @@
     }
 
     .step-num {
-        width: 32px;
-        height: 32px;
+        width: 38px;
+        height: 38px;
         background: var(--u-primary);
         color: white;
         border-radius: 10px;
@@ -279,21 +285,21 @@
         align-items: center;
         justify-content: center;
         font-weight: 800;
-        font-size: 0.8rem;
-        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+        font-size: 1rem;
+        box-shadow: 0 4px 10px rgba(118, 207, 28, 0.3);
     }
 
     .sidebar-header h4 {
         font-family: 'Plus Jakarta Sans', sans-serif;
         font-weight: 700;
-        font-size: 1.1rem;
+        font-size: 1.3rem;
         margin: 0;
         color: var(--u-text);
     }
 
     .u-label {
         display: block;
-        font-size: 0.75rem;
+        font-size: 0.85rem;
         font-weight: 800;
         color: var(--u-text-light);
         text-transform: uppercase;
@@ -315,19 +321,19 @@
 
     .u-input {
         width: 100%;
-        height: 52px;
+        height: 56px;
         border: 1.5px solid var(--u-border);
         border-radius: 14px;
         padding: 10px 15px 10px 45px;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 1.05rem;
         transition: all 0.2s;
         background: white;
     }
 
     .u-input:focus {
         border-color: var(--u-primary);
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
+        box-shadow: 0 0 0 4px rgba(118, 207, 28, 0.08);
         outline: none;
     }
 
@@ -335,7 +341,7 @@
         display: block;
         margin-top: 8px;
         color: #94a3b8;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
     }
 
     /* Main Area */
@@ -344,8 +350,6 @@
     }
 
     .main-area-header {
-        display: flex;
-        align-items: center;
         margin-bottom: 30px;
         padding-bottom: 20px;
         border-bottom: 1px solid var(--u-border);
@@ -354,19 +358,22 @@
     .main-area-header h4 {
         font-family: 'Plus Jakarta Sans', sans-serif;
         font-weight: 700;
-        font-size: 1.1rem;
+        font-size: 1.3rem;
         margin: 0;
         color: var(--u-text);
         margin-left: 15px;
+        line-height: 1;
     }
 
     .badge-count {
         background: var(--u-primary-light);
         color: var(--u-primary);
-        padding: 6px 16px;
+        padding: 8px 20px;
         border-radius: 100px;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
         font-weight: 700;
+        display: flex;
+        align-items: center;
     }
 
     /* Conditions Grid */
@@ -414,9 +421,9 @@
     .field-title {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 1.1rem;
         color: var(--u-text);
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
@@ -451,12 +458,12 @@
 
     .u-minimal-select, .u-minimal-input {
         width: 100%;
-        height: 42px;
+        height: 48px;
         background: #f8fafc;
         border: 1px solid var(--u-border);
         border-radius: 10px;
         padding: 0 12px;
-        font-size: 0.85rem;
+        font-size: 1rem;
         font-weight: 600;
         color: var(--u-text);
         transition: all 0.2s;
@@ -466,6 +473,25 @@
         background: white;
         border-color: var(--u-primary);
         outline: none;
+    }
+
+    /* Condition Input Flexbox Layout */
+    .condition-inputs {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .c-input-group {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .c-arrow {
+        flex: 0 0 20px;
+        text-align: center;
+        color: #cbd5e1;
+        font-size: 0.9rem;
     }
 
     /* Empty State */
@@ -485,17 +511,19 @@
     .u-empty-state h5 {
         font-family: 'Plus Jakarta Sans', sans-serif;
         font-weight: 700;
+        font-size: 1.25rem;
         color: var(--u-text);
     }
 
     .u-empty-state p {
         color: var(--u-text-light);
-        font-size: 0.9rem;
+        font-size: 1rem;
     }
 
     /* Footer */
     .u-form-footer {
         display: flex;
+        align-items: center;
         justify-content: flex-end;
         gap: 20px;
         border-top: 1px solid var(--u-border);
@@ -513,15 +541,16 @@
         font-size: 1rem;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 12px;
-        box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 10px 20px -5px rgba(118, 207, 28, 0.4);
         transition: all 0.3s;
     }
 
     .btn-u-primary:hover {
         background: var(--u-primary-dark);
         transform: translateY(-2px);
-        box-shadow: 0 15px 25px -5px rgba(99, 102, 241, 0.5);
+        box-shadow: 0 15px 25px -5px rgba(118, 207, 28, 0.5);
     }
 
     .btn-u-secondary {
@@ -531,6 +560,7 @@
         font-weight: 700;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         color: var(--u-text-light);
         background: white;
         border: 1.5px solid var(--u-border);
@@ -555,7 +585,7 @@
 
     .select2-container--default.select2-container--focus .select2-selection--multiple {
         border-color: var(--u-primary) !important;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08) !important;
+        box-shadow: 0 0 0 4px rgba(118, 207, 28, 0.08) !important;
     }
 
     .select2-container--default .select2-selection--multiple .select2-selection__choice {
@@ -563,9 +593,9 @@
         border: 1px solid #e2e8f0 !important;
         color: #475569 !important;
         border-radius: 8px !important;
-        padding: 5px 12px !important;
+        padding: 6px 14px !important;
         font-weight: 700 !important;
-        font-size: 0.8rem !important;
+        font-size: 0.95rem !important;
         margin-top: 4px !important;
     }
 
@@ -581,7 +611,7 @@
         align-items: center;
         gap: 12px;
         color: var(--u-text-light);
-        font-size: 0.85rem;
+        font-size: 0.95rem;
         padding: 10px 0;
     }
 
@@ -660,8 +690,8 @@ function initUltraPage() {
                     </button>
                 </div>
                 <div class="u-card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col-5">
+                    <div class="condition-inputs">
+                        <div class="c-input-group">
                             <select class="u-minimal-select operator-select">
                                 <option value="==">Equals</option>
                                 <option value="!=">Not Equal</option>
@@ -669,10 +699,10 @@ function initUltraPage() {
                                 <option value=">=">Great/Equal</option>
                             </select>
                         </div>
-                        <div class="col-2 text-center text-muted opacity-50">
+                        <div class="c-arrow">
                             <i class="fa fa-long-arrow-right"></i>
                         </div>
-                        <div class="col-5">
+                        <div class="c-input-group">
                             <input type="text" class="u-minimal-input value-input" placeholder="Value">
                         </div>
                     </div>
@@ -683,13 +713,17 @@ function initUltraPage() {
     }
 
     function updateEmptyState() {
-        setTimeout(() => {
-            if ($('.u-condition-card').length > 0) {
-                $('#emptyState').addClass('d-none');
-            } else {
-                $('#emptyState').removeClass('d-none');
-            }
-        }, 350);
+        const selected = $('#fieldSelector').val() || [];
+        if (selected.length > 0) {
+            $('#emptyState').addClass('d-none').hide();
+        } else {
+            setTimeout(() => {
+                const currentSelected = $('#fieldSelector').val() || [];
+                if (currentSelected.length === 0 && $('.u-condition-card').length === 0) {
+                    $('#emptyState').removeClass('d-none').show();
+                }
+            }, 350);
+        }
     }
 
     // Run initial sync
@@ -703,7 +737,7 @@ function saveAlertConfiguration(btn) {
     const conditions = [];
 
     if (!name) {
-        Swal.fire({ icon: 'error', title: 'Name Required', text: 'Please give your alert a descriptive name.', confirmButtonColor: '#6366f1' });
+        Swal.fire({ icon: 'error', title: 'Name Required', text: 'Please give your alert a descriptive name.', confirmButtonColor: '#76CF1C' });
         return;
     }
 
@@ -716,12 +750,12 @@ function saveAlertConfiguration(btn) {
     });
 
     if (conditions.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'No Rules', text: 'You must define at least one condition to save this alert.', confirmButtonColor: '#6366f1' });
+        Swal.fire({ icon: 'warning', title: 'No Rules', text: 'You must define at least one condition to save this alert.', confirmButtonColor: '#76CF1C' });
         return;
     }
 
     if (conditions.some(c => c.value === '')) {
-        Swal.fire({ icon: 'error', title: 'Incomplete Rules', text: 'One or more conditions are missing comparison values.', confirmButtonColor: '#6366f1' });
+        Swal.fire({ icon: 'error', title: 'Incomplete Rules', text: 'One or more conditions are missing comparison values.', confirmButtonColor: '#76CF1C' });
         return;
     }
 

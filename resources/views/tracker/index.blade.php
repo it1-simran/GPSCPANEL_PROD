@@ -127,20 +127,28 @@ use App\Helper\CommonHelper;
     margin-bottom: 0;
     box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.filter-row {
+    display: flex;
     flex-wrap: wrap;
     gap: 15px 20px;
     align-items: flex-end;
+    width: 100%;
+}
+.filter-divider {
+    width: 100%;
+    height: 1px;
+    background: #f1f5f9;
 }
 .filter-container .form-group { margin-bottom: 0; flex: 1; min-width: 180px; }
 .filter-container .form-group:has(.flatpickr-datetime) { flex: 1.5; min-width: 220px; }
 .filter-container .form-group.action-group { 
-    flex: 1 1 100%; 
+    flex: 1; 
     display: flex; 
     gap: 12px; 
     justify-content: flex-end;
-    margin-top: 5px;
-    padding-top: 15px;
-    border-top: 1px solid #f1f5f9;
 }
 .protocol-settings-panel {
     background: linear-gradient(180deg, #fbfdff 0%, #f7fbff 100%);
@@ -211,6 +219,7 @@ use App\Helper\CommonHelper;
     #main-content .tracker-page [class*="col-"] { width: 100% !important; max-width: 100%; flex: 100%; margin-bottom: 10px; }
     
     .filter-container,
+    .filter-row,
     .protocol-settings-grid {
         flex-direction: column;
         align-items: stretch;
@@ -479,9 +488,7 @@ use App\Helper\CommonHelper;
 
 /* Alert Validation Specific Styles */
 .alert-report-container {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 2px solid #f1f5f9;
+    width: 100%;
 }
 .alert-report-header {
     display: flex;
@@ -581,47 +588,56 @@ use App\Helper\CommonHelper;
 
                         <form method="GET" action="{{ route($route_prefix . '.tracker.index') }}" class="tracker-filter-form">
                             <div class="filter-container">
-                                <div class="form-group" style="min-width: 200px;">
-                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">IMEI</label>
-                                    <select name="imei" class="form-control" style="width:100%; border-radius:8px;">
-                                        <option value="">Select IMEI</option>
-                                        @foreach($allDevices as $d)
-                                            <option value="{{ $d->imei }}" {{ $imei === $d->imei ? 'selected' : '' }}>{{ $d->imei }} ({{ $d->status_label }})</option>
-                                        @endforeach
-                                    </select>
+                                <!-- Row 1 -->
+                                <div class="filter-row">
+                                    <div class="form-group" style="min-width: 200px; flex: 2;">
+                                        <label style="text-transform:uppercase; letter-spacing:0.5px;">IMEI</label>
+                                        <select name="imei" class="form-control" style="width:100%; border-radius:8px;">
+                                            <option value="">Select IMEI</option>
+                                            @foreach($allDevices as $d)
+                                                <option value="{{ $d->imei }}" {{ $imei === $d->imei ? 'selected' : '' }}>{{ $d->imei }} ({{ $d->status_label }})</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="form-group protocol-validation-toggle-wrap">
+                                        <label style="text-transform:uppercase; letter-spacing:0.5px;">Protocol Validation</label>
+                                        <select name="protocol_validation" id="protocolValidationToggle" class="form-control" style="width:100%; border-radius:8px;">
+                                            <option value="0" {{ empty($protocolValidationEnabled) ? 'selected' : '' }}>OFF</option>
+                                            <option value="1" {{ !empty($protocolValidationEnabled) ? 'selected' : '' }}>ON</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group protocol-validation-toggle-wrap">
+                                        <label style="text-transform:uppercase; letter-spacing:0.5px;">Alert Validation</label>
+                                        <select name="alert_validation" id="alertValidationToggle" class="form-control" style="width:100%; border-radius:8px;">
+                                            <option value="0" {{ empty($alertValidationEnabled) ? 'selected' : '' }}>OFF</option>
+                                            <option value="1" {{ !empty($alertValidationEnabled) ? 'selected' : '' }}>ON</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">Start Date &amp; Time</label>
-                                    <input type="text" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime" style="border-radius:8px;">
-                                </div>
-                                <div class="form-group">
-                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">End Date &amp; Time</label>
-                                    <input type="text" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i:s') }}" @endif style="border-radius:8px;">
-                                </div>
-                                <div class="form-group protocol-validation-toggle-wrap">
-                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">Protocol Validation</label>
-                                    <select name="protocol_validation" id="protocolValidationToggle" class="form-control" style="width:100%; border-radius:8px;">
-                                        <option value="0" {{ empty($protocolValidationEnabled) ? 'selected' : '' }}>OFF</option>
-                                        <option value="1" {{ !empty($protocolValidationEnabled) ? 'selected' : '' }}>ON</option>
-                                    </select>
-                                </div>
-                                <div class="form-group protocol-validation-toggle-wrap">
-                                    <label style="text-transform:uppercase; letter-spacing:0.5px;">Alert Validation</label>
-                                    <select name="alert_validation" id="alertValidationToggle" class="form-control" style="width:100%; border-radius:8px;">
-                                        <option value="0" {{ empty($alertValidationEnabled) ? 'selected' : '' }}>OFF</option>
-                                        <option value="1" {{ !empty($alertValidationEnabled) ? 'selected' : '' }}>ON</option>
-                                    </select>
-                                </div>
-                                <div class="form-group action-group">
-                                    <div style="display:flex; gap:10px; align-items:center;">
-                                        <button type="submit" class="btn btn-primary" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; box-shadow:0 4px 12px rgba(13, 110, 253, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
-                                            <i class="fa fa-filter" style="margin-right:8px;"></i> Apply
-                                        </button>
-                                        @if($device)
-                                        <a id="downloadLogsBtn" href="{{ route($route_prefix . '.tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '']) }}" class="btn btn-success" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; background:#198754; border:none; box-shadow:0 4px 12px rgba(25, 135, 84, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
-                                            <i class="fa fa-download" style="margin-right:8px;"></i> Download ({{ $totalLogsCount }})
-                                        </a>
-                                        @endif
+                                
+                                <div class="filter-divider"></div>
+
+                                <!-- Row 2 -->
+                                <div class="filter-row">
+                                    <div class="form-group">
+                                        <label style="text-transform:uppercase; letter-spacing:0.5px;">Start Date &amp; Time</label>
+                                        <input type="text" name="start_at" value="{{ isset($filters['start_at']) && $filters['start_at'] ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime" style="border-radius:8px;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="text-transform:uppercase; letter-spacing:0.5px;">End Date &amp; Time</label>
+                                        <input type="text" name="end_at" value="{{ isset($filters['end_at']) && $filters['end_at'] ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i:s') : '' }}" class="form-control flatpickr-datetime" @if($device && $device->effective_end_at) max="{{ CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d\TH:i:s') }}" @endif style="border-radius:8px;">
+                                    </div>
+                                    <div class="form-group action-group">
+                                        <div style="display:flex; gap:10px; align-items:center;">
+                                            <button type="submit" class="btn btn-primary" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; box-shadow:0 4px 12px rgba(13, 110, 253, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
+                                                <i class="fa fa-filter" style="margin-right:8px;"></i> Apply
+                                            </button>
+                                            @if($device)
+                                            <a id="downloadLogsBtn" href="{{ route($route_prefix . '.tracker.logs.download', ['device' => $device->id, 'start_at' => request()->has('start_at') && request('start_at') ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'Y-m-d\TH:i') : '', 'end_at' => request()->has('end_at') && request('end_at') ? CommonHelper::getDateAsTimeZone($filters['end_at'], 'Y-m-d\TH:i') : '']) }}" class="btn btn-success" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; background:#198754; border:none; box-shadow:0 4px 12px rgba(25, 135, 84, 0.2); display:inline-flex; align-items:center; justify-content:center; margin:0;">
+                                                <i class="fa fa-download" style="margin-right:8px;"></i> Download ({{ $totalLogsCount }})
+                                            </a>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1332,6 +1348,37 @@ $(document).ready(function() {
         html += '<div class="stat-item"><span class="stat-label">Packet Type</span><span class="stat-value">' + escapeHtml(validation.packet_type_name || 'N/A') + '</span></div>';
         html += '</div>';
 
+        // Alert Validation Report Section
+        if (alertValidationEnabled && validation.alert_report && validation.alert_report.has_alerts) {
+            const report = validation.alert_report;
+            html += '<div class="alert-report-container" style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:8px;">';
+            html += '<div class="alert-report-header" style="margin-bottom:12px;">';
+            html += '<h5 class="alert-report-title" style="margin:0;"><i class="fa fa-bell"></i> Alert Validation Report</h5>';
+            html += '<span class="validation-badge ' + (report.status === 'fail' ? 'validation-badge-fail' : 'validation-badge-pass') + '">' + 
+                    (report.status === 'fail' ? 'FAIL - ALERTS TRIGGERED' : 'PASS - ALL CLEAR') + '</span>';
+            html += '</div>';
+            
+            report.alerts.forEach(function(alert) {
+                html += '<div class="alert-card ' + (alert.triggered ? 'triggered' : 'cleared') + '" style="margin-bottom:10px;">';
+                html += '<div class="alert-name">' + escapeHtml(alert.name) + 
+                        '<span class="alert-badge-tracker ' + (alert.triggered ? 'alert-badge-triggered' : 'alert-badge-cleared') + '">' + 
+                        (alert.triggered ? 'TRIGGERED' : 'CLEARED') + '</span></div>';
+                
+                alert.conditions.forEach(function(cond) {
+                    html += '<div class="alert-condition-row">';
+                    html += '<span class="cond-field">' + escapeHtml(cond.field) + '</span>';
+                    html += '<span class="cond-op">' + escapeHtml(cond.operator) + '</span>';
+                    html += '<span class="cond-exp">' + escapeHtml(cond.expected) + '</span>';
+                    html += '<span class="cond-arrow"><i class="fa fa-long-arrow-right"></i></span>';
+                    html += '<span class="cond-act ' + (cond.is_satisfied ? 'match' : 'mismatch') + '">' + 
+                            escapeHtml(cond.actual) + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
         // Global Errors (if any) - 3 Column Layout
         const errors = validation.errors || {};
         const errorKeys = Object.keys(errors);
@@ -1342,7 +1389,7 @@ $(document).ready(function() {
             errorKeys.forEach(function(key) { html += '<li><strong>' + escapeHtml(key) + ':</strong> ' + escapeHtml(errors[key]) + '</li>'; });
             html += '</ul></div>';
         }
-        
+
         // Field Summary Section
         html += '<div>';
         html += '<h5 style="margin-bottom:12px; font-weight:700; color:#334155; font-size:14px;"><i class="fa fa-list"></i> Field Summary</h5>';
@@ -1367,37 +1414,6 @@ $(document).ready(function() {
         });
         
         html += '</div></div>'; // end grid and field summary div
-
-        // Alert Validation Report Section
-        if (alertValidationEnabled && validation.alert_report && validation.alert_report.has_alerts) {
-            const report = validation.alert_report;
-            html += '<div class="alert-report-container">';
-            html += '<div class="alert-report-header">';
-            html += '<h5 class="alert-report-title"><i class="fa fa-bell"></i> Alert Validation Report</h5>';
-            html += '<span class="validation-badge ' + (report.status === 'fail' ? 'validation-badge-fail' : 'validation-badge-pass') + '">' + 
-                    (report.status === 'fail' ? 'FAIL - ALERTS TRIGGERED' : 'PASS - ALL CLEAR') + '</span>';
-            html += '</div>';
-            
-            report.alerts.forEach(function(alert) {
-                html += '<div class="alert-card ' + (alert.triggered ? 'triggered' : 'cleared') + '">';
-                html += '<div class="alert-name">' + escapeHtml(alert.name) + 
-                        '<span class="alert-badge-tracker ' + (alert.triggered ? 'alert-badge-triggered' : 'alert-badge-cleared') + '">' + 
-                        (alert.triggered ? 'TRIGGERED' : 'CLEARED') + '</span></div>';
-                
-                alert.conditions.forEach(function(cond) {
-                    html += '<div class="alert-condition-row">';
-                    html += '<span class="cond-field">' + escapeHtml(cond.field) + '</span>';
-                    html += '<span class="cond-op">' + escapeHtml(cond.operator) + '</span>';
-                    html += '<span class="cond-exp">' + escapeHtml(cond.expected) + '</span>';
-                    html += '<span class="cond-arrow"><i class="fa fa-long-arrow-right"></i></span>';
-                    html += '<span class="cond-act ' + (cond.is_satisfied ? 'match' : 'mismatch') + '">' + 
-                            escapeHtml(cond.actual) + '</span>';
-                    html += '</div>';
-                });
-                html += '</div>';
-            });
-            html += '</div>';
-        }
 
         html += '</div>'; // end container
 

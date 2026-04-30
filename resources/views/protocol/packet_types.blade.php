@@ -44,7 +44,7 @@
                         @endphp
 
                         <div class="row protocol-stats-row">
-                            <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="col-lg-4 col-md-4 col-sm-6">
                                 <div class="protocol-stat-card">
                                     <div>
                                         <h3>{{ $totalPacketTypes }}</h3>
@@ -53,7 +53,7 @@
                                     <span class="protocol-stat-icon protocol-stat-cyan"><i class="fa fa-list-ul"></i></span>
                                 </div>
                             </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="col-lg-4 col-md-4 col-sm-6">
                                 <div class="protocol-stat-card">
                                     <div>
                                         <h3>{{ $totalFields }}</h3>
@@ -62,7 +62,7 @@
                                     <span class="protocol-stat-icon protocol-stat-blue"><i class="fa fa-cogs"></i></span>
                                 </div>
                             </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="col-lg-4 col-md-4 col-sm-6">
                                 <div class="protocol-stat-card">
                                     <div>
                                         <h3>{{ $protocol->name }}</h3>
@@ -78,14 +78,14 @@
                                 <thead>
                                     <tr>
                                         <th>Packet Name</th>
-                                        <th style="width:190px;" class="text-center">Header Identifier</th>
-                                        <th style="width:130px;" class="text-center">Fields Count</th>
-                                        <th style="width:190px;" class="text-center">Actions</th>
+                                        <th class="text-center">Header Identifier</th>
+                                        <th class="text-center">Fields Count</th>
+                                        <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($packetTypes as $type)
-                                        <tr>
+                                    @foreach ($packetTypes as $type) 
+                                        <tr class="p-0">
                                             <td>
                                                 <div class="protocol-name-cell">
                                                     <span class="protocol-row-icon"><i class="fa fa-cube"></i></span>
@@ -109,10 +109,10 @@
                                                     <a href="{{ route($routePrefix . '.fields', $type->id) }}" class="btn btn-primary btn-sm protocol-manage-btn">
                                                         <i class="fa fa-cogs"></i> Manage Parameters
                                                     </a>
-                                                    <form action="{{ route($routePrefix . '.packet-types.destroy', $type->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this packet type? This will also delete all its associated parameters.');">
+                                                    <form action="{{ route($routePrefix . '.packet-types.destroy', $type->id) }}" method="POST" style="display:inline-flex; margin: 0; padding: 0;" onsubmit="return confirm('Are you sure you want to delete this packet type? This will also delete all its associated parameters.');">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm protocol-delete-btn">
+                                                        <button type="submit" class="btn btn-danger protocol-delete-btn" style="margin-top: -2px;">
                                                             <i class="fa fa-trash"></i> Delete
                                                         </button>
                                                     </form>
@@ -135,17 +135,22 @@
 <script>
 $(function () {
     $('#packet_table').DataTable({
-        pageLength: 10,
-        autoWidth: false,
-        scrollX: false,
-        order: [[0, 'asc']],
-        columnDefs: [
-            { orderable: false, targets: [3] }
-        ]
+        "paging": true,
+        "lengthChange": false,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "autoWidth": false,
+        "responsive": true,
     });
 });
 </script>
 @endsection
+
+
+
+
+
 
 
 

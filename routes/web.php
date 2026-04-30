@@ -267,6 +267,14 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/admin/packet-types/{packet_type}/fields', [App\Http\Controllers\ProtocolController::class, 'viewFields'])->name('protocols.fields');
     Route::delete('/admin/packet-types/{packetType}', [App\Http\Controllers\ProtocolController::class, 'destroyPacketType'])->name('protocols.packet-types.destroy');
     Route::post('/admin/protocols/{protocol}/packet-types/store-full', [App\Http\Controllers\ProtocolController::class, 'storeFullConfiguration'])->name('protocols.packet-types.store-full');
+
+    /* ======================= Packet Alert Routes ======================= */
+    Route::get('/admin/packet-types/{packetType}/alerts', [App\Http\Controllers\PacketAlertController::class, 'index'])->name('protocols.packet-types.alerts');
+    Route::get('/admin/packet-types/{packetType}/alerts/create', [App\Http\Controllers\PacketAlertController::class, 'create'])->name('protocols.packet-types.alerts.create');
+    Route::post('/admin/packet-types/{packetType}/alerts', [App\Http\Controllers\PacketAlertController::class, 'store'])->name('protocols.packet-types.alerts.store');
+    Route::get('/admin/packet-alerts/{alert}/edit', [App\Http\Controllers\PacketAlertController::class, 'edit'])->name('protocols.packet-alerts.edit');
+    Route::put('/admin/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'update'])->name('protocols.packet-alerts.update');
+    Route::delete('/admin/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'destroy'])->name('protocols.packet-alerts.destroy');
 });
 
 Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function () {
@@ -455,5 +463,13 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::get('/packet-types/{packet_type}/fields', [\App\Http\Controllers\ProtocolController::class, 'viewFields'])->name('support.protocols.fields');
     Route::delete('/packet-types/{packetType}', [\App\Http\Controllers\ProtocolController::class, 'destroyPacketType'])->name('support.protocols.packet-types.destroy');
     Route::post('/protocols/{protocol}/packet-types/store-full', [\App\Http\Controllers\ProtocolController::class, 'storeFullConfiguration'])->name('support.protocols.packet-types.store-full');
+
+    /* ======================= Packet Alert Routes ======================= */
+    Route::get('/packet-types/{packetType}/alerts', [App\Http\Controllers\PacketAlertController::class, 'index'])->name('support.protocols.packet-types.alerts');
+    Route::get('/packet-types/{packetType}/alerts/create', [App\Http\Controllers\PacketAlertController::class, 'create'])->name('support.protocols.packet-types.alerts.create');
+    Route::post('/packet-types/{packetType}/alerts', [App\Http\Controllers\PacketAlertController::class, 'store'])->name('support.protocols.packet-types.alerts.store');
+    Route::get('/packet-alerts/{alert}/edit', [App\Http\Controllers\PacketAlertController::class, 'edit'])->name('support.protocols.packet-alerts.edit');
+    Route::put('/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'update'])->name('support.protocols.packet-alerts.update');
+    Route::delete('/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'destroy'])->name('support.protocols.packet-alerts.destroy');
 });
 

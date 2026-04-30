@@ -32,7 +32,7 @@
                         <div class="clearfix"></div>
                     </div>
 
-                    <div class="c_content">
+                    <div class="c_content" style="padding-left: 0; padding-right: 0;">
                         @if(session('success'))
                             <div class="alert alert-success">{{ session('success') }}</div>
                         @endif
@@ -143,11 +143,19 @@
         overflow: hidden;
     }
 
-    .protocol-page .c_title h2 {
+    .protocol-page .bgx-title-container {
+        padding: 15px 20px;
+        margin-left: 0;
+        margin-right: 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .protocol-page .bgx-title-container h2 {
         margin: 0;
         font-size: 20px;
         font-weight: 700;
         color: #222;
+        line-height: 34px;
     }
 
     .protocol-add-btn {

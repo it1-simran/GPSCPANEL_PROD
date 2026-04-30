@@ -15,4 +15,9 @@ class PacketField extends BaseModel
     {
         return $this->belongsTo(PacketType::class);
     }
+
+    public function alertConditions()
+    {
+        return $this->hasMany(PacketAlertCondition::class);
+    }
 }

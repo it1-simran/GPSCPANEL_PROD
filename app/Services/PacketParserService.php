@@ -36,15 +36,42 @@ class PacketParserService
         }
 
         $protocols = $protocolId
-            ? Protocol::with(['packetTypes.fields'])->where('id', $protocolId)->get()
-            : Protocol::with(['packetTypes.fields'])->where('is_active', true)->get();
+            ? Protocol::with(['packetTypes' => function ($q) {
+                $q->where('is_active', true);
+            }, 'packetTypes.fields' => function ($q) {
+                $q->orderBy('sequence');
+            }])->where('id', $protocolId)->get()
+            : Protocol::with(['packetTypes' => function ($q) {
+                $q->where('is_active', true);
+            }, 'packetTypes.fields' => function ($q) {
+                $q->orderBy('sequence');
+            }])->where('is_active', true)->get();
+
+        $bestMatchResult = null;
+        $bestMatchErrorsCount = PHP_INT_MAX;
+        $bestMatchCandidate = null;
 
         foreach ($protocols as $protocol) {
             foreach ($protocol->packetTypes as $candidate) {
                 if ($this->isMatching($rawData, $candidate)) {
-                    return $this->processPacket($rawData, $candidate, $log, false);
+                    $result = $this->processPacket($rawData, $candidate, null, false);
+                    
+                    if ($result['is_valid']) {
+                        return $this->processPacket($rawData, $candidate, $log, false);
+                    }
+
+                    $errorsCount = count($result['errors']);
+                    if ($errorsCount < $bestMatchErrorsCount) {
+                        $bestMatchErrorsCount = $errorsCount;
+                        $bestMatchResult = $result;
+                        $bestMatchCandidate = $candidate;
+                    }
                 }
             }
+        }
+
+        if ($bestMatchResult) {
+            return $this->processPacket($rawData, $bestMatchCandidate, $log, false);
         }
 
         return $this->skippedResult(
@@ -219,7 +246,7 @@ class PacketParserService
                 $alertService = app(\App\Services\AlertService::class);
                 
                 // 1. Existing behavior: Trigger actual alerts/tickets (Only for valid packets to avoid false alarms)
-                if ($isValid) {
+                if ($isValid && $log) {
                     $alertService->evaluate($packetType->id, $parsedData, $log);
                 }
                 

@@ -601,9 +601,11 @@ use App\Helper\CommonHelper;
                                     </div>
                                     <div class="form-group protocol-validation-toggle-wrap">
                                         <label style="text-transform:uppercase; letter-spacing:0.5px;">Protocol Validation</label>
-                                        <select name="protocol_validation" id="protocolValidationToggle" class="form-control" style="width:100%; border-radius:8px;">
-                                            <option value="0" {{ empty($protocolValidationEnabled) ? 'selected' : '' }}>OFF</option>
-                                            <option value="1" {{ !empty($protocolValidationEnabled) ? 'selected' : '' }}>ON</option>
+                                        <select name="protocol_id" id="protocolValidationToggle" class="form-control" style="width:100%; border-radius:8px;">
+                                            <option value="" {{ empty($selectedProtocolId) ? 'selected' : '' }}>OFF</option>
+                                            @foreach($protocols as $protocol)
+                                                <option value="{{ $protocol->id }}" {{ (string) $selectedProtocolId === (string) $protocol->id ? 'selected' : '' }}>{{ $protocol->name }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                     <div class="form-group protocol-validation-toggle-wrap">
@@ -642,35 +644,6 @@ use App\Helper\CommonHelper;
                                 </div>
                             </div>
 
-                            <div id="protocolValidationPanel" class="protocol-settings-panel protocol-validation-group {{ empty($protocolValidationEnabled) ? 'is-hidden' : '' }}">
-                                <div class="protocol-settings-header">
-                                    <div>
-                                        <p class="protocol-settings-title">Protocol Validation Settings</p>
-                                        <p class="protocol-settings-subtitle">Choose the protocol and packet type here when validation mode is enabled.</p>
-                                    </div>
-                                </div>
-                                <div class="protocol-settings-grid">
-                                    <div class="form-group">
-                                        <label style="text-transform:uppercase; letter-spacing:0.5px;">Protocol</label>
-                                        <select name="protocol_id" id="protocolSelect" class="form-control" style="width:100%; border-radius:8px;" {{ !empty($protocolValidationEnabled) ? '' : 'disabled' }}>
-                                            <option value="">Select Protocol</option>
-                                            @foreach($protocols as $protocol)
-                                                <option value="{{ $protocol->id }}" {{ (string) $selectedProtocolId === (string) $protocol->id ? 'selected' : '' }}>{{ $protocol->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label style="text-transform:uppercase; letter-spacing:0.5px;">Packet Type</label>
-                                        <select name="packet_type_id" id="packetTypeSelect" class="form-control" style="width:100%; border-radius:8px;" {{ (!empty($protocolValidationEnabled) && $selectedProtocolId) ? '' : 'disabled' }}>
-                                            <option value="">Auto Detect</option>
-                                            @foreach($packetTypes as $packetType)
-                                                <option value="{{ $packetType->id }}" {{ (string) $selectedPacketTypeId === (string) $packetType->id ? 'selected' : '' }}>{{ $packetType->name }}{{ $packetType->header_identifier ? ' (' . $packetType->header_identifier . ')' : '' }}</option>
-                                            @endforeach
-                                        </select>
-                                        <div id="packetFieldsHint" class="protocol-fields-hint"></div>
-                                    </div>
-                                </div>
-                            </div>
                         </form>
 
                         @if($device)
@@ -887,11 +860,8 @@ $(document).ready(function() {
     let validationEnabled = @json(!empty($protocolValidationEnabled));
     let alertValidationEnabled = @json(!empty($alertValidationEnabled));
     let selectedProtocolId = @json($selectedProtocolId ?? '');
-    let selectedPacketTypeId = @json($selectedPacketTypeId ?? '');
-    const packetTypesUrlTemplate = @json(route($route_prefix . '.tracker.protocol.packet-types', ['protocol' => '__PROTOCOL__']));
     const addedLogIds = new Set();
     const validationByLogId = {};
-    const packetTypeFieldsById = {};
 
     // Pre-populate with initial log IDs
     $('.log-entry').each(function() {
@@ -985,9 +955,9 @@ $(document).ready(function() {
             href = href.split('?')[0];
         }
         
-        let query = '?start_at=' + encodeURIComponent(currentStart) + '&end_at=' + encodeURIComponent(currentEnd) + '&protocol_validation=' + (validationEnabled ? '1' : '0') + '&alert_validation=' + (alertValidationEnabled ? '1' : '0');
+        let query = '?start_at=' + encodeURIComponent(currentStart) + '&end_at=' + encodeURIComponent(currentEnd) + '&alert_validation=' + (alertValidationEnabled ? '1' : '0');
         if (validationEnabled) {
-            query += '&protocol_id=' + encodeURIComponent(selectedProtocolId || '') + '&packet_type_id=' + encodeURIComponent(selectedPacketTypeId || '');
+            query += '&protocol_id=' + encodeURIComponent(selectedProtocolId || '');
         }
         $btn.attr('href', href + query);
     }
@@ -1030,9 +1000,9 @@ $(document).ready(function() {
         $('#autoReloadGroup').css('opacity', '0.5').find('select').attr('disabled', true);
         $('#streamStatus').text('(LIVE)').css('color', '#198754');
 
-        let streamUrl = `{{ route($route_prefix . '.tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}&protocol_validation=${validationEnabled ? '1' : '0'}&alert_validation=${alertValidationEnabled ? '1' : '0'}`;
+        let streamUrl = `{{ route($route_prefix . '.tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}&alert_validation=${alertValidationEnabled ? '1' : '0'}`;
         if (validationEnabled) {
-            streamUrl += `&protocol_id=${encodeURIComponent(selectedProtocolId || '')}&packet_type_id=${encodeURIComponent(selectedPacketTypeId || '')}`;
+            streamUrl += `&protocol_id=${encodeURIComponent(selectedProtocolId || '')}`;
         }
         sseSource = new EventSource(streamUrl);
 
@@ -1192,12 +1162,10 @@ $(document).ready(function() {
 
             const requestData = { 
                 last_id: lastLogId, 
-                protocol_validation: validationEnabled ? 1 : 0,
                 alert_validation: alertValidationEnabled ? 1 : 0
             };
             if (validationEnabled) {
                 requestData.protocol_id = selectedProtocolId || '';
-                requestData.packet_type_id = selectedPacketTypeId || '';
             }
             
             // Auto-extend endAt if it's in the past (only for Today)
@@ -1263,51 +1231,6 @@ $(document).ready(function() {
         $("#packetValidationModal").modal("hide");
         $("#logContainer").html('<div id="emptyLogState" style="padding:20px; color:#ccc;">' + (validationEnabled ? 'Loading logs with selected protocol validation...' : 'Loading raw logs...') + '</div>');
         loadLatestLogs({ resetTimer: true });
-    }
-
-    function loadPacketTypes(protocolId, selectedId) {
-        const $packetSelect = $('#packetTypeSelect');
-        $('#packetFieldsHint').text('');
-        $packetSelect.html('<option value="">Auto Detect</option>');
-        selectedPacketTypeId = selectedId || '';
-
-        if (!protocolId) {
-            $packetSelect.prop('disabled', true);
-            return;
-        }
-
-        $packetSelect.prop('disabled', true).append('<option value="" disabled>Loading...</option>');
-        $.ajax({
-            url: packetTypesUrlTemplate.replace('__PROTOCOL__', encodeURIComponent(protocolId)),
-            cache: false
-        }).done(function(response) {
-            $packetSelect.html('<option value="">Auto Detect</option>');
-            (response.packet_types || []).forEach(function(type) {
-                const label = type.name + (type.header_identifier ? ' (' + type.header_identifier + ')' : '');
-                packetTypeFieldsById[type.id] = type.fields || [];
-                const option = $('<option>').val(type.id).text(label).attr('data-fields-count', type.fields_count || 0);
-                if (String(selectedPacketTypeId) === String(type.id)) option.prop('selected', true);
-                $packetSelect.append(option);
-            });
-            $packetSelect.prop('disabled', false);
-            updatePacketFieldsHint();
-        }).fail(function() {
-            $packetSelect.html('<option value="">Failed to load packet types</option>').prop('disabled', true);
-        });
-    }
-
-    function updatePacketFieldsHint() {
-        const selected = $('#packetTypeSelect option:selected');
-        const count = selected.attr('data-fields-count');
-        if ($('#protocolSelect').val() && $('#packetTypeSelect').val()) {
-            const fields = packetTypeFieldsById[$('#packetTypeSelect').val()] || [];
-            const preview = fields.slice(0, 6).map(field => field.name).join(', ');
-            $('#packetFieldsHint').html((count || 0) + ' configured fields' + (preview ? ': ' + escapeHtml(preview) + (fields.length > 6 ? '...' : '') : '') + '.');
-        } else if ($('#protocolSelect').val()) {
-            $('#packetFieldsHint').text('Auto Detect will match by packet header.');
-        } else {
-            $('#packetFieldsHint').text('Select a protocol to enable validation.');
-        }
     }
 
     function escapeHtml(value) {
@@ -1423,66 +1346,30 @@ $(document).ready(function() {
 
 
     function syncProtocolValidationUI(resetSelection) {
-        const $groups = $('.protocol-validation-group');
-        const $protocolSelect = $('#protocolSelect');
-        const $packetSelect = $('#packetTypeSelect');
         const $alertToggle = $('#alertValidationToggle');
 
         if (!validationEnabled) {
-            $groups.addClass('is-hidden');
-            $protocolSelect.prop('disabled', true);
-            $packetSelect.prop('disabled', true).html('<option value="">Auto Detect</option>');
-            
             $alertToggle.prop('disabled', true);
             if (resetSelection) {
                 $alertToggle.val('0');
                 alertValidationEnabled = false;
             }
             
-            $("#packetFieldsHint").text('Protocol validation is disabled.');
             $("#packetValidationModal").modal('hide');
             if (resetSelection) {
                 selectedProtocolId = '';
-                selectedPacketTypeId = '';
-                $protocolSelect.val('');
-                $packetSelect.val('');
             }
             return;
         }
 
-        $groups.removeClass('is-hidden');
-        $protocolSelect.prop('disabled', false);
         $alertToggle.prop('disabled', false);
-
-        if (selectedProtocolId) {
-            loadPacketTypes(selectedProtocolId, selectedPacketTypeId);
-        } else {
-            $packetSelect.prop('disabled', true).html('<option value="">Auto Detect</option>');
-            updatePacketFieldsHint();
-        }
     }
 
     $('#protocolValidationToggle').on('change', function() {
-        validationEnabled = $(this).val() === '1';
+        selectedProtocolId = $(this).val();
+        validationEnabled = !!selectedProtocolId;
         syncProtocolValidationUI(true);
         resetLogListForValidationChange();
-    });
-
-    $('#protocolSelect').on('change', function() {
-        selectedProtocolId = $(this).val();
-        selectedPacketTypeId = '';
-        loadPacketTypes(selectedProtocolId, '');
-        if (validationEnabled) {
-            resetLogListForValidationChange();
-        }
-    });
-
-    $('#packetTypeSelect').on('change', function() {
-        selectedPacketTypeId = $(this).val();
-        updatePacketFieldsHint();
-        if (validationEnabled) {
-            resetLogListForValidationChange();
-        }
     });
 
     $('#logContainer').on('click', '.log-entry', function() {
@@ -1547,9 +1434,8 @@ $(document).ready(function() {
                     start_at: currentStart, 
                     end_at: currentEnd, 
                     count_only: 1, 
-                    protocol_validation: validationEnabled ? 1 : 0,
                     alert_validation: alertValidationEnabled ? 1 : 0
-                }, validationEnabled ? { protocol_id: selectedProtocolId || '', packet_type_id: selectedPacketTypeId || '' } : {}),
+                }, validationEnabled ? { protocol_id: selectedProtocolId || '' } : {}),
                 cache: false
             }).done(function(response) {
                 if (response.total_count !== undefined) {

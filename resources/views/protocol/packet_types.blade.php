@@ -133,24 +133,16 @@
 @include('protocol.partials.protocol_styles')
 
 <script>
-$(function () {
-    $('#packet_table').DataTable({
-        "paging": true,
-        "lengthChange": false,
-        "searching": true,
-        "ordering": true,
-        "info": true,
-        "autoWidth": false,
-        "responsive": true,
+    $(function () {
+        $('#packet_table').DataTable({
+            "paging": true,
+            "lengthChange": false,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "autoWidth": false,
+            "responsive": true,
+        });
     });
-});
 </script>
 @endsection
-
-
-
-
-
-
-
-

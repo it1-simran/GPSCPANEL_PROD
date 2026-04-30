@@ -44,6 +44,7 @@ class LiveTrackerController extends Controller
         }
 
         $protocolValidationEnabled = $request->boolean('protocol_validation') || $request->filled('protocol_id') || $request->filled('packet_type_id');
+        $alertValidationEnabled = $request->boolean('alert_validation');
         $selectedProtocolId = $protocolValidationEnabled ? $request->query('protocol_id') : null;
         $selectedPacketTypeId = $protocolValidationEnabled ? $request->query('packet_type_id') : null;
         $protocols = Protocol::where('is_active', true)->orderBy('name')->get();
@@ -88,6 +89,7 @@ class LiveTrackerController extends Controller
             'selectedProtocolId' => $selectedProtocolId,
             'selectedPacketTypeId' => $selectedPacketTypeId,
             'protocolValidationEnabled' => $protocolValidationEnabled,
+            'alertValidationEnabled' => $alertValidationEnabled,
         ]);
     }
 
@@ -110,6 +112,7 @@ class LiveTrackerController extends Controller
         $lastId = (int) $request->query('last_id', 0);
         $lastCommandTs = $request->query('last_command_ts', now()->toDateTimeString());
         $protocolValidationEnabled = $request->boolean('protocol_validation') || $request->filled('protocol_id') || $request->filled('packet_type_id');
+        $alertValidationEnabled = $request->boolean('alert_validation');
         $protocolId = $protocolValidationEnabled ? $request->query('protocol_id') : null;
         $packetTypeId = $protocolValidationEnabled ? $request->query('packet_type_id') : null;
 
@@ -217,6 +220,7 @@ class LiveTrackerController extends Controller
         [$startAt, $endAt] = $this->validatedWindow($device, $request);
         $lastId = (int) $request->query('last_id', 0);
         $protocolValidationEnabled = $request->boolean('protocol_validation') || $request->filled('protocol_id') || $request->filled('packet_type_id');
+        $alertValidationEnabled = $request->boolean('alert_validation');
         $protocolId = $protocolValidationEnabled ? $request->query('protocol_id') : null;
         $packetTypeId = $protocolValidationEnabled ? $request->query('packet_type_id') : null;
 
@@ -459,6 +463,12 @@ class LiveTrackerController extends Controller
                 'parsed_data' => [],
                 'errors' => [],
                 'field_summary' => [],
+                'alert_report' => [
+                    'has_alerts' => false,
+                    'status' => 'none',
+                    'summary' => 'Validation disabled.',
+                    'alerts' => []
+                ],
             ];
 
         return $logArray;
@@ -479,6 +489,12 @@ class LiveTrackerController extends Controller
                 'parsed_data' => [],
                 'errors' => [],
                 'field_summary' => [],
+                'alert_report' => [
+                    'has_alerts' => false,
+                    'status' => 'none',
+                    'summary' => 'Validation disabled.',
+                    'alerts' => []
+                ],
             ];
 
         return $log;

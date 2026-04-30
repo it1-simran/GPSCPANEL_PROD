@@ -80,8 +80,8 @@ class LiveTrackerController extends Controller
             'totalLogsCount' => $totalLogsCount,
             'status' => $status,
             'filters' => [
-                'start_at' => $startAt->format('Y-m-d\TH:i'),
-                'end_at' => $endAt->format('Y-m-d\TH:i'),
+                'start_at' => $startAt,
+                'end_at' => $endAt,
             ],
             'route_prefix' => strtolower(auth()->user()->user_type) === 'admin' ? 'admin' : 'support',
             'protocols' => $protocols,

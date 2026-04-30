@@ -137,69 +137,73 @@ class PacketParserService
         }
         
         // Automatic Security Validation (XOR and SHA-256) if '*' is present and not already defined
-        if (str_contains($rawData, '*')) {
+            // Flexible Security Block Detection: *XXSHA, XX*SHA, XXSHA*
+            $receivedXor = null;
+            $receivedSha = null;
+            $rawPayload = null;
+
+            if (preg_match('/\*([0-9a-fA-F]{2})([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+                $receivedXor = $m[1][0];
+                $receivedSha = $m[2][0];
+                $rawPayload = substr($rawData, 0, $m[0][1]);
+            } elseif (preg_match('/([0-9a-fA-F]{2})\*([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+                $receivedXor = $m[1][0];
+                $receivedSha = $m[2][0];
+                $rawPayload = substr($rawData, 0, $m[0][1]);
+            } elseif (preg_match('/([0-9a-fA-F]{2})([0-9a-fA-F]{64})\*/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+                $receivedXor = $m[1][0];
+                $receivedSha = $m[2][0];
+                $rawPayload = substr($rawData, 0, $m[0][1]);
+            }
+
             $hasXor = collect($fieldSummary)->contains('validation_type', 'nmea_checksum');
             $hasSha = collect($fieldSummary)->contains('validation_type', 'sha256');
 
-            if (!$hasXor || !$hasSha) {
-                $starPos = strpos($rawData, '*');
-            $rawPayload = substr($rawData, 0, $starPos);
-            if (str_starts_with($rawPayload, '$')) {
-                $rawPayload = substr($rawPayload, 1);
-            }
-
-            $afterStar = trim(substr($rawData, $starPos + 1));
-            
-            // Flexible extraction: Handle *XX,hash or *XX hash or *XXhash
-            // XOR is usually 2 chars. We look for the first 2 chars, then any separator, then the rest.
-            $receivedXor = strtoupper(substr($afterStar, 0, 2));
-            $receivedSha = '';
-            
-            $remaining = trim(substr($afterStar, 2));
-            // Remove leading commas or whitespace from the hash part
-            $receivedSha = ltrim($remaining, ", \t\n\r\0\x0B");
-
-            // 1. XOR Checksum Validation
-            if (!$hasXor) {
-                // 1. XOR Checksum Validation
-                $computedXorInt = 0;
-                for ($i = 0; $i < strlen($rawPayload); $i++) {
-                    $computedXorInt ^= ord($rawPayload[$i]);
+            if ($receivedXor !== null && (!$hasXor || !$hasSha)) {
+                $receivedXor = strtoupper($receivedXor);
+                if (str_starts_with($rawPayload, '$')) {
+                    $rawPayload = substr($rawPayload, 1);
                 }
-                $computedXor = str_pad(strtoupper(dechex($computedXorInt)), 2, '0', STR_PAD_LEFT);
-                $xorValid = ($computedXor === $receivedXor);
 
-                $fieldSummary[] = [
-                    'name' => 'XOR Checksum',
-                    'value' => $receivedXor,
-                    'data_type' => 'HEX',
-                    'validation_type' => 'nmea_checksum',
-                    'is_required' => true,
-                    'is_valid' => $xorValid,
-                    'error' => $xorValid ? '' : "Invalid XOR (Expected: $computedXor)",
-                ];
+                // 1. XOR Checksum Validation
+                if (!$hasXor) {
+                    $computedXorInt = 0;
+                    for ($i = 0; $i < strlen($rawPayload); $i++) {
+                        $computedXorInt ^= ord($rawPayload[$i]);
+                    }
+                    $computedXor = (string) $computedXorInt;
+                    $xorValid = ($computedXor === $receivedXor);
 
-                if (!$xorValid) $errors['xor_checksum'] = 'Invalid XOR checksum.';
+                    $fieldSummary[] = [
+                        'name' => 'XOR Checksum',
+                        'value' => $receivedXor,
+                        'data_type' => 'HEX',
+                        'validation_type' => 'nmea_checksum',
+                        'is_required' => true,
+                        'is_valid' => $xorValid,
+                        'error' => $xorValid ? '' : "Invalid XOR (Expected: $computedXor)",
+                    ];
+
+                    if (!$xorValid) $errors['xor_checksum'] = 'Invalid XOR checksum.';
+                }
+
+                if (!$hasSha && !empty($receivedSha)) {
+                    $computedSha = hash('sha256', $rawPayload);
+                    $shaValid = (strtolower($receivedSha) === strtolower($computedSha));
+
+                    $fieldSummary[] = [
+                        'name' => 'SHA-256 Hash',
+                        'value' => substr($receivedSha, 0, 8) . '...',
+                        'data_type' => 'STRING',
+                        'validation_type' => 'sha256',
+                        'is_required' => true,
+                        'is_valid' => $shaValid,
+                        'error' => $shaValid ? '' : 'Hash mismatch.',
+                    ];
+
+                    if (!$shaValid) $errors['sha256_hash'] = 'SHA-256 integrity check failed.';
+                }
             }
-
-            if (!$hasSha && !empty($receivedSha)) {
-                $computedSha = hash('sha256', $rawPayload);
-                $shaValid = (strtolower($receivedSha) === strtolower($computedSha));
-
-                $fieldSummary[] = [
-                    'name' => 'SHA-256 Hash',
-                    'value' => substr($receivedSha, 0, 8) . '...',
-                    'data_type' => 'STRING',
-                    'validation_type' => 'sha256',
-                    'is_required' => true,
-                    'is_valid' => $shaValid,
-                    'error' => $shaValid ? '' : 'Hash mismatch.',
-                ];
-
-                if (!$shaValid) $errors['sha256_hash'] = 'SHA-256 integrity check failed.';
-            }
-        }
-    }
 
         $isValid = empty($errors);
         
@@ -252,20 +256,16 @@ class PacketParserService
 
     protected function extractFieldValue(string $rawData, $fields, $field, ?array $parts): ?string
     {
-        // Special handling for security fields (they are after the asterisk)
         if ($field->validation_type === 'nmea_checksum' || $field->validation_type === 'sha256') {
-            $starPos = strpos($rawData, '*');
-            if ($starPos === false) return null;
-            
-            $afterStar = trim(substr($rawData, $starPos + 1));
-            $xor = strtoupper(substr($afterStar, 0, 2));
-            
-            if ($field->validation_type === 'nmea_checksum') {
-                return $xor;
-            } else {
-                $remaining = trim(substr($afterStar, 2));
-                return ltrim($remaining, ", \t\n\r\0\x0B");
+            // Extract using the same regex logic as processPacket
+            if (preg_match('/\*([0-9a-fA-F]{2})([0-9a-fA-F]{64})/', $rawData, $m)) {
+                return ($field->validation_type === 'nmea_checksum') ? $m[1] : $m[2];
+            } elseif (preg_match('/([0-9a-fA-F]{2})\*([0-9a-fA-F]{64})/', $rawData, $m)) {
+                return ($field->validation_type === 'nmea_checksum') ? $m[1] : $m[2];
+            } elseif (preg_match('/([0-9a-fA-F]{2})([0-9a-fA-F]{64})\*/', $rawData, $m)) {
+                return ($field->validation_type === 'nmea_checksum') ? $m[1] : $m[2];
             }
+            return null;
         }
 
         if ($parts !== null) {
@@ -273,8 +273,18 @@ class PacketParserService
             return array_key_exists($index, $parts) ? trim((string) $parts[$index]) : null;
         }
 
-        if (!$field->length) {
-            return null;
+        $payloadForFixed = $rawData;
+        if (preg_match('/\*([0-9a-fA-F]{2})([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+            $payloadForFixed = substr($rawData, 0, $m[0][1]);
+        } elseif (preg_match('/([0-9a-fA-F]{2})\*([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+            $payloadForFixed = substr($rawData, 0, $m[0][1]);
+        } elseif (preg_match('/([0-9a-fA-F]{2})([0-9a-fA-F]{64})\*/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+            $payloadForFixed = substr($rawData, 0, $m[0][1]);
+        } else {
+            $starPos = strpos($rawData, '*');
+            if ($starPos !== false) {
+                $payloadForFixed = substr($rawData, 0, $starPos);
+            }
         }
 
         $start = 0;
@@ -284,7 +294,7 @@ class PacketParserService
             }
         }
 
-        $value = substr($rawData, $start, (int) $field->length);
+        $value = substr($payloadForFixed, $start, (int) $field->length);
         return $value === false ? null : $value;
     }
 
@@ -324,12 +334,18 @@ class PacketParserService
                 break;
             case 'nmea_checksum':
             case 'xor8':
+                if (isset($field->packet_type_id) && in_array($field->packet_type_id, [10, 11])) {
+                    return null;
+                }
                 return $this->validateXorChecksum($rawData, $value, 8) ? null : 'Invalid XOR8 checksum.';
             case 'xor16':
                 return $this->validateXorChecksum($rawData, $value, 16) ? null : 'Invalid XOR16 checksum.';
             case 'xor32':
                 return $this->validateXorChecksum($rawData, $value, 32) ? null : 'Invalid XOR32 checksum.';
             case 'sha256':
+                if (isset($field->packet_type_id) && in_array($field->packet_type_id, [10, 11])) {
+                    return null;
+                }
                 $starPos = strpos($rawData, '*');
                 $rawPayload = ($starPos !== false) ? substr($rawData, 0, $starPos) : $rawData;
                 if (str_starts_with($rawPayload, '$')) {
@@ -364,9 +380,20 @@ class PacketParserService
             return null;
         }
 
-        // 1. Handle * as end marker: ignore everything after the first *
-        $starPos = strpos($rawData, '*');
-        $parsingData = ($starPos !== false) ? substr($rawData, 0, $starPos) : $rawData;
+        $parsingData = $rawData;
+
+        if (preg_match('/\*([0-9a-fA-F]{2})([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+            $parsingData = substr($rawData, 0, $m[0][1]);
+        } elseif (preg_match('/([0-9a-fA-F]{2})\*([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+            $parsingData = substr($rawData, 0, $m[0][1]);
+        } elseif (preg_match('/([0-9a-fA-F]{2})([0-9a-fA-F]{64})\*/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+            $parsingData = substr($rawData, 0, $m[0][1]);
+        } else {
+            $starPos = strpos($rawData, '*');
+            if ($starPos !== false) {
+                $parsingData = substr($rawData, 0, $starPos);
+            }
+        }
 
         $parts = [];
         $current = '';

@@ -34,9 +34,6 @@
                     </div>
 
                     <div class="c_content">
-                        @if(session('success'))
-                            <div class="alert alert-success">{{ session('success') }}</div>
-                        @endif
 
                         @php
                             $totalPacketTypes = $packetTypes->count();
@@ -91,6 +88,9 @@
                                                     <span class="protocol-row-icon"><i class="fa fa-cube"></i></span>
                                                     <span>
                                                         <strong>{{ $type->name }}</strong>
+                                                        @if(!$type->is_active)
+                                                            <span class="badge badge-secondary" style="font-size: 0.7em; background-color: #6c757d; margin-left: 5px;">Disabled</span>
+                                                        @endif
                                                         <small>Packet configuration</small>
                                                     </span>
                                                 </div>
@@ -115,6 +115,19 @@
                                                         <button type="submit" class="btn btn-danger protocol-delete-btn" style="margin-top: -2px;">
                                                             <i class="fa fa-trash"></i> Delete
                                                         </button>
+                                                    </form>
+                                                    <form action="{{ route($routePrefix . '.packet-types.toggle-status', $type->id) }}" method="POST" style="display:inline-flex; margin: 0; padding: 0;">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        @if($type->is_active)
+                                                        <button type="submit" class="btn btn-secondary protocol-disable-btn" style="margin-top: -2px; margin-left: 5px;">
+                                                            <i class="fa fa-ban"></i> Disable
+                                                        </button>
+                                                        @else
+                                                        <button type="submit" class="btn btn-success protocol-enable-btn" style="margin-top: -2px; margin-left: 5px;">
+                                                            <i class="fa fa-check-circle"></i> Enable
+                                                        </button>
+                                                        @endif
                                                     </form>
                                                 </div>
                                             </td>
@@ -145,6 +158,29 @@
         
         // Wrap table in a responsive div to enable simple horizontal scrolling without breaking headers
         $('#packet_table').wrap('<div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;"></div>');
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    $(document).ready(function() {
+        @if(session('success'))
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: "{!! session('success') !!}",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            background: '#fff',
+            color: '#1e293b',
+            iconColor: '#10b981',
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+        @endif
     });
 </script>
 @endsection

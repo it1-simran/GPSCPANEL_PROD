@@ -266,6 +266,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     
     Route::get('/admin/packet-types/{packet_type}/fields', [App\Http\Controllers\ProtocolController::class, 'viewFields'])->name('protocols.fields');
     Route::delete('/admin/packet-types/{packetType}', [App\Http\Controllers\ProtocolController::class, 'destroyPacketType'])->name('protocols.packet-types.destroy');
+    Route::patch('/admin/packet-types/{packetType}/toggle-status', [App\Http\Controllers\ProtocolController::class, 'togglePacketTypeStatus'])->name('protocols.packet-types.toggle-status');
     Route::post('/admin/protocols/{protocol}/packet-types/store-full', [App\Http\Controllers\ProtocolController::class, 'storeFullConfiguration'])->name('protocols.packet-types.store-full');
 
     /* ======================= Packet Alert Routes ======================= */
@@ -462,6 +463,7 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     
     Route::get('/packet-types/{packet_type}/fields', [\App\Http\Controllers\ProtocolController::class, 'viewFields'])->name('support.protocols.fields');
     Route::delete('/packet-types/{packetType}', [\App\Http\Controllers\ProtocolController::class, 'destroyPacketType'])->name('support.protocols.packet-types.destroy');
+    Route::patch('/packet-types/{packetType}/toggle-status', [\App\Http\Controllers\ProtocolController::class, 'togglePacketTypeStatus'])->name('support.protocols.packet-types.toggle-status');
     Route::post('/protocols/{protocol}/packet-types/store-full', [\App\Http\Controllers\ProtocolController::class, 'storeFullConfiguration'])->name('support.protocols.packet-types.store-full');
 
     /* ======================= Packet Alert Routes ======================= */

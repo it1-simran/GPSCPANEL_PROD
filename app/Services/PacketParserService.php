@@ -290,14 +290,16 @@ class PacketParserService
             return null;
         }
 
-        if ($field->validation_type === 'nmea_checksum' || $field->validation_type === 'sha256') {
+        if (in_array($field->validation_type, ['nmea_checksum', 'xor8', 'sha256'])) {
             // Extract using the same regex logic as processPacket
             if (preg_match('/\*([0-9a-fA-F]{2})([0-9a-fA-F]{64})/', $rawData, $m)) {
-                return ($field->validation_type === 'nmea_checksum') ? $m[1] : $m[2];
+                return ($field->validation_type === 'sha256') ? $m[2] : $m[1];
             } elseif (preg_match('/([0-9a-fA-F]{2})\*([0-9a-fA-F]{64})/', $rawData, $m)) {
-                return ($field->validation_type === 'nmea_checksum') ? $m[1] : $m[2];
+                return ($field->validation_type === 'sha256') ? $m[2] : $m[1];
             } elseif (preg_match('/([0-9a-fA-F]{2})([0-9a-fA-F]{64})\*/', $rawData, $m)) {
-                return ($field->validation_type === 'nmea_checksum') ? $m[1] : $m[2];
+                return ($field->validation_type === 'sha256') ? $m[2] : $m[1];
+            } elseif (preg_match('/\*([0-9a-fA-F]{2})/', $rawData, $m)) {
+                return ($field->validation_type === 'sha256') ? null : $m[1];
             }
             return null;
         }
@@ -375,8 +377,8 @@ class PacketParserService
                 if (isset($field->packet_type_id) && in_array($field->packet_type_id, [10, 11])) {
                     return null;
                 }
-                if (str_contains($rawData, '$NMP') || str_contains($rawData, 'NMP,')) {
-                    // For NMP protocols, the 2-digit hex is often a length count, so skip XOR validation
+                if (str_contains($rawData, '$NMP') || str_contains($rawData, 'NMP,') || str_contains($rawData, ',JSD,')) {
+                    // For NMP/JSD protocols, the 2-digit hex is often a length count, so skip XOR validation
                     return null;
                 }
                 return $this->validateXorChecksum($rawData, $value, 8) ? null : 'Invalid XOR8 checksum.';

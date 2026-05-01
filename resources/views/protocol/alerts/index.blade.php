@@ -102,15 +102,16 @@
 
 <script>
 $(function () {
-    #alert_table.DataTable({
+    var table = $('#alert_table').DataTable({
         pageLength: 10,
         autoWidth: false,
-        scrollX: false,
         order: [[0, 'asc']],
         columnDefs: [
             { orderable: false, targets: [1, 3] }
         ]
     });
+    // Wrap table in a responsive div to enable simple horizontal scrolling without breaking headers
+    $('#alert_table').wrap('<div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;"></div>');
 });
 </script>
 @endsection

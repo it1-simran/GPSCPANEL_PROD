@@ -134,15 +134,17 @@
 
 <script>
     $(function () {
-        $('#packet_table').DataTable({
+        var table = $('#packet_table').DataTable({
             "paging": true,
             "lengthChange": false,
             "searching": true,
             "ordering": true,
             "info": true,
-            "autoWidth": false,
-            "responsive": true,
+            "autoWidth": false
         });
+        
+        // Wrap table in a responsive div to enable simple horizontal scrolling without breaking headers
+        $('#packet_table').wrap('<div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;"></div>');
     });
 </script>
 @endsection

@@ -16,7 +16,11 @@
             <option value="imei" {{ $field->validation_type == 'imei' ? 'selected' : '' }}>IMEI</option>
             <option value="date_ddmmyyyy" {{ $field->validation_type == 'date_ddmmyyyy' ? 'selected' : '' }}>Date (DDMMYYYY)</option>
             <option value="time_hhmmss" {{ $field->validation_type == 'time_hhmmss' ? 'selected' : '' }}>Time (HHMMSS)</option>
-            <option value="nmea_checksum" {{ $field->validation_type == 'nmea_checksum' ? 'selected' : '' }}>NMEA Checksum</option>
+            <option value="nmea_checksum" {{ $field->validation_type == 'nmea_checksum' ? 'selected' : '' }}>NMEA Checksum (XOR8)</option>
+            <option value="xor8" {{ $field->validation_type == 'xor8' ? 'selected' : '' }}>XOR8 Checksum</option>
+            <option value="xor16" {{ $field->validation_type == 'xor16' ? 'selected' : '' }}>XOR16 Checksum</option>
+            <option value="xor32" {{ $field->validation_type == 'xor32' ? 'selected' : '' }}>XOR32 Checksum</option>
+            <option value="sha256" {{ $field->validation_type == 'sha256' ? 'selected' : '' }}>SHA-256 Hash</option>
             <option value="regex" {{ $field->validation_type == 'regex' || $field->regex_pattern ? 'selected' : '' }}>Custom Regex</option>
         </select>
         <input type="text" name="regex_pattern" value="{{ $field->regex_pattern }}" 

@@ -220,6 +220,14 @@ class ProtocolController extends Controller
         return redirect()->route($this->getProtocolRoute('packet-types'), $protocolId)->with('success', 'Packet type deleted successfully.');
     }
 
+    public function togglePacketTypeStatus(PacketType $packetType)
+    {
+        $packetType->is_active = !$packetType->is_active;
+        $packetType->save();
+        $status = $packetType->is_active ? 'enabled' : 'disabled';
+        return redirect()->back()->with('success', "Packet type {$status} successfully.");
+    }
+
     private function getProtocolRoute($suffix, $request = null)
     {
         $user = $request ? $request->user() : auth()->user();

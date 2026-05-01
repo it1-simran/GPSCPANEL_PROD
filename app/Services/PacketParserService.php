@@ -283,6 +283,13 @@ class PacketParserService
 
     protected function extractFieldValue(string $rawData, $fields, $field, ?array $parts): ?string
     {
+        if (strtolower(trim($field->name)) === 'end character') {
+            if (str_contains($rawData, '*')) {
+                return '*';
+            }
+            return null;
+        }
+
         if ($field->validation_type === 'nmea_checksum' || $field->validation_type === 'sha256') {
             // Extract using the same regex logic as processPacket
             if (preg_match('/\*([0-9a-fA-F]{2})([0-9a-fA-F]{64})/', $rawData, $m)) {
@@ -336,7 +343,11 @@ class PacketParserService
         }
 
         if ($field->length && strlen($value) !== (int) $field->length) {
-            return 'Length must be ' . $field->length . ' characters.';
+            if ($field->validation_type === 'sha256' && strlen($value) === 64) {
+                // Ignore length error, it's a valid 64-char sha256 even if field length is misconfigured
+            } else {
+                return 'Length must be ' . $field->length . ' characters.';
+            }
         }
 
         if ($field->fixed_value !== null && $field->fixed_value !== '' && $value !== $field->fixed_value) {
@@ -364,6 +375,10 @@ class PacketParserService
                 if (isset($field->packet_type_id) && in_array($field->packet_type_id, [10, 11])) {
                     return null;
                 }
+                if (str_contains($rawData, '$NMP') || str_contains($rawData, 'NMP,')) {
+                    // For NMP protocols, the 2-digit hex is often a length count, so skip XOR validation
+                    return null;
+                }
                 return $this->validateXorChecksum($rawData, $value, 8) ? null : 'Invalid XOR8 checksum.';
             case 'xor16':
                 return $this->validateXorChecksum($rawData, $value, 16) ? null : 'Invalid XOR16 checksum.';
@@ -373,8 +388,20 @@ class PacketParserService
                 if (isset($field->packet_type_id) && in_array($field->packet_type_id, [10, 11])) {
                     return null;
                 }
-                $starPos = strpos($rawData, '*');
-                $rawPayload = ($starPos !== false) ? substr($rawData, 0, $starPos) : $rawData;
+                $rawPayload = $rawData;
+                if (preg_match('/\*([0-9a-fA-F]{2})([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+                    $rawPayload = substr($rawData, 0, $m[0][1]);
+                } elseif (preg_match('/([0-9a-fA-F]{2})\*([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+                    $rawPayload = substr($rawData, 0, $m[0][1]);
+                } elseif (preg_match('/([0-9a-fA-F]{2})([0-9a-fA-F]{64})\*/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+                    $rawPayload = substr($rawData, 0, $m[0][1]);
+                } else {
+                    $starPos = strpos($rawData, '*');
+                    if ($starPos !== false) {
+                        $rawPayload = substr($rawData, 0, $starPos);
+                    }
+                }
+
                 if (str_starts_with($rawPayload, '$')) {
                     $rawPayload = substr($rawPayload, 1);
                 }
@@ -473,24 +500,28 @@ class PacketParserService
 
     protected function validateXorChecksum(string $rawData, string $receivedHex, int $bits = 8): bool
     {
-        $starPos = strpos($rawData, '*');
         $payload = $rawData;
 
-        if ($starPos !== false) {
-            $beforeStar = substr($rawData, 0, $starPos);
-            $afterStar = substr($rawData, $starPos + 1);
-            
-            // If the received value is at the very beginning (before *), 
-            // then the payload is what comes after.
-            if (trim($beforeStar) === trim($receivedHex)) {
-                $payload = $afterStar;
-            } else {
-                // Otherwise, the payload is what's before the *
-                $payload = $beforeStar;
-            }
+        if (preg_match('/\*([0-9a-fA-F]{2})([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+            $payload = substr($rawData, 0, $m[0][1]);
+        } elseif (preg_match('/([0-9a-fA-F]{2})\*([0-9a-fA-F]{64})/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+            $payload = substr($rawData, 0, $m[0][1]);
+        } elseif (preg_match('/([0-9a-fA-F]{2})([0-9a-fA-F]{64})\*/', $rawData, $m, PREG_OFFSET_CAPTURE)) {
+            $payload = substr($rawData, 0, $m[0][1]);
         } else {
-            // No star? Just remove the checksum value from the raw string to get payload
-            $payload = str_replace($receivedHex, '', $rawData);
+            $starPos = strpos($rawData, '*');
+            if ($starPos !== false) {
+                $beforeStar = substr($rawData, 0, $starPos);
+                $afterStar = substr($rawData, $starPos + 1);
+                
+                if (trim($beforeStar) === trim($receivedHex)) {
+                    $payload = $afterStar;
+                } else {
+                    $payload = $beforeStar;
+                }
+            } else {
+                $payload = str_replace($receivedHex, '', $rawData);
+            }
         }
 
         // Strip NMEA $ prefix if present

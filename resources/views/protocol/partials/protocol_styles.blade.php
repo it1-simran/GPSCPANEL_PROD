@@ -296,6 +296,16 @@
         color: #fff;
         box-shadow: 0 3px 8px rgba(239, 68, 68, 0.25);
     }
+    .btn-secondary.protocol-disable-btn {
+        background: linear-gradient(135deg, #64748b, #475569);
+        color: #fff;
+        box-shadow: 0 3px 8px rgba(100, 116, 139, 0.25);
+    }
+    .btn-success.protocol-enable-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #fff;
+        box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+    }
 
     .protocol-actions .btn:hover {
         transform: translateY(-1px);

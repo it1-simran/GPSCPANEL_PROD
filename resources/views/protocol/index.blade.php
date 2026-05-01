@@ -184,6 +184,7 @@
         justify-content: space-between;
         min-height: 82px;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+        margin-bottom: 15px;
     }
 
     .protocol-stat-card h3 {
@@ -325,11 +326,9 @@
         border-radius: 4px;
         }
 
-    .protocol-page .dataTables_wrapper,
-    .protocol-page .dataTables_scroll,
-    .protocol-page .dataTables_scrollBody {
+    .protocol-page .dataTables_wrapper {
         width: 100% !important;
-        overflow: visible !important;
+        padding: 15px;
     }
 
     .protocol-page .dataTables_wrapper .dataTables_length,
@@ -369,15 +368,17 @@
 
 <script>
 $(function () {
-    #protocol_table.DataTable({
+    var table = $('#protocol_table').DataTable({
         pageLength: 10,
         autoWidth: false,
-        scrollX: false,
         order: [[0, 'asc']],
         columnDefs: [
             { orderable: false, targets: [4] }
         ]
     });
+    
+    // Wrap table in a responsive div to enable simple horizontal scrolling without breaking headers
+    $('#protocol_table').wrap('<div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;"></div>');
 });
 </script>
 @endsection

@@ -266,6 +266,7 @@ class PacketParserService
             'packet_type_name' => $packetType->name,
             'protocol_name' => optional($packetType->protocol)->name,
             'parsed_data' => $parsedData,
+            'raw_packet' => $rawData,
             'errors' => $errors,
             'field_summary' => $fieldSummary,
             'alert_report' => $alertReport,

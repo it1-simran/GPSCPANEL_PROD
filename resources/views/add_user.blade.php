@@ -38,12 +38,12 @@
       <div class="row">
         <div class="col-md-12">
           <!--=========== START TAGS INPUT ===========-->
-          <div class="c_panel">
-            <div class="c_title">
-              <h2>Add Account</h2>
+          <div class="c_panel" style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border: none; overflow: hidden; margin-bottom: 30px;">
+            <div class="c_title" style="padding: 24px 30px; border-bottom: none; background-color: #76CF1C;">
+              <h2 style="font-weight: 700; color: #ffffff; font-size: 20px; margin: 0;">Add Account</h2>
               <div class="clearfix"></div>
             </div><!--/.c_title-->
-            <div class="c_content">
+            <div class="c_content" style="padding: 30px;">
               <div class="row" id="alert_msg">
                 @if ($message = Session::get('success'))
                 <div class="col-sm-12 alert alert-success" role="alert">
@@ -66,73 +66,78 @@
                 @endif
                 <div class="col-sm-12 alert alert-success success_msg" role="alert" style="display:none"></div>
                 <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
-                <form class="validator form-horizontal" id="commentForm" method="post" action="#" onsubmit="return false">
+                <form class="validator" id="commentForm" method="post" action="#" onsubmit="return false">
                   @csrf
-                  <div class="form-group">
-                    <label for="curl" class="control-label col-md-3 col-sm-12">Account Type</label>
-                    <div class="col-md-6 col-sm-12">
-                      <select class="form-control" id="userType" name="user_type">
-                        <option value="Reseller">Manufacturer</option>
-                        <option selected="selected" value="User">Dealer</option>
-                        @if($currentUser->user_type =='Admin')
-                        <option value="Support">Support</option>
-                        @endif
-                      </select>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="userType" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Account Type <span style="color: #ef4444;">*</span></label>
+                        <select class="form-control" id="userType" name="user_type" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px;">
+                          <option value="Reseller">Manufacturer</option>
+                          <option selected="selected" value="User">Dealer</option>
+                          @if($currentUser->user_type =='Admin')
+                          <option value="Support">Support</option>
+                          @endif
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="cname" class="control-label col-md-3 col-sm-12">Name <span class="require">*</span></label>
-                    <div class="col-md-6 col-sm-12">
-                      <input class=" form-control" placeholder="Enter Name" id="cname" name="name" type="text" required />
+                    
+                    <div class="col-md-6">
+                      <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="cname" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Name <span style="color: #ef4444;">*</span></label>
+                        <input class="form-control" placeholder="Enter Name" id="cname" name="name" type="text" required style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" />
+                      </div>
                     </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="cemail" class="control-label col-md-3 col-sm-12">Mobile <span class="require">*</span></label>
-                    <div class="col-md-6 col-sm-12">
-                      <input class="form-control" placeholder="Enter Mobile Number" id="cmobile" type="text" name="mobile" maxlength="10" required />
+
+                    <div class="col-md-6">
+                      <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="cmobile" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Mobile <span style="color: #ef4444;">*</span></label>
+                        <input class="form-control" placeholder="Enter Mobile Number" id="cmobile" type="text" name="mobile" maxlength="10" required style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" />
+                      </div>
                     </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="cemail" class="control-label col-md-3 col-sm-12">E-Mail <span class="require">*</span></label>
-                    <div class="col-md-6 col-sm-12">
-                      <input class="form-control" placeholder="Enter E-Mail" id="cemail" type="email" name="email" required />
+
+                    <div class="col-md-6">
+                      <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="cemail" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">E-Mail <span style="color: #ef4444;">*</span></label>
+                        <input class="form-control" placeholder="Enter E-Mail" id="cemail" type="email" name="email" required style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" />
+                      </div>
                     </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="timezone" class="control-label col-md-3 col-sm-12">TimeZones <span class="require">*</span></label>
-                    <div class="col-md-6 col-sm-12">
-                      <select name="timezone" class="select2" id="timezone">
-                        <option value="">Please Select Time Zone</option>
-                        @foreach($timeZones as $timezone)
-                        @php
-                        $tzValue = $timezone->name . ' (' . $timezone->utc_offset . ')';
-                        @endphp
-                        <option value="{{ $timezone->name }}">
-                          {{ $tzValue }}
-                        </option>
-                        @endforeach
-                      </select>
+
+                    <div class="col-md-6">
+                      <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="timezone" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">TimeZones <span style="color: #ef4444;">*</span></label>
+                        <select name="timezone" class="form-control select2" id="timezone" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; width: 100%;">
+                          <option value="">Please Select Time Zone</option>
+                          @foreach($timeZones as $timezone)
+                          @php
+                          $tzValue = $timezone->name . ' (' . $timezone->utc_offset . ')';
+                          @endphp
+                          <option value="{{ $timezone->name }}">
+                            {{ $tzValue }}
+                          </option>
+                          @endforeach
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="curl" class="control-label col-md-3 col-sm-12">Login Password <span class="require">*</span></label>
-                    <div class="col-md-6 col-sm-12">
-                      <input class="form-control" placeholder="Enter Login password" type="password" name="password" required />
+
+                    <div class="col-md-6">
+                      <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="password" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Login Password <span style="color: #ef4444;">*</span></label>
+                        <input class="form-control" placeholder="Enter Login password" type="password" id="password" name="password" required style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" />
+                      </div>
                     </div>
                   </div>
                   <div class="is-support-active" style="display: none;"></div>
                   @if($currentUser->user_type =='Admin')
 
-                  <div class="form-group bgx-margin-bottom row">
-                    <label for="curl" class="control-label col-md-3 col-sm-12">Device Categories<span class="require">*</span></label>
-                    <div class="col-lg-9 bgx-margin-top row ">
+                  <div class="form-group" style="margin-top: 10px; margin-bottom: 30px;">
+                    <label style="font-weight: 700; color: #334155; font-size: 16px; margin-bottom: 16px; display: block; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Device Categories <span style="color: #ef4444;">*</span></label>
+                    <div class="row" style="margin-top: 16px;">
                       @foreach($getDeviceCategory as $deviceCategory)
-                      <div class="row col-md-6">
-                        <div class="col-xs-6 col-sm-6 col-md-4">
-                          <label class='bgx-label-category'>{{$deviceCategory->device_category_name}}</label>
-                        </div>
-                        <div class="col-xs-6 col-sm-6 col-md-2 text-right">
-                          <input type="checkbox" class="bgx-checkbox-category " name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput()">
+                      <div class="col-md-3 col-sm-6" style="margin-bottom: 15px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+                          <label class="bgx-label-category" style="margin: 0; font-weight: 600; color: #475569; cursor: pointer;">{{$deviceCategory->device_category_name}}</label>
+                          <input type="checkbox" class="bgx-checkbox-category " name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput()" style="width: 18px; height: 18px; margin: 0; cursor: pointer;">
                         </div>
                       </div>
                       @endforeach
@@ -140,17 +145,15 @@
                   </div>
                   @endif
                   @if($currentUser->user_type == 'Reseller')
-                  <div class="form-group bgx-margin-bottom row">
-                    <label for="curl" class="control-label col-md-3 col-sm-12">Device Categories<span class="require">*</span></label>
-                    <div class="col-lg-6 bgx-margin-top row ">
+                  <div class="form-group" style="margin-top: 10px; margin-bottom: 30px;">
+                    <label style="font-weight: 700; color: #334155; font-size: 16px; margin-bottom: 16px; display: block; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Device Categories <span style="color: #ef4444;">*</span></label>
+                    <div class="row" style="margin-top: 16px;">
                       @foreach($getDeviceCategory as $deviceCategory)
                       @if(in_array($deviceCategory->id,$deviceCategoryArr))
-                      <div class="row">
-                        <div class="col-md-4">
-                          <label class='bgx-label-category'>{{$deviceCategory->device_category_name}}</label>
-                        </div>
-                        <div class="col-md-2">
-                          <input type="checkbox" {{ in_array($deviceCategory->id, $deviceCategoryArr) ? 'checked' : '' }} class="bgx-checkbox-category bgx-checkbox-category-{{$deviceCategory->id}}" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput({{Auth::user()->id}},{{$deviceCategory->id}})">
+                      <div class="col-md-3 col-sm-6" style="margin-bottom: 15px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+                          <label class="bgx-label-category" style="margin: 0; font-weight: 600; color: #475569; cursor: pointer;">{{$deviceCategory->device_category_name}}</label>
+                          <input type="checkbox" {{ in_array($deviceCategory->id, $deviceCategoryArr) ? 'checked' : '' }} class="bgx-checkbox-category bgx-checkbox-category-{{$deviceCategory->id}}" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput({{Auth::user()->id}},{{$deviceCategory->id}})" style="width: 18px; height: 18px; margin: 0; cursor: pointer;">
                         </div>
                       </div>
                       @endif
@@ -160,11 +163,11 @@
                   @foreach($getDeviceCategory as $key => $category)
                   @if(in_array($category->id,$deviceCategoryArr))
 
-                  <div class="device-category-fields card device-category-block-{{$category->id}}">
-                    <div class="card-title">
-                      <h4>{{ CommonHelper::getDeviceCategoryName($category->id) }}</h4>
+                  <div class="device-category-fields card device-category-block-{{$category->id}}" style="border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 30px; overflow: hidden; background: #ffffff;">
+                    <div class="card-title" style="background-color: #76CF1C; border-bottom: 1px solid #76CF1C; padding: 16px 24px; margin: 0;">
+                      <h4 style="margin: 0; font-weight: 700; color: #ffffff; font-size: 16px;">{{ CommonHelper::getDeviceCategoryName($category->id) }} Configuration</h4>
                     </div>
-                    <div class="card-details">
+                    <div class="card-details" style="padding: 24px;">
                       @php
                       $inputs = json_decode($category->inputs, true);
                       $totalInputs = count($inputs);
@@ -186,16 +189,16 @@
                       ->get();
                       @endphp
                       <div class="row">
-                        <div class="col-md-6 col-sm-12">
-                          <div class="form-group">
-                            <label for="templates<?= $category->id ?>" class="control-label col-md-3 col-sm-12">
-                              Templates <span class="require">*</span>
+                        <div class="col-md-6">
+                          <div class="form-group" style="margin-bottom: 24px;">
+                            <label for="templates<?= $category->id ?>" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">
+                              Templates <span style="color: #ef4444;">*</span>
                             </label>
-                            <div class="col-md-8 col-sm-12">
-                              <select class="userAccType form-control "
+                            <select class="userAccType form-control"
                                 id="templates<?= $category->id ?>"
                                 name="configuration[<?= $category->id ?>][template]"
-                                onchange="changeTemplate(<?= $category->id ?>)">
+                                onchange="changeTemplate(<?= $category->id ?>)"
+                                style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;">
                                 <?php if (!empty($templates)): ?>
                                   <?php foreach ($templates as $temp): ?>
                                     <option value="<?= $temp['id'] ?>"
@@ -207,55 +210,57 @@
                                 <?php else: ?>
                                   <option>No Template Found</option>
                                 <?php endif; ?>
-                              </select>
-                            </div>
+                            </select>
                           </div>
-                          <div class="col-lg-6">
+                        </div>
+                        <div class="col-md-6">
                             @php
                             $firmwares = \DB::table('firmware')->where('device_category_id', $category->id)->get();
                             @endphp
-                            <div class="form-group">
-                              <label for="firmware<?= $category->id ?>" class="control-label col-lg-3">
-                                Firmware <span class="require">*</span>
-                              </label>
-                              <div class="col-lg-8">
-                                <select class="form-control"
-                                  id="firmware<?= $category->id ?>"
-                                  data-index="<?= $category->id ?>"
-                                  data-category="<?= $category->id ?>"
-                                  name="configuration[<?= $category->id ?>][firmware_id]"
-                                  onchange="changeFirmware(<?= $category->id ?>)">
-                                  @foreach($firmwares as $firmware)
-                                  <option value="{{ $firmware->id }}" {{ $firmware->is_default == 1 ? 'selected' : '' }}>
-                                    {{ $firmware->name }}
-                                  </option>
-                                  @endforeach
-                                </select>
-                              </div>
-                            </div>
+                          <div class="form-group" style="margin-bottom: 24px;">
+                            <label for="firmware<?= $category->id ?>" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">
+                              Firmware <span style="color: #ef4444;">*</span>
+                            </label>
+                            <select class="form-control"
+                                id="firmware<?= $category->id ?>"
+                                data-index="<?= $category->id ?>"
+                                data-category="<?= $category->id ?>"
+                                data-category-name="{{ CommonHelper::getDeviceCategoryName($category->id) }}"
+                                name="configuration[<?= $category->id ?>][firmware_id]"
+                                onchange="changeFirmware(<?= $category->id ?>)"
+                                <?= $firmwares->isEmpty() ? 'disabled' : '' ?>
+                                style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;">
+                                @if($firmwares->isEmpty())
+                                    <option value="">Not Found</option>
+                                @else
+                                    @foreach($firmwares as $firmware)
+                                    <option value="{{ $firmware->id }}" {{ $firmware->is_default == 1 ? 'selected' : '' }}>
+                                      {{ $firmware->name }}
+                                    </option>
+                                    @endforeach
+                                @endif
+                            </select>
                           </div>
                         </div>
-                        <div class="row">
-                          <div class="col-lg-6">
-                            <div class="form-group">
-                              <label class="control-label col-lg-3">Model Name <span class="require">*</span></label>
-                              <div class="col-lg-8">
-                                <input type="text" class="form-control" name="configuration[<?= $category->id ?>][modelName]" id="modelName<?= $category->id ?>" readonly />
-                              </div>
-                            </div>
-                          </div>
-                          <div class="col-lg-6">
-                            <div class="form-group">
-                              <label class="control-label col-lg-3">Vendor ID <span class="require">*</span></label>
-                              <div class="col-lg-8">
-                                <input type="text" class="form-control" name="configuration[<?= $category->id ?>][vendorId]" id="vendorId<?= $category->id ?>" readonly />
-                              </div>
-                            </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-6">
+                          <div class="form-group" style="margin-bottom: 24px;">
+                            <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Model Name <span style="color: #ef4444;">*</span></label>
+                            <input type="text" class="form-control" name="configuration[<?= $category->id ?>][modelName]" id="modelName<?= $category->id ?>" readonly style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; background-color: #f8fafc;" />
                           </div>
                         </div>
+                        <div class="col-md-6">
+                          <div class="form-group" style="margin-bottom: 24px;">
+                            <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Vendor ID <span style="color: #ef4444;">*</span></label>
+                            <input type="text" class="form-control" name="configuration[<?= $category->id ?>][vendorId]" id="vendorId<?= $category->id ?>" readonly style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; background-color: #f8fafc;" />
+                          </div>
+                        </div>
+                      </div>
                         <script>
                           $(document).ready(function() {
                             setTimeout(function() {
+                              changeTemplate(<?= $category->id ?>);
                               changeFirmware(<?= $category->id ?>);
                             }, 500);
                           });
@@ -273,54 +278,50 @@
                           @endif
                           @if(isset($input['key']))
                           <div class="col-lg-6">
-                            <input class="form-control inputType" type="hidden" placeholder="Enter {{$input['key']}}" name="idParameters[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" value="{{$input['id']}}" />
+                            <input class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" type="hidden" placeholder="Enter {{$input['key']}}" name="idParameters[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" value="{{$input['id']}}" />
                             @php
                             $validationConfig = json_decode($input['validationConfig'],true);
                             @endphp
                             @if ($input['type'] == 'select')
 
-                            <div class="form-group">
-                              <label class="control-label col-lg-3">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
-                              <div class="col-lg-8">
-                                <select class="form-control inputType" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }}>
-                                  <!-- <option value="">Please Select</option> -->
-                                  @foreach($validationConfig['selectOptions'] as $configkey => $option)
-                                  <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
-                                  @endforeach
-                                </select>
-                              </div>
+                            <div class="form-group" style="margin-bottom: 24px;">
+                              <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span style="color: #ef4444;">*</span>' : '' !!}</label>
+                              <select class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }} style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;">
+                                <!-- <option value="">Please Select</option> -->
+                                @foreach($validationConfig['selectOptions'] as $configkey => $option)
+                                <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
+                                @endforeach
+                              </select>
                             </div>
                             @elseif ($input['type'] == 'multiselect')
                             @php
                             $validationConfig = json_decode($input['validationConfig'],true);
                             @endphp
-                            <div class="form-group">
-                              <label class="control-label col-lg-3">
-                                {{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}
+                            <div class="form-group" style="margin-bottom: 24px;">
+                              <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">
+                                {{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span style="color: #ef4444;">*</span>' : '' !!}
                               </label>
-                              <div class="col-lg-8">
-                                <select class="inputType" id="configval{{$category->id}}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}][]" multiple {{ $input['requiredFieldInput'] ? 'required' : '' }}>
-                                  @foreach($validationConfig['selectOptions'] as $configkey => $option)
-                                  @php
-                                  $inputKey = str_replace(' ', '_', strtolower($input['key']));
-                                  $rawValue = $configurationValue[$inputKey]['value'] ?? [];
-                                  if (is_string($rawValue)) {
-                                  $decoded = json_decode($rawValue, true);
-                                  $selectedValues = is_array($decoded) ? $decoded : explode(',', $rawValue);
-                                  } elseif (is_array($rawValue)) {
-                                  $selectedValues = $rawValue;
-                                  } else {
-                                  $selectedValues = [];
-                                  }
-                                  $selectedValues = array_map('strval', $selectedValues);
-                                  @endphp
-                                  <option value="{{ $validationConfig['selectValues'][$configkey] }}"
-                                    {{ in_array($validationConfig['selectValues'][$configkey], $selectedValues) ? 'selected' : '' }}>
-                                    {{ $option }}
-                                  </option>
-                                  @endforeach
-                                </select>
-                              </div>
+                              <select class="inputType" id="configval{{$category->id}}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}][]" multiple {{ $input['requiredFieldInput'] ? 'required' : '' }} style="width: 100%;">
+                                @foreach($validationConfig['selectOptions'] as $configkey => $option)
+                                @php
+                                $inputKey = str_replace(' ', '_', strtolower($input['key']));
+                                $rawValue = $configurationValue[$inputKey]['value'] ?? [];
+                                if (is_string($rawValue)) {
+                                $decoded = json_decode($rawValue, true);
+                                $selectedValues = is_array($decoded) ? $decoded : explode(',', $rawValue);
+                                } elseif (is_array($rawValue)) {
+                                $selectedValues = $rawValue;
+                                } else {
+                                $selectedValues = [];
+                                }
+                                $selectedValues = array_map('strval', $selectedValues);
+                                @endphp
+                                <option value="{{ $validationConfig['selectValues'][$configkey] }}"
+                                  {{ in_array($validationConfig['selectValues'][$configkey], $selectedValues) ? 'selected' : '' }}>
+                                  {{ $option }}
+                                </option>
+                                @endforeach
+                              </select>
                             </div>
                             <script>
                               $(document).ready(function() {
@@ -348,31 +349,28 @@
                               // });
                             </script>
                             @else
-                            <div class="form-group">
+                            <div class="form-group" style="margin-bottom: 24px;">
                               @php
                               $addClassTextArray = isset($input['type']) && $input['type'] == 'text' ? "text-array-space": '';
                               $addClassIpUrl = isset($input['type']) && $input['type'] == 'IP/URL' ? "ip-url-space" : '';
                               @endphp
 
-                              <label class="control-label col-lg-3">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
-                              <div class="col-lg-8">
-                                @php
-                                $configKey = str_replace(' ', '_', strtolower($input['key']));
-                                $configVal = '';
-                                if (isset($configurationValue) && isset($configurationValue[$configKey]) && array_key_exists('value', $configurationValue[$configKey])) {
-                                $configVal = is_array($configurationValue[$configKey]['value'])
-                                ? json_encode($configurationValue[$configKey]['value'])
-                                : $configurationValue[$configKey]['value'];
-                                }
-                                @endphp
-                                <input class="form-control {{$addClassTextArray}} {{$addClassIpUrl}}" type="{{ $input['type'] == 'number' ? 'number' : 'text' }}"
-                                  {!! $input['type']=='number' ? 'min="' . ($input['numberRange']['min'] ?? '' ) . '" max="' . ($input['numberRange']['max'] ?? '' ) . '"' : '' !!}
-                                  placeholder="Enter {{ isset($input['key']) ? $input['key'] :''  }}" name="configuration[{{ $category->id }}][{{ $configKey }}]"
-                                  value="{{ $configVal }}"
-
-                                  {{ $input['requiredFieldInput'] ? 'required' : '' }}>
-                              </div>
-
+                              <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span style="color: #ef4444;">*</span>' : '' !!}</label>
+                              @php
+                              $configKey = str_replace(' ', '_', strtolower($input['key']));
+                              $configVal = '';
+                              if (isset($configurationValue) && isset($configurationValue[$configKey]) && array_key_exists('value', $configurationValue[$configKey])) {
+                              $configVal = is_array($configurationValue[$configKey]['value'])
+                              ? json_encode($configurationValue[$configKey]['value'])
+                              : $configurationValue[$configKey]['value'];
+                              }
+                              @endphp
+                              <input class="form-control {{$addClassTextArray}} {{$addClassIpUrl}}" type="{{ $input['type'] == 'number' ? 'number' : 'text' }}"
+                                {!! $input['type']=='number' ? 'min="' . ($input['numberRange']['min'] ?? '' ) . '" max="' . ($input['numberRange']['max'] ?? '' ) . '"' : '' !!}
+                                placeholder="Enter {{ isset($input['key']) ? $input['key'] :''  }}" name="configuration[{{ $category->id }}][{{ $configKey }}]"
+                                value="{{ $configVal }}"
+                                style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;"
+                                {{ $input['requiredFieldInput'] ? 'required' : '' }}>
                             </div>
                             @endif
                           </div>
@@ -384,83 +382,92 @@
                         @endforeach
                         @if( $category->is_can_protocol == 1 )
                         <div class="row">
-                          <div class="isCanEnable{{$category->id}}" style="padding: 0px 25px;">
-                            <label for="canConfigurationArr" class="control-label">
-                              CAN Configuration <span class="require">*</span>
+                          <div class="isCanEnable{{$category->id}}" style="padding: 0px 15px; margin-bottom: 24px;">
+                            <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">
+                              CAN Configuration <span style="color: #ef4444;">*</span>
                             </label>
-                            <div class="col-lg-12 padding-1">
+                            <div>
                               @php
                               $value = isset($canConfigurations[$category->id] ) ?$canConfigurations[$category->id]: [];
                               $result = is_array($value) ? json_encode($value) : $value;
                               @endphp
-                              <input type="text" class="form-control" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value="{{$result}}" readonly />
-                              <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display: none;"></div>
-                              <button type="button" class="btn btn-primary" onclick="openCanModal('{{ $category->id }}')">
-                                Configure CAN Protocol
+                              <input type="text" class="form-control" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value="{{$result}}" readonly style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; width: 100%; font-size: 14px; color: #475569; background-color: #f8fafc; margin-bottom: 16px;" />
+                              <button type="button" class="btn btn-primary" onclick="openCanModal('{{ $category->id }}')" style="height: 44px; border-radius: 6px; padding: 0 20px; font-weight: 600; background-color: #76CF1C; border-color: #76CF1C; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="fa fa-cogs"></i> Configure CAN Protocol
                               </button>
                             </div>
+                            <div class="alert alert-danger modelName_error" role="alert" style="display: none; margin-top: 8px;"></div>
                           </div>
                           <div class="modal" id="canModal{{$category->id}}">
-                            <div class="modal-dialog modal-md">
-                              <div class="modal-content">
-                                <div class="modal-header">
-                                  <button type="button" class="close" data-dismiss="modal">
+                            <div class="modal-dialog" style="max-width: 750px; width: 100%;">
+                              <div class="modal-content" style="border-radius: 8px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                                <div class="modal-header" style="background-color: #76CF1C; border-radius: 8px 8px 0 0; border-bottom: none; padding: 20px 24px;">
+                                  <button type="button" class="close" data-dismiss="modal" style="color: white; opacity: 1; text-shadow: none; font-size: 20px; margin-top: -2px;">
                                     <i class="fa fa-times"></i>
                                   </button>
-                                  <h5 class="modal-title">CAN Protocol Configuration</h5>
+                                  <h4 class="modal-title" style="font-weight: 700; color: white; font-size: 16px;">
+                                    <i class="fa fa-cog" style="margin-right: 8px;"></i> CAN PROTOCOL CONFIGURATION
+                                  </h4>
                                 </div>
-                                <div class="modal-body">
-                                  <div class="row">
-                                    <div class="col-md-12" style="padding: 0px 25px;">
-                                      <div id="canForm">
-                                        <!-- Protocol Selection -->
-                                        <div class="form-group isCanEnable">
-                                          <div style="margin:10px 0px;">
-                                            <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                            <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]">
-                                              <option value="">-- Select CAN Channel --</option>
-                                              <option value="1">CAN 1</option>
-                                              <option value="2">CAN 2</option>
-                                              <option value="3">CAN 3</option>
-                                              <option value="4">CAN 4</option>
-                                            </select>
-                                          </div>
-                                          <div style="margin:10px 0px;">
-                                            <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                            <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control">
-                                              <option value="">-- Select Baud Rate --</option>
-                                              <option value="500">500 kbps</option>
-                                              <option value="250">250 kbps</option>
-                                            </select>
-                                          </div>
-                                          <div style="margin:10px 0px;">
-                                            <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                            <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control">
-                                              <option value="">-- Select Can ID --</option>
-                                              <option value="0">Standard</option>
-                                              <option value="1">Extended</option>
-                                            </select>
-                                          </div>
-                                          <div style="margin:10px 0px;">
-                                            <label for="can_protocol" class="control-label padding-left-3">
-                                              CAN Protocol <span class="require">*</span>
-                                            </label>
-                                            <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control" onchange="selectedCanProtocol(
-                                          '{{$category->id}}')">
-                                              <option value="">Select Protocol</option>
-                                              <option value="1">J1979</option>
-                                              <option value="2">J1939</option>
-                                              <option value="3">Custom CAN</option>
-                                            </select>
-                                          </div>
+                                <div class="modal-body" style="background-color: #ffffff; padding: 30px;">
+                                  <div id="canForm">
+                                    <div class="row isCanEnable">
+                                      <div class="col-md-6">
+                                        <div class="form-group" style="margin-bottom: 24px;">
+                                          <label class="control-label" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 10px;">Can Channel <span style="color: #ef4444;">*</span></label>
+                                          <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]" class="form-control" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; font-size: 14px; color: #64748b;">
+                                            <option value="">-- Select CAN Channel --</option>
+                                            <option value="1">CAN 1</option>
+                                            <option value="2">CAN 2</option>
+                                            <option value="3">CAN 3</option>
+                                            <option value="4">CAN 4</option>
+                                          </select>
                                         </div>
-                                        <div id="dynamicCanFields{{$category->id}}"></div>
+                                      </div>
+                                      <div class="col-md-6">
+                                        <div class="form-group" style="margin-bottom: 24px;">
+                                          <label class="control-label" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 10px;">Can Baud Rate <span style="color: #ef4444;">*</span></label>
+                                          <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; font-size: 14px; color: #64748b;">
+                                            <option value="">-- Select Baud Rate --</option>
+                                            <option value="500">500 kbps</option>
+                                            <option value="250">250 kbps</option>
+                                          </select>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-6">
+                                        <div class="form-group" style="margin-bottom: 24px;">
+                                          <label class="control-label" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 10px;">Can ID Type <span style="color: #ef4444;">*</span></label>
+                                          <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; font-size: 14px; color: #64748b;">
+                                            <option value="">-- Select Can ID --</option>
+                                            <option value="0">Standard</option>
+                                            <option value="1">Extended</option>
+                                          </select>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-6">
+                                        <div class="form-group" style="margin-bottom: 24px;">
+                                          <label class="control-label" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 10px;">
+                                            CAN Protocol <span style="color: #ef4444;">*</span>
+                                          </label>
+                                          <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control" onchange="selectedCanProtocol('{{$category->id}}')" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; font-size: 14px; color: #64748b;">
+                                            <option value="">-- Select Protocol --</option>
+                                            <option value="1">J1979</option>
+                                            <option value="2">J1939</option>
+                                            <option value="3">Custom CAN</option>
+                                          </select>
+                                        </div>
                                       </div>
                                     </div>
-                                    <div class="col-md-12 text-right">
-                                      <button type="button" class="btn btn-success mt-4" onclick="generateJSON('{{$category->id}}')">Submit</button>
-                                    </div>
+                                    <div class="row" id="dynamicCanFields{{$category->id}}"></div>
                                   </div>
+                                </div>
+                                <div class="modal-footer" style="border-top: 1px solid #f1f5f9; background-color: #ffffff; border-radius: 0 0 8px 8px; padding: 20px 30px;">
+                                  <button type="button" class="btn btn-default" data-dismiss="modal" style="background-color: #e2e8f0; color: #475569; border: none; border-radius: 6px; padding: 10px 24px; font-weight: 600; font-size: 14px;">
+                                    <i class="fa fa-times" style="margin-right: 6px;"></i> Cancel
+                                  </button>
+                                  <button type="button" class="btn btn-success" onclick="generateJSON('{{$category->id}}')" style="background-color: #76CF1C; border-color: #76CF1C; border-radius: 6px; padding: 10px 24px; font-weight: 600; font-size: 14px; margin-left: 12px; box-shadow: none;">
+                                    <i class="fa fa-check" style="margin-right: 6px;"></i> Save Configuration
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -471,16 +478,16 @@
                     </div>
                     @endif
 
-                    <input type="hidden" name="configuration[{{$category->id}}][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['ping_interval']['value'])  ? $configurationValue['ping_interval']['value'] : 4 }}" />
-                    <input type="hidden" name="configuration[{{$category->id}}][is_editable]" class="form-control inputType" placeholder="Is Editable" value="{{ isset($configurationValue) && isset($configurationValue['is_editable']['value'])  ? $configurationValue['is_editable']['value'] : 1 }}" />
+                    <input type="hidden" name="configuration[{{$category->id}}][ping_interval]" class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['ping_interval']['value'])  ? $configurationValue['ping_interval']['value'] : 4 }}" />
+                    <input type="hidden" name="configuration[{{$category->id}}][is_editable]" class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" placeholder="Is Editable" value="{{ isset($configurationValue) && isset($configurationValue['is_editable']['value'])  ? $configurationValue['is_editable']['value'] : 1 }}" />
                     @endforeach
 
                     @endif
                     <div id="deviceCategoryInputFields"></div>
-                    <div class="form-group">
-                      <div class="bgx-save-button col-lg-11">
-                        <button class="btn btn-primary btn-flat" type="submit">Save</button>
-                      </div>
+                    <div class="form-group" style="margin-top: 30px; text-align: right; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+                      <button class="btn btn-primary" type="submit" style="background-color: #76CF1C; border-color: #76CF1C; border-radius: 6px; padding: 12px 30px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 6px rgba(118, 207, 28, 0.2); transition: all 0.2s ease;">
+                        <i class="fa fa-save" style="margin-right: 8px;"></i> Save Account
+                      </button>
                     </div>
                 </form>
                 <hr>
@@ -505,11 +512,9 @@
         let support = $('.is-support-active');
         if (val == 'Support') {
           support.show();
-          let html = `<div class="form-group">
-            <label for="curl" class="control-label col-md-3 col-sm-12">Configuration Edit Permission</label>
-            <div class="col-lg-6"  style="position: absolute;left: 4%;">
-              <input type="checkbox" class="form-control" name="is_support_active" style="height:20px;">
-            </div>
+          let html = `<div class="form-group" style="margin-bottom: 24px; padding: 0 15px;">
+            <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Configuration Edit Permission</label>
+            <input type="checkbox" class="form-control" name="is_support_active" style="width: 24px; height: 24px; box-shadow: none; cursor: pointer;">
           </div>`;
           support.append(html)
         } else {
@@ -663,12 +668,12 @@
                 let defaultTemplatesToTrigger = [];
                 inputFields.forEach((data, index) => {
                   let input = JSON.parse(data.inputs);
-                  htmlContent += '<div class="device-category-fields device-category-block-' + deviceCategoryId + ' card">';
-                  htmlContent += '<div class="card-title"><h4 >' + data.device_category_name + '</h4></div>';
-                  htmlContent += '<div class="card-details">';
+                  htmlContent += '<div class="device-category-fields device-category-block-' + deviceCategoryId + ' card" style="border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 30px; overflow: hidden; background: #ffffff;">';
+                  htmlContent += '<div class="card-title" style="background-color: #76CF1C; border-bottom: 1px solid #76CF1C; padding: 16px 24px; margin: 0;"><h4 style="margin: 0; font-weight: 700; color: #ffffff; font-size: 16px;">' + data.device_category_name + ' Configuration</h4></div>';
+                  htmlContent += '<div class="card-details" style="padding: 24px;">';
                   htmlContent += '<div class="row">';
                   htmlContent += '<div class="col-lg-6">';
-                  htmlContent += '<div class="form-group"><label for="curl" class="control-label col-md-3 col-sm-12">Templates <span class="require">*</span></label><div class="col-md-8 col-sm-12"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
+                  htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Templates <span class="require">*</span></label><div><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
                   if (templates[index].length > 0) {
                     templates[index].forEach((temp) => {
                       if (temp.default_template == 1) {
@@ -690,12 +695,12 @@
                       htmlContent += '<div class="row">';
                     }
                     htmlContent += '<div class="col-lg-6">';
-                    htmlContent += '<input class="form-control inputType" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
+                    htmlContent += '<input class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
                     if (input.type == 'select') {
-                      htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-md-8 col-sm-12">';
-                      htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
+                      htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                      htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div>';
+                      htmlContent += '<select class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
                       // htmlContent += '<option value="">Please Select</option>';
 
                       validation?.selectOptions.forEach((option, optIndex) => {
@@ -706,9 +711,9 @@
                       htmlContent += '</div>';
                       htmlContent += '</div>';
                     } else if (input.type == 'multiselect') {
-                      htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-md-8 col-sm-12">';
+                      htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                      htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div>';
                       htmlContent += '<select class="inputType" id="configval' + index + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? '' : '') + ' multiple>';
                       // htmlContent += '<option value="">Please Select</option>';
 
@@ -728,9 +733,9 @@
                       }, 100);
                     } else {
                       if (input.key == 'Password') {
-                        htmlContent += '<div class="form-group">';
-                        htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                        htmlContent += '<div class="col-md-8 col-sm-12">';
+                        htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                        htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                        htmlContent += '<div>';
                         htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                         htmlContent += '</div>';
                         htmlContent += '</div>';
@@ -738,9 +743,9 @@
 
                         let addClassTextArray = input?.type === 'text_array' ? 'text-array-space' : '';
                         let addClassIpUrl = input?.type === 'IP/URL' ? 'ip-url-space' : '';
-                        htmlContent += '<div class="form-group">';
-                        htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                        htmlContent += '<div class="col-md-8 col-sm-12">';
+                        htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                        htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                        htmlContent += '<div>';
                         htmlContent += '<input class="form-control inputType ' + addClassTextArray + ' ' + addClassIpUrl + '" type="' +
                           (input.type === 'number' ? 'number' : 'text') + '" ' +
                           (input.type === 'number' && validation?.numberInput ?
@@ -764,17 +769,17 @@
                     }
                   });
                   htmlContent += '<div class="row">';
-                  htmlContent += '<div class="col-lg-6"><div class="form-group">';
-                  htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Ping Interval <span class="require">*</span></label>';
-                  htmlContent += '<div class="col-md-8 col-sm-12">';
-                  htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value=""/>';
+                  htmlContent += '<div class="col-lg-6"><div class="form-group" style="margin-bottom: 24px;">';
+                  htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Ping Interval <span class="require">*</span></label>';
+                  htmlContent += '<div>';
+                  htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" placeholder="Ping Interval" value=""/>';
                   htmlContent += '</div></div></div>';
                   htmlContent += '<div class="col-lg-6">';
-                  htmlContent += '<div class="form-group">';
-                  htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Device Edit Permission<span class="require">*</span></label>';
-                  htmlContent += '<div class="col-lg-6">';
-                  htmlContent += '<label class="padding-10">Enable</label><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>';
-                  htmlContent += '<label class="padding-10">Disable</label><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>';
+                  htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                  htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Device Edit Permission<span class="require">*</span></label>';
+                  htmlContent += '<div style="display: flex; gap: 16px; align-items: center; margin-top: 8px;">';
+                  htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Enable</label>';
+                  htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Disable</label>';
                   htmlContent += '</div></div></div>';
                   htmlContent += '</div>';
                   htmlContent += '</div></div></div>';
@@ -835,21 +840,21 @@
               inputFields.forEach((data, index) => {
                 let input = JSON.parse(data.inputs);
                 let canEnable = data.is_can_protocol == 1 ? true : false;
-                htmlContent += '<div class="device-category-fields card">';
-                htmlContent += '<div class="card-title"><h4 >' + data.device_category_name + '</h4></div>';
-                htmlContent += '<div class="card-details">';
+                htmlContent += '<div class="device-category-fields card" style="border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 30px; overflow: hidden; background: #ffffff;">';
+                htmlContent += '<div class="card-title" style="background-color: #76CF1C; border-bottom: 1px solid #76CF1C; padding: 16px 24px; margin: 0;"><h4 style="margin: 0; font-weight: 700; color: #ffffff; font-size: 16px;">' + data.device_category_name + ' Configuration</h4></div>';
+                htmlContent += '<div class="card-details" style="padding: 24px;">';
                 htmlContent += '<div class="row">';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label for="curl" class="control-label col-md-3 col-sm-12">Templates <span class="require">*</span></label><div class="col-md-8 col-sm-12"><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
+                htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Templates <span class="require">*</span></label><div><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
                 if (templates[index].length > 0) {
                   templates[index].forEach((temp) => {
-                    if (temp.default_template == 1) {
+                    if (temp.default_template == 1 || temp.is_default == 1) {
                       defaultTemplatesToTrigger.push({
                         index: index,
                         id: temp.id
                       });
                     }
-                    htmlContent += '<option ' + (temp.default_template == 1 ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + ' ' + (temp.default_template == 1 ? ' (Default)' : '') + '</option>';
+                    htmlContent += '<option ' + ((temp.default_template == 1 || temp.is_default == 1) ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + ' ' + ((temp.default_template == 1 || temp.is_default == 1) ? ' (Default)' : '') + '</option>';
                   });
                 }
                 htmlContent += '</select></div></div></div>';
@@ -857,20 +862,22 @@
                 // Add Firmware selection
                 let firmwares = JSON.parse(result.firmware);
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label for="firmware' + index + '" class="control-label col-md-3 col-sm-12">Firmware <span class="require">*</span></label><div class="col-md-8 col-sm-12"><select class="form-control firmware-select" id="firmware' + index + '" data-index="' + index + '" data-category="' + data.id + '" name="configuration[' + index + '][firmware_id]" onchange="changeFirmware(' + index + ')">';
+                htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label for="firmware' + index + '" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Firmware <span class="require">*</span></label><div><select class="form-control firmware-select" id="firmware' + index + '" data-index="' + index + '" data-category="' + data.id + '" data-category-name="' + data.device_category_name + '" name="configuration[' + index + '][firmware_id]" onchange="changeFirmware(' + index + ')" ' + ((!firmwares[index] || firmwares[index].length === 0) ? 'disabled' : '') + ' style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;">';
                 if (firmwares[index] && firmwares[index].length > 0) {
                   firmwares[index].forEach((firmware) => {
                     htmlContent += '<option ' + (firmware.is_default == 1 ? "selected" : "") + ' value="' + firmware.id + '">' + firmware.name + '</option>';
                   });
+                } else {
+                  htmlContent += '<option value="">Not Found</option>';
                 }
                 htmlContent += '</select></div></div></div></div>';
 
                 // Add Model and Vendor fields
                 htmlContent += '<div class="row">';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label class="control-label col-md-3 col-sm-12">Model Name <span class="require">*</span></label><div class="col-md-8 col-sm-12"><input type="text" class="form-control" name="configuration[' + index + '][modelName]" id="modelName' + index + '" readonly /></div></div></div>';
+                htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Model Name <span class="require">*</span></label><div><input type="text" class="form-control" name="configuration[' + index + '][modelName]" id="modelName' + index + '" readonly /></div></div></div>';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group"><label class="control-label col-md-3 col-sm-12">Vendor ID <span class="require">*</span></label><div class="col-md-8 col-sm-12"><input type="text" class="form-control" name="configuration[' + index + '][vendorId]" id="vendorId' + index + '" readonly /></div></div></div>';
+                htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Vendor ID <span class="require">*</span></label><div><input type="text" class="form-control" name="configuration[' + index + '][vendorId]" id="vendorId' + index + '" readonly /></div></div></div>';
                 htmlContent += '</div>';
 
                 input.forEach((input, index1) => {
@@ -880,30 +887,32 @@
                     htmlContent += '<div class="row">';
                   }
                   htmlContent += '<div class="col-lg-6">';
-                  htmlContent += '<input class="form-control inputType" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
+                  htmlContent += '<input class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
                   if (input.type == 'select') {
-                    htmlContent += '<div class="form-group">';
-                    htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                    htmlContent += '<div class="col-md-8 col-sm-12">';
-                    htmlContent += '<select class="form-control inputType" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
+                    htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                    htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                    htmlContent += '<div>';
+                    htmlContent += '<select class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
                     // htmlContent += '<option value="">Please Select</option>';
 
                     validation?.selectOptions.forEach((option, optIndex) => {
-                      htmlContent += '<option  value="' + validation?.selectValues[optIndex] + '">' + option + '</option>';
+                      let isSelected = (validation?.selectValues[optIndex] == input.default) ? 'selected' : '';
+                      htmlContent += '<option ' + isSelected + ' value="' + validation?.selectValues[optIndex] + '">' + option + '</option>';
                     });
 
                     htmlContent += '</select>';
                     htmlContent += '</div>';
                     htmlContent += '</div>';
                   } else if (input.type == 'multiselect') {
-                    htmlContent += '<div class="form-group">';
-                    htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                    htmlContent += '<div class="col-md-8 col-sm-12">';
+                    htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                    htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                    htmlContent += '<div>';
                     htmlContent += '<select class="inputType" id="configval' + index + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? '' : '') + ' multiple>';
                     // htmlContent += '<option value="">Please Select</option>';
 
                     validation?.selectOptions.forEach((option, optIndex) => {
-                      htmlContent += '<option  value="' + validation?.selectValues[optIndex] + '">' + option + '</option>';
+                      let isSelected = (validation?.selectValues[optIndex] == input.default) ? 'selected' : '';
+                      htmlContent += '<option ' + isSelected + ' value="' + validation?.selectValues[optIndex] + '">' + option + '</option>';
                     });
 
                     htmlContent += '</select>';
@@ -932,19 +941,19 @@
                     }, 100);
                   } else {
                     if (input.key == 'Password') {
-                      htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-md-8 col-sm-12">';
-                      htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
+                      htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                      htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div>';
+                      htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + (input.default || '') + '" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                       htmlContent += '</div>';
                       htmlContent += '</div>';
                     } else {
                       let addClassTextArray = input?.type === 'text_array' ? 'text-array-space' : '';
                       let addClassIpUrl = input?.type === 'IP/URL' ? 'ip-url-space' : '';
-                      htmlContent += '<div class="form-group">';
-                      htmlContent += '<label class="control-label col-md-3 col-sm-12">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
-                      htmlContent += '<div class="col-md-8 col-sm-12">';
-                      // htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'min="' + validation?.numberInput?.min + '" max="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '" maxlength="' + validation?.maxValueInput') + '>';
+                      htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                      htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
+                      htmlContent += '<div>';
+                      // htmlContent += '<input class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'min="' + validation?.numberInput?.min + '" max="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '" maxlength="' + validation?.maxValueInput') + '>';
                       htmlContent +=
                         '<input class="form-control inputType ' + addClassTextArray + ' ' + addClassIpUrl + '" type="' +
                         (input.type === 'number' ? 'number' : 'text') + '" ' +
@@ -954,6 +963,7 @@
                         (input.type !== 'number' && validation?.maxValueInput ? 'maxlength="' + validation.maxValueInput + '"' : '') +
                         'placeholder="Enter ' + input.key + '" ' +
                         'name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' +
+                        'value="' + (input.default || '') + '" ' +
                         (input.requiredFieldInput ?
                           'required' :
                           '') +
@@ -969,94 +979,103 @@
                   }
                 });
                 htmlContent += '<div class="row">';
-                htmlContent += '<div class="col-lg-6"><div class="form-group">';
-                htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Ping Interval <span class="require">*</span></label>';
-                htmlContent += '<div class="col-md-8 col-sm-12">';
-                htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value=""/>';
+                htmlContent += '<div class="col-lg-6"><div class="form-group" style="margin-bottom: 24px;">';
+                htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Ping Interval <span class="require">*</span></label>';
+                htmlContent += '<div>';
+                htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" placeholder="Ping Interval" value=""/>';
                 htmlContent += '</div></div></div>';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group">';
-                htmlContent += '<label for="curl" class="control-label col-md-3 col-sm-12">Device Edit Permission<span class="require">*</span></label>';
-                htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<label class="padding-10">Enable</label><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>';
-                htmlContent += '<label class="padding-10">Disable</label><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>';
+                htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
+                htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Device Edit Permission<span class="require">*</span></label>';
+                htmlContent += '<div style="display: flex; gap: 16px; align-items: center; margin-top: 8px;">';
+                htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Enable</label>';
+                htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Disable</label>';
                 htmlContent += '</div></div></div>';
                 if (canEnable) {
                   htmlContent += `
-                <div class="isCanEnable` + index + `" style="padding: 0px 25px;">
-                    <label for="canConfigurationArr" class="control-label" required>
-                        CAN Configuration <span class="require">*</span>
+                <div class="col-lg-12 isCanEnable` + index + `" style="padding: 0px 15px; margin-bottom: 24px;">
+                    <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">
+                        CAN Configuration <span style="color: #ef4444;">*</span>
                     </label>
-                    <div class="col-lg-12 padding-1">
-                        <input type="text" class="form-control" name="canConfigurationArr[${index}]" id="canConfigurationArr${index}" value="" readonly />
-                        <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display: none;"></div>
-                        <button type="button" class="btn btn-primary" onclick="openCanModal(` + index + `)">
-                            Configure CAN Protocol
+                    <div>
+                        <input type="text" class="form-control" name="canConfigurationArr[${index}]" id="canConfigurationArr${index}" value="" readonly style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; width: 100%; font-size: 14px; color: #475569; background-color: #f8fafc; margin-bottom: 16px;" />
+                        <button type="button" class="btn btn-primary" onclick="openCanModal(` + index + `)" style="height: 44px; border-radius: 6px; padding: 0 20px; font-weight: 600; background-color: #76CF1C; border-color: #76CF1C; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fa fa-cogs"></i> Configure CAN Protocol
                         </button>
                     </div>
+                    <div class="alert alert-danger modelName_error" role="alert" style="display: none; margin-top: 8px;"></div>
                 </div>`;
                   htmlContent += `
                     <div class="modal" id="canModal` + index + `" aria-hidden="true">
-                      <div class="modal-dialog modal-md">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                      <div class="modal-dialog" style="max-width: 750px; width: 100%;">
+                        <div class="modal-content" style="border-radius: 8px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                          <div class="modal-header" style="background-color: #76CF1C; border-radius: 8px 8px 0 0; border-bottom: none; padding: 20px 24px;">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="color: white; opacity: 1; text-shadow: none; font-size: 20px; margin-top: -2px;">
                               <i class="fa fa-times"></i>
                             </button>
-                            <h5 class="modal-title">CAN Protocol Configuration</h5>
+                            <h4 class="modal-title" style="font-weight: 700; color: white; font-size: 16px;">
+                              <i class="fa fa-cog" style="margin-right: 8px;"></i> CAN PROTOCOL CONFIGURATION
+                            </h4>
                           </div>
-                          <div class="modal-body">
-                            <div class="row">
-                              <div class="col-md-12" style="padding: 0px 25px;">
-                                <form id="canForm">
-                                  <!-- Protocol Selection -->
-                                  <div class="form-group isCanEnable">
-                                    <div style="margin:10px 0px;">
-                                      <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                      <select class="form-control" id="can_channel${index}" name="canConfiguration[${index}][can_channel]">
-                                          <option value="">-- Select CAN Channel --</option>
-                                          <option value="1">CAN 1</option>
-                                          <option value="2">CAN 2</option>
-                                          <option value="3">CAN 3</option>
-                                          <option value="4">CAN 4</option>
-                                        </select>
-                                    </div>
-                                      <div style="margin:10px 0px;">
-                                        <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                        <select id="can_baud_rate${index}" name="canConfiguration[${index}][can_baud_rate]" class="form-control">
-                                          <option value="">-- Select Baud Rate --</option>
-                                          <option value="500">500 kbps</option>
-                                          <option value="250">250 kbps</option>
-                                        </select>
-                                      </div>
-                                      <div style="margin:10px 0px;">
-                                        <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                        <select id="can_id_type${index}" name="canConfiguration[${index}][can_id_type]" class="form-control">
-                                          <option value="">-- Select Can ID --</option>
-                                          <option value="0">Standard</option>
-                                          <option value="1">Extended</option>
-                                        </select>
-                                      </div>
-                                      <div style="margin:10px 0px;">
-                                        <label for="can_protocol" class="control-label padding-left-3">
-                                          CAN Protocol <span class="require">*</span>
-                                        </label>
-                                        <select id="can_protocol${index}" name="canConfiguration[${index}][can_protocol]" class="form-control" onchange="selectedCanProtocol(${index})">
-                                          <option value="">Select Protocol</option>
-                                          <option value="1">J1979</option>
-                                          <option value="2">J1939</option>
-                                          <option value="3">Custom CAN</option>
-                                        </select>
-                                      </div>
+                          <div class="modal-body" style="background-color: #ffffff; padding: 30px;">
+                            <form id="canForm">
+                              <div class="row isCanEnable">
+                                <div class="col-md-6">
+                                  <div class="form-group" style="margin-bottom: 24px;">
+                                    <label class="control-label" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 10px;">Can Channel <span style="color: #ef4444;">*</span></label>
+                                    <select class="form-control" id="can_channel${index}" name="canConfiguration[${index}][can_channel]" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; font-size: 14px; color: #64748b;">
+                                        <option value="">-- Select CAN Channel --</option>
+                                        <option value="1">CAN 1</option>
+                                        <option value="2">CAN 2</option>
+                                        <option value="3">CAN 3</option>
+                                        <option value="4">CAN 4</option>
+                                      </select>
                                   </div>
-
-                                  <div id="dynamicCanFields${index}"></div>
-                                </form>
+                                </div>
+                                <div class="col-md-6">
+                                  <div class="form-group" style="margin-bottom: 24px;">
+                                    <label class="control-label" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 10px;">Can Baud Rate <span style="color: #ef4444;">*</span></label>
+                                    <select id="can_baud_rate${index}" name="canConfiguration[${index}][can_baud_rate]" class="form-control" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; font-size: 14px; color: #64748b;">
+                                      <option value="">-- Select Baud Rate --</option>
+                                      <option value="500">500 kbps</option>
+                                      <option value="250">250 kbps</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div class="col-md-6">
+                                  <div class="form-group" style="margin-bottom: 24px;">
+                                    <label class="control-label" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 10px;">Can ID Type <span style="color: #ef4444;">*</span></label>
+                                    <select id="can_id_type${index}" name="canConfiguration[${index}][can_id_type]" class="form-control" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; font-size: 14px; color: #64748b;">
+                                      <option value="">-- Select Can ID --</option>
+                                      <option value="0">Standard</option>
+                                      <option value="1">Extended</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div class="col-md-6">
+                                  <div class="form-group" style="margin-bottom: 24px;">
+                                    <label class="control-label" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 10px;">
+                                      CAN Protocol <span style="color: #ef4444;">*</span>
+                                    </label>
+                                    <select id="can_protocol${index}" name="canConfiguration[${index}][can_protocol]" class="form-control" onchange="selectedCanProtocol(${index})" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; font-size: 14px; color: #64748b;">
+                                      <option value="">-- Select Protocol --</option>
+                                      <option value="1">J1979</option>
+                                      <option value="2">J1939</option>
+                                      <option value="3">Custom CAN</option>
+                                    </select>
+                                  </div>
+                                </div>
                               </div>
-                              <div class="col-md-12 text-right">
-                                <button type="button" class="btn btn-success mt-4" onclick="generateJSON(${index})">Submit</button>
-                              </div>
-                            </div>
+                              <div class="row" id="dynamicCanFields${index}"></div>
+                            </form>
+                          </div>
+                          <div class="modal-footer" style="border-top: 1px solid #f1f5f9; background-color: #ffffff; border-radius: 0 0 8px 8px; padding: 20px 30px;">
+                            <button type="button" class="btn btn-default" data-dismiss="modal" style="background-color: #e2e8f0; color: #475569; border: none; border-radius: 6px; padding: 10px 24px; font-weight: 600; font-size: 14px;">
+                              <i class="fa fa-times" style="margin-right: 6px;"></i> Cancel
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="generateJSON(${index})" style="background-color: #76CF1C; border-color: #76CF1C; border-radius: 6px; padding: 10px 24px; font-weight: 600; font-size: 14px; margin-left: 12px; box-shadow: none;">
+                              <i class="fa fa-check" style="margin-right: 6px;"></i> Save Configuration
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -1102,6 +1121,9 @@
 
       if (firmwareId && categoryId) {
         checkUserModalNameExist(index, userId, firmwareId, categoryId);
+      } else {
+        $('#modelName' + index).val(firmwareSelect.data('category-name') || 'N/A');
+        $('#vendorId' + index).val("JSD");
       }
     }
 
@@ -1123,11 +1145,12 @@
             $('#vendorId' + index).val(result.modal.vendorId);
           } else {
             // Default to JSD for unassigned/no model
-            $('#modelName' + index).val($('.device-category-block-title' + index).text() || 'N/A');
+            $('#modelName' + index).val($('#firmware' + index).data('category-name') || 'N/A');
             $('#vendorId' + index).val("JSD");
           }
         },
         error: function() {
+          $('#modelName' + index).val($('#firmware' + index).data('category-name') || 'N/A');
           $('#vendorId' + index).val("JSD");
         }
       });
@@ -1165,7 +1188,9 @@
             }
             let inputHtml = `<input type="hidden" name="idCanParameters[${index}][${fieldId}]" value="${field.id}" />`;
             inputHtml += `<input type="hidden" name="CanParametersType[${index}][${fieldId}]" value="${inputType}" />`;
-            let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control"  placeholder="Enter ${field.fieldName}"`;
+            let inputHeight = (inputType === 'text_array' || inputType === 'multiselect') ? '' : 'height: 44px;';
+            let appearanceCSS = (inputType === 'select') ? "appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px;" : "";
+            let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control" placeholder="Enter ${field.fieldName}" style="border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; font-size: 14px; color: #64748b; ${inputHeight} ${appearanceCSS}"`;
 
             if (inputType === 'number') {
               if (validation.numberInput) {
@@ -1209,7 +1234,8 @@
                 if ($select.length) {
                   $select.select2({
                     placeholder: "Select up to 3 options",
-                    width: "100%"
+                    width: "100%",
+                    dropdownParent: $('#canModal' + index)
                   });
                   $select.on("change", function() {
                     var selected = $(this).select2("val");
@@ -1315,15 +1341,15 @@
               inputHtml += `<input type="text" ${attr} />`;
             }
 
-            html += `<div class="col-md-12 padding-3 padding-top-10">
-                    <div class="form-group" id="modalInput">
-                        <label for="${fieldId}" class="control-label padding-left-14" required>
-                            ${field.fieldName} <span class="require">*</span>
+            let gridCol = (inputType === 'text_array' || inputType === 'multiselect') ? 'col-md-12' : 'col-md-6';
+            
+            html += `<div class="${gridCol}">
+                      <div class="form-group" style="margin-bottom: 24px;">
+                        <label for="${fieldId}" class="control-label" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 10px;" required>
+                            ${field.fieldName} <span style="color: #ef4444;">*</span>
                         </label>
-                        <div class="col-lg-12">
-                            ${inputHtml}
-                            <div class="col-sm-12 alert alert-danger ${fieldId}_error" role="alert" style="display:none"></div>
-                        </div>
+                        ${inputHtml}
+                        <div class="alert alert-danger ${fieldId}_error" role="alert" style="display:none; margin-top: 5px; padding: 5px 10px;"></div>
                     </div></div>`;
           });
           html += '</div>';
@@ -1418,62 +1444,87 @@
 
           if (result.status == 200) {
             let templateData = result.template;
-            let template;
+            let template = templateData;
+            
             try {
-              template = (typeof templateData === 'string') ? JSON.parse(templateData) : templateData;
-              // Handle potential double encoding
-              if (typeof template === 'string') {
-                template = JSON.parse(template);
-              }
+                let unwrapCount = 0;
+                while (typeof template === 'string' && unwrapCount < 5) {
+                    try { template = JSON.parse(template); unwrapCount++; } catch (e) { break; }
+                }
             } catch (e) {
-              console.error("Failed to parse template configurations", e, templateData);
-              return;
+                console.error("Failed to parse template configurations", e, templateData);
+                return;
+            }
+
+            if (Array.isArray(template) && template.length > 0) {
+                template = template[0];
             }
 
             if (template && typeof template === 'object') {
-              console.log("Applying template configurations:", template);
-              Object.keys(template)
-                .filter((key) => key !== 'template')
-                .forEach(function(key) {
-                  let val = (typeof template[key] === 'object' && template[key] !== null && 'value' in template[key]) ? template[key]['value'] : template[key];
-
-                  // Normalize the key from template
-                  let normKey = key.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
-
-                  // Broad recursive lookup for fields starting with configuration[index]
-                  $('input, select').each(function() {
-                    let name = $(this).attr('name');
-                    if (name && name.startsWith(`configuration[${index}]`)) {
-                      // Extract the field part, e.g. "ip" from "configuration[0][ip]"
-                      let matches = name.match(/\[([^\]]+)\]$/);
-                      if (!matches) {
-                        // Handle cases like configuration[0][ip][] (multiselect)
-                        matches = name.match(/\[([^\]]+)\]\[\]$/);
-                      }
-
-                      if (matches && matches[1]) {
-                        let fieldPart = matches[1];
-                        let normFieldPart = fieldPart.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
-
-                        // Check for direct match or normalized match
-                        if (normFieldPart === normKey || fieldPart.toLowerCase() === key.toLowerCase() || fieldPart.toLowerCase().replace(/\s+/g, '_') === key.toLowerCase().replace(/\s+/g, '_')) {
-                          if ($(this).is(':radio')) {
-                            if ($(this).val() == val) {
-                              $(this).prop('checked', true);
-                            }
-                          } else {
-                            $(this).val(val);
-                            if ($(this).is('select')) {
-                              $(this).trigger('change');
-                            }
-                          }
-                        }
-                      }
+                if (template.configurations) {
+                    let configData = template.configurations;
+                    let cCount = 0;
+                    while (typeof configData === 'string' && cCount < 5) {
+                        try { configData = JSON.parse(configData); cCount++; } catch (e) { break; }
                     }
-                  });
+                    template = typeof configData === 'object' && configData !== null ? configData : template;
+                }
+
+                console.log("Applying template configurations:", template);
+                Object.keys(template).filter((key) => key !== 'template').forEach(function(key) {
+                    let rawVal = template[key];
+                    let val = rawVal;
+                    if (rawVal && typeof rawVal === 'object' && 'value' in rawVal) {
+                        val = rawVal.value;
+                    }
+
+                    // Normalize the key from template
+                    let normKey = key.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
+
+                    // Broad recursive lookup for fields starting with configuration[index]
+                    $('input, select').each(function() {
+                        let name = $(this).attr('name');
+                        if (name && name.startsWith(`configuration[${index}]`)) {
+                            let matches = name.match(/\[([^\]]+)\]$/) || name.match(/\[([^\]]+)\]\[\]$/);
+                            
+                            if (matches && matches[1]) {
+                                let fieldPart = matches[1];
+                                let normFieldPart = fieldPart.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
+
+                                if (normFieldPart === normKey || fieldPart.toLowerCase() === key.toLowerCase() || fieldPart.toLowerCase().replace(/\s+/g, '_') === key.toLowerCase().replace(/\s+/g, '_')) {
+                                    if ($(this).is(':radio') || $(this).is(':checkbox')) {
+                                        if ($(this).val() == val) {
+                                            $(this).prop('checked', true);
+                                        }
+                                    } else {
+                                        let finalVal = val;
+                                        if ($(this).attr('multiple')) {
+                                            if (typeof val === 'string') {
+                                                try {
+                                                    let cleanStr = val.startsWith('{') && val.endsWith('}') ? '[' + val.substring(1, val.length - 1) + ']' : val;
+                                                    finalVal = JSON.parse(cleanStr);
+                                                } catch(e) {
+                                                    finalVal = val.split(',');
+                                                }
+                                            } else if (!Array.isArray(val) && val != null) {
+                                                finalVal = [val];
+                                            }
+                                        }
+                                        
+                                        if (finalVal !== undefined && finalVal !== null && finalVal !== "") {
+                                            $(this).val(finalVal);
+                                            if ($(this).is('select')) {
+                                                $(this).trigger('change');
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
                 });
             } else {
-              console.warn("Template data is empty or invalid structure", template);
+                console.warn("Template data is empty or invalid structure", template);
             }
           } else {
             console.error(result.message);

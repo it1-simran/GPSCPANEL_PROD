@@ -26,20 +26,20 @@ button.selectDeviceUserChange {
 
 /* Premium Design Overrides */
 ul.sidebar-menu li.active > a {
-    background: rgba(75, 108, 183, 0.1) !important;
-    border-left: 4px solid #4b6cb7 !important;
-    color: #4b6cb7 !important;
+    background: #76CF1C !important;
+    border-left: 4px solid #5fa616 !important;
+    color: #fff !important;
 }
 
 ul.sidebar-menu li.active > a span.icon-sidebar {
-    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%) !important;
+    background: rgba(255, 255, 255, 0.2) !important;
     color: #fff !important;
 }
 
 ul.sidebar-menu li ul.sub li.active a {
-    background: rgba(75, 108, 183, 0.1) !important;
-    color: #4b6cb7 !important;
-    border-left: 3px solid #4b6cb7 !important;
+    background: rgba(118, 207, 28, 0.1) !important;
+    color: #76CF1C !important;
+    border-left: 3px solid #76CF1C !important;
     font-weight: 700;
 }
 
@@ -97,18 +97,65 @@ ul.sidebar-menu li ul.sub li.active a {
     transition: all 0.3s !important;
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%) !important;
+/* Premium Action Buttons */
+.btn-primary,
+.btn-info,
+.btn.viewConfigurations {
+    background: #1d283e !important;
     border: none !important;
+    color: #ffffff !important;
 }
 
-.btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(75, 108, 183, 0.3) !important;
+.btn-primary:hover,
+.btn-info:hover,
+.btn.viewConfigurations:hover {
+    background: #141c2c !important;
+    box-shadow: 0 4px 12px rgba(29, 40, 62, 0.3) !important;
+    color: #ffffff !important;
 }
 
-.btn-success {
-    background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%) !important;
+.btn-success,
+.btn-green,
+.btn.linkReseller {
+    background: #76CF1C !important;
     border: none !important;
+    color: #ffffff !important;
+}
+
+.btn-success:hover,
+.btn-green:hover,
+.btn.linkReseller:hover {
+    background: #65b515 !important;
+    box-shadow: 0 4px 12px rgba(118, 207, 28, 0.3) !important;
+    color: #ffffff !important;
+}
+
+
+/* Force Odd/Even on specific grouped buttons (Downloads & Stats) */
+.margin-bottom-10 .btn:nth-child(odd),
+.stats-buttons .btn:nth-child(odd),
+.dt-buttons .btn:nth-child(odd) {
+    background: #1d283e !important;
+    color: #ffffff !important;
+}
+
+.margin-bottom-10 .btn:nth-child(odd):hover,
+.stats-buttons .btn:nth-child(odd):hover,
+.dt-buttons .btn:nth-child(odd):hover {
+    background: #141c2c !important;
+}
+
+.margin-bottom-10 .btn:nth-child(even),
+.stats-buttons .btn:nth-child(even),
+.dt-buttons .btn:nth-child(even) {
+    background: #76CF1C !important;
+    color: #ffffff !important;
+}
+
+.margin-bottom-10 .btn:nth-child(even):hover,
+.stats-buttons .btn:nth-child(even):hover,
+.dt-buttons .btn:nth-child(even):hover {
+    background: #65b515 !important;
 }
 
 .badge {

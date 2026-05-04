@@ -73,22 +73,24 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .btn-edit { background: #0ea5e9; color: white; }
-    .btn-run { background: #10b981; color: white; }
-    .btn-delete { background: #ef4444; color: white; }
+    .btn-edit { background: #1d283e !important; color: white !important; }
+    .btn-run { background: #76CF1C !important; color: white !important; }
+    .btn-delete { background: #ef4444 !important; color: white !important; }
     
     .create-btn {
-        background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
-        border: none;
-        padding: 8px 20px;
+        background: #76CF1C !important;
+        border: none !important;
+        padding: 8px 20px !important;
         border-radius: 8px;
         font-weight: 700;
+        color: white !important;
         letter-spacing: 0.5px;
         transition: all 0.3s;
     }
     .create-btn:hover {
+        background: #65b515;
         transform: translateY(-2px);
-        box-shadow: 0 10px 15px rgba(75, 108, 183, 0.2);
+        box-shadow: 0 10px 15px rgba(118, 207, 28, 0.3);
         color: white !important;
     }
 </style>
@@ -105,7 +107,7 @@
                                 <strong style="font-size: 16px; letter-spacing: 0.5px;">AUTOMATED TEST PLANS</strong>
                             </div>
                             <div class="col-md-6 text-right">
-                                <a href="{{ route('admin.test-plans.create') }}" class="btn btn-primary create-btn">
+                                <a href="{{ route('admin.test-plans.create') }}" class="btn create-btn">
                                     <i class="fa fa-plus-circle" style="margin-right: 5px;"></i> CREATE NEW PLAN
                                 </a>
                             </div>
@@ -122,6 +124,7 @@
                             <table class="table table-hover" id="test-plans-table">
                                 <thead>
                                     <tr>
+                                        <th style="width: 60px; text-align: center;">Sr. No.</th>
                                         <th>Name</th>
                                         <th>Description</th>
                                         <th>Steps</th>
@@ -131,8 +134,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($testPlans as $plan)
+                                    @foreach($testPlans as $index => $plan)
                                         <tr>
+                                            <td style="text-align: center; color: #64748b; font-weight: 600;">{{ $index + 1 }}</td>
                                             <td style="font-weight: 700; color: #1e293b;">{{ $plan->name }}</td>
                                             <td class="text-muted">{{ $plan->description ?: 'No description provided' }}</td>
                                             <td>

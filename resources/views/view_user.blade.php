@@ -12,6 +12,61 @@
           text-align: center;
       }
   }
+
+  /* Premium Password Toggle Pill */
+  .pwd-pill {
+      display: inline-flex;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 30px;
+      padding: 4px 5px 4px 15px;
+      gap: 12px;
+      min-width: 145px;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      transition: all 0.3s ease;
+  }
+  .pwd-pill:hover {
+      border-color: #cbd5e0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .pwd-text {
+      font-weight: 600;
+      color: #2d3748;
+      font-family: monospace;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      user-select: all;
+  }
+  .pwd-hidden {
+      color: #a0aec0;
+      font-size: 16px;
+      letter-spacing: 3px;
+      margin-top: 3px;
+  }
+  .pwd-btn {
+      background: rgba(118, 207, 28, 0.15);
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5fa616;
+      cursor: pointer;
+      transition: all 0.2s;
+      outline: none;
+  }
+  .pwd-btn:hover {
+      background: #76CF1C;
+      color: #fff;
+      transform: scale(1.05);
+  }
+  .pwd-btn:active {
+      transform: scale(0.95);
+  }
 </style>
 
 
@@ -169,10 +224,17 @@
                     <td>{{$contact['mobile']}}</td>
                     <td>{{$contact['email']}}</td>
                     <td>
-                      <div id="showpassword-{{$contact['id']}}" hidden>
-                        {{$contact['showLoginPassword']}}
+                      <div class="pwd-pill">
+                        <div id="showpassword-{{$contact['id']}}" class="pwd-text" style="display: none;">
+                          {{$contact['showLoginPassword']}}
+                        </div>
+                        <div id="hiddenpassword-{{$contact['id']}}" class="pwd-hidden">
+                          ••••••••
+                        </div>
+                        <button type="button" id="hide-{{$contact['id']}}" class="pwd-btn" onclick="togglePasswordShow({{$contact['id']}})" title="Toggle Password">
+                          <i class="fa fa-eye" id="eye-icon-{{$contact['id']}}"></i>
+                        </button>
                       </div>
-                      <button id="hide-{{$contact['id']}}" class="margin-top-1" onclick="togglePasswordShow({{$contact['id']}})">show</button>
                     </td>
                     <td>{{$contact['device_count']}}</td>
                     <td>{{$contact['total_pings']}}</td>
@@ -307,7 +369,18 @@
   });
 
   function togglePasswordShow(id) {
-    $("#hide-" + id).hide();
-    $("#showpassword-" + id).show();
+    var pwdField = $("#showpassword-" + id);
+    var hiddenField = $("#hiddenpassword-" + id);
+    var icon = $("#eye-icon-" + id);
+
+    if (pwdField.is(":hidden")) {
+      pwdField.show();
+      hiddenField.hide();
+      icon.removeClass("fa-eye").addClass("fa-eye-slash");
+    } else {
+      pwdField.hide();
+      hiddenField.show();
+      icon.removeClass("fa-eye-slash").addClass("fa-eye");
+    }
   }
 </script>

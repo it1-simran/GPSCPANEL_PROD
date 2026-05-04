@@ -40,12 +40,17 @@ class AlertService
     /**
      * Validate a packet against all active alerts and return a detailed report.
      */
-    public function validate($packetTypeId, array $parsedData): array
+    public function validate($packetTypeId, array $parsedData, $evaluateAll = 1, $alertIds = []): array
     {
-        $alerts = PacketAlert::with('conditions.field')
+        $query = PacketAlert::with('conditions.field')
             ->where('packet_type_id', $packetTypeId)
-            ->where('is_active', true)
-            ->get();
+            ->where('is_active', true);
+            
+        if (!$evaluateAll && !empty($alertIds)) {
+            $query->whereIn('id', $alertIds);
+        }
+
+        $alerts = $query->get();
 
         if ($alerts->isEmpty()) {
             return [

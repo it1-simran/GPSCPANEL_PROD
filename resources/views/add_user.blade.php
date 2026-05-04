@@ -652,7 +652,8 @@
             url: actionUrl,
             type: "POST",
             data: {
-              ids: newCheckedValues
+              ids: newCheckedValues,
+              userId: "{{ Auth::user()->id }}"
             },
             success: function(response) {
               let result = JSON.parse(response);
@@ -666,8 +667,19 @@
                 let inputFields = JSON.parse(result.device);
                 let templates = JSON.parse(result.templates);
                 let defaultTemplatesToTrigger = [];
+                let authDeviceCategories = ("{{ Auth::user()->device_category_id }}" || "").split(',');
                 inputFields.forEach((data, index) => {
                   let input = JSON.parse(data.inputs);
+                  
+                  let myConfigIndex = authDeviceCategories.indexOf(data.id.toString());
+                  let myConfig = null;
+                  if (myConfigIndex !== -1 && result.configurations) {
+                      let parsedConfigs = JSON.parse(result.configurations);
+                      if (parsedConfigs && parsedConfigs[myConfigIndex]) {
+                          myConfig = parsedConfigs[myConfigIndex];
+                      }
+                  }
+
                   htmlContent += '<div class="device-category-fields device-category-block-' + deviceCategoryId + ' card" style="border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 30px; overflow: hidden; background: #ffffff;">';
                   htmlContent += '<div class="card-title" style="background-color: #76CF1C; border-bottom: 1px solid #76CF1C; padding: 16px 24px; margin: 0;"><h4 style="margin: 0; font-weight: 700; color: #ffffff; font-size: 16px;">' + data.device_category_name + ' Configuration</h4></div>';
                   htmlContent += '<div class="card-details" style="padding: 24px;">';
@@ -675,8 +687,10 @@
                   htmlContent += '<div class="col-lg-6">';
                   htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Templates <span class="require">*</span></label><div><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
                   if (templates[index].length > 0) {
+                    let hasDefault = false;
                     templates[index].forEach((temp) => {
                       if (temp.default_template == 1) {
+                        hasDefault = true;
                         defaultTemplatesToTrigger.push({
                           index: index,
                           id: temp.id
@@ -684,12 +698,22 @@
                       }
                       htmlContent += '<option ' + (temp.default_template == 1 ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + ' ' + (temp.default_template == 1 ? ' (Default)' : '') + '</option>';
                     });
+                    if (!hasDefault) {
+                        defaultTemplatesToTrigger.push({
+                            index: index,
+                            id: templates[index][0].id
+                        });
+                    }
                   }
                   // htmlContent += '<option>No Template Found</option>';
                   htmlContent += '</select></div></div></div></div>';
 
                   input.forEach((input, index1) => {
                     let validation = JSON.parse(input.validationConfig);
+                    let configVal = input.default || '';
+                    if (myConfig && myConfig[input.key.replace(/\s+/g, '_').toLowerCase()]) {
+                        configVal = myConfig[input.key.replace(/\s+/g, '_').toLowerCase()].value || '';
+                    }
 
                     if (index1 % 2 === 0) {
                       htmlContent += '<div class="row">';
@@ -754,6 +778,7 @@
                           (input.type !== 'number' && validation?.maxValueInput ? 'maxlength="' + validation.maxValueInput + '"' : '') +
                           'placeholder="Enter ' + input.key + '" ' +
                           'name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' +
+                          'value="' + configVal + '" ' +
                           (input.requiredFieldInput ?
                             'required' :
                             '') +
@@ -822,7 +847,8 @@
           url: actionUrl,
           type: "POST",
           data: {
-            ids: newCheckedValues
+            ids: newCheckedValues,
+            userId: "{{ Auth::user()->id }}"
           },
           success: function(response) {
             let result = JSON.parse(response);
@@ -837,8 +863,19 @@
               let inputFields = JSON.parse(result.device);
               let templates = JSON.parse(result.templates);
               let defaultTemplatesToTrigger = [];
+              let authDeviceCategories = ("{{ Auth::user()->device_category_id }}" || "").split(',');
               inputFields.forEach((data, index) => {
                 let input = JSON.parse(data.inputs);
+                
+                let myConfigIndex = authDeviceCategories.indexOf(data.id.toString());
+                let myConfig = null;
+                if (myConfigIndex !== -1 && result.configurations) {
+                    let parsedConfigs = JSON.parse(result.configurations);
+                    if (parsedConfigs && parsedConfigs[myConfigIndex]) {
+                        myConfig = parsedConfigs[myConfigIndex];
+                    }
+                }
+
                 let canEnable = data.is_can_protocol == 1 ? true : false;
                 htmlContent += '<div class="device-category-fields card" style="border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 30px; overflow: hidden; background: #ffffff;">';
                 htmlContent += '<div class="card-title" style="background-color: #76CF1C; border-bottom: 1px solid #76CF1C; padding: 16px 24px; margin: 0;"><h4 style="margin: 0; font-weight: 700; color: #ffffff; font-size: 16px;">' + data.device_category_name + ' Configuration</h4></div>';
@@ -847,8 +884,10 @@
                 htmlContent += '<div class="col-lg-6">';
                 htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Templates <span class="require">*</span></label><div><select class="form-control userAccType" id="templates' + index + '" name="configuration[' + index + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
                 if (templates[index].length > 0) {
+                  let hasDefault = false;
                   templates[index].forEach((temp) => {
                     if (temp.default_template == 1 || temp.is_default == 1) {
+                      hasDefault = true;
                       defaultTemplatesToTrigger.push({
                         index: index,
                         id: temp.id
@@ -856,6 +895,12 @@
                     }
                     htmlContent += '<option ' + ((temp.default_template == 1 || temp.is_default == 1) ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + ' ' + ((temp.default_template == 1 || temp.is_default == 1) ? ' (Default)' : '') + '</option>';
                   });
+                  if (!hasDefault) {
+                      defaultTemplatesToTrigger.push({
+                          index: index,
+                          id: templates[index][0].id
+                      });
+                  }
                 }
                 htmlContent += '</select></div></div></div>';
 
@@ -882,6 +927,10 @@
 
                 input.forEach((input, index1) => {
                   let validation = JSON.parse(input.validationConfig);
+                  let configVal = input.default || '';
+                  if (myConfig && myConfig[input.key.replace(/\s+/g, '_').toLowerCase()]) {
+                      configVal = myConfig[input.key.replace(/\s+/g, '_').toLowerCase()].value || '';
+                  }
 
                   if (index1 % 2 === 0) {
                     htmlContent += '<div class="row">';
@@ -896,7 +945,7 @@
                     // htmlContent += '<option value="">Please Select</option>';
 
                     validation?.selectOptions.forEach((option, optIndex) => {
-                      let isSelected = (validation?.selectValues[optIndex] == input.default) ? 'selected' : '';
+                      let isSelected = (validation?.selectValues[optIndex] == configVal) ? 'selected' : '';
                       htmlContent += '<option ' + isSelected + ' value="' + validation?.selectValues[optIndex] + '">' + option + '</option>';
                     });
 
@@ -963,7 +1012,7 @@
                         (input.type !== 'number' && validation?.maxValueInput ? 'maxlength="' + validation.maxValueInput + '"' : '') +
                         'placeholder="Enter ' + input.key + '" ' +
                         'name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' +
-                        'value="' + (input.default || '') + '" ' +
+                        'value="' + configVal + '" ' +
                         (input.requiredFieldInput ?
                           'required' :
                           '') +

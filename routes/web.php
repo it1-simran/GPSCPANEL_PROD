@@ -90,6 +90,21 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
         Route::get('/admin/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs'])->name('admin.tracker.logs.fetch');
         Route::get('/admin/tracker/protocols/{protocol}/packet-types', [\App\Http\Controllers\LiveTrackerController::class, 'packetTypes'])->name('admin.tracker.protocol.packet-types');
 
+        /* ======================= Automated Test Plan Routes ======================= */
+        Route::resource('/admin/test-plans', \App\Http\Controllers\TestPlanController::class)->names([
+            'index' => 'admin.test-plans.index',
+            'create' => 'admin.test-plans.create',
+            'store' => 'admin.test-plans.store',
+            'edit' => 'admin.test-plans.edit',
+            'update' => 'admin.test-plans.update',
+            'destroy' => 'admin.test-plans.destroy',
+        ]);
+        Route::get('/admin/test-validate', [\App\Http\Controllers\TestPlanExecutionController::class, 'index'])->name('admin.test-validate.index');
+        Route::post('/admin/test-execute', [\App\Http\Controllers\TestPlanExecutionController::class, 'execute'])->name('admin.test-execute');
+        Route::get('/admin/test-report/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'report'])->name('admin.test-report');
+        Route::post('/admin/test-stop/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'stop'])->name('admin.test-stop');
+        Route::get('/admin/test-stream/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'stream'])->name('admin.test-stream');
+
         Route::get('/admin/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('imei-devices.index');
         Route::get('/admin/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('imei-devices.create');
         Route::post('/admin/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'store'])->name('imei-devices.store');
@@ -403,6 +418,10 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::get('/tracker/{device}/download', [\App\Http\Controllers\LiveTrackerController::class, 'downloadLogs'])->name('support.tracker.logs.download');
     Route::get('/tracker/logs/{imei}', [\App\Http\Controllers\LiveTrackerController::class, 'fetchLogs'])->name('support.tracker.logs.fetch');
     Route::get('/tracker/protocols/{protocol}/packet-types', [\App\Http\Controllers\LiveTrackerController::class, 'packetTypes'])->name('support.tracker.protocol.packet-types');
+
+    /* ======================= Automated Test Plan Routes (Support) ======================= */
+    Route::get('/test-plans', [\App\Http\Controllers\TestPlanController::class, 'index'])->name('support.test-plans.index');
+    Route::get('/test-validate', [\App\Http\Controllers\TestPlanExecutionController::class, 'index'])->name('support.test-validate.index');
 
     Route::get('/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('support.imei-devices.index');
     Route::get('/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('support.imei-devices.create');

@@ -19,3 +19,153 @@ button.selectDeviceUserChange {
     padding: 10px 20px;
     margin-right: 20px;
 }
+
+#main-content {
+    padding-top: 80px !important;
+}
+
+/* Premium Design Overrides */
+ul.sidebar-menu li.active > a {
+    background: #76CF1C !important;
+    border-left: 4px solid #5fa616 !important;
+    color: #fff !important;
+}
+
+ul.sidebar-menu li.active > a span.icon-sidebar {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+ul.sidebar-menu li ul.sub li.active a {
+    background: rgba(118, 207, 28, 0.1) !important;
+    color: #76CF1C !important;
+    border-left: 3px solid #76CF1C !important;
+    font-weight: 700;
+}
+
+.panel {
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+    margin-bottom: 30px !important;
+}
+
+.panel-heading {
+    background: #fff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    padding: 18px 25px !important;
+    font-weight: 700 !important;
+    font-size: 16px !important;
+    color: #2c3e50 !important;
+}
+
+.table thead th {
+    background: #f8f9fa !important;
+    border-bottom: 2px solid #edf2f7 !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.8px !important;
+    color: #718096 !important;
+    padding: 12px 15px !important;
+}
+
+.table tbody td {
+    padding: 15px !important;
+    vertical-align: middle !important;
+}
+
+.step-item {
+    border-radius: 12px !important;
+    border: 1px solid #edf2f7 !important;
+    border-left: 6px solid #4b6cb7 !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 20px !important;
+    background: #fff !important;
+}
+
+.step-item:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+    transform: translateY(-3px);
+}
+
+.btn {
+    border-radius: 8px !important;
+    padding: 8px 18px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s !important;
+}
+
+/* Premium Action Buttons */
+.btn-primary,
+.btn-info,
+.btn.viewConfigurations {
+    background: #1d283e !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover,
+.btn-info:hover,
+.btn.viewConfigurations:hover {
+    background: #141c2c !important;
+    box-shadow: 0 4px 12px rgba(29, 40, 62, 0.3) !important;
+    color: #ffffff !important;
+}
+
+.btn-success,
+.btn-green,
+.btn.linkReseller {
+    background: #76CF1C !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+
+.btn-success:hover,
+.btn-green:hover,
+.btn.linkReseller:hover {
+    background: #65b515 !important;
+    box-shadow: 0 4px 12px rgba(118, 207, 28, 0.3) !important;
+    color: #ffffff !important;
+}
+
+
+/* Force Odd/Even on specific grouped buttons (Downloads & Stats) */
+.margin-bottom-10 .btn:nth-child(odd),
+.stats-buttons .btn:nth-child(odd),
+.dt-buttons .btn:nth-child(odd) {
+    background: #1d283e !important;
+    color: #ffffff !important;
+}
+
+.margin-bottom-10 .btn:nth-child(odd):hover,
+.stats-buttons .btn:nth-child(odd):hover,
+.dt-buttons .btn:nth-child(odd):hover {
+    background: #141c2c !important;
+}
+
+.margin-bottom-10 .btn:nth-child(even),
+.stats-buttons .btn:nth-child(even),
+.dt-buttons .btn:nth-child(even) {
+    background: #76CF1C !important;
+    color: #ffffff !important;
+}
+
+.margin-bottom-10 .btn:nth-child(even):hover,
+.stats-buttons .btn:nth-child(even):hover,
+.dt-buttons .btn:nth-child(even):hover {
+    background: #65b515 !important;
+}
+
+.badge {
+    padding: 5px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+}
+
+.bg-success { background-color: #c6f6d5 !important; color: #22543d !important; }
+.bg-info { background-color: #bee3f8 !important; color: #2a4365 !important; }
+.bg-danger { background-color: #fed7d7 !important; color: #822727 !important; }
+.bg-warning { background-color: #feebc8 !important; color: #744210 !important; }

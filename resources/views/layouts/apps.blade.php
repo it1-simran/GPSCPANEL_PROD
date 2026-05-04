@@ -304,6 +304,24 @@ $ticketCount = $tickets->count();
                                 </ul>
                             </li>
 
+                            <li class='sub-menu {{ request()->is('admin/test-plans*', 'admin/test-validate*') ? 'active' : '' }}'>
+                                <a href="#" class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/test-plans*', 'admin/test-validate*') ? 'active' : '' }}">
+                                    <span class='icon-sidebar pe-7s-rocket fa-2x'></span><span>Test Automation</span>
+                                </a>
+                                <ul class='sub'>
+                                    <li class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
+                                        <a href="{{ url('admin/test-plans') }}" class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
+                                            Manage Test Plans
+                                        </a>
+                                    </li>
+                                    <li class="{{ request()->is('admin/test-validate*') ? 'active' : '' }}">
+                                        <a href="{{ url('admin/test-validate') }}" class="{{ request()->is('admin/test-validate*') ? 'active' : '' }}">
+                                            Test Validation Page
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+
                             <li
                                 class='sub-menu {{ request()->is('admin/add-template', 'admin/view-template', 'admin/assign-setting-bulk') ? 'active' : '' }}'>
                                 <a href="#"
@@ -674,6 +692,24 @@ $ticketCount = $tickets->count();
                                             <a href="{{ url('support/tracker') }}"
                                                 class="{{ request()->is('support/tracker*') ? 'active' : '' }}">
                                                 Live Track / Logs
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+
+                                <li class='sub-menu {{ request()->is('support/test-plans*', 'support/test-validate*') ? 'active' : '' }}'>
+                                    <a href="#" class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/test-plans*', 'support/test-validate*') ? 'active' : '' }}">
+                                        <span class='icon-sidebar pe-7s-rocket fa-2x'></span><span>Test Automation</span>
+                                    </a>
+                                    <ul class='sub'>
+                                        <li class="{{ request()->is('support/test-plans*') ? 'active' : '' }}">
+                                            <a href="{{ url('support/test-plans') }}" class="{{ request()->is('support/test-plans*') ? 'active' : '' }}">
+                                                Manage Test Plans
+                                            </a>
+                                        </li>
+                                        <li class="{{ request()->is('support/test-validate*') ? 'active' : '' }}">
+                                            <a href="{{ url('support/test-validate') }}" class="{{ request()->is('support/test-validate*') ? 'active' : '' }}">
+                                                Test Validation Page
                                             </a>
                                         </li>
                                     </ul>

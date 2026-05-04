@@ -41,7 +41,8 @@
         }
 
         .btn-start {
-            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            background: #96c93d !important;
+            color: white !important;
             border: none;
             height: 45px;
             border-radius: 8px;
@@ -54,7 +55,7 @@
 
         .btn-start:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(75, 108, 183, 0.2);
+            box-shadow: 0 10px 20px rgba(150, 201, 61, 0.2);
             color: white !important;
         }
 

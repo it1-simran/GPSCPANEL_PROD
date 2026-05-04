@@ -17,6 +17,7 @@ class TestPlanExecutionService
     protected $commandService;
     protected $packetService;
     protected $alertService;
+    protected $onLogCallback;
 
     public function __construct(
         CommandExecutionService $commandService,
@@ -26,6 +27,11 @@ class TestPlanExecutionService
         $this->commandService = $commandService;
         $this->packetService = $packetService;
         $this->alertService = $alertService;
+    }
+
+    public function setOnLogCallback(callable $callback)
+    {
+        $this->onLogCallback = $callback;
     }
 
     public function execute(TestPlanExecution $execution)
@@ -85,7 +91,7 @@ class TestPlanExecutionService
 
     protected function addLog(TestPlanExecution $execution, ?TestPlanStep $step, string $status, string $message, array $output = [])
     {
-        return TestPlanExecutionLog::create([
+        $log = TestPlanExecutionLog::create([
             'execution_id' => $execution->id,
             'step_id' => $step ? $step->id : $execution->testPlan->steps->first()->id,
             'status' => $status,
@@ -93,6 +99,13 @@ class TestPlanExecutionService
             'output_data' => $output,
             'duration_ms' => 0
         ]);
+
+        if (is_callable($this->onLogCallback)) {
+            $log->load('step');
+            call_user_func($this->onLogCallback, $log);
+        }
+
+        return $log;
     }
 
     protected function executeStep(TestPlanStep $step, ImeiDevice $device, TestPlanExecution $execution)
@@ -135,7 +148,7 @@ class TestPlanExecutionService
 
         $duration = (int) ((microtime(true) - $startTime) * 1000);
 
-        return TestPlanExecutionLog::create([
+        $log = TestPlanExecutionLog::create([
             'execution_id' => $execution->id,
             'step_id' => $step->id,
             'status' => $status,
@@ -144,6 +157,13 @@ class TestPlanExecutionService
             'error_message' => $error,
             'duration_ms' => $duration
         ]);
+
+        if (is_callable($this->onLogCallback)) {
+            $log->load('step');
+            call_user_func($this->onLogCallback, $log);
+        }
+
+        return $log;
     }
 
     protected function handleSendCommand(TestPlanStep $step, ImeiDevice $device, TestPlanExecution $execution)

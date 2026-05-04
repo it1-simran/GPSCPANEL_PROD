@@ -98,8 +98,8 @@
         <div class="row">
             <div class="col-md-10 col-md-offset-1">
                 <section class="panel" style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: none;">
-                    <header class="panel-heading" style="background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%) !important; color: white !important; border-radius: 15px 15px 0 0; padding: 25px !important; border: none;">
-                        <i class="fa fa-magic" style="margin-right: 10px;"></i> <strong style="font-size: 18px; letter-spacing: 0.5px;">Design Your Automation Workflow</strong>
+                    <header class="panel-heading" style="background: #0f172a !important; color: white !important; border-radius: 15px 15px 0 0; padding: 25px !important; border: none;">
+                        <i class="fa fa-magic" style="margin-right: 10px; color: #96c93d;"></i> <strong style="font-size: 18px; letter-spacing: 0.5px;">Design Your Automation Workflow</strong>
                     </header>
                     <div class="panel-body" style="padding: 35px;">
                         <form action="{{ route('admin.test-plans.store') }}" method="POST" class="form-horizontal tasi-form" id="test-plan-form">
@@ -144,17 +144,17 @@
                                     <div style="background: #fff; padding: 25px; border-radius: 15px; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
                                         <p style="font-weight: 800; color: #718096; margin-bottom: 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Add Action to Sequence</p>
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-info add-step" data-type="send_command" style="margin: 5px; background: #4b6cb7 !important; border: none;">
-                                                <i class="fa fa-paper-plane" style="margin-right: 5px;"></i> Send Command
+                                            <button type="button" class="btn btn-info add-step" data-type="send_command" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
+                                                <i class="fa fa-paper-plane" style="margin-right: 5px; color: #96c93d;"></i> Send Command
                                             </button>
-                                            <button type="button" class="btn btn-info add-step" data-type="wait_for_response" style="margin: 5px; background: #718096 !important; border: none;">
-                                                <i class="fa fa-clock-o" style="margin-right: 5px;"></i> Wait
+                                            <button type="button" class="btn btn-info add-step" data-type="wait_for_response" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
+                                                <i class="fa fa-clock-o" style="margin-right: 5px; color: #96c93d;"></i> Wait
                                             </button>
-                                            <button type="button" class="btn btn-info add-step" data-type="validate_response" style="margin: 5px; background: #00b09b !important; border: none;">
-                                                <i class="fa fa-check-square-o" style="margin-right: 5px;"></i> Validate
+                                            <button type="button" class="btn btn-info add-step" data-type="validate_response" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
+                                                <i class="fa fa-check-square-o" style="margin-right: 5px; color: #96c93d;"></i> Validate
                                             </button>
-                                            <button type="button" class="btn btn-info add-step" data-type="alert_evaluation" style="margin: 5px; background: #96c93d !important; border: none;">
-                                                <i class="fa fa-bell-o" style="margin-right: 5px;"></i> Alert
+                                            <button type="button" class="btn btn-info add-step" data-type="alert_evaluation" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
+                                                <i class="fa fa-bell-o" style="margin-right: 5px; color: #96c93d;"></i> Alert
                                             </button>
                                         </div>
                                     </div>
@@ -162,8 +162,8 @@
                             </div>
 
                             <div style="margin-top: 50px; text-align: right; border-top: 2px solid #edf2f7; padding-top: 30px;">
-                                <a href="{{ route('admin.test-plans.index') }}" class="btn btn-default" style="padding: 12px 30px; margin-right: 15px; border-radius: 10px; font-weight: 700;">Cancel</a>
-                                <button type="submit" class="btn btn-primary" style="padding: 12px 45px; border-radius: 10px; font-weight: 700; background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%) !important; border: none; box-shadow: 0 10px 20px rgba(75, 108, 183, 0.2);">
+                                <a href="{{ route('admin.test-plans.index') }}" class="btn btn-default" style="margin-top:10px; padding: 12px 30px; margin-right: 15px; border-radius: 10px; font-weight: 700;">Cancel</a>
+                                <button type="submit" class="btn btn-primary" style="padding: 12px 45px; border-radius: 10px; font-weight: 700; background: #96c93d !important; color: white !important; border: none; box-shadow: 0 10px 20px rgba(150, 201, 61, 0.2);">
                                     <i class="fa fa-save" style="margin-right: 8px;"></i> Save Test Plan
                                 </button>
                             </div>
@@ -177,13 +177,17 @@
 
 <!-- Step Templates -->
 <template id="step-template-send_command">
-    <div class="panel panel-default step-item" data-type="send_command" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #4b6cb7; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading" style="background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+    <div class="panel panel-default step-item" data-type="send_command" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center;">
-                <span class="step-index badge" style="background: #ebf8ff; color: #2b6cb0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
-                <strong style="color: #2d3748; letter-spacing: 0.5px;">SEND COMMAND</strong>
+                <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
+                <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
+                <strong style="color: #0f172a; letter-spacing: 0.5px;">SEND COMMAND</strong>
             </div>
-            <button type="button" class="btn btn-danger btn-xs remove-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #feb2b2; border: none; color: #9b2c2c;"><i class="fa fa-times"></i></button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-default btn-xs toggle-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #edf2f7; border: none; color: #4a5568;"><i class="fa fa-chevron-up"></i></button>
+                <button type="button" class="btn btn-danger btn-xs remove-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #feb2b2; border: none; color: #9b2c2c;"><i class="fa fa-times"></i></button>
+            </div>
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="send_command">
@@ -209,13 +213,17 @@
 </template>
 
 <template id="step-template-wait_for_response">
-    <div class="panel panel-default step-item" data-type="wait_for_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #718096; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading" style="background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+    <div class="panel panel-default step-item" data-type="wait_for_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center;">
-                <span class="step-index badge" style="background: #ebf8ff; color: #2b6cb0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
-                <strong style="color: #2d3748; letter-spacing: 0.5px;">WAIT FOR RESPONSE</strong>
+                <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
+                <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
+                <strong style="color: #0f172a; letter-spacing: 0.5px;">WAIT FOR RESPONSE</strong>
             </div>
-            <button type="button" class="btn btn-danger btn-xs remove-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #feb2b2; border: none; color: #9b2c2c;"><i class="fa fa-times"></i></button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-default btn-xs toggle-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #edf2f7; border: none; color: #4a5568;"><i class="fa fa-chevron-up"></i></button>
+                <button type="button" class="btn btn-danger btn-xs remove-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #feb2b2; border: none; color: #9b2c2c;"><i class="fa fa-times"></i></button>
+            </div>
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="wait_for_response">
@@ -235,13 +243,17 @@
 </template>
 
 <template id="step-template-validate_response">
-    <div class="panel panel-default step-item" data-type="validate_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #00b09b; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading" style="background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+    <div class="panel panel-default step-item" data-type="validate_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center;">
-                <span class="step-index badge" style="background: #ebf8ff; color: #2b6cb0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
-                <strong style="color: #2d3748; letter-spacing: 0.5px;">VALIDATE PACKET</strong>
+                <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
+                <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
+                <strong style="color: #0f172a; letter-spacing: 0.5px;">VALIDATE PACKET</strong>
             </div>
-            <button type="button" class="btn btn-danger btn-xs remove-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #feb2b2; border: none; color: #9b2c2c;"><i class="fa fa-times"></i></button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-default btn-xs toggle-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #edf2f7; border: none; color: #4a5568;"><i class="fa fa-chevron-up"></i></button>
+                <button type="button" class="btn btn-danger btn-xs remove-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #feb2b2; border: none; color: #9b2c2c;"><i class="fa fa-times"></i></button>
+            </div>
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="validate_response">
@@ -282,12 +294,16 @@
 
 <template id="step-template-alert_evaluation">
     <div class="panel panel-default step-item" data-type="alert_evaluation" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading" style="background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center;">
-                <span class="step-index badge" style="background: #ebf8ff; color: #2b6cb0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
-                <strong style="color: #2d3748; letter-spacing: 0.5px;">EVALUATE ALERTS</strong>
+                <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
+                <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
+                <strong style="color: #0f172a; letter-spacing: 0.5px;">EVALUATE ALERTS</strong>
             </div>
-            <button type="button" class="btn btn-danger btn-xs remove-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #feb2b2; border: none; color: #9b2c2c;"><i class="fa fa-times"></i></button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-default btn-xs toggle-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #edf2f7; border: none; color: #4a5568;"><i class="fa fa-chevron-up"></i></button>
+                <button type="button" class="btn btn-danger btn-xs remove-step" style="border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #feb2b2; border: none; color: #9b2c2c;"><i class="fa fa-times"></i></button>
+            </div>
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="alert_evaluation">
@@ -323,10 +339,40 @@
     </div>
 </template>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
 $(document).ready(function() {
     let stepCount = 0;
     const packetFields = {}; // Store fields for each packet type
+
+    // Initialize Sortable
+    const stepsContainer = document.getElementById('steps-container');
+    new Sortable(stepsContainer, {
+        animation: 150,
+        handle: '.step-handle',
+        ghostClass: 'sortable-ghost',
+        scroll: true,
+        forceFallback: true,
+        scrollSensitivity: 100,
+        scrollSpeed: 20,
+        onEnd: function() {
+            updateStepIndices();
+        }
+    });
+
+    // Expand / Collapse Step
+    $(document).on('click', '.toggle-step', function(e) {
+        e.stopPropagation();
+        const $panelBody = $(this).closest('.step-item').find('.panel-body');
+        const $icon = $(this).find('i');
+        $panelBody.slideToggle(300, function() {
+            if ($panelBody.is(':visible')) {
+                $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            } else {
+                $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            }
+        });
+    });
 
     $('.add-step').click(function() {
         const type = $(this).data('type');
@@ -342,6 +388,7 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.remove-step', function() {
+        if (!confirm('Are you sure you want to remove this step?')) return;
         $(this).closest('.step-item').remove();
         updateStepIndices();
         if ($('.step-item').length === 0) {
@@ -401,6 +448,7 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.remove-rule', function() {
+        if (!confirm('Are you sure you want to remove this rule?')) return;
         $(this).closest('.rule-row').remove();
     });
 
@@ -446,6 +494,19 @@ $(document).ready(function() {
         
         $('.step-item').each(function(index) {
             $(this).find('.step-index').text((index + 1));
+            
+            // Re-index all inputs
+            $(this).find('input, select, textarea').each(function() {
+                if ($(this).attr('name')) {
+                    const newName = $(this).attr('name').replace(/steps\[\d+\]/, 'steps[' + index + ']');
+                    $(this).attr('name', newName);
+                }
+            });
+            
+            // Update data attributes and IDs for rules/alerts
+            $(this).find('.add-rule-btn').data('step-index', index).attr('data-step-index', index);
+            $(this).find('.rules-container').attr('id', 'rules-container-' + index);
+            $(this).find('.alerts-container').attr('id', 'alerts-container-' + index);
         });
     }
 });

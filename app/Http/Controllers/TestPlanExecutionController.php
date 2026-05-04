@@ -71,48 +71,78 @@ class TestPlanExecutionController extends Controller
             $startTime = time();
             $maxTime = 300; // 5 minutes
 
-            // If not running, start it (or it might be started by an async process)
+            // If not running, start it
             if ($execution->status === TestPlanExecution::STATUS_PENDING) {
-                 // In a real app, this would be a Job. For now, we'll run it here or assume it's running.
-                 $this->executionService->execute($execution);
-            }
-
-            while (time() - $startTime < $maxTime) {
-                if (connection_aborted()) break;
-
-                $execution->refresh();
-                
-                $logs = $execution->logs()->where('id', '>', $lastLogId)->get();
-                foreach ($logs as $log) {
+                // Set the callback to stream logs immediately as they happen
+                $this->executionService->setOnLogCallback(function($log) {
                     echo "event: log\n";
                     echo "data: " . json_encode([
                         'step_id' => $log->step_id,
-                        'sequence' => $log->step->sequence,
-                        'type' => $log->step->step_type,
+                        'sequence' => $log->step ? $log->step->sequence : 'SYS',
+                        'type' => $log->step ? $log->step->step_type : 'INIT',
                         'status' => $log->status,
                         'message' => $log->error_message,
                         'duration' => $log->duration_ms,
                         'output' => $log->output_data,
                     ]) . "\n\n";
-                    $lastLogId = $log->id;
-                }
 
-                if (in_array($execution->status, [TestPlanExecution::STATUS_PASSED, TestPlanExecution::STATUS_FAILED, TestPlanExecution::STATUS_STOPPED])) {
-                    echo "event: complete\n";
-                    echo "data: " . json_encode([
-                        'status' => $execution->status,
-                        'summary' => $execution->summary,
-                        'completed_at' => $execution->completed_at->toDateTimeString()
-                    ]) . "\n\n";
-                    break;
-                }
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
+                });
 
-                echo "event: heartbeat\n";
-                echo "data: " . json_encode(['ts' => now()->toDateTimeString()]) . "\n\n";
+                // Execute synchronously but stream in real-time
+                $this->executionService->execute($execution);
+
+                // Execution is done, stream the complete event
+                $execution->refresh();
+                echo "event: complete\n";
+                echo "data: " . json_encode([
+                    'status' => $execution->status,
+                    'summary' => $execution->summary,
+                    'completed_at' => $execution->completed_at ? $execution->completed_at->toDateTimeString() : now()->toDateTimeString()
+                ]) . "\n\n";
 
                 if (ob_get_level() > 0) ob_flush();
                 flush();
-                sleep(1);
+            } else {
+                // Fallback for already running/completed executions
+                while (time() - $startTime < $maxTime) {
+                    if (connection_aborted()) break;
+
+                    $execution->refresh();
+                    
+                    $logs = $execution->logs()->where('id', '>', $lastLogId)->get();
+                    foreach ($logs as $log) {
+                        echo "event: log\n";
+                        echo "data: " . json_encode([
+                            'step_id' => $log->step_id,
+                            'sequence' => $log->step ? $log->step->sequence : 'SYS',
+                            'type' => $log->step ? $log->step->step_type : 'INIT',
+                            'status' => $log->status,
+                            'message' => $log->error_message,
+                            'duration' => $log->duration_ms,
+                            'output' => $log->output_data,
+                        ]) . "\n\n";
+                        $lastLogId = $log->id;
+                    }
+
+                    if (in_array($execution->status, [TestPlanExecution::STATUS_PASSED, TestPlanExecution::STATUS_FAILED, TestPlanExecution::STATUS_STOPPED])) {
+                        echo "event: complete\n";
+                        echo "data: " . json_encode([
+                            'status' => $execution->status,
+                            'summary' => $execution->summary,
+                            'completed_at' => $execution->completed_at ? $execution->completed_at->toDateTimeString() : now()->toDateTimeString()
+                        ]) . "\n\n";
+                        break;
+                    }
+
+                    echo "event: heartbeat\n";
+                    echo "data: " . json_encode(['ts' => now()->toDateTimeString()]) . "\n\n";
+
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
+                    sleep(1);
+                }
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',

@@ -293,6 +293,8 @@ class TestPlanExecutionService
     protected function handleAlertEvaluation(TestPlanStep $step, ImeiDevice $device, TestPlanExecution $execution)
     {
         $packetTypeId = $step->config['packet_type_id'] ?? null;
+        $evaluateAll = $step->config['evaluate_all'] ?? 0;
+        $alertIds = $step->config['alert_ids'] ?? [];
 
         $this->addLog($execution, $step, TestPlanExecutionLog::STATUS_INFO, "🔔 Starting alert evaluation flow...");
 
@@ -313,7 +315,7 @@ class TestPlanExecutionService
 
         $this->addLog($execution, $step, TestPlanExecutionLog::STATUS_INFO, "📊 Analyzing fields for configured alert conditions...");
 
-        $alertReport = $this->alertService->validate($packetTypeId, $validation['parsed_data']);
+        $alertReport = $this->alertService->validate($packetTypeId, $validation['parsed_data'], $evaluateAll, $alertIds);
         
         $this->addLog($execution, $step, TestPlanExecutionLog::STATUS_INFO, "📢 Evaluation complete: " . count($alertReport['alerts'] ?? []) . " alerts processed.");
 

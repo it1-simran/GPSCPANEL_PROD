@@ -344,6 +344,7 @@
 $(document).ready(function() {
     let stepCount = 0;
     const packetFields = {}; // Store fields for each packet type
+    const packetAlerts = {}; // Store alerts for each packet type
 
     // Initialize Sortable
     const stepsContainer = document.getElementById('steps-container');
@@ -415,6 +416,7 @@ $(document).ready(function() {
             data.packet_types.forEach(function(pt) {
                 options += `<option value="${pt.id}">${pt.name}</option>`;
                 packetFields[pt.id] = pt.fields;
+                packetAlerts[pt.id] = pt.alerts;
             });
             $packetSelect.html(options).prop('disabled', false);
         });
@@ -452,6 +454,17 @@ $(document).ready(function() {
         $(this).closest('.rule-row').remove();
     });
 
+    $(document).on('change', '.evaluate-all-alerts', function() {
+        const $container = $(this).closest('.alerts-container');
+        const $specificAlerts = $container.find('.specific-alerts-container');
+        if ($(this).is(':checked')) {
+            $specificAlerts.hide();
+            $specificAlerts.find('.specific-alert-checkbox').prop('checked', true);
+        } else {
+            $specificAlerts.show();
+        }
+    });
+
     function addRuleRow(stepIdx, packetTypeId) {
         const fields = packetFields[packetTypeId] || [];
         let fieldOptions = '<option value="">Select Field</option>';
@@ -483,9 +496,26 @@ $(document).ready(function() {
     function fetchAndRenderAlerts(packetTypeId, $container) {
         const stepIdx = $container.attr('id').split('-').pop();
         $container.html('<p class="small text-muted"><i class="fa fa-spinner fa-spin"></i> Loading alerts...</p>');
-        $container.html('<div style="display:flex; flex-wrap:wrap; gap:15px;">' +
-            '<div class="checkbox" style="margin:0;"><label style="font-weight:600; color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][evaluate_all]" checked value="1"> Evaluate all active alerts for this packet</label></div>' +
-            '</div>');
+        
+        const alerts = packetAlerts[packetTypeId] || [];
+        
+        let html = '<div style="margin-bottom: 15px;">' +
+            '<div class="checkbox" style="margin:0;"><label style="font-weight:600; color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][evaluate_all]" class="evaluate-all-alerts" checked value="1"> Evaluate all active alerts for this packet</label></div>' +
+            '</div>';
+            
+        if (alerts.length > 0) {
+            html += '<div class="specific-alerts-container" style="display: none; flex-wrap:wrap; gap:15px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">';
+            alerts.forEach(function(alert) {
+                html += '<div class="checkbox" style="margin:0; width: 100%;">' +
+                    '<label style="color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][alert_ids][]" class="specific-alert-checkbox" value="' + alert.id + '" checked> ' + alert.name + '</label>' +
+                    '</div>';
+            });
+            html += '</div>';
+        } else {
+            html += '<div class="specific-alerts-container" style="display: none; padding-top: 10px; border-top: 1px dashed #e2e8f0;"><p class="small text-muted">No specific alerts available for this packet type.</p></div>';
+        }
+        
+        $container.html(html);
     }
 
     function updateStepIndices() {

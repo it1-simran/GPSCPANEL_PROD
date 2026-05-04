@@ -262,7 +262,7 @@
                                                 </div>
                                                 <div class="alerts-section" style="margin-top: 25px;">
                                                     <label style="color: #2d3748; font-weight: 800; font-size: 11px; text-transform: uppercase;">Alerts to Validate</label>
-                                                    <div class="alerts-container" id="alerts-container-{{ $index }}" style="background: #fdfdfd; border: 1px solid #edf2f7; border-radius: 10px; padding: 15px;">
+                                                    <div class="alerts-container" id="alerts-container-{{ $index }}" data-initial-alerts="{{ json_encode($step->config['alert_ids'] ?? []) }}" style="background: #fdfdfd; border: 1px solid #edf2f7; border-radius: 10px; padding: 15px;">
                                                         <div style="display:flex; flex-wrap:wrap; gap:15px;">
                                                             <div class="checkbox" style="margin:0;"><label style="font-weight:600; color:#4a5568;"><input type="checkbox" name="steps[{{ $index }}][config][evaluate_all]" {{ ($step->config['evaluate_all'] ?? true) ? 'checked' : '' }} value="1"> Evaluate all active alerts for this packet</label></div>
                                                         </div>
@@ -479,6 +479,7 @@
 $(document).ready(function() {
     let stepCount = {{ $testPlan->steps->count() }};
     const packetFields = {};
+    const packetAlerts = {};
 
     // Initialize Sortable
     const stepsContainer = document.getElementById('steps-container');
@@ -555,6 +556,7 @@ $(document).ready(function() {
                 const selected = (isInitial && pt.id == initialPacketId) ? 'selected' : '';
                 options += `<option value="${pt.id}" ${selected}>${pt.name}</option>`;
                 packetFields[pt.id] = pt.fields;
+                packetAlerts[pt.id] = pt.alerts;
             });
             $packetSelect.html(options).prop('disabled', false);
             
@@ -564,6 +566,12 @@ $(document).ready(function() {
                     const initialField = $(this).data('initial-value');
                     populateFieldSelect($(this), initialPacketId, initialField);
                 });
+                
+                // If alert evaluation, render alerts
+                if ($panelBody.closest('.step-item').data('type') === 'alert_evaluation') {
+                    const stepIdx = $panelBody.closest('.step-item').find('.step-index').text() - 1;
+                    fetchAndRenderAlerts(initialPacketId, $panelBody.find('.alerts-container'), stepIdx, true);
+                }
             }
         });
     });
@@ -579,7 +587,23 @@ $(document).ready(function() {
                 $rulesSection.show();
                 // We don't empty if it's the first manual change after page load if rules exist? 
                 // Actually, if they change the packet type, rules SHOULD probably be reset or at least field options updated.
+            } else if (stepType === 'alert_evaluation') {
+                const $alertsSection = $panelBody.find('.alerts-section');
+                $alertsSection.show();
+                const stepIdx = $(this).closest('.step-item').find('.step-index').text() - 1;
+                fetchAndRenderAlerts(packetTypeId, $panelBody.find('.alerts-container'), stepIdx, false);
             }
+        }
+    });
+
+    $(document).on('change', '.evaluate-all-alerts', function() {
+        const $container = $(this).closest('.alerts-container');
+        const $specificAlerts = $container.find('.specific-alerts-container');
+        if ($(this).is(':checked')) {
+            $specificAlerts.hide();
+            $specificAlerts.find('.specific-alert-checkbox').prop('checked', true);
+        } else {
+            $specificAlerts.show();
         }
     });
 
@@ -630,6 +654,51 @@ $(document).ready(function() {
             options += `<option value="${f.name}" ${selected}>${f.name}</option>`;
         });
         $select.html(options);
+    }
+
+    function fetchAndRenderAlerts(packetTypeId, $container, stepIdx, isInitial) {
+        $container.html('<p class="small text-muted"><i class="fa fa-spinner fa-spin"></i> Loading alerts...</p>');
+        
+        const alerts = packetAlerts[packetTypeId] || [];
+        
+        // For edit view, we might need to get initial selected values from hidden input or data attributes
+        // But since we replace the HTML, let's just default to evaluate_all = true if not isInitial
+        let isEvaluateAll = true;
+        let selectedAlerts = [];
+        
+        if (isInitial) {
+            // Attempt to get the initial value from the existing DOM before replacing
+            const existingEvalAll = $container.find('input[name="steps[' + stepIdx + '][config][evaluate_all]"]');
+            if (existingEvalAll.length > 0) {
+                isEvaluateAll = existingEvalAll.is(':checked');
+            }
+            
+            try {
+                const initialAlertsStr = $container.attr('data-initial-alerts');
+                if (initialAlertsStr) {
+                    selectedAlerts = JSON.parse(initialAlertsStr).map(id => parseInt(id));
+                }
+            } catch(e) {}
+        }
+        
+        let html = '<div style="margin-bottom: 15px;">' +
+            '<div class="checkbox" style="margin:0;"><label style="font-weight:600; color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][evaluate_all]" class="evaluate-all-alerts" value="1" ' + (isEvaluateAll ? 'checked' : '') + '> Evaluate all active alerts for this packet</label></div>' +
+            '</div>';
+            
+        if (alerts.length > 0) {
+            html += '<div class="specific-alerts-container" style="display: ' + (isEvaluateAll ? 'none' : 'flex') + '; flex-wrap:wrap; gap:15px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">';
+            alerts.forEach(function(alert) {
+                const isChecked = isEvaluateAll || (!isInitial) || selectedAlerts.includes(alert.id);
+                html += '<div class="checkbox" style="margin:0; width: 100%;">' +
+                    '<label style="color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][alert_ids][]" class="specific-alert-checkbox" value="' + alert.id + '" ' + (isChecked ? 'checked' : '') + '> ' + alert.name + '</label>' +
+                    '</div>';
+            });
+            html += '</div>';
+        } else {
+            html += '<div class="specific-alerts-container" style="display: ' + (isEvaluateAll ? 'none' : 'block') + '; padding-top: 10px; border-top: 1px dashed #e2e8f0;"><p class="small text-muted">No specific alerts available for this packet type.</p></div>';
+        }
+        
+        $container.html(html);
     }
 
     function updateStepIndices() {

@@ -265,6 +265,8 @@ class LiveTrackerController extends Controller
                 ->where('is_active', true)
                 ->with(['fields' => function ($query) {
                     $query->orderBy('sequence');
+                }, 'alerts' => function ($query) {
+                    $query->where('is_active', true)->orderBy('name');
                 }])
                 ->orderBy('name')
                 ->get()
@@ -281,6 +283,12 @@ class LiveTrackerController extends Controller
                                 'data_type' => $field->data_type,
                                 'validation_type' => $field->validation_type,
                                 'is_required' => (bool) $field->is_required,
+                            ];
+                        })->values(),
+                        'alerts' => $type->alerts->map(function ($alert) {
+                            return [
+                                'id' => $alert->id,
+                                'name' => $alert->name,
                             ];
                         })->values(),
                     ];

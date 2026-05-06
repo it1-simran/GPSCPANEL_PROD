@@ -107,7 +107,7 @@
                             @method('PUT')
                             
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group" style="margin: 0 0 25px 0;">
                                         <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Plan Name</label>
                                         <div class="input-group">
@@ -116,7 +116,21 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
+                                    <div class="form-group" style="margin: 0 0 25px 0;">
+                                        <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Protocol</label>
+                                        <div class="input-group">
+                                            <span class="input-group-addon"><i class="fa fa-exchange text-primary"></i></span>
+                                            <select name="protocol_id" id="plan_protocol_id" class="form-control" style="border-radius: 0 10px 10px 0;" required>
+                                                <option value="">Select Protocol...</option>
+                                                @foreach($protocols as $p)
+                                                    <option value="{{ $p->id }}" {{ $testPlan->protocol_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
                                     <div class="form-group" style="margin: 0 0 25px 0;">
                                         <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Description</label>
                                         <div class="input-group">
@@ -193,18 +207,7 @@
                                                 </div>
                                             @elseif($step->step_type == 'validate_response')
                                                 <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-6">
-                                                        <div class="form-group" style="margin: 0;">
-                                                            <label>Protocol</label>
-                                                            <select name="steps[{{ $index }}][config][protocol_id]" class="form-control protocol-select" required>
-                                                                <option value="">Select Protocol...</option>
-                                                                @foreach($protocols as $p)
-                                                                    <option value="{{ $p->id }}" {{ ($step->config['protocol_id'] ?? '') == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6">
+                                                    <div class="col-md-12">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Packet Type</label>
                                                             <select name="steps[{{ $index }}][config][packet_type_id]" class="form-control packet-type-select" required data-initial-value="{{ $step->config['packet_type_id'] ?? '' }}">
@@ -240,18 +243,7 @@
                                                 </div>
                                             @elseif($step->step_type == 'alert_evaluation')
                                                 <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-6">
-                                                        <div class="form-group" style="margin: 0;">
-                                                            <label>Protocol</label>
-                                                            <select class="form-control protocol-select" required>
-                                                                <option value="">Select Protocol...</option>
-                                                                @foreach($protocols as $p)
-                                                                    <option value="{{ $p->id }}" {{ ($step->config['protocol_id'] ?? '') == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6">
+                                                    <div class="col-md-12">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Packet Type</label>
                                                             <select name="steps[{{ $index }}][config][packet_type_id]" class="form-control packet-type-select" required data-initial-value="{{ $step->config['packet_type_id'] ?? '' }}">
@@ -393,18 +385,7 @@
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="validate_response">
             <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-6">
-                    <div class="form-group" style="margin: 0;">
-                        <label>Protocol</label>
-                        <select name="steps[INDEX][config][protocol_id]" class="form-control protocol-select" required>
-                            <option value="">Select Protocol...</option>
-                            @foreach($protocols as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="form-group" style="margin: 0;">
                         <label>Packet Type</label>
                         <select name="steps[INDEX][config][packet_type_id]" class="form-control packet-type-select" required disabled>
@@ -443,18 +424,7 @@
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="alert_evaluation">
             <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-6">
-                    <div class="form-group" style="margin: 0;">
-                        <label>Protocol</label>
-                        <select class="form-control protocol-select" required>
-                            <option value="">Select Protocol...</option>
-                            @foreach($protocols as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="form-group" style="margin: 0;">
                         <label>Packet Type</label>
                         <select name="steps[INDEX][config][packet_type_id]" class="form-control packet-type-select" required disabled>
@@ -496,6 +466,8 @@ $(document).ready(function() {
         }
     });
 
+    let currentPacketTypes = [];
+
     // Expand / Collapse Step
     $(document).on('click', '.toggle-step', function(e) {
         e.stopPropagation();
@@ -510,12 +482,81 @@ $(document).ready(function() {
         });
     });
 
-    // Initial population for existing steps
-    $('.protocol-select').each(function() {
-        if ($(this).val()) {
-            $(this).trigger('change', [true]); // true = isInitial
+    $('#plan_protocol_id').change(function(e, isInitial) {
+        const protocolId = $(this).val();
+        
+        if (!protocolId) {
+            currentPacketTypes = [];
+            $('.packet-type-select').html('<option value="">Select Type...</option>').prop('disabled', true);
+            $('.rules-section, .alerts-section').hide();
+            return;
         }
+
+        if (!isInitial) {
+            $('.packet-type-select').html('<option value="">Loading...</option>').prop('disabled', true);
+        }
+
+        $.get(`/admin/tracker/protocols/${protocolId}/packet-types`, function(data) {
+            currentPacketTypes = data.packet_types;
+            data.packet_types.forEach(function(pt) {
+                packetFields[pt.id] = pt.fields;
+                packetAlerts[pt.id] = pt.alerts;
+            });
+            
+            $('.packet-type-select').each(function() {
+                const $select = $(this);
+                const initialPacketId = isInitial ? $select.data('initial-value') : null;
+                
+                if (currentPacketTypes.length === 0) {
+                    $select.html('<option value="">No packet types found</option>').prop('disabled', true);
+                    const $panelBody = $select.closest('.panel-body');
+                    $panelBody.find('.rules-section, .alerts-section').show();
+                    $panelBody.find('.rules-container, .alerts-container').html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;"><i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> No packet types available for this protocol.</div>');
+                } else {
+                    let options = '<option value="">Select Type...</option>';
+                    data.packet_types.forEach(function(pt) {
+                        const selected = (isInitial && pt.id == initialPacketId) ? 'selected' : '';
+                        options += `<option value="${pt.id}" ${selected}>${pt.name}</option>`;
+                    });
+                    $select.html(options).prop('disabled', false);
+                }
+
+                if (isInitial && initialPacketId && currentPacketTypes.length > 0) {
+                    const $panelBody = $select.closest('.panel-body');
+                    $panelBody.find('.field-select').each(function() {
+                        const initialField = $(this).data('initial-value');
+                        populateFieldSelect($(this), initialPacketId, initialField);
+                    });
+                    
+                    const stepType = $panelBody.closest('.step-item').data('type');
+                    if (stepType === 'validate_response') {
+                        const $rulesContainer = $panelBody.find('.rules-container');
+                        if ($rulesContainer.children().length === 0) {
+                            $panelBody.find('.add-rule-btn').click();
+                        }
+                    } else if (stepType === 'alert_evaluation') {
+                        const stepIdx = $panelBody.closest('.step-item').find('.step-index').text() - 1;
+                        fetchAndRenderAlerts(initialPacketId, $panelBody.find('.alerts-container'), stepIdx, true);
+                    }
+                } else if (!isInitial && currentPacketTypes.length > 0) {
+                    const $panelBody = $select.closest('.panel-body');
+                    $panelBody.find('.rules-container').empty();
+                    $panelBody.find('.alerts-container').empty();
+                    $panelBody.find('.rules-section, .alerts-section').hide();
+                }
+            });
+        }).fail(function() {
+            alert('Error loading packet types. Please try again.');
+            if (!isInitial) {
+                $('.packet-type-select').html('<option value="">Error</option>');
+            }
+        });
     });
+
+    // Initial population for existing steps
+    if ($('#plan_protocol_id').val()) {
+        $('#plan_protocol_id').trigger('change', [true]);
+    }
 
     $('.add-step').click(function() {
         const type = $(this).data('type');
@@ -525,6 +566,25 @@ $(document).ready(function() {
         const $step = $(html);
         $('#steps-container').append($step);
         $('#empty-steps-msg').hide();
+        
+        if (type === 'validate_response' || type === 'alert_evaluation') {
+            const $packetSelect = $step.find('.packet-type-select');
+            if (!$('#plan_protocol_id').val()) {
+                alert('Please select a Protocol at the top of the form first.');
+                $step.find('.rules-section, .alerts-section').show();
+                $step.find('.rules-container, .alerts-container').html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;"><i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> Please select a Protocol first.</div>');
+            } else if (currentPacketTypes.length > 0) {
+                let options = '<option value="">Select Type...</option>';
+                currentPacketTypes.forEach(function(pt) {
+                    options += `<option value="${pt.id}">${pt.name}</option>`;
+                });
+                $packetSelect.html(options).prop('disabled', false);
+            } else {
+                $packetSelect.html('<option value="">No packet types found</option>').prop('disabled', true);
+                $step.find('.rules-section, .alerts-section').show();
+                $step.find('.rules-container, .alerts-container').html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;"><i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> No packet types available for this protocol.</div>');
+            }
+        }
         
         updateStepIndices();
         stepCount++;
@@ -539,43 +599,6 @@ $(document).ready(function() {
         }
     });
 
-    $(document).on('change', '.protocol-select', function(e, isInitial) {
-        const protocolId = $(this).val();
-        const $panelBody = $(this).closest('.panel-body');
-        const $packetSelect = $panelBody.find('.packet-type-select');
-        const initialPacketId = $packetSelect.data('initial-value');
-        
-        if (!protocolId) {
-            $packetSelect.html('<option value="">Select Type...</option>').prop('disabled', true);
-            return;
-        }
-
-        $.get(`/admin/tracker/protocols/${protocolId}/packet-types`, function(data) {
-            let options = '<option value="">Select Type...</option>';
-            data.packet_types.forEach(function(pt) {
-                const selected = (isInitial && pt.id == initialPacketId) ? 'selected' : '';
-                options += `<option value="${pt.id}" ${selected}>${pt.name}</option>`;
-                packetFields[pt.id] = pt.fields;
-                packetAlerts[pt.id] = pt.alerts;
-            });
-            $packetSelect.html(options).prop('disabled', false);
-            
-            if (isInitial && initialPacketId) {
-                // If we have rules, populate the field selects
-                $panelBody.find('.field-select').each(function() {
-                    const initialField = $(this).data('initial-value');
-                    populateFieldSelect($(this), initialPacketId, initialField);
-                });
-                
-                // If alert evaluation, render alerts
-                if ($panelBody.closest('.step-item').data('type') === 'alert_evaluation') {
-                    const stepIdx = $panelBody.closest('.step-item').find('.step-index').text() - 1;
-                    fetchAndRenderAlerts(initialPacketId, $panelBody.find('.alerts-container'), stepIdx, true);
-                }
-            }
-        });
-    });
-
     $(document).on('change', '.packet-type-select', function() {
         const packetTypeId = $(this).val();
         const $panelBody = $(this).closest('.panel-body');
@@ -585,8 +608,9 @@ $(document).ready(function() {
             if (stepType === 'validate_response') {
                 const $rulesSection = $panelBody.find('.rules-section');
                 $rulesSection.show();
-                // We don't empty if it's the first manual change after page load if rules exist? 
-                // Actually, if they change the packet type, rules SHOULD probably be reset or at least field options updated.
+                const stepIdx = $panelBody.find('.add-rule-btn').data('step-index');
+                $(`#rules-container-${stepIdx}`).empty();
+                addRuleRow(stepIdx, packetTypeId);
             } else if (stepType === 'alert_evaluation') {
                 const $alertsSection = $panelBody.find('.alerts-section');
                 $alertsSection.show();
@@ -661,6 +685,13 @@ $(document).ready(function() {
         
         const alerts = packetAlerts[packetTypeId] || [];
         
+        if (alerts.length === 0) {
+            $container.html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;">' +
+                    '<i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> No active alerts configured for this packet type.' +
+                    '</div>');
+            return;
+        }
+
         // For edit view, we might need to get initial selected values from hidden input or data attributes
         // But since we replace the HTML, let's just default to evaluate_all = true if not isInitial
         let isEvaluateAll = true;
@@ -685,18 +716,14 @@ $(document).ready(function() {
             '<div class="checkbox" style="margin:0;"><label style="font-weight:600; color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][evaluate_all]" class="evaluate-all-alerts" value="1" ' + (isEvaluateAll ? 'checked' : '') + '> Evaluate all active alerts for this packet</label></div>' +
             '</div>';
             
-        if (alerts.length > 0) {
-            html += '<div class="specific-alerts-container" style="display: ' + (isEvaluateAll ? 'none' : 'flex') + '; flex-wrap:wrap; gap:15px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">';
-            alerts.forEach(function(alert) {
-                const isChecked = isEvaluateAll || (!isInitial) || selectedAlerts.includes(alert.id);
-                html += '<div class="checkbox" style="margin:0; width: 100%;">' +
-                    '<label style="color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][alert_ids][]" class="specific-alert-checkbox" value="' + alert.id + '" ' + (isChecked ? 'checked' : '') + '> ' + alert.name + '</label>' +
-                    '</div>';
-            });
-            html += '</div>';
-        } else {
-            html += '<div class="specific-alerts-container" style="display: ' + (isEvaluateAll ? 'none' : 'block') + '; padding-top: 10px; border-top: 1px dashed #e2e8f0;"><p class="small text-muted">No specific alerts available for this packet type.</p></div>';
-        }
+        html += '<div class="specific-alerts-container" style="display: ' + (isEvaluateAll ? 'none' : 'flex') + '; flex-wrap:wrap; gap:15px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">';
+        alerts.forEach(function(alert) {
+            const isChecked = isEvaluateAll || (!isInitial) || selectedAlerts.includes(alert.id);
+            html += '<div class="checkbox" style="margin:0; width: 100%;">' +
+                '<label style="color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][alert_ids][]" class="specific-alert-checkbox" value="' + alert.id + '" ' + (isChecked ? 'checked' : '') + '> ' + alert.name + '</label>' +
+                '</div>';
+        });
+        html += '</div>';
         
         $container.html(html);
     }

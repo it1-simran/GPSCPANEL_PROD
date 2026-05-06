@@ -26,6 +26,7 @@ class TestPlanController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'protocol_id' => 'required|exists:protocols,id',
             'steps' => 'required|array|min:1',
             'steps.*.step_type' => 'required|string',
             'steps.*.config' => 'required|array',
@@ -34,6 +35,7 @@ class TestPlanController extends Controller
         $testPlan = TestPlan::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? '',
+            'protocol_id' => $validated['protocol_id'],
         ]);
 
         foreach ($request->input('steps') as $index => $stepData) {
@@ -59,6 +61,7 @@ class TestPlanController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'protocol_id' => 'required|exists:protocols,id',
             'steps' => 'required|array|min:1',
             'steps.*.step_type' => 'required|string',
             'steps.*.config' => 'required|array',
@@ -67,6 +70,7 @@ class TestPlanController extends Controller
         $testPlan->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? '',
+            'protocol_id' => $validated['protocol_id'],
         ]);
 
         $testPlan->steps()->delete();

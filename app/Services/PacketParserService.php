@@ -245,8 +245,8 @@ class PacketParserService
             try {
                 $alertService = app(\App\Services\AlertService::class);
                 
-                // 1. Existing behavior: Trigger actual alerts/tickets (Only for valid packets to avoid false alarms)
-                if ($isValid && $log) {
+                // 1. Existing behavior: Trigger actual alerts/tickets (Always evaluate if we have data and a log context)
+                if ($log) {
                     $alertService->evaluate($packetType->id, $parsedData, $log);
                 }
                 

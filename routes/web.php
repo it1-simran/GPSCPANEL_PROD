@@ -99,6 +99,8 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
             'update' => 'admin.test-plans.update',
             'destroy' => 'admin.test-plans.destroy',
         ]);
+        Route::get('/admin/packet-analyzer', [\App\Http\Controllers\PacketAnalyzerController::class, 'index'])->name('admin.packet-analyzer.index');
+        Route::post('/admin/packet-analyzer/analyze', [\App\Http\Controllers\PacketAnalyzerController::class, 'analyze'])->name('admin.packet-analyzer.analyze');
         Route::get('/admin/test-validate', [\App\Http\Controllers\TestPlanExecutionController::class, 'index'])->name('admin.test-validate.index');
         Route::post('/admin/test-execute', [\App\Http\Controllers\TestPlanExecutionController::class, 'execute'])->name('admin.test-execute');
         Route::get('/admin/test-report/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'report'])->name('admin.test-report');
@@ -492,5 +494,8 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::get('/packet-alerts/{alert}/edit', [App\Http\Controllers\PacketAlertController::class, 'edit'])->name('support.protocols.packet-alerts.edit');
     Route::put('/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'update'])->name('support.protocols.packet-alerts.update');
     Route::delete('/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'destroy'])->name('support.protocols.packet-alerts.destroy');
+
+    Route::get('/packet-analyzer', [\App\Http\Controllers\PacketAnalyzerController::class, 'index'])->name('support.packet-analyzer.index');
+    Route::post('/packet-analyzer/analyze', [\App\Http\Controllers\PacketAnalyzerController::class, 'analyze'])->name('support.packet-analyzer.analyze');
 });
 

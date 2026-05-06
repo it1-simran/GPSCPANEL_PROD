@@ -724,12 +724,17 @@ use App\Helper\CommonHelper;
                                 </div>
                             </div>
 
-                            <div class="row">
+
+
+                            <div class="row" style="margin-top: 20px;">
                                 <div class="col-md-12">
                                     <div class="panel panel-default">
                                         <div class="panel-heading"><strong>History + Live Logs</strong></div>
                                         <div class="panel-body" id="logContainer" style="max-height:520px; overflow-y:auto; overflow-x:hidden; background:#111; color:#66ff66; font-family:monospace;">
-                                            @php $srNo = $totalLogsCount > 0 ? ($totalLogsCount - $initialLogs->count() + 1) : 1; @endphp
+                                            @php 
+                                                $srNo = $totalLogsCount > 0 ? ($totalLogsCount - $initialLogs->count() + 1) : 1;
+                                                $initialAlertCount = count($alertHistory);
+                                            @endphp
                                                     @forelse($initialLogs as $log)
                                                 @php
                                                     $displayPacket = $log->raw_packet;
@@ -811,6 +816,46 @@ use App\Helper\CommonHelper;
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="row" id="alertHistorySection" style="margin-top: 20px; {{ !empty($alertValidationEnabled) ? '' : 'display:none;' }}">
+                                <div class="col-md-12">
+                                    <div class="panel panel-danger" style="border: 1px solid #fecaca; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.05);">
+                                        <div class="panel-heading" style="background: #fef2f2; color: #991b1b; padding: 12px 20px; border-bottom: 1px solid #fecaca; display: flex; align-items: center; justify-content: space-between;">
+                                            <h4 style="margin: 0; font-size: 15px; font-weight: 800;"><i class="fa fa-bell"></i> Alert Validation History</h4>
+                                            <span class="badge" id="alertHistoryCount" style="background: #ef4444;">0</span>
+                                        </div>
+                                        <div class="panel-body" style="padding: 0; max-height: 400px; overflow-y: auto;">
+                                            <table class="table table-hover" id="alertHistoryTable" style="margin-bottom: 0;">
+                                                <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 10;">
+                                                    <tr>
+                                                        <th style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 20px;">Alert Name</th>
+                                                        <th style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">Status</th>
+                                                        <th style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Description</th>
+                                                        <th style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 20px;">Date & Time</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="alertHistoryBody">
+                                                    @forelse($alertHistory as $alert)
+                                                        @php $isFail = ($alert['status'] === 'fail' || $alert['status'] === 'triggered'); @endphp
+                                                        <tr class="alert-entry" style="border-left: 4px solid {{ $isFail ? '#ef4444' : '#10b981' }}; background: {{ $isFail ? '#fff5f5' : '#f0fdf4' }};">
+                                                            <td style="padding: 12px 20px; font-weight: 700; color: #1e293b;">{{ $alert['name'] }}</td>
+                                                            <td style="text-align: center;">
+                                                                <span class="badge" style="background: {{ $isFail ? '#ef4444' : '#10b981' }}; font-size: 10px; text-transform: uppercase;">{{ $isFail ? 'FAIL' : 'PASS' }}</span>
+                                                            </td>
+                                                            <td style="font-size: 12px; color: #475569;">{{ $alert['description'] }}</td>
+                                                            <td style="padding: 12px 20px; color: #64748b; font-family: monospace; font-size: 12px;">{{ $alert['timestamp'] }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr id="noAlertsRow">
+                                                            <td colspan="4" class="text-center" style="padding: 30px; color: #94a3b8; font-style: italic;">No alerts evaluated in the current window.</td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         @else
                             <div class="alert alert-info">Select an IMEI to view saved and live logs.</div>
                         @endif
@@ -851,6 +896,8 @@ $(document).ready(function() {
     const endAt = urlParams.get('end_at') || @json($filters['end_at'] ?? '');
     let lastLogId = {{ $initialLogs->max('id') ?? 0 }};
     let totalLogsCounter = {{ $totalLogsCount ?? 0 }};
+    let alertCount = {{ count($alertHistory ?? []) }};
+    $('#alertHistoryCount').text(alertCount);
     let lastCommandTs = @json(now()->toDateTimeString());
     let sseSource = null;
     let reloadHandle = null;
@@ -863,14 +910,29 @@ $(document).ready(function() {
     const addedLogIds = new Set();
     const validationByLogId = {};
 
-    // Pre-populate with initial log IDs
+    // Pre-populate with initial log IDs and process existing alerts
     $('.log-entry').each(function() {
         const id = $(this).data('log-id');
         if (id) {
             addedLogIds.add(Number(id));
             const rawValidation = $(this).attr('data-validation');
             if (rawValidation) {
-                try { validationByLogId[Number(id)] = JSON.parse(rawValidation); } catch (e) {}
+                try { 
+                    const v = JSON.parse(rawValidation);
+                    validationByLogId[Number(id)] = v;
+                    
+                    // Extract timestamp from the UI text if needed, or just pass the object
+                    // The log-entry has the info we need
+                    const timestampStr = $(this).find('div[style*="color:#9ea7ad"]').text();
+                    const tsMatch = timestampStr.match(/\[([^\]]+)\]\s+\[([^\]]+)\]\s+\[([^\]]+)\]/);
+                    const timestamp = tsMatch ? tsMatch[3] : 'N/A';
+
+                    processLogAlerts({
+                        id: id,
+                        validation: v,
+                        logged_at_formatted: timestamp
+                    });
+                } catch (e) {}
             }
         }
     });
@@ -941,6 +1003,57 @@ $(document).ready(function() {
 
         const logContainer = document.getElementById('logContainer');
         logContainer.scrollTop = logContainer.scrollHeight;
+
+        // Process Alerts for the new log
+        processLogAlerts(log);
+    }
+
+    function processLogAlerts(log) {
+        if (!alertValidationEnabled || !log || !log.validation || !log.validation.alert_report || !log.validation.alert_report.has_alerts) {
+            return;
+        }
+
+        const report = log.validation.alert_report;
+        const timestamp = log.logged_at_formatted || log.logged_at;
+
+        report.alerts.forEach(function(alert) {
+            addAlertToTable({
+                name: alert.name,
+                status: alert.status, // Use the actual status (pass/fail)
+                description: alert.conditions.map(c => `${c.field} (${c.actual}) ${c.operator} ${c.expected}`).join('; '),
+                timestamp: timestamp
+            });
+        });
+    }
+
+    function addAlertToTable(alert) {
+        const isFail = (alert.status === 'fail' || alert.status === 'triggered' || alert.status === 'TRIGGERED');
+        alertCount++;
+        $('#noAlertsRow').remove();
+        
+        const rowBg = isFail ? '#fff5f5' : '#f0fdf4';
+        const rowBorder = isFail ? '#ef4444' : '#10b981';
+        const badgeBg = isFail ? '#ef4444' : '#10b981';
+        const statusLabel = isFail ? 'FAIL' : 'PASS';
+
+        $('#alertHistoryBody').prepend(`
+            <tr class="alert-entry" style="border-left: 4px solid ${rowBorder}; background: ${rowBg};">
+                <td style="padding: 12px 20px; font-weight: 700; color: #1e293b;">${escapeHtml(alert.name)}</td>
+                <td style="text-align: center;">
+                    <span class="badge" style="background: ${badgeBg}; font-size: 10px; text-transform: uppercase;">${statusLabel}</span>
+                </td>
+                <td style="font-size: 12px; color: #475569;">${escapeHtml(alert.description)}</td>
+                <td style="padding: 12px 20px; color: #64748b; font-family: monospace; font-size: 12px;">${escapeHtml(alert.timestamp)}</td>
+            </tr>
+        `);
+        
+        $('#alertHistoryCount').text(alertCount);
+
+        // Keep table size manageable
+        const rows = $('#alertHistoryBody tr.alert-entry');
+        if (rows.length > 100) {
+            rows.last().remove();
+        }
     }
 
     function updateDownloadUrl() {
@@ -1191,9 +1304,24 @@ $(document).ready(function() {
                 data: requestData,
                 cache: false
             }).done(function(response) {
-                if (requestData.last_id === 0 && response.total_count !== undefined) {
+                if (requestData.last_id === 0) {
                     totalLogsCounter = response.total_count - (response.logs || []).length;
+                    // Reset alert history on full refresh
+                    alertCount = 0;
+                    $('#alertHistoryBody').empty();
+                    $('#alertHistoryCount').text('0');
+
+                    if (response.alert_history && response.alert_history.length > 0) {
+                        response.alert_history.reverse().forEach(function(h) {
+                            addAlertToTable(h);
+                        });
+                    }
+
+                    if (alertCount === 0) {
+                        $('#alertHistoryBody').html('<tr id="noAlertsRow"><td colspan="4" class="text-center" style="padding: 30px; color: #94a3b8; font-style: italic;">No historical alerts found for this device.</td></tr>');
+                    }
                 }
+
                 (response.logs || []).forEach(function(log) {
                     appendLog(log);
                 });
@@ -1228,8 +1356,18 @@ $(document).ready(function() {
         Object.keys(validationByLogId).forEach(key => delete validationByLogId[key]);
         lastLogId = 0;
         totalLogsCounter = 0;
+        alertCount = 0;
         $("#packetValidationModal").modal("hide");
         $("#logContainer").html('<div id="emptyLogState" style="padding:20px; color:#ccc;">' + (validationEnabled ? 'Loading logs with selected protocol validation...' : 'Loading raw logs...') + '</div>');
+        
+        if (alertValidationEnabled) {
+            $('#alertHistorySection').show();
+            $('#alertHistoryBody').html('<tr id="noAlertsRow"><td colspan="4" class="text-center" style="padding: 30px; color: #94a3b8; font-style: italic;">Loading alerts...</td></tr>');
+            $('#alertHistoryCount').text('0');
+        } else {
+            $('#alertHistorySection').hide();
+        }
+        
         loadLatestLogs({ resetTimer: true });
     }
 

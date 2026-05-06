@@ -282,45 +282,41 @@ $ticketCount = $tickets->count();
                                 </ul>
                             </li>
 
-                            <li
-                                class='sub-menu {{ request()->is('admin/imei-devices', 'admin/tracker*') ? 'active' : '' }}'>
-                                <a href="#"
-                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/imei-devices', 'admin/tracker*') ? 'active' : '' }}">
-                                    <span class='icon-sidebar pe-7s-map-marker fa-2x'></span><span>Live Tracking</span>
-                                </a>
-                                <ul class='sub'>
-                                    <li class="{{ request()->is('admin/imei-devices') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/imei-devices') }}"
-                                            class="{{ request()->is('admin/imei-devices') ? 'active' : '' }}">
-                                            Manage Trackers
-                                        </a>
-                                    </li>
-                                    <li class="{{ request()->is('admin/tracker*') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/tracker') }}"
-                                            class="{{ request()->is('admin/tracker*') ? 'active' : '' }}">
-                                            Live Track / Logs
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
+                                <li
+                                    class='sub-menu {{ request()->is('admin/imei-devices', 'admin/test-plans*', 'admin/protocols*', 'admin/packet-analyzer*') ? 'active' : '' }}'>
+                                    <a href="#"
+                                        class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/imei-devices', 'admin/test-plans*', 'admin/protocols*', 'admin/packet-analyzer*') ? 'active' : '' }}">
+                                        <span class='icon-sidebar pe-7s-science fa-2x'></span><span>Testing Tools</span>
+                                    </a>
+                                    <ul class='sub'>
+                                        <li class="{{ request()->is('admin/imei-devices') ? 'active' : '' }}">
+                                            <a href="{{ url('admin/imei-devices') }}"
+                                                class="{{ request()->is('admin/imei-devices') ? 'active' : '' }}">
+                                                Manage Trackers
+                                            </a>
+                                        </li>
+                                        <li class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
+                                            <a href="{{ url('admin/test-plans') }}"
+                                                class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
+                                                Manage Test Plans
+                                            </a>
+                                        </li>
+                                        <li class="{{ request()->is('admin/protocols*') ? 'active' : '' }}">
+                                            <a href="{{ route('protocols.index') }}"
+                                                class="{{ request()->is('admin/protocols*') ? 'active' : '' }}">
+                                                Protocol Management
+                                            </a>
+                                        </li>
+                                        <li class="{{ request()->is('admin/packet-analyzer*') ? 'active' : '' }}">
+                                            <a href="{{ route('admin.packet-analyzer.index') }}"
+                                                class="{{ request()->is('admin/packet-analyzer*') ? 'active' : '' }}">
+                                                Packet Analyzer
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
 
-                            <li class='sub-menu {{ request()->is('admin/test-plans*', 'admin/test-validate*') ? 'active' : '' }}'>
-                                <a href="#" class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/test-plans*', 'admin/test-validate*') ? 'active' : '' }}">
-                                    <span class='icon-sidebar pe-7s-rocket fa-2x'></span><span>Test Automation</span>
-                                </a>
-                                <ul class='sub'>
-                                    <li class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/test-plans') }}" class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
-                                            Manage Test Plans
-                                        </a>
-                                    </li>
-                                    <li class="{{ request()->is('admin/test-validate*') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/test-validate') }}" class="{{ request()->is('admin/test-validate*') ? 'active' : '' }}">
-                                            Test Validation Page
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
+
 
                             <li
                                 class='sub-menu {{ request()->is('admin/add-template', 'admin/view-template', 'admin/assign-setting-bulk') ? 'active' : '' }}'>
@@ -384,12 +380,7 @@ $ticketCount = $tickets->count();
                                 </ul>
                             </li>
 
-                            <li class="{{ request()->is('admin/protocols*') ? 'active' : '' }}">
-                                <a href="{{ route('protocols.index') }}"
-                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/protocols*') ? 'active' : '' }}">
-                                    <span class='icon-sidebar pe-7s-link fa-2x'></span><span>Protocol Management</span>
-                                </a>
-                            </li>
+
 
                             <li
                                 class='sub-menu {{ request()->is('admin/view-esim-customers', 'admin/view-models', 'admin/view-firmware', 'admin/view-backend', 'admin/view-esim') ? 'active' : '' }}'>
@@ -676,10 +667,10 @@ $ticketCount = $tickets->count();
                                 </li>
 
                                 <li
-                                    class='sub-menu {{ request()->is('support/imei-devices*', 'support/tracker*') ? 'active' : '' }}'>
+                                    class='sub-menu {{ request()->is('support/imei-devices*', 'support/test-plans*', 'support/protocols*', 'support/packet-analyzer*') ? 'active' : '' }}'>
                                     <a href="#"
-                                        class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/imei-devices*', 'support/tracker*') ? 'active' : '' }}">
-                                        <span class='icon-sidebar pe-7s-map-marker fa-2x'></span><span>Live Tracking</span>
+                                        class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/imei-devices*', 'support/test-plans*', 'support/protocols*', 'support/packet-analyzer*') ? 'active' : '' }}">
+                                        <span class='icon-sidebar pe-7s-science fa-2x'></span><span>Testing Tools</span>
                                     </a>
                                     <ul class='sub'>
                                         <li class="{{ request()->is('support/imei-devices*') ? 'active' : '' }}">
@@ -688,39 +679,30 @@ $ticketCount = $tickets->count();
                                                 Manage Trackers
                                             </a>
                                         </li>
-                                        <li class="{{ request()->is('support/tracker*') ? 'active' : '' }}">
-                                            <a href="{{ url('support/tracker') }}"
-                                                class="{{ request()->is('support/tracker*') ? 'active' : '' }}">
-                                                Live Track / Logs
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-
-                                <li class='sub-menu {{ request()->is('support/test-plans*', 'support/test-validate*') ? 'active' : '' }}'>
-                                    <a href="#" class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/test-plans*', 'support/test-validate*') ? 'active' : '' }}">
-                                        <span class='icon-sidebar pe-7s-rocket fa-2x'></span><span>Test Automation</span>
-                                    </a>
-                                    <ul class='sub'>
                                         <li class="{{ request()->is('support/test-plans*') ? 'active' : '' }}">
-                                            <a href="{{ url('support/test-plans') }}" class="{{ request()->is('support/test-plans*') ? 'active' : '' }}">
+                                            <a href="{{ url('support/test-plans') }}"
+                                                class="{{ request()->is('support/test-plans*') ? 'active' : '' }}">
                                                 Manage Test Plans
                                             </a>
                                         </li>
-                                        <li class="{{ request()->is('support/test-validate*') ? 'active' : '' }}">
-                                            <a href="{{ url('support/test-validate') }}" class="{{ request()->is('support/test-validate*') ? 'active' : '' }}">
-                                                Test Validation Page
+                                        <li class="{{ request()->is('support/protocols*') ? 'active' : '' }}">
+                                            <a href="{{ route('support.protocols.index') }}"
+                                                class="{{ request()->is('support/protocols*') ? 'active' : '' }}">
+                                                Protocol Management
+                                            </a>
+                                        </li>
+                                        <li class="{{ request()->is('support/packet-analyzer*') ? 'active' : '' }}">
+                                            <a href="{{ route('support.packet-analyzer.index') }}"
+                                                class="{{ request()->is('support/packet-analyzer*') ? 'active' : '' }}">
+                                                Packet Analyzer
                                             </a>
                                         </li>
                                     </ul>
                                 </li>
 
-                                <li class="{{ request()->is('support/protocols*') ? 'active' : '' }}">
-                                    <a href="{{ route('support.protocols.index') }}"
-                                        class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/protocols*') ? 'active' : '' }}">
-                                        <span class='icon-sidebar pe-7s-link fa-2x'></span><span>Protocol Management</span>
-                                    </a>
-                                </li>
+
+
+
 
                             @endif
                             <!--<li class="{{ request()->is('user') ? 'active' : '' }}">-->

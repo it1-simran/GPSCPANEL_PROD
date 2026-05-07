@@ -108,7 +108,8 @@
                             </div>
                             <div class="col-md-6 text-right">
                                 @php
-                                    $routePrefix = auth()->user() && auth()->user()->user_type === 'support' ? 'support' : 'admin';
+                                    $userType = auth()->check() ? strtolower(trim((string) auth()->user()->user_type)) : '';
+                                    $routePrefix = $userType === 'support' ? 'support' : 'admin';
                                     $createRoute = $routePrefix . '.test-plans.create';
                                 @endphp
                                 <a href="{{ route($createRoute) }}" class="btn create-btn">

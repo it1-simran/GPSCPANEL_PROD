@@ -264,7 +264,8 @@
             let eventSource = null;
             let executionId = null;
             @php
-                $routePrefix = auth()->user() && auth()->user()->user_type === 'support' ? 'support' : 'admin';
+                $userType = auth()->check() ? strtolower(trim((string) auth()->user()->user_type)) : '';
+                $routePrefix = $userType === 'support' ? 'support' : 'admin';
             @endphp
             const routePrefix = '{{ $routePrefix }}';
 

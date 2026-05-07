@@ -3,6 +3,9 @@
 @section('title', 'Test Plan Report')
 
 @section('content')
+@php
+    $routePrefix = auth()->user() && auth()->user()->user_type === 'support' ? 'support' : 'admin';
+@endphp
 <section id="main-content">
     <section class="wrapper">
         <div class="row">
@@ -78,8 +81,8 @@
                         </div>
                         
                         <div class="text-center mt-3">
-                            <a href="{{ route('admin.test-validate.index') }}" class="btn btn-default">Run Another Test</a>
-                            <a href="{{ route('admin.test-plans.index') }}" class="btn btn-primary">Back to Plans</a>
+                            <a href="{{ route($routePrefix . '.test-validate.index') }}" class="btn btn-default">Run Another Test</a>
+                            <a href="{{ route($routePrefix . '.test-plans.index') }}" class="btn btn-primary">Back to Plans</a>
                         </div>
                     </div>
                 </section>

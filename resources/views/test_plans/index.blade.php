@@ -107,7 +107,11 @@
                                 <strong style="font-size: 16px; letter-spacing: 0.5px;">AUTOMATED TEST PLANS</strong>
                             </div>
                             <div class="col-md-6 text-right">
-                                <a href="{{ route('admin.test-plans.create') }}" class="btn create-btn">
+                                @php
+                                    $routePrefix = auth()->user() && auth()->user()->user_type === 'support' ? 'support' : 'admin';
+                                    $createRoute = $routePrefix . '.test-plans.create';
+                                @endphp
+                                <a href="{{ route($createRoute) }}" class="btn create-btn">
                                     <i class="fa fa-plus-circle" style="margin-right: 5px;"></i> CREATE NEW PLAN
                                 </a>
                             </div>
@@ -150,23 +154,58 @@
                                                     Active
                                                 </span>
                                             </td>
-                                            <td>
+                                            <!-- <td>
                                                 <div class="action-flex">
-                                                    <a href="{{ route('admin.test-plans.edit', $plan->id) }}" class="btn-action btn-edit" title="Edit Plan">
+                                                    @php
+                                                        $routePrefix = auth()->user() && auth()->user()->user_type === 'support' ? 'support' : 'admin';
+                                                    @endphp
+                                                    <a href="{{ route($routePrefix . '.test-plans.edit', $plan->id) }}" class="btn-action btn-edit" title="Edit Plan">
                                                         <i class="fa fa-pencil"></i>
                                                     </a>
-                                                    <a href="{{ route('admin.test-validate.index', ['test_plan_id' => $plan->id]) }}" class="btn-action btn-run" title="Run Plan">
+                                                    <a href="{{ route($routePrefix . '.test-validate.index', ['test_plan_id' => $plan->id]) }}" class="btn-action btn-run" title="Run Plan">
                                                         <i class="fa fa-play"></i>
                                                     </a>
                                                     <a href="javascript:void(0)" class="btn-action btn-delete" onclick="if(confirm('Are you sure you want to delete this plan?')) document.getElementById('delete-form-{{ $plan->id }}').submit();" title="Delete Plan">
                                                         <i class="fa fa-trash-o"></i>
                                                     </a>
-                                                    <form id="delete-form-{{ $plan->id }}" action="{{ route('admin.test-plans.destroy', $plan->id) }}" method="POST" style="display: none;">
+                                                    <form id="delete-form-{{ $plan->id }}" action="{{ route($routePrefix . '.test-plans.destroy', $plan->id) }}" method="POST" style="display: none;">
                                                         @csrf
                                                         @method('DELETE')
                                                     </form>
                                                 </div>
-                                            </td>
+                                            </td> -->
+
+                                            <td>
+    <div class="action-flex">
+        @php
+            $userType = auth()->check() ? strtolower(trim(auth()->user()->user_type)) : '';
+
+            $routePrefix = $userType === 'support'
+                ? 'support'
+                : 'admin';
+        @endphp
+
+        <a href="{{ route($routePrefix . '.test-plans.edit', $plan->id) }}" class="btn-action btn-edit" title="Edit Plan">
+            <i class="fa fa-pencil"></i>
+        </a>
+
+        <a href="{{ route($routePrefix . '.test-validate.index', ['test_plan_id' => $plan->id]) }}" class="btn-action btn-run" title="Run Plan">
+            <i class="fa fa-play"></i>
+        </a>
+
+        <a href="javascript:void(0)" class="btn-action btn-delete" onclick="if(confirm('Are you sure you want to delete this plan?')) document.getElementById('delete-form-{{ $plan->id }}').submit();" title="Delete Plan">
+            <i class="fa fa-trash-o"></i>
+        </a>
+
+        <form id="delete-form-{{ $plan->id }}" action="{{ route($routePrefix . '.test-plans.destroy', $plan->id) }}" method="POST" style="display: none;">
+            @csrf
+            @method('DELETE')
+        </form>
+    </div>
+</td>
+
+
+
                                         </tr>
                                     @endforeach
                                 </tbody>

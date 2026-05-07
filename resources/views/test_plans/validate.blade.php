@@ -263,6 +263,10 @@
         $(document).ready(function () {
             let eventSource = null;
             let executionId = null;
+            @php
+                $routePrefix = auth()->user() && auth()->user()->user_type === 'support' ? 'support' : 'admin';
+            @endphp
+            const routePrefix = '{{ $routePrefix }}';
 
             $('#execution-form').submit(function (e) {
                 e.preventDefault();
@@ -274,7 +278,7 @@
                 $('#status-badge').css({ 'background': '#e0f2fe', 'color': '#0369a1' }).text('RUNNING');
                 $('#log-stats').text('CONNECTING...');
 
-                $.post('{{ route("admin.test-execute") }}', data, function (response) {
+                $.post(`/${routePrefix}/test-execute`, data, function (response) {
                     if (response.success) {
                         executionId = response.execution_id;
                         $('#start-btn').hide();
@@ -289,7 +293,7 @@
 
             $('#stop-btn').click(function () {
                 if (confirm('Are you sure you want to stop the test execution?')) {
-                    $.post(`/admin/test-stop/${executionId}`, { _token: '{{ csrf_token() }}' }, function () {
+                    $.post(`/${routePrefix}/test-stop/${executionId}`, { _token: '{{ csrf_token() }}' }, function () {
                         if (eventSource) eventSource.close();
                         $('#status-badge').css({ 'background': '#fee2e2', 'color': '#991b1b' }).text('STOPPED');
                         $('#stop-btn').hide();
@@ -301,7 +305,7 @@
             function startStreaming(id) {
                 if (eventSource) eventSource.close();
 
-                eventSource = new EventSource(`/admin/test-stream/${id}`);
+                eventSource = new EventSource(`/${routePrefix}/test-stream/${id}`);
                 $('#log-stats').text('STREAMING');
 
                 eventSource.addEventListener('log', function (e) {

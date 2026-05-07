@@ -102,7 +102,10 @@
                         <i class="fa fa-edit" style="margin-right: 10px; color: #96c93d;"></i> <strong style="font-size: 18px; letter-spacing: 0.5px;">Modify Test Plan: {{ $testPlan->name }}</strong>
                     </header>
                     <div class="panel-body" style="padding: 35px;">
-                        <form action="{{ route('admin.test-plans.update', $testPlan->id) }}" method="POST" class="form-horizontal tasi-form" id="test-plan-form">
+                        @php
+                            $routePrefix = auth()->user() && auth()->user()->user_type === 'support' ? 'support' : 'admin';
+                        @endphp
+                        <form action="{{ route($routePrefix . '.test-plans.update', $testPlan->id) }}" method="POST" class="form-horizontal tasi-form" id="test-plan-form">
                             @csrf
                             @method('PUT')
                             
@@ -289,7 +292,7 @@
                             </div>
 
                             <div style="margin-top: 50px; text-align: right; border-top: 2px solid #edf2f7; padding-top: 30px;">
-                                <a href="{{ route('admin.test-plans.index') }}" class="btn btn-default" style="margin-top:10px; padding: 12px 30px; margin-right: 15px; border-radius: 10px; font-weight: 700;">Cancel</a>
+                                <a href="{{ route($routePrefix . '.test-plans.index') }}" class="btn btn-default" style="margin-top:10px; padding: 12px 30px; margin-right: 15px; border-radius: 10px; font-weight: 700;">Cancel</a>
                                 <button type="submit" class="btn btn-primary" style="padding: 12px 45px; border-radius: 10px; font-weight: 700; background: #96c93d !important; color: white !important; border: none; box-shadow: 0 10px 20px rgba(150, 201, 61, 0.2);">
                                     <i class="fa fa-save" style="margin-right: 8px;"></i> Update Test Plan
                                 </button>

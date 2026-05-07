@@ -9,6 +9,14 @@ use Illuminate\Http\Request;
 
 class TestPlanController extends Controller
 {
+    private function testPlanIndexRouteName(): string
+    {
+        $userType = auth()->check() ? strtolower(trim((string) auth()->user()->user_type)) : '';
+        $routePrefix = $userType === 'support' ? 'support' : 'admin';
+
+        return $routePrefix . '.test-plans.index';
+    }
+
     public function index()
     {
         $testPlans = TestPlan::withCount('steps')->latest()->get();
@@ -46,7 +54,7 @@ class TestPlanController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.test-plans.index')->with('success', 'Test Plan created successfully.');
+        return redirect()->route($this->testPlanIndexRouteName())->with('success', 'Test Plan created successfully.');
     }
 
     public function edit(TestPlan $testPlan)
@@ -83,12 +91,12 @@ class TestPlanController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.test-plans.index')->with('success', 'Test Plan updated successfully.');
+        return redirect()->route($this->testPlanIndexRouteName())->with('success', 'Test Plan updated successfully.');
     }
 
     public function destroy(TestPlan $testPlan)
     {
         $testPlan->delete();
-        return redirect()->route('admin.test-plans.index')->with('success', 'Test Plan deleted successfully.');
+        return redirect()->route($this->testPlanIndexRouteName())->with('success', 'Test Plan deleted successfully.');
     }
 }

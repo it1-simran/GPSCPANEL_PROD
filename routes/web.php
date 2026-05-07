@@ -422,8 +422,21 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::get('/tracker/protocols/{protocol}/packet-types', [\App\Http\Controllers\LiveTrackerController::class, 'packetTypes'])->name('support.tracker.protocol.packet-types');
 
     /* ======================= Automated Test Plan Routes (Support) ======================= */
-    Route::get('/test-plans', [\App\Http\Controllers\TestPlanController::class, 'index'])->name('support.test-plans.index');
+    Route::resource('test-plans', \App\Http\Controllers\TestPlanController::class)->names([
+        'index' => 'support.test-plans.index',
+        'create' => 'support.test-plans.create',
+        'store' => 'support.test-plans.store',
+        'edit' => 'support.test-plans.edit',
+        'update' => 'support.test-plans.update',
+        'destroy' => 'support.test-plans.destroy',
+    ]);
+    Route::get('/packet-analyzer', [\App\Http\Controllers\PacketAnalyzerController::class, 'index'])->name('support.packet-analyzer.index');
+    Route::post('/packet-analyzer/analyze', [\App\Http\Controllers\PacketAnalyzerController::class, 'analyze'])->name('support.packet-analyzer.analyze');
     Route::get('/test-validate', [\App\Http\Controllers\TestPlanExecutionController::class, 'index'])->name('support.test-validate.index');
+    Route::post('/test-execute', [\App\Http\Controllers\TestPlanExecutionController::class, 'execute'])->name('support.test-execute');
+    Route::get('/test-report/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'report'])->name('support.test-report');
+    Route::post('/test-stop/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'stop'])->name('support.test-stop');
+    Route::get('/test-stream/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'stream'])->name('support.test-stream');
 
     Route::get('/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('support.imei-devices.index');
     Route::get('/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('support.imei-devices.create');

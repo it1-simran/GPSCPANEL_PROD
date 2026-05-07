@@ -1,18 +1,15 @@
-#userEditDelOptionsModal .form-group label
-{
-	display: flex;
+#userEditDelOptionsModal .form-group label {
+    display: flex;
     align-items: center;
     column-gap: 10px;
 }
 
-#userEditDelOptionsModal .form-group input
-{
-	margin-top: 0px;
+#userEditDelOptionsModal .form-group input {
+    margin-top: 0px;
 }
 
-.new_imei_table
-{
-	font-size: 13px;
+.new_imei_table {
+    font-size: 13px;
 }
 
 button.selectDeviceUserChange {
@@ -25,13 +22,13 @@ button.selectDeviceUserChange {
 }
 
 /* Premium Design Overrides */
-ul.sidebar-menu li.active > a {
+ul.sidebar-menu li.active>a {
     background: #76CF1C !important;
     border-left: 4px solid #5fa616 !important;
     color: #fff !important;
 }
 
-ul.sidebar-menu li.active > a span.icon-sidebar {
+ul.sidebar-menu li.active>a span.icon-sidebar {
     background: rgba(255, 255, 255, 0.2) !important;
     color: #fff !important;
 }
@@ -165,7 +162,261 @@ ul.sidebar-menu li ul.sub li.active a {
     font-size: 11px !important;
 }
 
-.bg-success { background-color: #c6f6d5 !important; color: #22543d !important; }
-.bg-info { background-color: #bee3f8 !important; color: #2a4365 !important; }
-.bg-danger { background-color: #fed7d7 !important; color: #822727 !important; }
-.bg-warning { background-color: #feebc8 !important; color: #744210 !important; }
+.bg-success {
+    background-color: #c6f6d5 !important;
+    color: #22543d !important;
+}
+
+.bg-info {
+    background-color: #bee3f8 !important;
+    color: #2a4365 !important;
+}
+
+.bg-danger {
+    background-color: #fed7d7 !important;
+    color: #822727 !important;
+}
+
+.bg-warning {
+    background-color: #feebc8 !important;
+    color: #744210 !important;
+}
+
+/* =============================================
+   GLOBAL PAGINATION — Brand Green #76CF1C
+   Applies to Bootstrap .pagination & DataTables
+   ============================================= */
+
+/* Bootstrap pagination */
+.pagination>li>a,
+.pagination>li>span {
+    color: #1d283e !important;
+    border-color: #e2e8f0 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    min-width: 34px;
+    text-align: center;
+    transition: all 0.2s !important;
+}
+
+.pagination>li>a:hover,
+.pagination>li>span:hover {
+    background: #f0fce8 !important;
+    color: #76CF1C !important;
+    border-color: #76CF1C !important;
+}
+
+.pagination>.active>a,
+.pagination>.active>span,
+.pagination>.active>a:hover,
+.pagination>.active>span:hover,
+.pagination>.active>a:focus,
+.pagination>.active>span:focus {
+    background: #76CF1C !important;
+    border-color: #76CF1C !important;
+    color: #fff !important;
+    box-shadow: 0 4px 10px rgba(118, 207, 28, 0.35) !important;
+}
+
+.pagination>.disabled>a,
+.pagination>.disabled>span {
+    color: #cbd5e1 !important;
+    border-color: #f1f5f9 !important;
+    background: #f8fafc !important;
+}
+
+/* DataTables pagination — global */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 6px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    color: #1d283e !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    /* padding: 5px 11px !important; */
+    margin: 0 2px !important;
+    transition: all 0.2s !important;
+    background: #fff !important;
+    line-height: 1.4 !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #f0fce8 !important;
+    border-color: #76CF1C !important;
+    color: #76CF1C !important;
+    box-shadow: none !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: #76CF1C !important;
+    border-color: #76CF1C !important;
+    color: #fff !important;
+    box-shadow: 0 4px 10px rgba(118, 207, 28, 0.35) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+    color: #cbd5e1 !important;
+    border-color: #f1f5f9 !important;
+    background: #f8fafc !important;
+    box-shadow: none !important;
+    cursor: default !important;
+}
+
+.dataTables_wrapper .dataTables_info {
+    font-size: 12px !important;
+    color: #94a3b8 !important;
+    padding-top: 10px !important;
+}
+
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+    color: #1d283e !important;
+    outline: none !important;
+    transition: border-color 0.2s !important;
+}
+
+.dataTables_wrapper .dataTables_filter input:focus,
+.dataTables_wrapper .dataTables_length select:focus {
+    border-color: #76CF1C !important;
+    box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12) !important;
+}
+
+/* =============================================
+   LEGACY PAGE PANELS — c_panel / c_title / c_content
+   Tickets · IMEI · JIG · Version Control etc.
+   All !important to override theme.css
+   ============================================= */
+
+.c_panel {
+    background: #fff !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07) !important;
+    border: none !important;
+    overflow: hidden !important;
+    margin-bottom: 28px !important;
+    display: block !important;
+}
+
+.c_title {
+    background: #0f172a !important;
+    padding: 16px 26px !important;
+    border-bottom: none !important;
+    border-radius: 14px 14px 0 0 !important;
+    overflow: hidden !important;
+}
+
+.c_title h2 {
+    color: #fff !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+    margin: 0 !important;
+    text-transform: uppercase !important;
+    float: none !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.c_title h2::before {
+    content: '\f0ca';
+    font-family: 'FontAwesome';
+    color: #76CF1C;
+    margin-right: 10px;
+    font-size: 14px;
+}
+
+.c_content {
+    padding: 22px 26px !important;
+    float: none !important;
+}
+
+/* Buttons inside c_title (ADD JIG, Update Version etc.) */
+.bgx-title-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+.bgx-title-container .btn-primary,
+.bgx-title-container .btn-success,
+.bgx-title-container .btn-default {
+    background: #76CF1C !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 7px 18px !important;
+    box-shadow: 0 3px 10px rgba(118,207,28,0.3) !important;
+}
+.bgx-title-container .btn-primary:hover,
+.bgx-title-container .btn-success:hover,
+.bgx-title-container .btn-default:hover {
+    background: #65b515 !important;
+    box-shadow: 0 5px 14px rgba(118,207,28,0.4) !important;
+}
+
+/* Breadcrumb dark card */
+.top-page-header {
+    margin-bottom: 18px !important;
+    padding-top: 4px !important;
+}
+.c_breadcrumbs ul {
+    display: flex !important;
+    align-items: center !important;
+    list-style: none !important;
+    padding: 9px 20px !important;
+    margin: 0 !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    border: 1.5px solid #76CF1C !important;
+    border-radius: 10px !important;
+    gap: 4px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+    width: fit-content !important;
+}
+.c_breadcrumbs ul li {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    list-style: none !important;
+}
+.c_breadcrumbs ul li::before {
+    content: '\f054' !important;
+    font-family: 'FontAwesome' !important;
+    font-size: 9px !important;
+    color: #334155 !important;
+}
+.c_breadcrumbs ul li:first-child::before {
+    content: '\f015' !important;
+    font-family: 'FontAwesome' !important;
+    color: #76CF1C !important;
+    font-size: 13px !important;
+}
+.c_breadcrumbs ul li a {
+    color: #94a3b8 !important;
+    text-decoration: none !important;
+}
+.c_breadcrumbs ul li a:hover {
+    color: #e2e8f0 !important;
+}
+.c_breadcrumbs ul li.active,
+.c_breadcrumbs ul li.active a {
+    color: #76CF1C !important;
+}
+
+/* DataTables — suppress empty spacer row from scrollX clone */
+table.dataTable thead .sorting_asc_disabled,
+table.dataTable thead .sorting_desc_disabled {
+    opacity: 0.3;
+}
+.dataTables_wrapper .dataTables_scroll .dataTables_scrollBody thead tr {
+    visibility: collapse !important;
+    height: 0 !important;
+}

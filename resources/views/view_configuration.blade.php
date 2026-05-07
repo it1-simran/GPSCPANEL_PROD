@@ -8,38 +8,245 @@ $timeZones = TimezoneModel::all();
 ?>
 @extends('layouts.apps')
 @section('content')
-<section id="main-content">
-	<section class="wrapper">
-		<div class="top-page-header">
-			<div class="page-breadcrumb">
-				<nav class="c_breadcrumbs">
-					<ul>
-						<li><a href="#">Account</a></li>
-						<li><a href="/{{$url_type}}/view-user">View Accounts</a></li>
 
-						<li class="active"><a href="#">View Configurations</a></li>
-					</ul>
-				</nav>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-12">
-				<div class="container bgx-custom-page">
-					<div class="row justify-content-center">
-						<div class="col-md-12">
-							<div class="card">
-								<div class="card-header bg-primary text-white header-custom">
-									<h4>User Profile and Configurations</h4>
+@push('styles')
+<style>
+    /* ---- Remove top spacing ---- */
+    #main-content { padding-top: 0 !important; margin-top: 0 !important; }
+    #main-content .wrapper { padding-top: 0 !important; }
+
+    /* ---- Modern Breadcrumb ---- */
+    .vc-breadcrumb-bar {
+        background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%);
+        padding: 14px 28px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 22px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    .vc-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .vc-breadcrumb li { display: flex; align-items: center; gap: 6px; }
+    .vc-breadcrumb li a {
+        color: rgba(255,255,255,0.55);
+        font-size: 12.5px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .vc-breadcrumb li a:hover { color: #76CF1C; }
+    .vc-breadcrumb li.active span {
+        color: #76CF1C;
+        font-size: 12.5px;
+        font-weight: 600;
+    }
+    .vc-breadcrumb .sep {
+        color: rgba(255,255,255,0.25);
+        font-size: 11px;
+    }
+    .vc-breadcrumb .home-icon {
+        width: 28px;
+        height: 28px;
+        background: rgba(118,207,28,0.15);
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #76CF1C;
+        font-size: 12px;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    .vc-breadcrumb .home-icon:hover { background: rgba(118,207,28,0.28); }
+
+    /* ---- Card Header ---- */
+    .vc-card-header {
+        background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
+        padding: 16px 24px !important;
+        border-radius: 10px 10px 0 0 !important;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: none !important;
+    }
+    .vc-card-header h4 {
+        color: #ffffff !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        letter-spacing: 0.3px;
+    }
+    .vc-card-header::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 22px;
+        background: linear-gradient(180deg, #76CF1C, #4fa812);
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+
+    /* ---- Card ---- */
+    .vc-card {
+        border: none !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.09) !important;
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    /* ---- Section titles ---- */
+    .vc-section-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0f172a;
+        padding: 10px 0 8px;
+        border-bottom: 2px solid #76CF1C;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .vc-section-title i { color: #76CF1C; }
+
+    /* ---- Info stat badges ---- */
+    .vc-stat-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 18px;
+        border-radius: 9px;
+        font-size: 12.5px;
+        font-weight: 600;
+        margin: 4px 0;
+        width: 100%;
+        justify-content: center;
+    }
+    .vc-stat-badge.green  { background: rgba(118,207,28,0.12); color: #3a8c0a; border: 1px solid rgba(118,207,28,0.3); }
+    .vc-stat-badge.navy   { background: rgba(15,23,42,0.07);   color: #1d283e; border: 1px solid rgba(15,23,42,0.15);  }
+    .vc-stat-badge.blue   { background: rgba(59,130,246,0.09); color: #2563eb; border: 1px solid rgba(59,130,246,0.25);}
+    .vc-stat-badge.orange { background: rgba(249,115,22,0.09); color: #ea580c; border: 1px solid rgba(249,115,22,0.25);}
+
+    /* ---- User info table ---- */
+    .vc-info-table { width: 100%; }
+    .vc-info-table .bgx-table-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+    .vc-info-table .bgx-table-cell {
+        flex: 1;
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: #374151;
+        border: 1px solid #f0f0f0;
+    }
+    .vc-info-table .bgx-table-cell strong {
+        color: #0f172a;
+        font-weight: 600;
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 3px;
+    }
+
+    /* ---- Child Accounts Table ---- */
+    .vc-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #f0f0f0; }
+    .vc-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .vc-table thead tr {
+        background: linear-gradient(90deg, #0f172a, #1d283e);
+    }
+    .vc-table thead th {
+        color: rgba(255,255,255,0.85) !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        padding: 12px 14px !important;
+        border: none !important;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+    .vc-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background 0.15s; }
+    .vc-table tbody tr:hover { background: rgba(118,207,28,0.04); }
+    .vc-table tbody td { padding: 11px 14px; color: #374151; vertical-align: middle; border: none !important; }
+
+    /* ---- Configuration item card ---- */
+    .configuration-item {
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #f0f0f0;
+        padding: 16px;
+        height: 100%;
+        transition: box-shadow 0.2s;
+    }
+    .configuration-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+    .configuration-item h6 {
+        color: #0f172a;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid rgba(118,207,28,0.3);
+    }
+    .configuration-item p {
+        font-size: 12.5px;
+        color: #374151;
+        margin-bottom: 6px;
+        display: flex;
+        gap: 6px;
+    }
+    .configuration-item p strong { color: #0f172a; min-width: 100px; }
+</style>
+@endpush
+
+<section id="main-content">
+<section class="wrapper" style="padding-top:0;">
+
+    <!-- ===== Modern Breadcrumb ===== -->
+    <div class="vc-breadcrumb-bar">
+        <ol class="vc-breadcrumb">
+            <li>
+                <a href="/{{ $url_type }}" class="home-icon">
+                    <i class="fa fa-home"></i>
+                </a>
+            </li>
+            <li><span class="sep"><i class="fa fa-angle-right"></i></span></li>
+            <li><a href="#">Account</a></li>
+            <li><span class="sep"><i class="fa fa-angle-right"></i></span></li>
+            <li><a href="/{{ $url_type }}/view-user">View Accounts</a></li>
+            <li><span class="sep"><i class="fa fa-angle-right"></i></span></li>
+            <li class="active"><span>View Configurations</span></li>
+        </ol>
+    </div>
+    <!-- ===== End Breadcrumb ===== -->
+
+    <div class="row" style="margin: 0 10px;">
+        <div class="col-md-12">
+            <div class="vc-card card">
+                <div class="vc-card-header card-header">
+                    <h4>User Profile and Configurations</h4>
 								</div>
 								<div class="card-body body-custom">
 									{{-- Display User Information --}}
 									<div class="user-info mb-4">
 										<div class='col-lg-9'>
-											<h5><b>User Information:</b></h5>
+											<div class="vc-section-title"><i class="fa fa-user"></i> User Information</div>
 										</div>
-										<div class='row  bgx-configurations view-user-configurations'>
+										<div class='row bgx-configurations view-user-configurations'>
 											<div class='col-lg-5'>
-												<div class="bgx-table-container">
+												<div class="bgx-table-container vc-info-table">
 													<div class="bgx-table-row">
 														<div class="bgx-table-cell"><strong>Name:</strong> {{ $user['name'] ?: '--'  }}</div>
 														<div class="bgx-table-cell"><strong>Mobile:</strong> {{ $user['mobile'] ?: '--'  }}</div>
@@ -61,12 +268,12 @@ $timeZones = TimezoneModel::all();
 													</div>
 												</div>
 											</div>
-											<div class='col-lg-7' style='display: grid;justify-content: center;'>
-												<div id="span2" class="btn btn-success" style='margin:3px 0px;'>Total Devices - {{ $deviceCount ?: 0  }}</div>
-												<div id="span1" class="btn btn-primary" style='margin:3px 0px;'>Today Pings - {{$user['today_pings'] ?: 0 }}</div>
-												<div id="span3" class="btn btn-info" style='margin:3px 0px;float:left;'>Total Pings - {{ $user['total_pings'] ?: 0 }}</div>
+											<div class='col-lg-7' style='display:grid;justify-content:center;gap:4px;align-content:start;'>
+												<div class="vc-stat-badge green"><i class="fa fa-server"></i> Total Devices &mdash; {{ $deviceCount ?: 0 }}</div>
+												<div class="vc-stat-badge navy"><i class="fa fa-signal"></i> Today Pings &mdash; {{ $user['today_pings'] ?: 0 }}</div>
+												<div class="vc-stat-badge blue"><i class="fa fa-database"></i> Total Pings &mdash; {{ $user['total_pings'] ?: 0 }}</div>
 												@if(Auth::user()->user_type == 'Admin' && $user['user_type'] == 'Support' )
-												<div id="span3" class="btn btn-warning" style='margin:3px 0px;float:left;'>Configuration Edit Permission - {{ $user['is_support_active'] ?: 0 }}</div>
+												<div class="vc-stat-badge orange"><i class="fa fa-shield"></i> Config Edit Permission &mdash; {{ $user['is_support_active'] ?: 0 }}</div>
 												@endif
 											</div>
 											<div class="row mt-3">
@@ -163,14 +370,13 @@ $timeZones = TimezoneModel::all();
 									@if(Auth::user()->user_type == 'Admin' && $user['user_type'] != 'Support')
 									<div class="user-info mb-4">
 										<div class='col-lg-12'>
-											<h5><b>Child Accounts :</b></h5>
+												<div class="vc-section-title"><i class="fa fa-users"></i> Child Accounts</div>
 										</div>
 										<div class='row view-user-configurations'>
 											<div class='col-lg-12'>
-												<div class="bgx-table-container" style="width: inherit;
-                                            overflow: scroll;">
+												<div class="vc-table-wrap">
 													<div class="table-container">
-														<table class="fold-table view_user_table table table-bordered table-striped ">
+														<table class="vc-table fold-table view_user_table">
 															<thead>
 																<tr>
 																	<th></th>
@@ -297,7 +503,7 @@ $timeZones = TimezoneModel::all();
 									</div>
 									@endif
 									<div class="user-info ">
-										<h5><b>User Device Configurations:</b></h5>
+										<div class="vc-section-title"><i class="fa fa-cog"></i> User Device Configurations</div>
 										@empty($user['configurations'])
 										<p class="col-md-12">No configurations found.</p>
 										@else
@@ -371,7 +577,7 @@ $timeZones = TimezoneModel::all();
 									@endphp
 									@if(count($categoryConfiguration) > 0)
 									<div class="user-info padding-bottom-35">
-										<h5><b>User CAN Protocol Configurations:</b></h5>
+										<div class="vc-section-title"><i class="fa fa-sitemap"></i> User CAN Protocol Configurations</div>
 										@empty($user['can_configurations'])
 										<p class="col-md-12 margin-bottom-11 text-center">No configurations found.</p>
 										@else

@@ -178,19 +178,37 @@
         border: none !important;
         border-top: 1px solid #f8fafc !important;
         border-bottom: 1px solid #f8fafc !important;
-        background: #fff;
+        background: #fff !important;
+    }
+
+    /* Kill Bootstrap table-bordered borders */
+    .protocol-table.table-bordered,
+    .protocol-table.table-bordered > thead > tr > th,
+    .protocol-table.table-bordered > tbody > tr > td {
+        border: none !important;
+    }
+
+    /* Kill Bootstrap table-striped alternating backgrounds */
+    .protocol-table.table-striped > tbody > tr:nth-child(odd) > td,
+    .protocol-table.table-striped > tbody > tr:nth-child(even) > td {
+        background-color: #fff !important;
     }
 
     .protocol-table tbody td:first-child {
-        border-left: 1px solid #f8fafc !important;
+        border-left: none !important;
         border-top-left-radius: 8px;
         border-bottom-left-radius: 8px;
     }
-    
+
     .protocol-table tbody td:last-child {
-        border-right: 1px solid #f8fafc !important;
+        border-right: none !important;
         border-top-right-radius: 8px;
         border-bottom-right-radius: 8px;
+    }
+
+    /* Row hover shadow */
+    .protocol-table tbody tr:hover td {
+        background: #f8faff !important;
     }
 
     .protocol-name-cell {

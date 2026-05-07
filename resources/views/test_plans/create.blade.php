@@ -4,35 +4,169 @@
 
 @section('content')
 <style>
-    .input-group-addon {
-        display: table-cell;
-        vertical-align: middle;
-        min-width: 45px;
-        background: #f8fafc !important;
-        border-color: #e2e8f0 !important;
+    /* ── Form field base ── */
+    .pf-group {
+        margin-bottom: 24px;
     }
-    .input-group .form-control {
-        height: 45px !important;
-        border-color: #e2e8f0 !important;
+    .pf-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        color: #64748b;
+        margin-bottom: 8px;
     }
-    .step-item .form-control {
+    .pf-label i {
+        color: #76CF1C;
+        font-size: 11px;
+    }
+    .pf-input {
+        width: 100%;
+        height: 46px;
+        padding: 0 16px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1e293b;
+        background: #fff;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
+    }
+    .pf-input:focus {
+        border-color: #76CF1C;
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12);
+    }
+    .pf-input::placeholder { color: #a0aec0; }
+    select.pf-input { cursor: pointer; }
+
+    /* ── Plan info card ── */
+    .plan-info-card {
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 28px;
+        margin-bottom: 30px;
+    }
+
+    /* ── Section header ── */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-title i { color: #76CF1C; }
+
+    /* ── Steps container ── */
+    .steps-drop-zone {
+        min-height: 130px;
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 24px;
+        border: 2px dashed #cbd5e0;
+        margin-bottom: 30px;
+        transition: border-color 0.2s;
+    }
+    .steps-drop-zone.drag-over { border-color: #76CF1C; }
+
+    /* ── Step item ── */
+    .step-item {
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        border-left: 5px solid #76CF1C !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+        margin-bottom: 16px !important;
+        background: #fff !important;
+        transition: box-shadow 0.2s !important;
+    }
+    .step-item:hover {
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08) !important;
+    }
+    .step-item .form-control,
+    .step-item select.form-control {
         height: 40px !important;
         border-radius: 8px !important;
+        border: 1.5px solid #e2e8f0 !important;
+        font-size: 13px !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+    }
+    .step-item .form-control:focus {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118,207,28,0.1) !important;
     }
     .step-item label {
-        margin-bottom: 5px !important;
-        font-size: 11px !important;
+        margin-bottom: 6px !important;
+        font-size: 10.5px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.6px !important;
+        color: #64748b !important;
+    }
+
+    /* ── Step heading ── */
+    .step-item .panel-heading {
+        background: #fff !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding: 14px 20px !important;
+    }
+
+    /* ── Action bar (add step buttons) ── */
+    .action-bar {
+        background: #fff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 22px;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .action-bar-title {
+        font-size: 10px;
+        font-weight: 800;
+        color: #94a3b8;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #718096;
+        letter-spacing: 1px;
+        margin-bottom: 14px;
     }
-    .remove-step {
+    .add-step-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: #0f172a;
+        color: #fff !important;
+        border: none;
+        border-radius: 9px;
+        padding: 9px 18px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        margin: 4px;
         transition: all 0.2s;
+        cursor: pointer;
     }
-    .remove-step:hover {
-        background: #e53e3e !important;
-        transform: scale(1.1);
+    .add-step-btn i { color: #76CF1C; font-size: 12px; }
+    .add-step-btn:hover {
+        background: #1d293f;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(15,23,42,0.25);
     }
+
+    /* ── Rules ── */
     .rules-container {
         background: #fdfdfd;
         border: 1px solid #edf2f7;
@@ -42,55 +176,96 @@
     }
     .rule-row {
         display: flex;
-        gap: 12px;
-        margin-bottom: 12px;
+        gap: 10px;
+        margin-bottom: 10px;
         align-items: center;
-        animation: fadeIn 0.3s ease;
+        animation: fadeIn 0.25s ease;
     }
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-5px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
-    .rule-row:last-child {
-        margin-bottom: 0;
-    }
-    .rule-row .form-control {
-        height: 38px !important;
-        font-size: 13px !important;
-    }
+    .rule-row:last-child { margin-bottom: 0; }
+    .rule-row .form-control { height: 38px !important; font-size: 13px !important; }
     .remove-rule {
-        background: #fed7d7 !important;
-        color: #c53030 !important;
-        border: none !important;
-        width: 32px !important;
-        height: 32px !important;
-        border-radius: 8px !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-        flex-shrink: 0;
+        background: #fed7d7 !important; color: #c53030 !important;
+        border: none !important; width: 32px !important; height: 32px !important;
+        border-radius: 8px !important; display: flex; align-items: center;
+        justify-content: center; transition: all 0.2s; flex-shrink: 0;
     }
-    .remove-rule:hover {
-        background: #feb2b2 !important;
-        color: #9b2c2c !important;
-        transform: scale(1.05);
-    }
+    .remove-rule:hover { background: #fc8181 !important; transform: scale(1.05); }
     .add-rule-btn {
-        margin-top: 15px;
-        font-size: 11px;
-        font-weight: 800;
-        padding: 8px 16px;
-        border-radius: 8px;
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        color: #4a5568;
+        margin-top: 14px; font-size: 11px; font-weight: 800;
+        padding: 8px 16px; border-radius: 8px; background: #fff;
+        border: 1px solid #e2e8f0; color: #4a5568; transition: all 0.2s;
+    }
+    .add-rule-btn:hover { background: #f1f5f9; border-color: #cbd5e0; }
+
+    /* ── Remove step ── */
+    .remove-step:hover { background: #e53e3e !important; transform: scale(1.1); }
+
+    /* ── Form footer ── */
+    .form-footer {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 14px;
+        border-top: 2px solid #f1f5f9;
+        padding-top: 28px;
+        margin-top: 10px;
+    }
+    .btn-cancel {
+        padding: 11px 28px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        background: #f1f5f9;
+        border: 1.5px solid #e2e8f0;
+        color: #475569;
         transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
     }
-    .add-rule-btn:hover {
-        background: #edf2f7;
-        border-color: #cbd5e0;
+    .btn-cancel:hover { background: #e2e8f0; color: #1e293b; }
+    .btn-save {
+        padding: 11px 40px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        background: linear-gradient(135deg, #76CF1C 0%, #5cb815 100%);
+        border: none;
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(118,207,28,0.3);
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(118,207,28,0.4);
+        color: #fff;
+    }
+
+    /* ── Input group addon ── */
+    .input-group-addon {
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        min-width: 44px;
+        text-align: center;
+    }
+    .input-group .form-control {
+        height: 46px !important;
+        border-color: #e2e8f0 !important;
+        border-radius: 0 10px 10px 0 !important;
+    }
+    .input-group .form-control:focus {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118,207,28,0.1) !important;
+    }
+    .input-group-addon i { color: #76CF1C; }
 </style>
 
 <section id="main-content">
@@ -104,71 +279,87 @@
                     <div class="panel-body" style="padding: 35px;">
                         <form action="{{ route('admin.test-plans.store') }}" method="POST" class="form-horizontal tasi-form" id="test-plan-form">
                             @csrf
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group" style="margin: 0 0 25px 0;">
-                                        <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Plan Name</label>
-                                        <div class="input-group">
-                                            <span class="input-group-addon"><i class="fa fa-tag text-primary"></i></span>
-                                            <input type="text" name="name" class="form-control" placeholder="e.g., Critical Alert Validation" style="border-radius: 0 10px 10px 0;" required>
-                                        </div>
+
+                            {{-- Plan Info Card --}}
+                            <div class="plan-info-card">
+                                <div class="section-header" style="margin-bottom: 22px;">
+                                    <div class="section-title">
+                                        <i class="fa fa-info-circle"></i> Plan Details
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group" style="margin: 0 0 25px 0;">
-                                        <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Description</label>
-                                        <div class="input-group">
-                                            <span class="input-group-addon"><i class="fa fa-align-left text-primary"></i></span>
-                                            <input type="text" name="description" class="form-control" style="border-radius: 0 10px 10px 0;" placeholder="Briefly describe the purpose of this test plan...">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="pf-group">
+                                            <label class="pf-label">
+                                                <i class="fa fa-tag"></i> Plan Name
+                                            </label>
+                                            <input type="text" name="name" class="pf-input"
+                                                placeholder="e.g., Critical Alert Validation" required>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-
-                            <div style="margin: 40px 0 20px 0; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                                <h4 style="margin: 0; font-weight: 800; color: #4a5568; text-transform: uppercase; font-size: 13px; letter-spacing: 1.5px;">Execution Sequence</h4>
-                                <span class="badge" id="step-count-badge" style="background: #ebf8ff; color: #2b6cb0; padding: 6px 12px; font-weight: 800; border: 1px solid #bee3f8;">0 STEPS</span>
-                            </div>
-
-                            <div id="steps-container" style="min-height: 120px; background: #f8fafc; border-radius: 15px; padding: 25px; border: 2px dashed #cbd5e0; margin-bottom: 35px;">
-                                <div id="empty-steps-msg" style="text-align: center; color: #a0aec0; padding: 50px 0;">
-                                    <i class="fa fa-cubes fa-3x" style="display: block; margin-bottom: 20px; opacity: 0.2;"></i>
-                                    <p style="font-size: 15px;">No actions added to the sequence yet.</p>
-                                    <p class="small">Use the buttons below to start building your automated test.</p>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div style="background: #fff; padding: 25px; border-radius: 15px; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                                        <p style="font-weight: 800; color: #718096; margin-bottom: 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Add Action to Sequence</p>
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-info add-step" data-type="send_command" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
-                                                <i class="fa fa-paper-plane" style="margin-right: 5px; color: #96c93d;"></i> Send Command
-                                            </button>
-                                            <button type="button" class="btn btn-info add-step" data-type="wait_for_response" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
-                                                <i class="fa fa-clock-o" style="margin-right: 5px; color: #96c93d;"></i> Wait
-                                            </button>
-                                            <button type="button" class="btn btn-info add-step" data-type="validate_response" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
-                                                <i class="fa fa-check-square-o" style="margin-right: 5px; color: #96c93d;"></i> Validate
-                                            </button>
-                                            <button type="button" class="btn btn-info add-step" data-type="alert_evaluation" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
-                                                <i class="fa fa-bell-o" style="margin-right: 5px; color: #96c93d;"></i> Alert
-                                            </button>
+                                    <div class="col-md-6">
+                                        <div class="pf-group">
+                                            <label class="pf-label">
+                                                <i class="fa fa-align-left"></i> Description
+                                            </label>
+                                            <input type="text" name="description" class="pf-input"
+                                                placeholder="Briefly describe the purpose of this test plan...">
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div style="margin-top: 50px; text-align: right; border-top: 2px solid #edf2f7; padding-top: 30px;">
-                                <a href="{{ route('admin.test-plans.index') }}" class="btn btn-default" style="margin-top:10px; padding: 12px 30px; margin-right: 15px; border-radius: 10px; font-weight: 700;">Cancel</a>
-                                <button type="submit" class="btn btn-primary" style="padding: 12px 45px; border-radius: 10px; font-weight: 700; background: #96c93d !important; color: white !important; border: none; box-shadow: 0 10px 20px rgba(150, 201, 61, 0.2);">
-                                    <i class="fa fa-save" style="margin-right: 8px;"></i> Save Test Plan
+                            {{-- Execution Sequence --}}
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <i class="fa fa-list-ol"></i> Execution Sequence
+                                </div>
+                                <span class="badge" id="step-count-badge"
+                                    style="background:#f0fce8; color:#3d8b08; padding:6px 14px; font-weight:800; border:1px solid #c6f6d5; border-radius:20px;">
+                                    0 STEPS
+                                </span>
+                            </div>
+
+                            <div id="steps-container" class="steps-drop-zone">
+                                <div id="empty-steps-msg" style="text-align:center; color:#a0aec0; padding:40px 0;">
+                                    <i class="fa fa-cubes fa-3x" style="display:block; margin-bottom:18px; opacity:0.2;"></i>
+                                    <p style="font-size:14px; font-weight:600;">No actions added yet.</p>
+                                    <p class="small">Use the buttons below to build your automation sequence.</p>
+                                </div>
+                            </div>
+
+                            {{-- Add Step Action Bar --}}
+                            <div class="action-bar">
+                                <p class="action-bar-title"><i class="fa fa-plus-circle" style="color:#76CF1C; margin-right:5px;"></i> Add Action to Sequence</p>
+                                <div>
+                                    <button type="button" class="add-step-btn add-step" data-type="send_command">
+                                        <i class="fa fa-paper-plane"></i> Send Command
+                                    </button>
+                                    <button type="button" class="add-step-btn add-step" data-type="wait_for_response">
+                                        <i class="fa fa-clock-o"></i> Wait
+                                    </button>
+                                    <button type="button" class="add-step-btn add-step" data-type="validate_response">
+                                        <i class="fa fa-check-square-o"></i> Validate
+                                    </button>
+                                    <button type="button" class="add-step-btn add-step" data-type="alert_evaluation">
+                                        <i class="fa fa-bell-o"></i> Alert
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Footer --}}
+                            <div class="form-footer">
+                                <a href="{{ route('admin.test-plans.index') }}" class="btn-cancel">
+                                    <i class="fa fa-times"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn-save">
+                                    <i class="fa fa-save"></i> Save Test Plan
                                 </button>
                             </div>
+
                         </form>
                     </div>
+
                 </section>
             </div>
         </div>

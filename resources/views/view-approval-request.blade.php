@@ -1,42 +1,220 @@
 <?php
-
 use App\Helper\CommonHelper;
-
 $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
 @section('content')
+<style>
+  #main-content .wrapper { padding-top: 10px !important; }
+  /* Breadcrumb */
+  .var-breadcrumb-wrap { padding: 14px 0 18px 0; }
+  .var-breadcrumb {
+    display: inline-flex; align-items: center;
+    background: #1e293b; border-radius: 50px;
+    padding: 6px 18px 6px 8px; gap: 0;
+    box-shadow: 0 4px 16px rgba(30,41,59,0.18);
+  }
+  .var-breadcrumb .bc-home {
+    width: 30px; height: 30px; background: #76CF1C;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .var-breadcrumb .bc-home i { color: #1e293b; font-size: 13px; }
+  .var-breadcrumb .bc-item { color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap; }
+  .var-breadcrumb .bc-sep  { color: rgba(255,255,255,0.35); margin: 0 8px; font-size: 12px; }
+  .var-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
+  /* Panel */
+  .c_panel { border: none !important; border-radius: 12px !important; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important; }
+  .c_title  { background: #1e293b !important; padding: 14px 20px !important; border-bottom: none !important; }
+  .var-title-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .var-title-row h2 { margin: 0; color: #fff; font-size: 16px; font-weight: 700; display: flex; align-items: center; }
+  .var-btn-primary {
+    background: linear-gradient(135deg,#76CF1C,#5fa816); border: none; border-radius: 7px;
+    padding: 0 16px; height: 34px; color: #1e293b; font-size: 13px; font-weight: 800;
+    display: inline-flex; align-items: center; gap: 6px;
+    box-shadow: 0 4px 12px rgba(118,207,28,0.3); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .var-btn-primary:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  /* Tab buttons */
+  .custom-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0 4px; }
+  .tab-btn {
+    padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; cursor: pointer; transition: all 0.2s;
+  }
+  .tab-btn.active { background: #76CF1C; color: #1e293b; border-color: #76CF1C; }
+  .tab-btn:hover:not(.active) { background: #f1f5f9; border-color: #cbd5e1; }
+  /* Table */
+  #approvalRequests { width:100% !important; border-collapse:separate !important; border-spacing:0 5px !important; border:none !important; }
+  #approvalRequests.table { border:none !important; }
+  #approvalRequests > thead > tr > th,
+  #approvalRequests > tbody > tr > td { border:none !important; }
+  #approvalRequests > tbody > tr:nth-child(odd) > td,
+  #approvalRequests > tbody > tr:nth-child(even) > td { background-color:transparent !important; }
+  #approvalRequests thead th {
+    background:transparent !important; color:#64748b !important;
+    font-size:11px !important; text-transform:uppercase !important;
+    letter-spacing:0.8px !important; font-weight:700 !important;
+    padding:8px 12px !important; border-bottom:2px solid #f1f5f9 !important; white-space:nowrap;
+  }
+  #approvalRequests tbody tr { background:#fff; transition:box-shadow 0.2s,background 0.2s; }
+  #approvalRequests tbody tr:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+  #approvalRequests tbody td {
+    vertical-align:middle !important; padding:11px 12px !important;
+    background:#fff !important; color:#334155; font-size:12px;
+    border-top:1px solid #e9ecef !important; border-bottom:1px solid #e9ecef !important;
+    border-left:none !important; border-right:none !important;
+  }
+  #approvalRequests tbody tr:hover td { background:#f8faff !important; }
+  #approvalRequests tbody td:first-child {
+    border-left:1px solid #e9ecef !important;
+    border-top-left-radius:8px !important; border-bottom-left-radius:8px !important;
+    color:#94a3b8; font-weight:700;
+  }
+  #approvalRequests tbody td:last-child {
+    border-right:1px solid #e9ecef !important;
+    border-top-right-radius:8px !important; border-bottom-right-radius:8px !important;
+  }
+  /* Action buttons */
+  .var-btn-approve, .var-btn-reject, .var-btn-resend, .var-btn-view {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:5px 12px; border-radius:6px; font-size:11px; font-weight:600;
+    border:none; cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .var-btn-approve { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 2px 6px rgba(22,163,74,0.2); }
+  .var-btn-reject  { background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; box-shadow:0 2px 6px rgba(239,68,68,0.2); }
+  .var-btn-resend  { background:linear-gradient(135deg,#0284c7,#0369a1); color:#fff; box-shadow:0 2px 6px rgba(2,132,199,0.2); }
+  .var-btn-view    { background:linear-gradient(135deg,#1e293b,#2d3f55); color:#fff; box-shadow:0 2px 6px rgba(30,41,59,0.2); }
+  .var-btn-approve:hover,.var-btn-reject:hover,.var-btn-resend:hover,.var-btn-view:hover { transform:translateY(-1px); filter:brightness(1.08); color:#fff; }
+  /* Status badges */
+  .var-badge {
+    display:inline-flex; align-items:center; padding:3px 10px;
+    border-radius:20px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .var-badge.approved  { background:#dcfce7; color:#16a34a; }
+  .var-badge.pending   { background:#fef9c3; color:#a16207; }
+  .var-badge.rejected  { background:#fee2e2; color:#dc2626; }
+  .var-badge.info      { background:#e0f2fe; color:#0369a1; }
+  .var-badge.secondary { background:#f1f5f9; color:#64748b; }
+
+  /* ===== DataTables wrapper ===== */
+  #approvalRequests_wrapper {
+    width: 100% !important;
+    overflow-x: hidden !important;   /* hide extra outer scrollbar */
+  }
+  /* Scroll is ONLY on the table body (scrollX handles this) */
+  #approvalRequests_wrapper .dataTables_scroll {
+    overflow-x: auto !important;
+  }
+  #approvalRequests_wrapper .dataTables_scrollBody {
+    overflow-x: auto !important;
+  }
+  /* Top bar: show/search in one flex row, no floats */
+  #approvalRequests_wrapper .dataTables_length,
+  #approvalRequests_wrapper .dataTables_filter {
+    float: none !important;
+  }
+  #approvalRequests_wrapper .dataTables_length { display: inline-block; }
+  #approvalRequests_wrapper .dataTables_filter {
+    display: inline-block;
+    text-align: right;
+    float: right !important;
+    max-width: 50%;
+  }
+  /* Bottom bar: info left, pagination right, clearfix */
+  #approvalRequests_wrapper .dataTables_info {
+    float: left !important;
+    font-size: 12px; color: #64748b; font-weight: 500;
+    padding-top: 10px; max-width: 50%;
+  }
+  #approvalRequests_wrapper .dataTables_paginate {
+    float: right !important;
+    padding-top: 4px;
+    max-width: 50%;
+  }
+  /* Clearfix on bottom row */
+  #approvalRequests_wrapper .dataTables_paginate::after,
+  #approvalRequests_wrapper .row:last-child::after {
+    content: ""; display: table; clear: both;
+  }
+  /* Label/input styling */
+  #approvalRequests_wrapper .dataTables_length label,
+  #approvalRequests_wrapper .dataTables_filter label {
+    font-size: 12px; color: #64748b; font-weight: 500; margin-bottom: 0;
+  }
+  #approvalRequests_wrapper .dataTables_length select,
+  #approvalRequests_wrapper .dataTables_filter input {
+    height: 32px; border: 1px solid #e2e8f0; border-radius: 6px;
+    padding: 0 10px; font-size: 12px; color: #334155;
+    background: #f8fafc; outline: none; box-shadow: none !important;
+  }
+  #approvalRequests_wrapper .dataTables_filter input:focus { border-color: #76CF1C; }
+  /* ===== Bootstrap Pagination override ===== */
+  #approvalRequests_wrapper .dataTables_paginate .pagination {
+    display: flex !important; align-items: center; flex-wrap: wrap; gap: 3px;
+    margin: 0 !important; padding: 0; list-style: none; justify-content: flex-end;
+  }
+  #approvalRequests_wrapper .dataTables_paginate .pagination > li > a,
+  #approvalRequests_wrapper .dataTables_paginate .pagination > li > span {
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+    min-width: 32px !important; height: 32px !important; padding: 0 12px !important;
+    border-radius: 7px !important; font-size: 12px !important; font-weight: 600 !important;
+    color: #64748b !important; background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important; cursor: pointer !important;
+    transition: all 0.18s !important; text-decoration: none !important;
+    white-space: nowrap !important; line-height: 1 !important;
+    box-shadow: none !important; margin: 0 !important; border-radius: 7px !important;
+  }
+  #approvalRequests_wrapper .dataTables_paginate .pagination > li > a:hover,
+  #approvalRequests_wrapper .dataTables_paginate .pagination > li > span:hover {
+    background: #e2e8f0 !important; color: #1e293b !important; border-color: #cbd5e1 !important;
+  }
+  #approvalRequests_wrapper .dataTables_paginate .pagination > .active > a,
+  #approvalRequests_wrapper .dataTables_paginate .pagination > .active > span,
+  #approvalRequests_wrapper .dataTables_paginate .pagination > .active > a:hover,
+  #approvalRequests_wrapper .dataTables_paginate .pagination > .active > span:hover {
+    background: #76CF1C !important; color: #fff !important;
+    border-color: #76CF1C !important; font-weight: 800 !important;
+    box-shadow: 0 2px 8px rgba(118,207,28,0.25) !important;
+  }
+  #approvalRequests_wrapper .dataTables_paginate .pagination > .disabled > a,
+  #approvalRequests_wrapper .dataTables_paginate .pagination > .disabled > span,
+  #approvalRequests_wrapper .dataTables_paginate .pagination > .disabled > a:hover,
+  #approvalRequests_wrapper .dataTables_paginate .pagination > .disabled > span:hover {
+    opacity: 0.4 !important; cursor: not-allowed !important;
+    background: #f8fafc !important; color: #94a3b8 !important; border-color: #f1f5f9 !important;
+  }
+  /* Sort icon fix */
+  #approvalRequests thead th.sorting,
+  #approvalRequests thead th.sorting_asc,
+  #approvalRequests thead th.sorting_desc { padding-right: 22px !important; }
+</style>
 <section id="main-content">
-    <section class="wrapper">
-        <!--======== Page Title and Breadcrumbs Start ========-->
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Account Management</a></li>
-                        <li class="active"><a href="#">View User Approval Request</a></li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
-        <!--======== Page Title and Breadcrumbs End ========-->
-        <!--======== Dynamic Datatable Content Start End ========-->
+  <section class="wrapper">
+    {{-- BREADCRUMB --}}
+    <div class="var-breadcrumb-wrap">
+      <nav class="var-breadcrumb">
+        <div class="bc-home"><i class="fa fa-home"></i></div>
+        <a href="{{ url('admin') }}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <a href="#" class="bc-item">Account Management</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">View User Approval Request</span>
+      </nav>
+    </div>
+    {{-- CONTENT --}}
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <div class="row bgx-title-container">
-                            <div class="col-lg-6">
-                                <h2>View User Approval Request</h2>
-                            </div>
-                            <div class="col-lg-6 text-right">
-                                <!-- Button to trigger modal -->
-                                <button type="button" class="btn btn-primary" onclick="requestModel()">
-                                    Send Account Request
-                                </button>
-                            </div>
+                        <div class="var-title-row">
+                          <h2>
+                            <span style="display:inline-block;width:4px;height:20px;background:#76CF1C;border-radius:3px;margin-right:10px;vertical-align:middle;"></span>
+                            View User Approval Request
+                          </h2>
+                          <button type="button" class="var-btn-primary" onclick="requestModel()">
+                            <i class="fa fa-paper-plane"></i> Send Account Request
+                          </button>
                         </div>
-                        <div class="clearfix"></div>
                         <!-- Modal -->
                         <div class="modal" id="accountRequestModal" tabindex="-1" aria-labelledby="accountRequestModalLabel" aria-hidden="true">
                             <div class="modal-dialog">
@@ -123,7 +301,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
                             {{-- ✅ Table --}}
                             <div class="table-responsive margin-top-25">
-                                <table id="approvalRequests" class="table table-bordered table-striped table-hover align-middle" style="font-size: 14px;">
+                                <table id="approvalRequests" class="table">
                                     <thead class="table-primary">
                                         <tr>
                                             <th>Sr. No.</th>
@@ -147,9 +325,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             <td>{{ $i + 1 }}</td>
                                             <td>{{ $request->name }}</td>
                                             <td>{{ $request->email }}</td>
-                                            <td>{{ $request->phone }}</td>
-                                            <td>{{ ucfirst($request->userType) }}</td>
-                                            <td>{{ $request->deviceCategory }}</td>
+                                            <td>{{ $request->phone ?: 'N/A' }}</td>
+                                            <td>{{ $request->userType ? ucfirst($request->userType) : 'N/A' }}</td>
+                                            <td>{{ $request->deviceCategory ?: 'N/A' }}</td>
                                             @php
                                                 $configurations = json_decode($request->configurations, true);
                                                 $deviceIp = $configurations['ip_test']['value'] ?? 'N/A';
@@ -159,44 +337,36 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             <td>{{ $devicePort }}</td>
                                             <td>{{ $request->resend_count }}</td>
                                             <td>
-                                                <span class="badge 
-                                                @if($request->status === 'approved') bg-success 
-                                                @elseif($request->status === 'supportApproved') bg-info 
-                                                @elseif($request->status === 'pendingApproval') bg-warning text-dark
-                                                @elseif($request->status === 'rejected') bg-danger 
-                                                @else bg-secondary @endif">
-                                                    {{ ucfirst($request->status) }}
-                                                </span>
+                                                @php
+                                                    $s = $request->status;
+                                                    $badgeClass = str_contains(strtolower($s),'approved') ? 'approved' : (str_contains(strtolower($s),'reject') ? 'rejected' : (str_contains(strtolower($s),'pending') ? 'pending' : 'secondary'));
+                                                @endphp
+                                                <span class="var-badge {{ $badgeClass }}">{{ ucfirst($s) }}</span>
                                             </td>
                                             <td>{{ $request->created_at->format('d M Y H:i') }}</td>
-                                            <td class="text-center">
-                                                <button class="btn btn-primary btn-sm btn-view-details" data-request="{{ json_encode($request) }}" onclick="viewDetails(this)" title="View Details">
-                                                    <i class="fa fa-eye text-white"></i>
+                                            <td>
+                                                <button class="var-btn-view btn-view-details" data-request="{{ json_encode($request) }}" onclick="viewDetails(this)" title="View Details">
+                                                    <i class="fa fa-eye"></i> View
                                                 </button>
                                             </td>
                                             <td>
                                                 {{-- Action Buttons --}}
                                                 @if(in_array($request->status, ['AdminApprovalPending']))
                                                 @if($url_type == 'admin')
-                                                <button class="btn btn-success btn-sm"
-                                                    onclick="showApprovalModal({{ $request->id }}, 'Approved')">
-                                                    Approve
+                                                <button class="var-btn-approve" onclick="showApprovalModal({{ $request->id }}, 'Approved')">
+                                                    <i class="fa fa-check"></i> Approve
                                                 </button>
                                                 @else
-                                                <button class="btn btn-success btn-sm"
-                                                    onclick="showApprovalModal({{ $request->id }}, 'Approved')">
-                                                    Approve
+                                                <button class="var-btn-approve" onclick="showApprovalModal({{ $request->id }}, 'Approved')">
+                                                    <i class="fa fa-check"></i> Approve
                                                 </button>
                                                 @endif
-
-                                                <button class="btn btn-danger btn-sm"
-                                                    onclick="showRejectModal({{ $request->id }})">
-                                                    Reject
+                                                <button class="var-btn-reject" onclick="showRejectModal({{ $request->id }})">
+                                                    <i class="fa fa-times"></i> Reject
                                                 </button>
                                                 @elseif(in_array($request->status, ['RejectedByAdmin', 'RejectedBySupport', 'RequestMailSent']))
-                                                <button type="button" class="btn btn-sm btn-info"
-                                                    onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}')">
-                                                    Resend Request
+                                                <button type="button" class="var-btn-resend" onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}')">
+                                                    <i class="fa fa-repeat"></i> Resend
                                                 </button>
                                                 @endif
                                                 <div class="custom-modal modal" id="approvalModal{{ $request->id }}" tabindex="-1" aria-hidden="true">
@@ -296,9 +466,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         <td>{{ $i }}</td>
                                         <td>{{ $request->name }}</td>
                                         <td>{{ $request->email }}</td>
-                                        <td>{{ $request->phone }}</td>
-                                        <td>{{ ucfirst($request->userType) }}</td>
-                                        <td>{{ $request->deviceCategory }}</td>
+                                        <td>{{ $request->phone ?: 'N/A' }}</td>
+                                        <td>{{ $request->userType ? ucfirst($request->userType) : 'N/A' }}</td>
+                                        <td>{{ $request->deviceCategory ?: 'N/A' }}</td>
                                         @php
                                             $configurations = json_decode($request->configurations, true);
                                             $deviceIp = $configurations['ip_test']['value'] ?? 'N/A';
@@ -418,7 +588,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 <div class="modal" id="viewDetailsModal" tabindex="-1" aria-labelledby="viewDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content info-modal-content">
-            <div class="modal-header portal-modal-header d-flex justify-content-between bg-primary">
+            <div class="modal-header portal-modal-header">
                 <h5 class="modal-title" id="viewDetailsModalLabel">
                     <i class="fa fa-info-circle"></i> USER REQUEST DETAILS
                 </h5>
@@ -432,7 +602,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 {{-- Quick Summary Header --}}
                 <div class="user-summary-card mb-4">
                     <div class="summary-avatar">
-                        <i class="fa fa-user-circle"></i>
+                        <i class="fa fa-user" style="font-size:22px; color:#76CF1C;"></i>
                     </div>
                     <div class="summary-details">
                         <h4 id="view_name_summary"></h4>
@@ -474,12 +644,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 </div>
 
                 {{-- Rejection Reason - Hidden by default --}}
-                <div id="rejection_reason_container" style="display:none;" class="mt-3">
-                    <div class="alert alert-danger border-0 shadow-sm d-flex align-items-start">
-                        <i class="fa fa-exclamation-triangle mt-1 me-2" style="font-size: 1.2rem;"></i>
-                        <div>
-                            <h6 class="fw-bold mb-1">Rejection Reason</h6>
-                            <p id="view_rejection_reason" class="mb-0 small"></p>
+                <div id="rejection_reason_container" style="display:none;" class="mt-3 mb-2">
+                    <div class="var-rejection-box">
+                        <div class="var-rejection-icon">
+                            <i class="fa fa-ban"></i>
+                        </div>
+                        <div class="var-rejection-body">
+                            <span class="var-rejection-label">Rejection Reason</span>
+                            <p id="view_rejection_reason" class="var-rejection-text"></p>
                         </div>
                     </div>
                 </div>
@@ -513,233 +685,282 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     </div>
 </div>
 <style>
-    /* Portal Integrated Theme Styles */
-    :root {
-        --portal-blue: #004a99;
-        --portal-dark: #1a2732;
-        --portal-gray: #f4f7f6;
-        --border-light: #e0e4e8;
-    }
+    /* ===== View Details Modal — Portal Design System ===== */
+    #viewDetailsModal .modal-dialog { max-width: 640px; margin: 40px auto; }
 
-    .info-modal-content {
-        border-radius: 8px; /* Sharper, cleaner corners */
-        border: 1px solid var(--border-light);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        background: #ffffff;
-    }
-
-    .portal-modal-header {
-        /* background: var(--portal-blue); */
-        padding: 12px 20px;
-        border-bottom: none;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-radius: 8px 8px 0 0;
-    }
-
-    .portal-modal-header .modal-title {
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        color: white !important;
-        margin: 0;
-    }
-
-    .portal-close-btn {
-        background: transparent;
+    #viewDetailsModal .modal-content {
         border: none;
-        color: white;
-        font-size: 16px;
-        opacity: 0.8;
-        transition: 0.2s;
-        padding: 5px;
+        border-radius: 14px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+        overflow: hidden;
+        background: #fff;
     }
 
-    .portal-close-btn:hover {
-        opacity: 1;
-        transform: scale(1.1);
+    /* ── Header ── */
+    #viewDetailsModal .portal-modal-header {
+        background: #1e293b;
+        padding: 16px 22px;
+        border-bottom: 3px solid #76CF1C;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 0;
+    }
+    #viewDetailsModal .portal-modal-header .modal-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #fff !important;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #viewDetailsModal .portal-modal-header .modal-title i {
+        color: #76CF1C;
+        font-size: 14px;
+    }
+    #viewDetailsModal .portal-close-btn {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #fff;
+        font-size: 14px;
+        border-radius: 6px;
+        width: 28px; height: 28px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 0;
+    }
+    #viewDetailsModal .portal-close-btn:hover {
+        background: #76CF1C;
+        border-color: #76CF1C;
+        color: #1e293b;
     }
 
-    .info-modal-body {
-        padding: 20px;
-        background: white;
-        max-height: 75vh;
+    /* ── Body ── */
+    #viewDetailsModal .info-modal-body {
+        padding: 22px;
+        background: #f8fafc;
+        max-height: 72vh;
         overflow-y: auto;
     }
 
-    /* Summary Card - Flattened */
-    .user-summary-card {
-        background: var(--portal-gray);
-        padding: 15px 20px;
-        border-radius: 8px;
+    /* ── User Summary Card ── */
+    #viewDetailsModal .user-summary-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #76CF1C;
+        border-radius: 10px;
+        padding: 14px 18px;
         display: flex;
         align-items: center;
-        gap: 15px;
-        border: 1px solid var(--border-light);
-        margin-bottom: 20px;
+        gap: 14px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
-
-    .summary-avatar {
-        font-size: 30px;
-        color: var(--portal-blue);
-        background: white;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    #viewDetailsModal .summary-avatar {
+        width: 46px; height: 46px;
         border-radius: 50%;
-        border: 1px solid var(--border-light);
+        background: linear-gradient(135deg, #1e293b, #334155);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        font-size: 20px;
+        color: #76CF1C;
+        border: 2px solid #76CF1C;
     }
-
-    .summary-details h4 {
-        margin: 0;
+    #viewDetailsModal .summary-details h4 {
+        margin: 0 0 2px;
         font-weight: 700;
-        color: var(--portal-dark);
-        font-size: 1.1rem;
+        font-size: 15px;
+        color: #1e293b;
+    }
+    #viewDetailsModal .summary-details p {
+        margin: 0;
+        font-size: 12px;
+        color: #64748b;
     }
 
-    .summary-details p {
-        margin: 2px 0 0;
-        color: #666;
-        font-size: 13px;
-    }
-
-    /* Details Grid */
-    .details-cards-grid {
+    /* ── Detail Cards Grid ── */
+    #viewDetailsModal .details-cards-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
+        gap: 10px;
+        margin-bottom: 18px;
     }
-
-    .detail-card {
-        background: white;
-        padding: 12px;
-        border-radius: 8px;
+    #viewDetailsModal .detail-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 14px;
         display: flex;
         align-items: center;
         gap: 10px;
-        border: 1px solid var(--border-light);
+        transition: box-shadow 0.2s;
     }
-
-    .card-icon {
-        color: var(--portal-blue);
-        font-size: 14px;
+    #viewDetailsModal .detail-card:hover {
+        box-shadow: 0 4px 12px rgba(118,207,28,0.12);
+        border-color: #76CF1C;
     }
-
-    .card-content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .card-label {
-        font-size: 9px;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: #999;
-    }
-
-    .card-value {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--portal-dark);
-    }
-
-    /* Config Section */
-    .config-container-premium {
-        margin-top: 20px;
-        border: 1px solid var(--border-light);
+    #viewDetailsModal .card-icon {
+        width: 32px; height: 32px;
         border-radius: 8px;
+        background: linear-gradient(135deg, #1e293b, #334155);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        color: #76CF1C;
+        font-size: 13px;
+    }
+    #viewDetailsModal .card-label {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #94a3b8;
+    }
+    #viewDetailsModal .card-value {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-top: 1px;
+    }
+
+    /* ── Config Section ── */
+    #viewDetailsModal .config-container-premium {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
         overflow: hidden;
     }
-
-    .config-header {
-        background: var(--portal-gray);
-        padding: 10px 15px;
+    #viewDetailsModal .config-header {
+        background: #1e293b;
+        padding: 10px 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid var(--border-light);
     }
-
-    .config-header h5 {
+    #viewDetailsModal .config-header h5 {
         margin: 0;
+        font-size: 12px;
         font-weight: 700;
-        color: var(--portal-dark);
-        font-size: 13px;
+        color: #fff;
+        letter-spacing: 0.5px;
+        display: flex; align-items: center; gap: 6px;
     }
-
-    .config-count {
-        background: var(--portal-blue);
-        color: white;
-        padding: 2px 8px;
-        border-radius: 4px;
+    #viewDetailsModal .config-header h5 i { color: #76CF1C; }
+    #viewDetailsModal .config-count {
+        background: #76CF1C;
+        color: #1e293b;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 800;
+    }
+    #viewDetailsModal .premium-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    #viewDetailsModal .premium-table thead th {
+        background: #f1f5f9;
+        padding: 9px 16px;
+        text-align: left;
         font-size: 10px;
         font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        border-bottom: 1px solid #e2e8f0;
     }
+    #viewDetailsModal .premium-table tbody td {
+        padding: 10px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        font-weight: 600;
+        font-size: 12px;
+    }
+    #viewDetailsModal .premium-table tbody tr:last-child td { border-bottom: none; }
+    #viewDetailsModal .premium-table tbody tr:hover td { background: #f8fafc; }
 
-    .premium-table {
-        width: 100%;
+    /* ── Rejection Reason Box ── */
+    #viewDetailsModal .var-rejection-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        background: #fff5f5;
+        border: 1px solid #fecaca;
+        border-left: 4px solid #dc2626;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+    }
+    #viewDetailsModal .var-rejection-icon {
+        width: 34px; height: 34px;
+        border-radius: 8px;
+        background: #fee2e2;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        color: #dc2626;
+        font-size: 15px;
+    }
+    #viewDetailsModal .var-rejection-label {
+        display: block;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #dc2626;
+        margin-bottom: 4px;
+    }
+    #viewDetailsModal .var-rejection-text {
+        margin: 0;
         font-size: 13px;
+        font-weight: 600;
+        color: #7f1d1d;
+        line-height: 1.5;
     }
 
-    .premium-table thead th {
-        background: #fafafa;
-        padding: 10px 15px;
-        text-align: left;
-        font-size: 11px;
-        color: #777;
-        border-bottom: 1px solid var(--border-light);
-    }
-
-    .premium-table tbody td {
-        padding: 10px 15px;
-        border-bottom: 1px solid #f9f9f9;
-    }
-
-    /* Badge Style */
+    /* ── Status Badges ── */
     .status-badge-premium {
-        padding: 4px 10px;
-        border-radius: 4px;
+        padding: 3px 10px;
+        border-radius: 20px;
         font-weight: 700;
         font-size: 10px;
         text-transform: uppercase;
-        border: 1px solid transparent;
+        letter-spacing: 0.5px;
     }
+    .status-approved-p  { background: #dcfce7; color: #16a34a; }
+    .status-pending-p   { background: #fef9c3; color: #a16207; }
+    .status-rejected-p  { background: #fee2e2; color: #dc2626; }
 
-    .status-approved-p { background: #e6fdf5; color: #059669; border-color: #a7f3d0; }
-    .status-pending-p { background: #fffbeb; color: #d97706; border-color: #fde68a; }
-    .status-rejected-p { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
-
-    .portal-modal-footer {
-        padding: 12px 20px;
-        background: #fafafa;
-        border-top: 1px solid var(--border-light);
+    /* ── Footer ── */
+    #viewDetailsModal .portal-modal-footer {
+        padding: 14px 22px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
         display: flex;
-        justify-content: center;
+        justify-content: flex-end;
     }
-
-    .btn-portal-close {
-        background: var(--portal-dark);
-        color: white;
+    #viewDetailsModal .btn-portal-close {
+        background: #1e293b;
+        color: #fff;
         border: none;
-        padding: 8px 40px;
-        border-radius: 4px;
+        padding: 9px 32px;
+        border-radius: 8px;
         font-weight: 700;
         font-size: 12px;
-        transition: 0.2s;
+        letter-spacing: 0.5px;
+        transition: all 0.2s;
+        cursor: pointer;
     }
-
-    .btn-portal-close:hover {
-        background: #000;
+    #viewDetailsModal .btn-portal-close:hover {
+        background: #76CF1C;
+        color: #1e293b;
     }
 
     @media (max-width: 768px) {
-        .details-cards-grid { grid-template-columns: 1fr; }
+        #viewDetailsModal .details-cards-grid { grid-template-columns: 1fr 1fr; }
+        #viewDetailsModal .modal-dialog { margin: 10px; max-width: calc(100% - 20px); }
     }
 </style>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</style>
 <script>
     function closeRequestModal() {
         $("#accountRequestModal").modal("hide");
@@ -898,23 +1119,19 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $("#approvalModal" + id).modal("show");
     }
     $(document).ready(function() {
-        $("#approvalRequests").dataTable({
+        $("#approvalRequests").DataTable({
             paging: true,
             searching: true,
             info: true,
             ordering: true,
             lengthChange: true,
-            // pageLength: 10,
-            // scrollX: true,
-            // scrollY: '500px',
-            scrollCollapse: true,
+            scrollX: true,
             "aLengthMenu": [
                 [25, 50, 100, 500, -1],
                 [25, 50, 100, 500, "All"]
             ],
             "iDisplayLength": 25
         });
-
     });
 
     function openModel(id) {
@@ -953,36 +1170,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 </script>
 
 
-{{-- ✅ Custom Tab CSS --}}
-<style>
-    .custom-tabs {
-        display: flex;
-        gap: 1px;
-        border-bottom: 2px solid #dee2e6;
-        padding-bottom: 6px;
-    }
-
-    .tab-btn {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        padding: 8px 16px;
-        font-size: 14px;
-        border-radius: 8px 8px 0 0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .tab-btn:hover {
-        background: #e9ecef;
-    }
-
-    .tab-btn.active {
-        background: #007bff;
-        color: #fff;
-        font-weight: 600;
-        border-bottom: 2px solid #007bff;
-    }
-</style>
+{{-- Duplicate tab CSS removed; styles defined in head <style> block above --}}
 
 {{-- ✅ JavaScript for Filtering + Count --}}
 <script>

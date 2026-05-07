@@ -44,9 +44,611 @@ $ticketCount = $tickets->count();
     <link href="{{ asset('assets/vendors/jquery.multi-select/css/multi-select.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/vendors/select2/select2.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/custom.css?nocache=' . time()) }}" rel="stylesheet" />
+
+    <!-- ===== Loader: Hide INSTANTLY in head if NOT a reload (before any paint) ===== -->
+    <script>
+        try {
+            var _entries = performance.getEntriesByType('navigation');
+            var _type = _entries.length
+                ? _entries[0].type
+                : (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
+            if (_type !== 'reload') {
+                document.documentElement.classList.add('no-loader');
+            }
+        } catch(e) { /* fail-safe: show loader */ }
+    </script>
+
+    <!-- ===== Page Loader + Navbar Styles ===== -->
+    <style>
+        /* ================================================================
+           NEW PREMIUM NAVBAR — FULL DARK UNIFIED HEADER
+        ================================================================ */
+
+        /* ---- Full dark header bar ---- */
+        header.header {
+            background: linear-gradient(90deg, #0f172a 0%, #1a2540 100%) !important;
+            border-bottom: 1px solid rgba(118,207,28,0.15) !important;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.35) !important;
+            height: 60px !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 !important;
+            z-index: 1050 !important;
+        }
+
+        /* ---- Brand / Logo Area ---- */
+        header.header .brand {
+            background: transparent !important;
+            height: 60px !important;
+            min-width: 240px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 0 18px !important;
+            border-right: 1px solid rgba(255,255,255,0.06) !important;
+            box-shadow: none !important;
+            flex-shrink: 0;
+        }
+        header.header .brand .logo {
+            color: #ffffff !important;
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            letter-spacing: 2px !important;
+            text-transform: uppercase !important;
+            text-decoration: none !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        /* GPS dot pulse animation */
+        header.header .brand .logo::before {
+            content: '';
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            background: #76CF1C;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(118,207,28,0.7);
+            animation: navPulse 2s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes navPulse {
+            0%   { box-shadow: 0 0 0 0   rgba(118,207,28,0.7); }
+            60%  { box-shadow: 0 0 0 7px rgba(118,207,28,0); }
+            100% { box-shadow: 0 0 0 0   rgba(118,207,28,0); }
+        }
+
+        /* ---- Hamburger toggle ---- */
+        header.header .brand .sidebar-toggle-box {
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: background 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+        }
+        header.header .brand .sidebar-toggle-box:hover {
+            background: rgba(118,207,28,0.15);
+            border-color: rgba(118,207,28,0.3);
+        }
+        /* Reset the fa-bars div — prevent white box from theme styles */
+        header.header .brand .sidebar-toggle-box .fa-bars {
+            display: block !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            color: rgba(255,255,255,0.75) !important;
+            font-size: 15px !important;
+            font-family: FontAwesome !important;
+            width: auto !important;
+            height: auto !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            line-height: 1 !important;
+            border: none !important;
+            box-shadow: none !important;
+            transition: color 0.2s;
+        }
+        header.header .brand .sidebar-toggle-box:hover .fa-bars {
+            color: #76CF1C !important;
+        }
+
+        /* ---- Right nav container ---- */
+        header.header .top-nav {
+            flex: 1 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            height: 60px !important;
+            padding: 0 24px !important;
+        }
+        header.header .top-nav ul.nav {
+            display: flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 60px !important;
+            list-style: none !important;
+        }
+        header.header .top-nav ul.nav > li {
+            display: flex !important;
+            align-items: center !important;
+            height: 60px !important;
+        }
+
+        /* ---- Version badge ---- */
+        header.header .top-nav .nav-item .d-flex.bg-primary {
+            background: rgba(118,207,28,0.12) !important;
+            border: 1px solid rgba(118,207,28,0.5) !important;
+            border-radius: 20px !important;
+            padding: 5px 14px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.8px !important;
+            color: #76CF1C !important;
+            box-shadow: 0 0 12px rgba(118,207,28,0.15) !important;
+            gap: 5px !important;
+        }
+        header.header .top-nav .nav-item .d-flex.bg-primary span,
+        header.header .top-nav .nav-item .d-flex.bg-primary i {
+            color: #76CF1C !important;
+        }
+
+        /* ---- Bell / Notification icon ---- */
+        header.header .top-nav .nav-link {
+            color: rgba(255,255,255,0.55) !important;
+            padding: 8px 10px !important;
+            border-radius: 10px !important;
+            transition: background 0.2s, color 0.2s !important;
+            display: flex !important;
+            align-items: center !important;
+            position: relative;
+        }
+        header.header .top-nav .nav-link:hover {
+            background: rgba(118,207,28,0.12) !important;
+            color: #76CF1C !important;
+        }
+        header.header .top-nav .nav-link .fa-bell {
+            font-size: 16px !important;
+        }
+        /* Notification badge */
+        header.header .top-nav .badge-danger {
+            background: #ef4444 !important;
+            font-size: 9px !important;
+            min-width: 16px;
+            height: 16px;
+            line-height: 16px;
+            padding: 0 4px;
+            border-radius: 8px;
+            top: 4px !important;
+            right: 4px !important;
+        }
+
+        /* ---- Search box ---- */
+        header.header .top-nav li.search-box {
+            display: flex !important;
+            align-items: center !important;
+        }
+        header.header .top-nav li.search-box .search {
+            background: rgba(255,255,255,0.07) !important;
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            border-radius: 20px !important;
+            height: 36px !important;
+            width: 170px !important;
+            padding: 0 16px !important;
+            font-size: 12px !important;
+            color: rgba(255,255,255,0.85) !important;
+            transition: border-color 0.25s, width 0.3s, box-shadow 0.25s, background 0.25s !important;
+            outline: none !important;
+        }
+        header.header .top-nav li.search-box .search:focus {
+            border-color: rgba(118,207,28,0.6) !important;
+            background: rgba(255,255,255,0.11) !important;
+            box-shadow: 0 0 0 3px rgba(118,207,28,0.12) !important;
+            width: 210px !important;
+        }
+        header.header .top-nav li.search-box .search::placeholder {
+            color: rgba(255,255,255,0.3) !important;
+        }
+
+        /* ---- Separator before user ---- */
+        header.header .top-nav ul.nav > li.dropdown:last-child {
+            border-left: 1px solid rgba(255,255,255,0.08);
+            margin-left: 8px;
+            padding-left: 12px;
+        }
+
+        /* ---- User Avatar ---- */
+        .nav-user-avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #76CF1C, #4fa812);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'Open Sans', sans-serif;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 2px rgba(118,207,28,0.35), 0 2px 10px rgba(118,207,28,0.3);
+            transition: box-shadow 0.25s ease, transform 0.2s ease;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+        .user-profile:hover .nav-user-avatar {
+            box-shadow: 0 0 0 3px rgba(118,207,28,0.6), 0 4px 16px rgba(118,207,28,0.4);
+            transform: scale(1.06);
+        }
+
+        /* ---- User profile trigger ---- */
+        .user-profile {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0 !important;
+            padding: 7px 12px !important;
+            border-radius: 10px !important;
+            transition: background 0.2s !important;
+            cursor: pointer;
+        }
+        .user-profile:hover {
+            background: rgba(255,255,255,0.07) !important;
+        }
+        .user-profile .nav-email-text {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.85);
+            max-width: 130px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .user-profile .fa-angle-down {
+            margin-left: 6px;
+            color: rgba(255,255,255,0.35);
+            font-size: 11px;
+            transition: transform 0.22s;
+        }
+        .user-profile[aria-expanded="true"] .fa-angle-down {
+            transform: rotate(180deg);
+            color: #76CF1C;
+        }
+
+        /* ---- User dropdown menu ---- */
+        .dropdown-usermenu {
+            border-radius: 12px !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.18) !important;
+            min-width: 200px !important;
+            overflow: hidden;
+            margin-top: 6px !important;
+            background: #ffffff !important;
+        }
+        .dropdown-usermenu li a {
+            padding: 11px 18px !important;
+            font-size: 13px !important;
+            color: #374151 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 9px !important;
+            transition: background 0.15s, color 0.15s !important;
+            font-weight: 500 !important;
+        }
+        .dropdown-usermenu li a:hover {
+            background: rgba(118,207,28,0.08) !important;
+            color: #3a8c0a !important;
+        }
+        .dropdown-usermenu li a i {
+            width: 16px;
+            text-align: center;
+            color: #9ca3af;
+        }
+        .dropdown-usermenu li a:hover i {
+            color: #76CF1C !important;
+        }
+
+        /* ================================================================
+           NOTIFICATION DROPDOWN STYLES
+        ================================================================ */
+        .notif-dropdown-menu {
+            width: 360px !important;
+            max-height: 480px !important;
+            overflow: hidden !important;
+            border-radius: 16px !important;
+            border: 1px solid rgba(15,23,42,0.10) !important;
+            box-shadow: 0 20px 56px rgba(0,0,0,0.20) !important;
+            padding: 0 !important;
+            margin-top: 10px !important;
+            background: #ffffff !important;
+        }
+        /* Header */
+        .notif-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%);
+            padding: 15px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 16px 16px 0 0;
+        }
+        .notif-header h6 {
+            color: #ffffff !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.5px !important;
+            margin: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        .notif-header h6::before {
+            content: '';
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            background: #76CF1C;
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(118,207,28,0.8);
+            flex-shrink: 0;
+        }
+        .notif-mark-read {
+            font-size: 11px !important;
+            color: rgba(118,207,28,0.75) !important;
+            font-weight: 500 !important;
+            text-decoration: none !important;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+        .notif-mark-read:hover { color: #76CF1C !important; }
+
+        /* Scrollable list */
+        .notif-list {
+            max-height: 340px;
+            overflow-y: auto;
+        }
+        .notif-list::-webkit-scrollbar { width: 4px; }
+        .notif-list::-webkit-scrollbar-track { background: #f9fafb; }
+        .notif-list::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+        /* Each notification row */
+        .notif-item {
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+            padding: 13px 18px !important;
+            border-bottom: 1px solid #f3f4f6 !important;
+            text-decoration: none !important;
+            transition: background 0.15s !important;
+            position: relative;
+            background: #fff;
+        }
+        .notif-item:last-child { border-bottom: none !important; }
+        .notif-item:hover { background: #f9fafb !important; }
+        .notif-item.unread { background: rgba(118,207,28,0.04) !important; }
+        .notif-item.unread::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #76CF1C, #4fa812);
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* Icon chip */
+        .notif-icon-chip {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 15px;
+        }
+        .notif-icon-chip.error   { background: rgba(239,68,68,0.10);  color: #ef4444; }
+        .notif-icon-chip.update  { background: rgba(59,130,246,0.10);  color: #3b82f6; }
+        .notif-icon-chip.default { background: rgba(107,114,128,0.10); color: #6b7280; }
+
+        /* Text content */
+        .notif-body { flex: 1; min-width: 0; }
+        .notif-title {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .notif-desc {
+            font-size: 11.5px;
+            color: #6b7280;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.45;
+        }
+        .notif-time {
+            font-size: 10.5px;
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        /* Empty state */
+        .notif-empty {
+            padding: 36px 20px;
+            text-align: center;
+        }
+        .notif-empty i {
+            font-size: 34px;
+            color: #d1d5db;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .notif-empty p {
+            font-size: 13px;
+            color: #9ca3af;
+            margin: 0;
+        }
+
+        /* Footer */
+        .notif-footer {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 12px 18px !important;
+            border-top: 1px solid #f3f4f6 !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            color: #76CF1C !important;
+            text-decoration: none !important;
+            transition: background 0.15s, color 0.15s !important;
+            gap: 6px;
+            background: #fff;
+        }
+        .notif-footer:hover {
+            background: rgba(118,207,28,0.05) !important;
+            color: #4fa812 !important;
+        }
+
+        /* ---- Page Loader Overlay ---- */
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1d283e 60%, #1a3520 100%);
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #page-loader.loader-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        /* Hide loader instantly via class set in <head> script (navigation, not reload) */
+        html.no-loader #page-loader {
+            display: none !important;
+        }
+
+        /* ---- GPS Pin SVG Spinner ---- */
+        .loader-icon {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 24px;
+        }
+        .loader-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: #76CF1C;
+            border-right-color: rgba(118,207,28,0.3);
+            animation: loaderSpin 0.9s linear infinite;
+        }
+        .loader-ring-2 {
+            position: absolute;
+            inset: 10px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-bottom-color: #76CF1C;
+            border-left-color: rgba(118,207,28,0.2);
+            animation: loaderSpin 1.4s linear infinite reverse;
+        }
+        .loader-pin {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loader-pin svg {
+            width: 32px;
+            height: 32px;
+            fill: #76CF1C;
+            animation: loaderPulse 1.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 8px rgba(118,207,28,0.7));
+        }
+        @keyframes loaderSpin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes loaderPulse {
+            0%, 100% { transform: scale(1);   opacity: 1; }
+            50%       { transform: scale(1.15); opacity: 0.7; }
+        }
+
+        /* ---- Loader Text ---- */
+        .loader-text {
+            color: #ffffff;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            opacity: 0.85;
+        }
+        .loader-dots span {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            margin: 0 3px;
+            background: #76CF1C;
+            border-radius: 50%;
+            animation: loaderDot 1.2s ease-in-out infinite;
+        }
+        .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes loaderDot {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40%            { transform: scale(1);   opacity: 1; }
+        }
+
+        /* ---- Brand Label ---- */
+        .loader-brand {
+            margin-top: 28px;
+            color: rgba(255,255,255,0.3);
+            font-family: 'Open Sans', sans-serif;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+    </style>
+    @stack('styles')
 </head>
 
 <body id="default-scheme">
+
+    <!-- ===== Global Page Loader ===== -->
+    <div id="page-loader" role="status" aria-label="Loading page">
+        <div class="loader-icon">
+            <div class="loader-ring"></div>
+            <div class="loader-ring-2"></div>
+            <div class="loader-pin">
+                <!-- GPS Map Pin SVG -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                </svg>
+            </div>
+        </div>
+        <div class="loader-text">GPS Control Panel</div>
+        <div class="loader-dots" style="margin-top:10px;">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+    <!-- ===== End Page Loader ===== -->
+
     <section id="container">
         <!--header start-->
         <header class="header fixed-top clearfix">
@@ -98,52 +700,57 @@ $ticketCount = $tickets->count();
                                 @endif
                             </a>
 
-                            <div class="dropdown-menu dropdown-menu-right shadow border-0"
-                                aria-labelledby="notificationDropdown"
-                                style="width: 340px; max-height: 420px; overflow-y: auto; border-radius: 12px;">
+                            <div class="dropdown-menu dropdown-menu-right notif-dropdown-menu"
+                                aria-labelledby="notificationDropdown">
 
-                                <!-- Header -->
-                                <div class="padding-5 d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light"
-                                    style="width: auto;align-items: center;justify-content: space-between">
-                                    <h6 class="mb-0 font-weight-bold text-dark">Notifications</h6>
-                                    <a href="#" class="small text-muted">Mark all as read</a>
+                                <!-- Notification Header -->
+                                <div class="notif-header">
+                                    <h6>Notifications
+                                        @if($ticketCount > 0)
+                                            <span style="background:rgba(118,207,28,0.2);color:#76CF1C;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;">
+                                                {{ $ticketCount }} new
+                                            </span>
+                                        @endif
+                                    </h6>
+                                    <a href="#" class="notif-mark-read">Mark all as read</a>
                                 </div>
 
-                                <!-- Notifications List -->
-                                <div id="notificationList" class="list-group list-group-flush">
+                                <!-- Notification List -->
+                                <div class="notif-list" id="notificationList">
                                     @forelse($tickets as $ticket)
-                                        <a class="list-group-item list-group-item-action d-flex align-items-start {{ $ticket->is_read ? '' : 'bg-light' }}"
+                                        <a class="notif-item {{ $ticket->is_read ? '' : 'unread' }}"
                                             href="/admin/tickets">
-                                            <div class="me-3">
+                                            <div class="notif-icon-chip {{ $ticket->type === 'error' ? 'error' : ($ticket->type === 'updation' ? 'update' : 'default') }}">
                                                 @if($ticket->type === 'error')
-                                                    <i class="fa fa-exclamation-circle padding-10 text-danger fa-lg"></i>
+                                                    <i class="fa fa-exclamation-circle"></i>
                                                 @elseif($ticket->type === 'updation')
-                                                    <i class="fa fa-refresh text-info padding-10 fa-lg"></i>
+                                                    <i class="fa fa-refresh"></i>
                                                 @else
-                                                    <i class="fa fa-bell text-secondary padding-10 fa-lg"></i>
+                                                    <i class="fa fa-bell"></i>
                                                 @endif
                                             </div>
-                                            <div>
-                                                <div class="fw-bold text-dark">
-                                                    {{ ucfirst($ticket->subject) }} - {{ ucfirst($ticket->type) }}
+                                            <div class="notif-body">
+                                                <div class="notif-title">{{ ucfirst($ticket->subject) }} &mdash; {{ ucfirst($ticket->type) }}</div>
+                                                <div class="notif-desc">{{ $ticket->description }}</div>
+                                                <div class="notif-time">
+                                                    <i class="fa fa-clock-o" style="font-size:10px;"></i>
+                                                    {{ \Carbon\Carbon::parse($ticket->created_at)->diffForHumans() }}
                                                 </div>
-                                                <small class="text-muted d-block">{{ $ticket->description }}</small>
-                                                <small
-                                                    class="text-muted">{{ \Carbon\Carbon::parse($ticket->created_at)->diffForHumans() }}</small>
                                             </div>
                                         </a>
                                     @empty
-                                        <div class="p-3 text-center text-muted">
-                                            No new notifications
+                                        <div class="notif-empty">
+                                            <i class="fa fa-bell-slash-o"></i>
+                                            <p>No new notifications</p>
                                         </div>
                                     @endforelse
                                 </div>
 
                                 <!-- Footer -->
-                                <a class="d-flex padding-right-5 padding-bottom-10 dropdown-item text-center text-primary fw-bold py-2"
-                                    href="/admin/tickets" style="width: auto;align-items: center;justify-content: end;">
-                                    View all notifications
+                                <a class="notif-footer" href="/admin/tickets">
+                                    <i class="fa fa-eye"></i> View all notifications
                                 </a>
+
                             </div>
                         </li>
 
@@ -154,7 +761,9 @@ $ticketCount = $tickets->count();
                     <li class="dropdown">
                         <a href="javascript:void(0);" class="user-profile dropdown-toggle" data-toggle="dropdown"
                             aria-expanded="false">
-                            <img src="{{ asset('assets/images/profile.jpg') }}" alt="image">{{ Auth::user()->email }}
+                            {{-- Dummy Avatar: First letter of email --}}
+                            <span class="nav-user-avatar">{{ strtoupper(substr(Auth::user()->email, 0, 1)) }}</span>
+                            <span class="nav-email-text">{{ Auth::user()->email }}</span>
                             <span class="fa fa-angle-down"></span>
                         </a>
                         <ul class="dropdown-menu dropdown-usermenu animated fadeInUp pull-right">
@@ -776,6 +1385,66 @@ $ticketCount = $tickets->count();
     <script src="{{ asset('assets/js/form-plupload.js') }}"></script>
     <script src="{{ asset('assets/js/form-x-editable.js') }}"></script>
     <script src="{{ asset('assets/js/portal.js') }}"></script>
+    @stack('scripts')
+
+    <!-- ===== Page Loader Script ===== -->
+    <script>
+        (function () {
+            var loader = document.getElementById('page-loader');
+            if (!loader) return;
+
+            // If head script already marked as no-loader, nothing to do
+            if (document.documentElement.classList.contains('no-loader')) return;
+
+            // Fail-safe: default TRUE so loader shows if detection is uncertain
+            var isReload = true;
+            try {
+                var _e = performance.getEntriesByType('navigation');
+                if (_e && _e.length) {
+                    isReload = (_e[0].type === 'reload');
+                } else if (performance.navigation) {
+                    isReload = (performance.navigation.type === 1);
+                }
+            } catch(e) { /* keep true */ }
+
+            if (!isReload) {
+                loader.style.display = 'none';
+                return;
+            }
+
+            // ---- Reload confirmed: show for min 1.5s then fade out ----
+            var MIN_SHOW_MS = 1500;
+            var startTime = Date.now();
+
+            function hideLoader() {
+                var elapsed = Date.now() - startTime;
+                var remaining = Math.max(0, MIN_SHOW_MS - elapsed);
+                setTimeout(function () {
+                    loader.classList.add('loader-hidden');
+                    setTimeout(function () {
+                        if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                    }, 600);
+                }, remaining);
+            }
+
+            if (document.readyState === 'complete') {
+                hideLoader();
+            } else {
+                window.addEventListener('load', hideLoader);
+            }
+
+            // Hard fallback: 8s
+            setTimeout(function () {
+                if (loader && loader.parentNode) {
+                    loader.classList.add('loader-hidden');
+                    setTimeout(function () {
+                        if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                    }, 600);
+                }
+            }, 8000);
+        })();
+    </script>
+    <!-- ===== End Page Loader Script ===== -->
 </body>
 
 </html>

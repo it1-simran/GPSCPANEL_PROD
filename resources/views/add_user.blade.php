@@ -20,20 +20,62 @@
   @extends('layouts.apps')
   @section('content')
   <!--main content start-->
+  <style>
+    #main-content .wrapper { padding-top: 10px !important; }
+    .au-breadcrumb-wrap { padding: 14px 0 18px 0; }
+    .au-breadcrumb {
+        display: inline-flex; align-items: center;
+        background: #1e293b; border-radius: 50px;
+        padding: 6px 18px 6px 8px; gap: 0;
+        box-shadow: 0 4px 16px rgba(30,41,59,0.18);
+    }
+    .au-breadcrumb .bc-home {
+        width: 30px; height: 30px; background: #76CF1C;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        margin-right: 10px; flex-shrink: 0;
+    }
+    .au-breadcrumb .bc-home i { color: #1e293b; font-size: 13px; }
+    .au-breadcrumb .bc-item  { color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap; }
+    .au-breadcrumb .bc-sep   { color: rgba(255,255,255,0.35); margin: 0 8px; font-size: 12px; }
+    .au-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
+
+    /* ===== SELECT2 multiselect — CAN modal (Select PGNs J1939) ===== */
+    .select2-container { width: 100% !important; }
+    .select2-container--default .select2-selection--multiple {
+      border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
+      background: #fff !important; min-height: 44px !important;
+      padding: 4px 8px !important; box-shadow: none !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+      background: #76CF1C !important; border: none !important; border-radius: 4px !important;
+      color: #1e293b !important; font-size: 12px !important; font-weight: 600 !important;
+      padding: 2px 8px !important; margin: 2px 4px 2px 0 !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove { color: #1e293b !important; margin-right: 4px !important; }
+    .select2-container--default.select2-container--focus .select2-selection--multiple {
+      border-color: #76CF1C !important; box-shadow: 0 0 0 3px rgba(118,207,28,0.12) !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-search__field {
+      font-size: 14px !important; color: #475569 !important; margin: 0 !important;
+    }
+    .select2-dropdown { border: 1px solid #cbd5e1 !important; border-radius: 6px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important; font-size: 14px !important; }
+    .select2-search--dropdown .select2-search__field { border: 1px solid #cbd5e1 !important; border-radius: 5px !important; padding: 6px 10px !important; font-size: 13px !important; outline: none !important; }
+    .select2-results__option { padding: 8px 12px !important; font-size: 13px !important; color: #475569 !important; }
+    .select2-results__option--highlighted { background-color: #76CF1C !important; color: #1e293b !important; }
+  </style>
   <section id="main-content">
     <section class="wrapper">
-      <!--======== Page Title and Breadcrumbs Start ========-->
-      <div class="top-page-header">
-        <div class="page-breadcrumb">
-          <nav class="c_breadcrumbs">
-            <ul>
-              <li><a href="#">Account</a></li>
-              <li class="active"><a href="#">Add Account</a></li>
-            </ul>
-          </nav>
-        </div>
+      {{-- BREADCRUMB --}}
+      <div class="au-breadcrumb-wrap">
+        <nav class="au-breadcrumb">
+          <div class="bc-home"><i class="fa fa-home"></i></div>
+          <a href="{{ url('admin') }}" class="bc-item">Home</a>
+          <span class="bc-sep">›</span>
+          <a href="#" class="bc-item">Account Management</a>
+          <span class="bc-sep">›</span>
+          <span class="bc-item active">Add Account</span>
+        </nav>
       </div>
-      <!--======== Page Title and Breadcrumbs End ========-->
       <!--======== Form Validation Content Start End ========-->
       <div class="row">
         <div class="col-md-12">
@@ -106,7 +148,7 @@
                     <div class="col-md-6">
                       <div class="form-group" style="margin-bottom: 24px;">
                         <label for="timezone" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">TimeZones <span style="color: #ef4444;">*</span></label>
-                        <select name="timezone" class="form-control select2" id="timezone" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; width: 100%;">
+                        <select name="timezone" class="form-control" id="timezone" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; width: 100%; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px;">
                           <option value="">Please Select Time Zone</option>
                           @foreach($timeZones as $timezone)
                           @php
@@ -1239,7 +1281,7 @@
             inputHtml += `<input type="hidden" name="CanParametersType[${index}][${fieldId}]" value="${inputType}" />`;
             let inputHeight = (inputType === 'text_array' || inputType === 'multiselect') ? '' : 'height: 44px;';
             let appearanceCSS = (inputType === 'select') ? "appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px;" : "";
-            let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control" placeholder="Enter ${field.fieldName}" style="border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; font-size: 14px; color: #64748b; ${inputHeight} ${appearanceCSS}"`;
+            let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control" placeholder="Enter ${field.fieldName}" style="border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; font-size: 14px; color: #64748b; width: 100%; ${inputHeight} ${appearanceCSS}"`;
 
             if (inputType === 'number') {
               if (validation.numberInput) {
@@ -1247,7 +1289,7 @@
               }
               inputHtml += `<input type="number" ${attr} />`;
             } else if (inputType === 'select') {
-              inputHtml += `<select ${attr}>`;
+              inputHtml += `<select ${attr}><option value="">-- Select ${field.fieldName} --</option>`;
               if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
                 validation.selectOptions.forEach(option => {
                   inputHtml += `<option value="${option}">${option}</option>`;
@@ -1261,41 +1303,47 @@
               }
               inputHtml += `</select>`;
             } else if (inputType == 'multiselect') {
-              inputHtml += `<select ${attr} multiple >`;
+              inputHtml += `<select id="${fieldId}" name="canConfiguration[${index}][${fieldId}][]" class="form-control can-multiselect" multiple style="border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; font-size: 14px; color: #64748b; width: 100%; min-height: 44px;">`;
 
               if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
+                const vals = Array.isArray(validation.selectValues) ? validation.selectValues : [];
                 validation.selectOptions.forEach((option, key) => {
-                  inputHtml += `<option value="${validation.selectValues[key]}">${option}</option>`;
+                  const optVal = vals[key] !== undefined ? vals[key] : option;
+                  inputHtml += `<option value="${optVal}">${option}</option>`;
                 });
               } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
                 Object.entries(validation.selectOptions).forEach(([key, value]) => {
                   inputHtml += `<option value="${key}">${value}</option>`;
                 });
               } else {
-                inputHtml += `<option value="">-- Select --</option>`;
+                inputHtml += `<option value="">-- No options available --</option>`;
               }
 
               inputHtml += `</select>`;
 
-              // Apply Select2
+              // Apply Select2 after DOM is ready
               setTimeout(() => {
                 var $select = $('#' + fieldId);
-                if ($select.length) {
+                if ($select.length && typeof $.fn.select2 === 'function') {
                   $select.select2({
-                    placeholder: "Select up to 3 options",
-                    width: "100%",
-                    dropdownParent: $('#canModal' + index)
+                    placeholder: 'Select options',
+                    width: '100%',
+                    dropdownParent: $('#canModal' + index),
+                    allowClear: true
                   });
-                  $select.on("change", function() {
-                    var selected = $(this).select2("val");
-                    if (selected && selected.length > validation.maxSelectValue) {
-                      selected.splice(validation.maxSelectValue);
-                      $(this).select2("val", selected);
-                      alert("You can only select up to " + validation.maxSelectValue + " options.");
-                    }
-                  });
+                  const maxSel = validation.maxSelectValue || 0;
+                  if (maxSel) {
+                    $select.on('change', function() {
+                      const selected = $(this).val() || [];
+                      if (selected.length > maxSel) {
+                        selected.splice(maxSel);
+                        $(this).val(selected).trigger('change.select2');
+                        alert('You can only select up to ' + maxSel + ' options.');
+                      }
+                    });
+                  }
                 }
-              }, 100);
+              }, 150);
             } else if (inputType === 'text_array') {
               console.log(validation);
               let values = [""];
@@ -1390,7 +1438,8 @@
               inputHtml += `<input type="text" ${attr} />`;
             }
 
-            let gridCol = (inputType === 'text_array' || inputType === 'multiselect') ? 'col-md-12' : 'col-md-6';
+            // All dynamic fields rendered full width
+            let gridCol = 'col-md-12';
             
             html += `<div class="${gridCol}">
                       <div class="form-group" style="margin-bottom: 24px;">

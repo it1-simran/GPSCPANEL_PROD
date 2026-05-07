@@ -63,7 +63,7 @@
                                             <td>
                                                 @foreach($alert->conditions as $cond)
                                                     <span class="badge bg-info" style="margin-bottom: 2px;">
-                                                        {{ $cond->field->name }} {{ $cond->operator }} {{ $cond->value }}
+                                                        {{ optional($cond->field)->name ?? 'Unknown Field' }} {{ $cond->operator }} {{ $cond->value }}
                                                     </span>
                                                 @endforeach
                                             </td>

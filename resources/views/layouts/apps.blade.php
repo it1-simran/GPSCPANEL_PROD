@@ -758,6 +758,7 @@ $ticketCount = $tickets->count();
     <script src="{{ asset('assets/js/form-plupload.js') }}"></script>
     <script src="{{ asset('assets/js/form-x-editable.js') }}"></script>
     <script src="{{ asset('assets/js/portal.js') }}"></script>
+    @yield('scripts')
 </body>
 
 </html>

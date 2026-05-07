@@ -103,7 +103,8 @@
                     </header>
                     <div class="panel-body" style="padding: 35px;">
                         @php
-                            $routePrefix = auth()->user() && auth()->user()->user_type === 'support' ? 'support' : 'admin';
+                            $userType = auth()->check() ? strtolower(trim((string) auth()->user()->user_type)) : '';
+                            $routePrefix = $userType === 'support' ? 'support' : 'admin';
                         @endphp
                         <form action="{{ route($routePrefix . '.test-plans.update', $testPlan->id) }}" method="POST" class="form-horizontal tasi-form" id="test-plan-form">
                             @csrf
@@ -450,6 +451,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
 $(document).ready(function() {
+    const routePrefix = @json($routePrefix);
     let stepCount = {{ $testPlan->steps->count() }};
     const packetFields = {};
     const packetAlerts = {};
@@ -499,7 +501,7 @@ $(document).ready(function() {
             $('.packet-type-select').html('<option value="">Loading...</option>').prop('disabled', true);
         }
 
-        $.get(`/admin/tracker/protocols/${protocolId}/packet-types`, function(data) {
+        $.get(`/${routePrefix}/tracker/protocols/${protocolId}/packet-types`, function(data) {
             currentPacketTypes = data.packet_types;
             data.packet_types.forEach(function(pt) {
                 packetFields[pt.id] = pt.fields;

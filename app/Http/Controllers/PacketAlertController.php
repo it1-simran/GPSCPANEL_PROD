@@ -15,12 +15,22 @@ class PacketAlertController extends Controller
     {
         $alerts = $packetType->alerts()->with('conditions.field')->get();
         $protocol = $packetType->protocol;
+        
+        if (!$protocol) {
+            return redirect()->back()->with('error', 'Protocol not found for this packet type.');
+        }
+
         return view('protocol.alerts.index', compact('packetType', 'alerts', 'protocol'));
     }
 
     public function create(PacketType $packetType)
     {
         $protocol = $packetType->protocol;
+        
+        if (!$protocol) {
+            return redirect()->back()->with('error', 'Protocol not found for this packet type.');
+        }
+
         $fields = $packetType->fields;
         return view('protocol.alerts.create', compact('packetType', 'protocol', 'fields'));
     }
@@ -65,6 +75,11 @@ class PacketAlertController extends Controller
     {
         $packetType = $alert->packetType;
         $protocol = $packetType->protocol;
+        
+        if (!$protocol) {
+            return redirect()->back()->with('error', 'Protocol not found for this alert.');
+        }
+
         $fields = $packetType->fields;
         $alert->load('conditions');
         return view('protocol.alerts.create', compact('alert', 'packetType', 'protocol', 'fields'));

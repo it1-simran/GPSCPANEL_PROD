@@ -29,21 +29,160 @@ $get_default_template = DB::table('templates')
   ->where('templates.default_template', '1')
   ->first();
 ?>
+<style>
+  #main-content .wrapper { padding-top: 10px !important; }
+  .top-page-header { margin-bottom: 18px !important; }
+
+  /* Reference breadcrumb style (same visual language as view-jig) */
+  .eu-breadcrumb-wrap { padding: 14px 0 18px 0; }
+  .eu-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    background: #1e293b;
+    border-radius: 50px;
+    padding: 6px 18px 6px 8px;
+    gap: 0;
+    box-shadow: 0 4px 16px rgba(30,41,59,0.18);
+  }
+  .eu-breadcrumb .bc-home {
+    width: 30px;
+    height: 30px;
+    background: #76CF1C;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .eu-breadcrumb .bc-home i {
+    color: #1e293b;
+    font-size: 13px;
+  }
+  .eu-breadcrumb .bc-item {
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .eu-breadcrumb .bc-sep {
+    color: rgba(255,255,255,0.35);
+    margin: 0 8px;
+    font-size: 12px;
+  }
+  .eu-breadcrumb .bc-item.active {
+    color: #76CF1C;
+    font-weight: 700;
+  }
+
+  /* Card + title */
+  #main-content .c_panel {
+    border-radius: 12px !important;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08) !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    margin-bottom: 28px !important;
+  }
+  #main-content .c_panel .c_title {
+    background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
+    padding: 18px 24px !important;
+    border-bottom: 1px solid rgba(118, 207, 28, 0.25) !important;
+  }
+  #main-content .c_panel .c_title h2 {
+    color: #ffffff !important;
+    font-size: 21px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    text-transform: none !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  #main-content .c_panel .c_content {
+    padding: 18px 22px 8px !important;
+  }
+  #main-content #alert_msg {
+    margin: 0 !important;
+    padding: 0 22px 22px !important;
+  }
+
+  /* Form layout */
+  #main-content .form-horizontal .form-group {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 16px !important;
+  }
+  #main-content .form-horizontal .control-label {
+    color: #334155 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    text-align: left !important;
+    padding-top: 10px !important;
+  }
+  #main-content .form-control,
+  #main-content select.form-control,
+  #main-content .select2-selection--single,
+  #main-content .select2-selection--multiple {
+    min-height: 42px !important;
+    border: 1px solid #d2dbe8 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    font-size: 13px !important;
+    color: #334155 !important;
+    background: #ffffff !important;
+  }
+  #main-content .form-control:focus,
+  #main-content .select2-container--focus .select2-selection--single,
+  #main-content .select2-container--focus .select2-selection--multiple {
+    border-color: #76CF1C !important;
+    box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12) !important;
+  }
+
+  /* Primary actions */
+  #main-content .bgx-save-button .btn.btn-primary,
+  #main-content .btn.btn-primary.btn-flat[type="submit"] {
+    background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+    border: 0 !important;
+    color: #0f172a !important;
+    border-radius: 8px !important;
+    padding: 11px 28px !important;
+    font-weight: 800 !important;
+    font-size: 14px !important;
+    box-shadow: 0 5px 14px rgba(118, 207, 28, 0.3) !important;
+  }
+  #main-content .bgx-save-button .btn.btn-primary:hover,
+  #main-content .btn.btn-primary.btn-flat[type="submit"]:hover {
+    filter: brightness(1.05);
+  }
+
+  /* Device category section header (GB429 etc.) */
+  #main-content .device-category-fields .card-title {
+    background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 10px 14px !important;
+  }
+  #main-content .device-category-fields .card-title h4 {
+    color: #ffffff !important;
+    margin: 0 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+  }
+</style>
 <!--main content start-->
 <section id="main-content">
   <section class="wrapper">
     <!--======== Page Title and Breadcrumbs Start ========-->
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-            <li><a href="#">Account</a></li>
-
-            <li><a href="/{{$url_type}}/view-user">View Account</a></li>
-            <li class="active"><a href="#">Update Account</a></li>
-          </ul>
-        </nav>
-      </div>
+    <div class="eu-breadcrumb-wrap">
+      <nav class="eu-breadcrumb">
+        <a href="/{{$url_type}}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
+        <a href="/{{$url_type}}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item">Account</span>
+        <span class="bc-sep">›</span>
+        <a href="/{{$url_type}}/view-user" class="bc-item">View Account</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">Update Account</span>
+      </nav>
     </div>
     <!--======== Page Title and Breadcrumbs End ========-->
     <!--======== Form Validation Content Start End ========-->

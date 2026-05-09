@@ -217,6 +217,132 @@
   }
   .dataTables_wrapper .dataTables_paginate .paginate_button.disabled { color:#cbd5e1 !important; cursor:not-allowed !important; }
   .dataTables_paginate span > span { display:none !important; }
+
+  /* Assign modal alignment and control sizing */
+  .assign-device-modal .modal-dialog {
+    width: min(760px, 92vw);
+    margin: 70px auto;
+  }
+  .assign-device-modal .modal-content {
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    background: #f8fafc;
+  }
+  .assign-device-modal .modal-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%);
+    border-bottom: 1px solid rgba(118, 207, 28, 0.28);
+    padding: 14px 48px 14px 18px;
+    position: relative;
+  }
+  .assign-device-modal .modal-title {
+    font-size: 21px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.2px;
+  }
+  .assign-device-modal .modal-header .close {
+    color: rgba(255, 255, 255, 0.82);
+    opacity: 0.9;
+    text-shadow: none;
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 22px;
+    line-height: 1;
+    margin: 0;
+  }
+  .assign-device-modal .modal-header .close:hover {
+    color: #76CF1C;
+    opacity: 1;
+  }
+  .assign-device-modal .modal-body {
+    padding: 18px 22px 10px;
+    background: #ffffff;
+  }
+  .assign-device-modal form {
+    max-width: none;
+    margin: 0;
+    width: 100%;
+  }
+  .assign-device-modal .form-group {
+    width: min(440px, 100%);
+    max-width: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .assign-device-modal .form-group .form-label,
+  .assign-device-modal .form-group label {
+    margin: 0;
+    width: 100% !important;
+    float: none !important;
+    display: block !important;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    text-align: left;
+  }
+  .assign-device-modal select.assignDevices {
+    width: 100% !important;
+    min-height: 44px;
+    border: 1px solid #dbe3ee;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 8px 10px;
+  }
+  .assign-device-modal select.assignDevices:focus {
+    border-color: #76CF1C;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.14);
+  }
+  .assign-device-modal .select2-selection__rendered {
+    display: block !important;
+    float: none !important;
+    text-align: left !important;
+  }
+  .assign-device-modal .select2-container {
+    width: 100% !important;
+  }
+  .assign-device-modal .select2-container--default .select2-selection--multiple {
+    min-height: 44px;
+    border: 1px solid #dbe3ee;
+    border-radius: 8px;
+    padding: 4px 6px;
+    width: 100% !important;
+  }
+  .assign-device-modal .select2-container--default .select2-selection--multiple:focus-within {
+    border-color: #76CF1C;
+    box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.14);
+  }
+  .assign-device-modal .modal-footer {
+    border-top: 1px solid #e9eef5;
+    text-align: left;
+    padding: 12px 22px 16px;
+    background: #ffffff;
+  }
+  .assign-device-modal .modal-footer .btn {
+    min-width: 120px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #76CF1C, #5fa816);
+    border: none;
+    color: #0f172a;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(118, 207, 28, 0.3);
+  }
+  .assign-device-modal .modal-footer .btn:hover {
+    filter: brightness(1.05);
+  }
+
+  @media (max-width: 768px) {
+    .assign-device-modal .modal-dialog {
+      width: calc(100% - 20px);
+      margin: 45px auto;
+    }
+  }
 </style>
 
 
@@ -378,43 +504,39 @@
                     </td>
                     <td><button style="margin-top:1px" class="vu-btn-assign" onclick="open_asign({{$contact['id']}})"><i class="fa fa-link"></i> Assign</button>
                       <!--****** Start Modal Responsive******-->
-                      <div class="modal" id="modal-responsive{{ $contact['id']}}" aria-hidden="true">
+                      <div class="modal assign-device-modal" id="modal-responsive{{ $contact['id']}}" aria-hidden="true">
                         <div class="modal-dialog modal-md">
                           <div class="modal-content">
                             <div class="modal-header">
                               <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
                               <h4 class="modal-title"><strong>Assign Device</strong></h4>
                             </div>
-                            <div class="modal-body">
-                              <div class="row">
-                                <div class="col-md-12">
-                                  <form action="/{{$url_type}}/assign-device" method="post">
-                                    @csrf
-                                    <div class="form-group">
-                                      <label class="form-label">Single/Multiple Select Device</label>
-                                      <input type="hidden" name="user_id" id="auser_id" value="">
-                                      <select class="assignDevices" id="s2example-2{{$contact['id']}}" name="devices[]" multiple>
-                                        @if(count($unassign_device) > 0)
-                                        <option></option>
-                                        <optgroup label="Unassigned Devices">
-                                          <!-- <option>Choose device</option> -->
-                                          @foreach($unassign_device as $user)
-                                          @if(in_array($user->device_category_id,explode(',',$contact->device_category_id)))
-                                          <option value="{{$user->id}}">{{$user->imei}}</option>
-                                          @endif
-                                          @endforeach
-                                          @endif
-                                        </optgroup>
-                                      </select>
-                                    </div>
-                                    <div class="modal-footer text-center">
-                                      <button  type="submit" class="btn btn-primary btn-raised rippler rippler-default"><i class="fa fa-check"></i> Assign
-                                      </button>
-                                    </div>
-                                  </form>
+                            <form action="/{{$url_type}}/assign-device" method="post">
+                              @csrf
+                              <div class="modal-body">
+                                <div class="form-group">
+                                  <label class="form-label">Single/Multiple Select Device</label>
+                                  <input type="hidden" name="user_id" class="assign-user-id" value="">
+                                  <select class="assignDevices" id="s2example-2{{$contact['id']}}" name="devices[]" multiple>
+                                    @if(count($unassign_device) > 0)
+                                    <option></option>
+                                    <optgroup label="Unassigned Devices">
+                                      @foreach($unassign_device as $user)
+                                      @if(in_array($user->device_category_id,explode(',',$contact->device_category_id)))
+                                      <option value="{{$user->id}}">{{$user->imei}}</option>
+                                      @endif
+                                      @endforeach
+                                      @endif
+                                    </optgroup>
+                                  </select>
                                 </div>
                               </div>
-                            </div>
+                              <div class="modal-footer text-center">
+                                <button type="submit" class="btn btn-primary btn-raised rippler rippler-default">
+                                  <i class="fa fa-check"></i> Assign
+                                </button>
+                              </div>
+                            </form>
                           </div>
                         </div>
                       </div>
@@ -459,8 +581,19 @@
 @stop
 <script>
   function open_asign(id) {
-    $("#auser_id").val(id);
-    $("#modal-responsive" + id).modal('show');
+    var $modal = $("#modal-responsive" + id);
+    $modal.find(".assign-user-id").val(id);
+
+    var $select = $modal.find(".assignDevices");
+    if ($select.length && !$select.hasClass("select2-hidden-accessible")) {
+      $select.select2({
+        placeholder: 'Select and Search ',
+        width: '100%',
+        dropdownParent: $modal
+      });
+    }
+
+    $modal.modal('show');
   };
 
   function openConfigurations(id) {
@@ -490,12 +623,7 @@
     });
 
     $('.assignDevices').each(function() {
-      // Get the ID of each element
-      var id = $(this).attr('id');
-
-      $('#' + id).select2({
-        'placeholder': 'Select and Search '
-      })
+      // Select2 is initialized on modal open to avoid hidden-width alignment bugs.
     });
 
 

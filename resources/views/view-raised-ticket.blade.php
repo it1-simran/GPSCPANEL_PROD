@@ -7,36 +7,213 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
 @section('content')
-<section id="main-content">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.tv-page { font-family: 'Inter', sans-serif; }
+#main-content .wrapper { padding-top: 8px !important; }
+
+/* Breadcrumb */
+.tv-breadcrumb-wrap { padding: 8px 0 14px 0; }
+.tv-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    background: #1e293b;
+    border-radius: 50px;
+    padding: 6px 18px 6px 8px;
+    box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
+}
+.tv-breadcrumb .bc-home {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #76CF1C;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+.tv-breadcrumb .bc-item { color: rgba(255,255,255,0.68); font-size: 13px; font-weight: 500; }
+.tv-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
+.tv-breadcrumb .bc-sep { color: rgba(255,255,255,0.35); margin: 0 8px; }
+
+/* Panel + title */
+.c_panel {
+    border: none !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
+}
+.c_title {
+    background: #1e293b !important;
+    padding: 14px 20px !important;
+    border-bottom: none !important;
+}
+.tv-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.tv-title-row h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+.tv-btn-primary {
+    background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+    border: none !important;
+    border-radius: 7px !important;
+    height: 34px;
+    padding: 0 16px !important;
+    color: #1e293b !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 12px rgba(118,207,28,0.3);
+}
+
+/* Table style (version-control reference) */
+#esim {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 6px !important;
+    border: none !important;
+}
+#esim.table { border: none !important; }
+#esim > thead > tr > th,
+#esim > tbody > tr > td { border: none !important; }
+#esim thead th {
+    background: transparent !important;
+    color: #64748b !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    font-weight: 700 !important;
+    padding: 8px 14px !important;
+    border-bottom: 2px solid #f1f5f9 !important;
+}
+#esim tbody tr { background: #fff; transition: box-shadow 0.2s, background 0.2s; }
+#esim tbody tr:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+#esim tbody td {
+    vertical-align: middle !important;
+    padding: 13px 14px !important;
+    background: #fff !important;
+    color: #334155;
+    font-size: 13px;
+    border-top: 1px solid #e9ecef !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+#esim tbody td:first-child {
+    border-left: 1px solid #e9ecef !important;
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+    color: #94a3b8;
+    font-weight: 700;
+}
+#esim tbody td:last-child {
+    border-right: 1px solid #e9ecef !important;
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+}
+
+/* Modal theme */
+.tv-modal .modal-content {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22);
+}
+.tv-modal .modal-header {
+    background: #1e293b;
+    border-bottom: none;
+    padding: 14px 20px;
+}
+.tv-modal .modal-title {
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
+.tv-modal .close {
+    color: #fff;
+    opacity: 0.8;
+}
+.tv-modal .modal-body {
+    background: #f8fafc;
+    padding: 20px;
+}
+.tv-modal .modal-footer {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 12px 20px 16px;
+}
+.tv-modal .form-group label {
+    color: #334155;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+.tv-modal .form-control {
+    border: 1.5px solid #dbe3ef;
+    border-radius: 8px;
+    height: 40px;
+    font-size: 13px;
+}
+.tv-modal textarea.form-control {
+    height: auto;
+    min-height: 80px;
+}
+.tv-modal .form-control:focus {
+    border-color: #76CF1C;
+    box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.15);
+}
+.tv-modal .btn-secondary {
+    background: #e2e8f0 !important;
+    border: none !important;
+    color: #334155 !important;
+    border-radius: 7px !important;
+    font-weight: 700;
+}
+.tv-modal .btn-primary {
+    background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+    border: none !important;
+    color: #1e293b !important;
+    border-radius: 7px !important;
+    font-weight: 800;
+    box-shadow: 0 6px 14px rgba(118, 207, 28, 0.25);
+}
+</style>
+
+<section id="main-content" class="tv-page">
     <section class="wrapper">
-        <!--======== Page Title and Breadcrumbs Start ========-->
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Support Management</a></li>
-                        <li class="active"><a href="#">Raise Ticket</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="tv-breadcrumb-wrap">
+            <nav class="tv-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <span class="bc-item">Support Management</span>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Raise Ticket</span>
+            </nav>
         </div>
-        <!--======== Page Title and Breadcrumbs End ========-->
-        <!--======== Dynamic Datatable Content Start End ========-->
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <div class="row bgx-title-container">
-                            <div class="col-lg-6">
-                                <h2>View Ticket</h2>
+                        <div class="tv-title-row">
+                            <div>
+                                <h2>
+                                    <span style="display:inline-block;width:4px;height:20px;background:#76CF1C;border-radius:3px;margin-right:10px;"></span>
+                                    View Ticket
+                                </h2>
                             </div>
-                            <div class="col-lg-6 text-right">
-                                <button type="button" class="btn btn-primary" onclick="openModel()">
+                            <div>
+                                <button type="button" class="btn tv-btn-primary" onclick="openModel()">
                                     Add Ticket
                                 </button>
                             </div>
                         </div>
-
                         <div class="clearfix"></div>
                     </div><!--/.c_title-->
                     <div class="c_content">
@@ -121,7 +298,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         <!--======= Dynamic Datatable Content Start End ========-->
     </section>
 </section>
-<div class="modal" id="raiseTicketModal" tabindex="-1" aria-hidden="true">
+<div class="modal tv-modal" id="raiseTicketModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
 

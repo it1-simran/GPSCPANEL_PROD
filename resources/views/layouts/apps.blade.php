@@ -7,6 +7,50 @@ $tickets = TicketModel::where('is_read', 0)->get();
 $latestVersion = versionModel::latest('created_at')->first();
 
 $ticketCount = $tickets->count();
+$userType = Auth::check() ? strtolower(trim((string) Auth::user()->user_type)) : '';
+
+$globalSearchItems = [];
+if ($userType === 'admin') {
+    $globalSearchItems = [
+        ['label' => 'Dashboard', 'url' => url('/admin'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'Raised Tickets', 'url' => url('/admin/tickets'), 'keywords' => ['ticket', 'raised', 'complaint', 'issue']],
+        ['label' => 'Version Management', 'url' => url('/admin/version-control'), 'keywords' => ['version', 'release', 'notes']],
+        ['label' => 'IMEI Management', 'url' => url('/admin/view-imeis'), 'keywords' => ['imei', 'imei list']],
+        ['label' => 'Live Tracker', 'url' => url('/admin/tracker'), 'keywords' => ['live', 'tracker', 'tracking', 'logs']],
+        ['label' => 'Manage Test Plans', 'url' => url('/admin/test-plans'), 'keywords' => ['test', 'plans', 'automation']],
+        ['label' => 'Test Validation', 'url' => url('/admin/test-validate'), 'keywords' => ['validate', 'execution', 'run test']],
+        ['label' => 'Protocol Management', 'url' => url('/admin/protocols'), 'keywords' => ['protocol', 'packet', 'alerts']],
+        ['label' => 'View Settings', 'url' => url('/admin/view-template'), 'keywords' => ['settings', 'template', 'config']],
+        ['label' => 'View Devices', 'url' => url('/admin/view-device-assign'), 'keywords' => ['device', 'assigned']],
+    ];
+} elseif ($userType === 'support') {
+    $globalSearchItems = [
+        ['label' => 'Dashboard', 'url' => url('/support'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'Ticket Management', 'url' => url('/support/view-ticket'), 'keywords' => ['ticket', 'raise ticket', 'issue', 'support ticket']],
+        ['label' => 'User Approval', 'url' => url('/support/view-user-approval-request'), 'keywords' => ['approval', 'user approval', 'account approval']],
+        ['label' => 'View Devices', 'url' => url('/support/view-device'), 'keywords' => ['device', 'devices', 'imei']],
+        ['label' => 'Assign Devices', 'url' => url('/support/assign-device'), 'keywords' => ['assign device', 'multiple device']],
+        ['label' => 'Manage Trackers', 'url' => url('/support/imei-devices'), 'keywords' => ['tracker', 'imei devices', 'manage tracker']],
+        ['label' => 'Live Track / Logs', 'url' => url('/support/tracker'), 'keywords' => ['live', 'tracking', 'logs', 'tracker logs']],
+        ['label' => 'Manage Test Plans', 'url' => url('/support/test-plans'), 'keywords' => ['test', 'plans', 'automation']],
+        ['label' => 'Test Validation', 'url' => url('/support/test-validate'), 'keywords' => ['validate', 'test validate', 'execution']],
+        ['label' => 'Protocol Management', 'url' => url('/support/protocols'), 'keywords' => ['protocol', 'packet', 'alerts']],
+        ['label' => 'View Settings', 'url' => url('/support/view-template'), 'keywords' => ['settings', 'template', 'config']],
+    ];
+} elseif ($userType === 'reseller') {
+    $globalSearchItems = [
+        ['label' => 'Dashboard', 'url' => url('/reseller'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'View Account', 'url' => url('/reseller/view-user'), 'keywords' => ['account', 'users']],
+        ['label' => 'Assigned Devices', 'url' => url('/reseller/view-device-assign'), 'keywords' => ['device', 'assigned devices']],
+        ['label' => 'View Settings', 'url' => url('/reseller/view-template'), 'keywords' => ['settings', 'template']],
+    ];
+} else {
+    $globalSearchItems = [
+        ['label' => 'Dashboard', 'url' => url('/user'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'View Device', 'url' => url('/user/view-device'), 'keywords' => ['device', 'devices']],
+        ['label' => 'View Settings', 'url' => url('/user/view-template'), 'keywords' => ['settings', 'template']],
+    ];
+}
 ?>
 
 <!DOCTYPE html>
@@ -127,20 +171,32 @@ $ticketCount = $tickets->count();
             align-items: center;
             justify-content: center;
             border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: background 0.2s, border-color 0.2s;
+            border: 1px solid rgba(118,207,28,0.5);
+            background: rgba(118,207,28,0.16);
+            box-shadow: inset 0 0 0 1px rgba(118,207,28,0.08);
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
             flex-shrink: 0;
         }
+        /* Keep same boxed look across all interaction states */
+        header.header .brand .sidebar-toggle-box.active,
+        header.header .brand .sidebar-toggle-box:focus,
+        header.header .brand .sidebar-toggle-box:active {
+            border: 1px solid rgba(118,207,28,0.5) !important;
+            background: rgba(118,207,28,0.16) !important;
+            box-shadow: inset 0 0 0 1px rgba(118,207,28,0.08) !important;
+            outline: none !important;
+        }
         header.header .brand .sidebar-toggle-box:hover {
-            background: rgba(118,207,28,0.15);
-            border-color: rgba(118,207,28,0.3);
+            background: rgba(118,207,28,0.24);
+            border-color: rgba(118,207,28,0.65);
+            box-shadow: 0 0 0 3px rgba(118,207,28,0.16);
         }
         /* Reset the fa-bars div — prevent white box from theme styles */
         header.header .brand .sidebar-toggle-box .fa-bars {
             display: block !important;
             background: transparent !important;
             background-color: transparent !important;
-            color: rgba(255,255,255,0.75) !important;
+            color: #76CF1C !important;
             font-size: 15px !important;
             font-family: FontAwesome !important;
             width: auto !important;
@@ -152,6 +208,13 @@ $ticketCount = $tickets->count();
             border: none !important;
             box-shadow: none !important;
             transition: color 0.2s;
+        }
+        /* Force hamburger glyph in case theme overrides FA content */
+        header.header .brand .sidebar-toggle-box .fa-bars::before {
+            content: "\f0c9" !important;
+            font-family: FontAwesome !important;
+            font-size: 15px !important;
+            color: inherit !important;
         }
         header.header .brand .sidebar-toggle-box:hover .fa-bars {
             color: #76CF1C !important;
@@ -655,23 +718,23 @@ $ticketCount = $tickets->count();
             <!--logo start-->
             <div class="brand">
                 @if(Auth::user()->user_type == 'Admin')
-                    <a href="/admin" class="logo">
+                    <a href="/admin" class="logo" style="margin-top: 1px;">
                         Admin Area
                     </a>
                 @elseif(Auth::user()->user_type == 'Reseller')
-                    <a href="/reseller" class="logo">
+                    <a href="/reseller" class="logo" style="margin-top: 1px;">
                         Manufacturer Area
                     </a>
                 @elseif(Auth::user()->user_type == 'Support')
-                    <a href="/user" class="logo">
+                    <a href="/user" class="logo" style="margin-top: 1px;">
                         Support Area
                     </a>
                 @else(Auth::user()->user_type!=='User')
-                    <a href="/user" class="logo">
+                    <a href="/user" class="logo" style="margin-top: 1px;">
                         Dealer Area
                     </a>
                 @endif
-                <div class="sidebar-toggle-box">
+                <div class="sidebar-toggle-box" style="margin-top: 1px;">
                     <div class="fa fa-bars"></div>
                 </div>
             </div>
@@ -756,7 +819,13 @@ $ticketCount = $tickets->count();
 
                     @endif
                     <li class="search-box">
-                        <input type="text" class="form-control search" placeholder="Search">
+                        <input type="text" id="global-nav-search" class="form-control search" list="global-nav-search-options"
+                            placeholder="Search pages or table data">
+                        <datalist id="global-nav-search-options">
+                            @foreach($globalSearchItems as $item)
+                                <option value="{{ $item['label'] }}"></option>
+                            @endforeach
+                        </datalist>
                     </li>
                     <li class="dropdown">
                         <a href="javascript:void(0);" class="user-profile dropdown-toggle" data-toggle="dropdown"
@@ -1442,6 +1511,161 @@ $ticketCount = $tickets->count();
                     }, 600);
                 }
             }, 8000);
+        })();
+    </script>
+    <script>
+        (function () {
+            var searchInput = document.getElementById('global-nav-search');
+            if (!searchInput) return;
+
+            var quickLinks = @json($globalSearchItems);
+
+            function normalize(value) {
+                return String(value || '').toLowerCase().trim();
+            }
+
+            function tryFilterCurrentDataTable(query) {
+                if (!window.jQuery || !$.fn || !$.fn.dataTable) return false;
+
+                try {
+                    var tablesApi = $.fn.dataTable.tables({ visible: true, api: true });
+                    if (!tablesApi || tablesApi.count() === 0) return false;
+                    tablesApi.search(query).draw();
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            function pickBestRoute(query) {
+                var q = normalize(query);
+                if (!q) return null;
+
+                var best = null;
+                quickLinks.forEach(function (item) {
+                    var score = 0;
+                    var label = normalize(item.label);
+                    var keywords = Array.isArray(item.keywords) ? item.keywords.map(normalize) : [];
+
+                    if (label === q) score += 120;
+                    if (label.indexOf(q) !== -1) score += 70;
+
+                    keywords.forEach(function (keyword) {
+                        if (!keyword) return;
+                        if (keyword === q) score += 100;
+                        else if (keyword.indexOf(q) !== -1) score += 40;
+                        else if (q.indexOf(keyword) !== -1) score += 20;
+                    });
+
+                    if (!best || score > best.score) {
+                        best = { score: score, item: item };
+                    }
+                });
+
+                return best && best.score > 0 ? best.item : null;
+            }
+
+            function executeSearch() {
+                var query = normalize(searchInput.value);
+                if (!query) return;
+
+                // 1) If current page has DataTable, search there first.
+                if (tryFilterCurrentDataTable(query)) return;
+
+                // 2) Fallback to role-based page routing.
+                var bestRoute = pickBestRoute(query);
+                if (bestRoute && bestRoute.url) {
+                    window.location.href = bestRoute.url;
+                } else {
+                    alert('No matching result found for your role.');
+                }
+            }
+
+            searchInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    executeSearch();
+                }
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            var sidebarScroller = document.querySelector('.leftside-navigation');
+            if (!sidebarScroller) return;
+
+            var storageKey = 'gpscpanel-sidebar-scroll';
+
+            // Restore sidebar scroll position after navigation.
+            try {
+                var savedScroll = window.localStorage.getItem(storageKey);
+                if (savedScroll !== null) {
+                    sidebarScroller.scrollTop = parseInt(savedScroll, 10) || 0;
+                }
+            } catch (error) {
+                // Ignore storage access issues.
+            }
+
+            function persistSidebarScroll() {
+                try {
+                    window.localStorage.setItem(storageKey, String(sidebarScroller.scrollTop));
+                } catch (error) {
+                    // Ignore storage access issues.
+                }
+            }
+
+            sidebarScroller.addEventListener('scroll', persistSidebarScroll);
+            window.addEventListener('beforeunload', persistSidebarScroll);
+
+            // Prevent hash jump for expandable parent items.
+            document.addEventListener('click', function (event) {
+                var trigger = event.target.closest('#nav-accordion .sub-menu > a[href="#"]');
+                if (!trigger) return;
+                event.preventDefault();
+            });
+
+            // Save scroll before navigating through sidebar links.
+            document.addEventListener('click', function (event) {
+                var link = event.target.closest('#nav-accordion a[href]');
+                if (!link) return;
+                var href = link.getAttribute('href') || '';
+                if (href && href !== '#' && !href.startsWith('javascript:')) {
+                    persistSidebarScroll();
+                }
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            if (!window.jQuery) return;
+            var $sidebarScroll = $('.leftside-navigation-scroll');
+            if (!$sidebarScroll.length) return;
+
+            function disableSidebarNiceScroll() {
+                try {
+                    var ns = $sidebarScroll.getNiceScroll();
+                    if (ns && ns.length) {
+                        ns.hide();
+                        ns.remove();
+                    }
+                } catch (error) {
+                    // ignore plugin timing errors
+                }
+
+                // Safety: hide any leftover thin rails near left sidebar
+                $('.nicescroll-rails').each(function () {
+                    var left = parseInt(this.style.left || '-1', 10);
+                    if (left >= 0 && left < 120) {
+                        this.style.display = 'none';
+                        this.style.opacity = '0';
+                        this.style.visibility = 'hidden';
+                    }
+                });
+            }
+
+            $(window).on('load', disableSidebarNiceScroll);
+            setTimeout(disableSidebarNiceScroll, 250);
+            setTimeout(disableSidebarNiceScroll, 1000);
         })();
     </script>
     <!-- ===== End Page Loader Script ===== -->

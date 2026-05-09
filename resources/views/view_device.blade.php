@@ -10,22 +10,346 @@ $idsArray = [1];
 $currentEmail = Auth::user()->email;
 ?>
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+  #main-content .wrapper { padding-top: 10px !important; }
+
+  /* Breadcrumb (reference style) */
+  .vd-breadcrumb-wrap { padding: 14px 0 18px 0; }
+  .vd-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    background: #1e293b;
+    border-radius: 50px;
+    padding: 6px 18px 6px 8px;
+    box-shadow: 0 4px 16px rgba(30,41,59,0.18);
+    gap: 0;
+  }
+  .vd-breadcrumb .bc-home {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #76CF1C; color: #1e293b; text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .vd-breadcrumb .bc-item {
+    color: rgba(255,255,255,0.65);
+    font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap;
+  }
+  .vd-breadcrumb .bc-sep { color: rgba(255,255,255,0.35); margin: 0 8px; font-size: 12px; }
+  .vd-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
+
+  #main-content .c_panel {
+    border: 0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 6px 24px rgba(15,23,42,0.08) !important;
+    overflow: hidden;
+  }
+  #main-content .c_title {
+    background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
+    padding: 16px 22px !important;
+    border-bottom: 1px solid rgba(118,207,28,0.2) !important;
+    margin-bottom: 0 !important;
+  }
+  #main-content .c_title h2 {
+    margin: 0 !important;
+    color: #fff !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+  }
+  #main-content .c_content.tabs { padding: 16px 16px 10px !important; }
+
+  /* Tabs + actions (approval-request reference style) */
+  #main-content .tabs .tablinks {
+    border: 1px solid #e2e8f0 !important;
+    background: #f8fafc !important;
+    color: #64748b !important;
+    border-radius: 8px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    margin-right: 4px !important;
+    margin-bottom: 10px !important;
+    transition: all 0.2s ease !important;
+  }
+  #main-content .tabs .tablinks.active {
+    background: #76CF1C !important;
+    border-color: #76CF1C !important;
+    color: #1e293b !important;
+    box-shadow: 0 2px 8px rgba(118,207,28,0.25) !important;
+  }
+  #main-content .tabs .tablinks:hover {
+    border-color: #cbd5e1 !important;
+    background: #f1f5f9 !important;
+  }
+
+  #main-content .tabs .tabcontent > div[style*="margin-bottom:15px"] {
+    margin-bottom: 12px !important;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    align-items: center;
+  }
+  #main-content .tabs .tabcontent .vdc-tab-toolbar {
+    margin-bottom: 12px !important;
+  }
+  #main-content .tabs .vdc-tab-toolbar .form-control.input-sm {
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #1e293b;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  /* Keep Account dropdown + Filter button on one row (Bootstrap .form-control is width:100% by default) */
+  #main-content .tabs .vdc-tab-toolbar-right .vdc-filter-form {
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+  #main-content .tabs .vdc-tab-toolbar-right .vdc-filter-form select.form-control {
+    width: auto !important;
+    max-width: min(280px, 42vw);
+    min-width: 160px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  #main-content .tabs .vdc-tab-toolbar-right .vdc-filter-form .btn {
+    flex-shrink: 0;
+    align-self: center;
+    white-space: nowrap;
+  }
+  #main-content .tabs .delete_all,
+  #main-content .tabs .user-responsive,
+  #main-content .tabs .template-responsive {
+    margin-left: 0 !important;
+    border: none !important;
+    border-radius: 7px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 7px 14px !important;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.14) !important;
+  }
+  #main-content .tabs .delete_all { background: linear-gradient(135deg,#ef4444,#dc2626) !important; }
+  #main-content .tabs .user-responsive { background: linear-gradient(135deg,#1e293b,#2d3f55) !important; }
+  #main-content .tabs .template-responsive { background: linear-gradient(135deg,#1e293b,#2d3f55) !important; }
+
+  /* Datatable look */
+  #main-content .tabs .dataTables_wrapper .dataTables_length label,
+  #main-content .tabs .dataTables_wrapper .dataTables_filter label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  #main-content .tabs .dataTables_wrapper .dataTables_length select,
+  #main-content .tabs .dataTables_wrapper .dataTables_filter input {
+    height: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0 10px;
+    font-size: 12px;
+    color: #334155;
+    background: #f8fafc;
+    box-shadow: none !important;
+    text-indent: 0 !important;
+    opacity: 1 !important;
+  }
+  #main-content .tabs .dataTables_wrapper .dataTables_length select {
+    min-width: 78px;
+    line-height: 30px;
+    padding: 0 26px 0 10px !important;
+    appearance: auto;
+    -webkit-appearance: menulist;
+    -moz-appearance: menulist;
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    background-color: #fff !important;
+    -webkit-text-fill-color: #1e293b !important;
+  }
+  #main-content .tabs .dataTables_wrapper .dataTables_length select option {
+    color: #1e293b !important;
+    background: #fff !important;
+  }
+  #main-content .tabs .dataTables_wrapper .dataTables_length {
+    margin-bottom: 8px;
+  }
+  #main-content .tabs .dataTables_wrapper .dataTables_filter input {
+    min-width: 190px;
+    background: #fff !important;
+  }
+  #main-content .tabs .tabcontent > .col-lg-12.text-right.margin-bottom-10 {
+    margin-bottom: 10px !important;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  #main-content .tabs .tabcontent > .col-lg-12.text-right.margin-bottom-10 .btn {
+    margin: 0 0 0 8px !important;
+    border-radius: 7px !important;
+    padding: 7px 14px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.14) !important;
+  }
+  #main-content .tabs .tabcontent > .col-lg-12.text-right.margin-bottom-10 .btn.btn-success:first-child {
+    background: linear-gradient(135deg,#1e293b,#2d3f55) !important;
+    color: #fff !important;
+  }
+  #main-content .tabs .tabcontent > .col-lg-12.text-right.margin-bottom-10 .btn.btn-success:last-child {
+    background: linear-gradient(135deg,#76CF1C,#67bb19) !important;
+    color: #0f172a !important;
+  }
+  #main-content .tabs .dataTables_wrapper .dataTables_scrollHead,
+  #main-content .tabs .dataTables_wrapper .dataTables_scrollBody {
+    border-color: #e5e7eb !important;
+  }
+  #main-content .tabs table.example thead th {
+    background: transparent !important;
+    color: #64748b !important;
+    font-size: 11px !important;
+    text-transform: uppercase;
+    font-weight: 700 !important;
+    border-bottom: 2px solid #f1f5f9 !important;
+  }
+  #main-content .tabs table.example tbody td {
+    background: #fff !important;
+    font-size: 12px !important;
+    color: #334155 !important;
+  }
+  #main-content .tabs table.example thead th:first-child {
+    min-width: 110px !important;
+    white-space: nowrap !important;
+  }
+  #main-content .tabs table.example thead th:first-child input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin-left: 6px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+  }
+  #main-content .tabs table.example tbody td:first-child input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+  }
+
+  /* Assign Account/Template modals */
+  .modal[id^="user-responsive"],
+  .modal[id^="template-responsive"] {
+    background: rgba(15, 23, 42, 0.45);
+  }
+  .modal[id^="user-responsive"] .modal-dialog,
+  .modal[id^="template-responsive"] .modal-dialog {
+    margin-top: 90px;
+  }
+  .modal[id^="user-responsive"] .modal-content,
+  .modal[id^="template-responsive"] .modal-content {
+    border: 0 !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(2, 8, 23, 0.32);
+  }
+  .modal[id^="user-responsive"] .modal-header,
+  .modal[id^="template-responsive"] .modal-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%);
+    border-bottom: 1px solid rgba(118, 207, 28, 0.2);
+    padding: 14px 18px;
+  }
+  .modal[id^="user-responsive"] .modal-header .modal-title,
+  .modal[id^="template-responsive"] .modal-header .modal-title {
+    color: #ffffff !important;
+    font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .2px;
+  }
+  .modal[id^="user-responsive"] .modal-header .close,
+  .modal[id^="template-responsive"] .modal-header .close {
+    color: #cbd5e1 !important;
+    opacity: 0.9;
+    text-shadow: none;
+    margin-top: 4px !important;
+    position: relative;
+    top: 2px;
+  }
+  .modal[id^="user-responsive"] .modal-body,
+  .modal[id^="template-responsive"] .modal-body {
+    padding: 16px 18px 8px;
+    background: #f8fafc;
+  }
+  .modal[id^="user-responsive"] .form-label,
+  .modal[id^="template-responsive"] .form-label {
+    display: block;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .35px;
+  }
+  .modal[id^="user-responsive"] select.form-control,
+  .modal[id^="template-responsive"] select.form-control {
+    min-height: 38px;
+    border: 1px solid #d5deea !important;
+    border-radius: 8px !important;
+    color: #1e293b !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+  .modal[id^="user-responsive"] .text-center[style*="font-size: 14px"],
+  .modal[id^="template-responsive"] .text-center[style*="font-size: 14px"] {
+    margin-top: 12px !important;
+    font-size: 13px !important;
+    line-height: 1.5;
+    color: #475569;
+    text-align: left !important;
+    background: #eef2f7;
+    border: 1px solid #dde6f1;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .modal[id^="user-responsive"] .modal-footer,
+  .modal[id^="template-responsive"] .modal-footer {
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: 10px 18px 14px;
+    text-align: center;
+  }
+  .modal[id^="user-responsive"] .modal-footer .btn,
+  .modal[id^="template-responsive"] .modal-footer .btn {
+    min-width: 130px;
+    border: none !important;
+    border-radius: 8px !important;
+    background: linear-gradient(135deg, #1e293b, #2d3f55) !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 9px 14px !important;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.22);
+  }
+</style>
 <section id="main-content">
   <section class="wrapper">
     <!--======== Page Title and Breadcrumbs Start ========-->
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-          <li><a href="#">Device Management</a></li>
-            @if(Auth::user()->user_type=='Admin' and url('admin/view-device-assign')==url()->current())
-            <li class="active"><a href="#">View Assigned Devices</a></li>
-            @elseif(Auth::user()->user_type=='Admin' and url('admin/view-device-unassign')==url()->current())
-            <li class="active"><a href="#">View Unassigned Devices</a></li>
-            @endif
-          </ul>
-        </nav>           
-      </div>
+    <div class="vd-breadcrumb-wrap">
+      <nav class="vd-breadcrumb">
+        <a href="{{ url('admin') }}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
+        <a href="{{ url('admin') }}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item">Device Management</span>
+        <span class="bc-sep">›</span>
+        @if(Auth::user()->user_type=='Admin' and url('admin/view-device-assign')==url()->current())
+          <span class="bc-item active">View Assigned Devices</span>
+        @elseif(Auth::user()->user_type=='Admin' and url('admin/view-device-unassign')==url()->current())
+          <span class="bc-item active">View Unassigned Devices</span>
+        @else
+          <span class="bc-item active">View Devices</span>
+        @endif
+      </nav>
     </div>
     <div class="row">
       <div class="col-md-12">
@@ -179,7 +503,7 @@ $currentEmail = Auth::user()->email;
     // Initialize datatables AFTER making the active tab visible!
     // This allows DataTables to correctly calculate columns width for the visible tab.
     initializeDataTables();
-    
+
     // Explicitly adjust columns just in case
     setTimeout(function() {
         if ($.fn.DataTable) {
@@ -193,6 +517,13 @@ $currentEmail = Auth::user()->email;
     }, 100);
 
     $('.dataTables_filter input').attr("placeholder", "Zoeken...");
+    $('.dataTables_length select').each(function() {
+      if (!$(this).val()) {
+        $(this).val('25');
+      }
+      this.style.color = '#1e293b';
+      this.style.backgroundColor = '#fff';
+    });
     
     $('#certificatePreviewBtn').on('click', function() {
       var deviceId = $('#certificateForm').data('deviceId');

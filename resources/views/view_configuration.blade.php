@@ -7,22 +7,25 @@ $timeZones = TimezoneModel::all();
 
 ?>
 @extends('layouts.apps')
-@section('content')
 
 @push('styles')
 <style>
-    /* ---- Remove top spacing ---- */
-    #main-content { padding-top: 0 !important; margin-top: 0 !important; }
+    /* Keep content below fixed header */
+    #main-content { padding-top: 70px !important; margin-top: 0 !important; }
     #main-content .wrapper { padding-top: 0 !important; }
 
     /* ---- Modern Breadcrumb ---- */
     .vc-breadcrumb-bar {
         background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%);
-        padding: 14px 28px;
+        padding: 8px 14px;
         display: flex;
         align-items: center;
         margin-bottom: 22px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        border: 1px solid rgba(118, 207, 28, 0.2);
+        border-radius: 999px;
+        box-shadow: 0 8px 20px rgba(2, 8, 23, 0.22);
+        width: fit-content;
+        max-width: 100%;
     }
     .vc-breadcrumb {
         display: flex;
@@ -34,36 +37,60 @@ $timeZones = TimezoneModel::all();
     }
     .vc-breadcrumb li { display: flex; align-items: center; gap: 6px; }
     .vc-breadcrumb li a {
-        color: rgba(255,255,255,0.55);
+        color: rgba(226, 232, 240, 0.82);
         font-size: 12.5px;
-        font-weight: 500;
+        font-weight: 700;
         text-decoration: none;
         transition: color 0.2s;
+        line-height: 1;
     }
-    .vc-breadcrumb li a:hover { color: #76CF1C; }
+    .vc-breadcrumb li a:hover { color: #ffffff; }
     .vc-breadcrumb li.active span {
         color: #76CF1C;
         font-size: 12.5px;
-        font-weight: 600;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .vc-breadcrumb li .vc-crumb-muted {
+        color: rgba(226, 232, 240, 0.82);
+        font-size: 12.5px;
+        font-weight: 700;
+        line-height: 1;
     }
     .vc-breadcrumb .sep {
-        color: rgba(255,255,255,0.25);
-        font-size: 11px;
+        color: rgba(148, 163, 184, 0.9);
+        font-size: 18px;
+        margin: 0 2px;
     }
     .vc-breadcrumb .home-icon {
         width: 28px;
         height: 28px;
-        background: rgba(118,207,28,0.15);
-        border-radius: 7px;
+        background: #76CF1C;
+        border-radius: 999px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #76CF1C;
+        color: #0f172a;
         font-size: 12px;
         text-decoration: none;
-        transition: background 0.2s;
+        transition: background 0.2s, transform 0.2s;
+        box-shadow: 0 0 0 4px rgba(118, 207, 28, 0.15);
     }
-    .vc-breadcrumb .home-icon:hover { background: rgba(118,207,28,0.28); }
+    .vc-breadcrumb .home-icon:hover { background: #86de2d; transform: translateY(-1px); }
+
+    @media (max-width: 768px) {
+        .vc-breadcrumb-bar {
+            border-radius: 14px;
+            width: 100%;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .vc-breadcrumb li a,
+        .vc-breadcrumb li .vc-crumb-muted,
+        .vc-breadcrumb li.active span {
+            font-size: 12px;
+        }
+    }
 
     /* ---- Card Header ---- */
     .vc-card-header {
@@ -184,55 +211,259 @@ $timeZones = TimezoneModel::all();
 
     /* ---- Configuration item card ---- */
     .configuration-item {
-        background: #f8fafc;
-        border-radius: 10px;
-        border: 1px solid #f0f0f0;
-        padding: 16px;
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        padding: 18px;
         height: 100%;
-        transition: box-shadow 0.2s;
+        transition: box-shadow 0.2s, border-color 0.2s;
+        box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
     }
-    .configuration-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+    .configuration-item:hover {
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
+        border-color: rgba(118, 207, 28, 0.35);
+    }
     .configuration-item h6 {
         color: #0f172a;
-        font-size: 13px;
-        font-weight: 700;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-        border-bottom: 2px solid rgba(118,207,28,0.3);
+        font-size: 14px;
+        font-weight: 800;
+        margin: 0 0 14px;
+        padding: 10px 12px;
+        border-bottom: 0;
+        border-radius: 8px;
+        background: rgba(118, 207, 28, 0.12);
     }
-    .configuration-item p {
-        font-size: 12.5px;
-        color: #374151;
-        margin-bottom: 6px;
+    .configuration-item [id^="config-"] .row.d-flex,
+    .configuration-item [id^="canConfig-"] .row.d-flex {
         display: flex;
-        gap: 6px;
+        align-items: flex-start;
     }
-    .configuration-item p strong { color: #0f172a; min-width: 100px; }
+    .configuration-item [id^="config-"] .col-lg-9,
+    .configuration-item [id^="canConfig-"] .col-lg-9 {
+        width: 88%;
+    }
+    .configuration-item [id^="config-"] .col-lg-3,
+    .configuration-item [id^="canConfig-"] .col-lg-3 {
+        width: 12%;
+        text-align: right;
+    }
+    .configuration-item [id^="config-"] p,
+    .configuration-item [id^="canConfig-"] p {
+        font-size: 12.5px;
+        color: #334155;
+        margin: 0 0 7px;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        line-height: 1.4;
+    }
+    .configuration-item [id^="config-"] p strong,
+    .configuration-item [id^="canConfig-"] p strong {
+        color: #0f172a;
+        min-width: 210px;
+        font-weight: 700;
+    }
+    .configuration-item .edit-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #1d283e !important;
+        border: none !important;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+    }
+
+    /* ---- Edit mode layout fix for long configuration forms ---- */
+    .configuration-item [id^="form-"],
+    .configuration-item [id^="canConfigForm-"] {
+        margin-top: 8px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+        max-height: 520px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    .configuration-item .bgx-form-fields .form-group {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 10px !important;
+        clear: both;
+    }
+    .configuration-item .bgx-form-fields .form-group::after {
+        content: "";
+        display: block;
+        clear: both;
+    }
+    .configuration-item .bgx-form-fields .form-group > .control-label {
+        float: left !important;
+        width: 42% !important;
+        max-width: none !important;
+        text-align: left !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        color: #334155 !important;
+        padding-top: 10px !important;
+        padding-left: 0 !important;
+        padding-right: 10px !important;
+    }
+    .configuration-item .bgx-form-fields .form-group > div[class*="col-"] {
+        float: left !important;
+        width: 58% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    .configuration-item .bgx-form-fields .form-control,
+    .configuration-item .bgx-form-fields select,
+    .configuration-item .bgx-form-fields textarea {
+        width: 100% !important;
+        min-height: 38px !important;
+        border: 1px solid #d5deea !important;
+        border-radius: 7px !important;
+        font-size: 12.5px !important;
+        color: #334155 !important;
+        box-shadow: none !important;
+        background: #fff !important;
+    }
+    .configuration-item .bgx-form-fields .form-control:focus,
+    .configuration-item .bgx-form-fields select:focus,
+    .configuration-item .bgx-form-fields textarea:focus {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12) !important;
+        outline: none !important;
+    }
+    .configuration-item .bg-margin-top {
+        margin-top: 10px !important;
+        border-top: 1px solid #eef2f7;
+        padding-top: 12px;
+    }
+
+    /* ---- CAN edit form polish ---- */
+    .configuration-item [id^="canConfigForm-"] .row {
+        margin-left: -6px;
+        margin-right: -6px;
+    }
+    .configuration-item [id^="canConfigForm-"] .row > [class*="col-"] {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+    .configuration-item [id^="canConfigForm-"] .form-group {
+        margin-bottom: 10px !important;
+    }
+    .configuration-item [id^="canConfigForm-"] label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+    .configuration-item [id^="canConfigForm-"] .form-control,
+    .configuration-item [id^="canConfigForm-"] select {
+        min-height: 38px !important;
+        border: 1px solid #d5deea !important;
+        border-radius: 7px !important;
+        background: #ffffff !important;
+        font-size: 12.5px !important;
+        color: #334155 !important;
+    }
+    .configuration-item [id^="canConfigForm-"] .form-control:focus,
+    .configuration-item [id^="canConfigForm-"] select:focus {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12) !important;
+        outline: none !important;
+    }
+    .configuration-item [id^="canConfigForm-"] .select2-container {
+        width: 100% !important;
+    }
+    .configuration-item [id^="canConfigForm-"] .select2-container--default .select2-selection--multiple {
+        min-height: 38px !important;
+        border: 1px solid #d5deea !important;
+        border-radius: 7px !important;
+        padding: 3px 6px !important;
+        background: #fff !important;
+    }
+    .configuration-item [id^="canConfigForm-"] .select2-container--default.select2-container--focus .select2-selection--multiple {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12) !important;
+    }
+    .configuration-item [id^="canConfigForm-"] .bg-margin-top {
+        margin-top: 12px !important;
+        padding-top: 12px;
+        border-top: 1px solid #e9eff7;
+        text-align: right;
+    }
+    .configuration-item [id^="canConfigForm-"] .btn.btn-primary {
+        min-width: 96px;
+    }
+
+    @media (max-width: 1199px) {
+        .configuration-item [id^="config-"] .col-lg-9,
+        .configuration-item [id^="config-"] .col-lg-3,
+        .configuration-item [id^="canConfig-"] .col-lg-9,
+        .configuration-item [id^="canConfig-"] .col-lg-3 {
+            width: 100%;
+            text-align: left;
+        }
+        .configuration-item .edit-btn {
+            margin-top: 8px;
+        }
+        .configuration-item [id^="config-"] p,
+        .configuration-item [id^="canConfig-"] p {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .configuration-item [id^="config-"] p strong,
+        .configuration-item [id^="canConfig-"] p strong {
+            min-width: 0;
+            display: inline;
+        }
+        .configuration-item .bgx-form-fields .form-group > .control-label,
+        .configuration-item .bgx-form-fields .form-group > div[class*="col-"] {
+            float: none !important;
+            width: 100% !important;
+        }
+        .configuration-item .bgx-form-fields .form-group > .control-label {
+            padding-right: 0 !important;
+            padding-top: 0 !important;
+            margin-bottom: 6px;
+        }
+    }
+
+    /* Keep breadcrumb and card left alignment consistent */
+    .vc-breadcrumb-bar,
+    .vc-content-row {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
 </style>
 @endpush
+
+@section('content')
 
 <section id="main-content">
 <section class="wrapper" style="padding-top:0;">
 
-    <!-- ===== Modern Breadcrumb ===== -->
+    {{-- Breadcrumb row above main card (page CSS loaded via layouts stack) --}}
     <div class="vc-breadcrumb-bar">
         <ol class="vc-breadcrumb">
             <li>
-                <a href="/{{ $url_type }}" class="home-icon">
+                <a href="/{{ $url_type }}" class="home-icon" title="Dashboard">
                     <i class="fa fa-home"></i>
                 </a>
             </li>
             <li><span class="sep"><i class="fa fa-angle-right"></i></span></li>
-            <li><a href="#">Account</a></li>
+            <li><span class="vc-crumb-muted">Account</span></li>
             <li><span class="sep"><i class="fa fa-angle-right"></i></span></li>
             <li><a href="/{{ $url_type }}/view-user">View Accounts</a></li>
             <li><span class="sep"><i class="fa fa-angle-right"></i></span></li>
-            <li class="active"><span>View Configurations</span></li>
+            <li class="active"><span>View Configurations{{ !empty($user['name']) ? ' - ' . $user['name'] : '' }}</span></li>
         </ol>
     </div>
-    <!-- ===== End Breadcrumb ===== -->
 
-    <div class="row" style="margin: 0 10px;">
+    <div class="row vc-content-row" style="margin: 0;">
         <div class="col-md-12">
             <div class="vc-card card">
                 <div class="vc-card-header card-header">

@@ -21,23 +21,300 @@ button.selectDeviceUserChange {
     padding-top: 80px !important;
 }
 
-/* Premium Design Overrides */
-ul.sidebar-menu li.active>a {
-    background: #76CF1C !important;
-    border-left: 4px solid #5fa616 !important;
-    color: #fff !important;
+/* Header sidebar toggle — remove hover outline/line completely */
+header.header .brand .sidebar-toggle-box {
+    border: 0 !important;
+    box-shadow: none !important;
+    background: rgba(118, 207, 28, 0.2) !important;
 }
 
-ul.sidebar-menu li.active>a span.icon-sidebar {
-    background: rgba(255, 255, 255, 0.2) !important;
-    color: #fff !important;
+header.header .brand .sidebar-toggle-box:hover,
+header.header .brand .sidebar-toggle-box.active,
+header.header .brand .sidebar-toggle-box:focus {
+    border: 0 !important;
+    box-shadow: none !important;
+    background: rgba(118, 207, 28, 0.3) !important;
+}
+
+/* ==========================================================
+   SIDEBAR REDESIGN — Dark Navy + Brand Green
+   ========================================================== */
+#sidebar {
+    background: linear-gradient(180deg, #0f172a 0%, #111c31 55%, #0f172a 100%) !important;
+    border-right: 1px solid rgba(118, 207, 28, 0.2) !important;
+    box-shadow: 8px 0 24px rgba(2, 8, 23, 0.35) !important;
+}
+
+#sidebar .leftside-navigation {
+    /* Keep scrolling functional, but hide scrollbar UI */
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+#sidebar .leftside-navigation::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+}
+
+#sidebar .leftside-navigation::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#sidebar .leftside-navigation::-webkit-scrollbar-thumb {
+    background: transparent !important;
+    border-radius: 0 !important;
+}
+
+/* In case theme applies overflow on this wrapper */
+#sidebar .leftside-navigation-scroll {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: none;
+}
+
+#sidebar .leftside-navigation-scroll::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* Hide NiceScroll generated vertical line in sidebar area */
+#sidebar+.nicescroll-rails,
+#sidebar .nicescroll-rails,
+.leftside-navigation+.nicescroll-rails,
+.leftside-navigation-scroll+.nicescroll-rails {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+}
+
+/* Sidebar toggle (hamburger) collapse:
+   Theme currently hides sidebar completely via `.hide-left-bar`.
+   We override it to keep icons visible and hide only menu text. */
+#sidebar.hide-left-bar {
+    margin-left: 0 !important;
+    /* override theme.css (no full off-screen) */
+    width: 70px !important;
+    transition: all 0.3s ease-in-out;
+}
+
+#sidebar.hide-left-bar .leftside-navigation,
+#sidebar.hide-left-bar .leftside-navigation-scroll {
+    width: 70px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+#sidebar.hide-left-bar ul.sidebar-menu {
+    padding: 78px 4px 16px !important;
+}
+
+#sidebar.hide-left-bar ul.sidebar-menu>li>a.hvr-bounce-to-right-sidebar-parent {
+    padding: 10px 0 !important;
+    justify-content: center !important;
+    gap: 0 !important;
+}
+
+/* Hide ALL label text pieces; keep only icon span visible */
+#sidebar.hide-left-bar ul.sidebar-menu li a span:not(.icon-sidebar) {
+    display: none !important;
+}
+
+/* Nested submenu items: hide completely in collapsed mode */
+#sidebar.hide-left-bar ul.sidebar-menu li ul.sub {
+    display: none !important;
+}
+
+/* Hide active left glow bar (will be outside collapsed width) */
+#sidebar.hide-left-bar ul.sidebar-menu>li.active::before {
+    display: none !important;
+}
+
+/* Adjust main content margin when merged with collapsed sidebar */
+#main-content.merge-left {
+    margin-left: 70px !important;
+}
+
+/* Remove any default bullets/points in sidebar lists */
+#sidebar ul,
+#sidebar li,
+ul.sidebar-menu,
+ul.sidebar-menu li,
+ul.sidebar-menu li ul.sub,
+ul.sidebar-menu li ul.sub li {
+    list-style: none !important;
+    list-style-type: none !important;
+}
+
+ul.sidebar-menu {
+    padding: 78px 14px 16px !important;
+}
+
+ul.sidebar-menu>li {
+    border-bottom: 0 !important;
+    margin-bottom: 4px;
+    position: relative;
+}
+
+ul.sidebar-menu>li:first-child {
+    margin-top: 6px;
+}
+
+ul.sidebar-menu>li>a.hvr-bounce-to-right-sidebar-parent {
+    border-radius: 11px !important;
+    padding: 10px 14px !important;
+    color: rgba(255, 255, 255, 0.88) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px;
+    transition: all 0.22s ease !important;
+    border: 1px solid transparent !important;
+    overflow: hidden;
+}
+
+ul.sidebar-menu>li>a.hvr-bounce-to-right-sidebar-parent:before {
+    display: none !important;
+}
+
+ul.sidebar-menu>li>a.hvr-bounce-to-right-sidebar-parent span:last-child {
+    flex: 1;
+    line-height: 1.2;
+}
+
+ul.sidebar-menu>li>a.hvr-bounce-to-right-sidebar-parent span.icon-sidebar:first-child {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 9px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #d3deed !important;
+    font-size: 15px !important;
+    transition: all 0.22s ease !important;
+}
+
+ul.sidebar-menu>li>a.hvr-bounce-to-right-sidebar-parent:hover {
+    background: rgba(118, 207, 28, 0.12) !important;
+    border-color: rgba(118, 207, 28, 0.28) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+}
+
+ul.sidebar-menu>li>a.hvr-bounce-to-right-sidebar-parent:hover span.icon-sidebar:first-child {
+    background: rgba(118, 207, 28, 0.25) !important;
+    color: #ffffff !important;
+}
+
+ul.sidebar-menu>li.active>a,
+ul.sidebar-menu>li>a.active {
+    background: linear-gradient(90deg, rgba(118, 207, 28, 0.28) 0%, rgba(118, 207, 28, 0.1) 100%) !important;
+    border-left: 0 !important;
+    border-color: rgba(118, 207, 28, 0.42) !important;
+    color: #ffffff !important;
+    box-shadow: 0 5px 16px rgba(118, 207, 28, 0.18) !important;
+}
+
+ul.sidebar-menu>li.active::before {
+    content: "";
+    position: absolute;
+    left: -12px;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(180deg, #76CF1C 0%, #5dab13 100%);
+    box-shadow: 0 0 10px rgba(118, 207, 28, 0.55);
+}
+
+ul.sidebar-menu>li.active>a span.icon-sidebar,
+ul.sidebar-menu>li>a.active span.icon-sidebar {
+    background: #76CF1C !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(118, 207, 28, 0.35);
+}
+
+/* ── Submenu: Tree-style with vertical line + horizontal dash connector ── */
+ul.sidebar-menu li ul.sub {
+    margin: 4px 0 8px 0 !important;
+    padding: 4px 0 0 0 !important;
+    margin-left: 22px !important;
+    border-left: 2px solid rgba(148, 163, 184, 0.35) !important;
+    box-sizing: border-box !important;
+    position: relative;
+}
+
+/* Hide old theme markers */
+ul.sidebar-menu li ul.sub li a::before,
+ul.sidebar-menu li ul.sub li ul.sub li a::before {
+    content: none !important;
+    display: none !important;
+    border: 0 !important;
+}
+
+ul.sidebar-menu li ul.sub li {
+    background: transparent !important;
+    border: 0 !important;
+    margin-bottom: 2px;
+    position: relative;
+}
+
+/* Horizontal dash connector (the — line before each item) */
+ul.sidebar-menu li ul.sub li::before {
+    content: '' !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 50% !important;
+    width: 14px !important;
+    height: 2px !important;
+    background: rgba(148, 163, 184, 0.45) !important;
+    transform: translateY(-50%) !important;
+    border: 0 !important;
+}
+
+ul.sidebar-menu li ul.sub li a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-left: 0 !important;
+    border-left: 0 !important;
+    border-radius: 8px !important;
+    color: rgba(203, 213, 225, 0.88) !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    padding: 8px 10px 8px 20px !important;
+    line-height: 1.25 !important;
+    transition: all 0.2s ease !important;
+}
+
+ul.sidebar-menu li ul.sub li a:hover {
+    background: rgba(118, 207, 28, 0.12) !important;
+    color: #e8ffd1 !important;
+    padding-left: 24px !important;
 }
 
 ul.sidebar-menu li ul.sub li.active a {
-    background: rgba(118, 207, 28, 0.1) !important;
-    color: #76CF1C !important;
-    border-left: 3px solid #76CF1C !important;
+    background: rgba(118, 207, 28, 0.18) !important;
+    color: #ffffff !important;
     font-weight: 700;
+    padding-left: 20px !important;
+}
+
+ul.sidebar-menu li ul.sub li.active::before {
+    background: #76CF1C !important;
+}
+
+/* Override theme.css (#sidebar .sub-menu > .sub li a { padding-left: 46px }) */
+#sidebar ul.sidebar-menu li.sub-menu > ul.sub li > a {
+    padding: 8px 10px 8px 20px !important;
+    margin-left: 0 !important;
 }
 
 .panel {
@@ -341,6 +618,7 @@ ul.sidebar-menu li ul.sub li.active a {
     align-items: center !important;
     justify-content: space-between !important;
 }
+
 .bgx-title-container .btn-primary,
 .bgx-title-container .btn-success,
 .bgx-title-container .btn-default {
@@ -351,13 +629,14 @@ ul.sidebar-menu li ul.sub li.active a {
     font-size: 12px !important;
     font-weight: 700 !important;
     padding: 7px 18px !important;
-    box-shadow: 0 3px 10px rgba(118,207,28,0.3) !important;
+    box-shadow: 0 3px 10px rgba(118, 207, 28, 0.3) !important;
 }
+
 .bgx-title-container .btn-primary:hover,
 .bgx-title-container .btn-success:hover,
 .bgx-title-container .btn-default:hover {
     background: #65b515 !important;
-    box-shadow: 0 5px 14px rgba(118,207,28,0.4) !important;
+    box-shadow: 0 5px 14px rgba(118, 207, 28, 0.4) !important;
 }
 
 /* Breadcrumb dark card */
@@ -365,6 +644,7 @@ ul.sidebar-menu li ul.sub li.active a {
     margin-bottom: 18px !important;
     padding-top: 4px !important;
 }
+
 .c_breadcrumbs ul {
     display: flex !important;
     align-items: center !important;
@@ -375,9 +655,10 @@ ul.sidebar-menu li ul.sub li.active a {
     border: 1.5px solid #76CF1C !important;
     border-radius: 10px !important;
     gap: 4px !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
     width: fit-content !important;
 }
+
 .c_breadcrumbs ul li {
     display: flex !important;
     align-items: center !important;
@@ -387,25 +668,30 @@ ul.sidebar-menu li ul.sub li.active a {
     color: #94a3b8 !important;
     list-style: none !important;
 }
+
 .c_breadcrumbs ul li::before {
     content: '\f054' !important;
     font-family: 'FontAwesome' !important;
     font-size: 9px !important;
     color: #334155 !important;
 }
+
 .c_breadcrumbs ul li:first-child::before {
     content: '\f015' !important;
     font-family: 'FontAwesome' !important;
     color: #76CF1C !important;
     font-size: 13px !important;
 }
+
 .c_breadcrumbs ul li a {
     color: #94a3b8 !important;
     text-decoration: none !important;
 }
+
 .c_breadcrumbs ul li a:hover {
     color: #e2e8f0 !important;
 }
+
 .c_breadcrumbs ul li.active,
 .c_breadcrumbs ul li.active a {
     color: #76CF1C !important;
@@ -416,6 +702,7 @@ table.dataTable thead .sorting_asc_disabled,
 table.dataTable thead .sorting_desc_disabled {
     opacity: 0.3;
 }
+
 .dataTables_wrapper .dataTables_scroll .dataTables_scrollBody thead tr {
     visibility: collapse !important;
     height: 0 !important;

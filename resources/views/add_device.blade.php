@@ -7,19 +7,128 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 @extends('layouts.apps')
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+    #main-content .wrapper { padding-top: 10px !important; }
+
+    /* Breadcrumb (reference style) */
+    .ad-breadcrumb-wrap { padding: 14px 0 18px 0; }
+    .ad-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        background: #1e293b;
+        border-radius: 50px;
+        padding: 6px 18px 6px 8px;
+        box-shadow: 0 4px 16px rgba(30,41,59,0.18);
+        gap: 0;
+    }
+    .ad-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #76CF1C;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        color: #1e293b;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+    .ad-breadcrumb .bc-item {
+        color: rgba(255,255,255,0.65);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .ad-breadcrumb .bc-sep {
+        color: rgba(255,255,255,0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+    .ad-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    /* Panel and form polish */
+    #main-content .c_panel {
+        border: 0 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 6px 24px rgba(15,23,42,0.08) !important;
+        overflow: hidden;
+    }
+    #main-content .c_title {
+        background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
+        padding: 16px 22px !important;
+        border-bottom: 1px solid rgba(118,207,28,0.2) !important;
+    }
+    #main-content .c_title h2 {
+        margin: 0 !important;
+        color: #fff !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    #main-content .c_content {
+        padding: 22px 20px !important;
+    }
+
+    #main-content #commentForm .form-group {
+        margin-bottom: 14px !important;
+    }
+    #main-content #commentForm .control-label {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: #334155 !important;
+        padding-top: 10px !important;
+    }
+    #main-content #commentForm .form-control,
+    #main-content #commentForm select,
+    #main-content #commentForm .select2-selection--single,
+    #main-content #commentForm .select2-selection--multiple {
+        min-height: 40px !important;
+        border: 1px solid #d5deea !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        font-size: 13px !important;
+        color: #334155 !important;
+        background: #fff !important;
+        width: 100% !important;
+    }
+    #main-content #commentForm .form-control:focus,
+    #main-content #commentForm select:focus {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118,207,28,0.12) !important;
+        outline: none !important;
+    }
+    #main-content #commentForm .select2-container {
+        width: 100% !important;
+    }
+    #main-content #commentForm .btn.btn-primary.btn-flat {
+        background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+        border: 0 !important;
+        color: #0f172a !important;
+        font-weight: 800 !important;
+        border-radius: 8px !important;
+        padding: 9px 20px !important;
+        box-shadow: 0 4px 12px rgba(118,207,28,0.3) !important;
+    }
+</style>
 <!--main content start-->
 <section id="main-content">
     <section class="wrapper">
         <!--======== Page Title and Breadcrumbs Start ========-->
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Device Management</a></li>
-                        <li class="active"><a href="#">Add Device</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="ad-breadcrumb-wrap">
+            <nav class="ad-breadcrumb">
+                <a href="{{ url('admin') }}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
+                <a href="{{ url('admin') }}" class="bc-item">Home</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item">Device Management</span>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Add Device</span>
+            </nav>
         </div>
         <!--======== Page Title and Breadcrumbs End ========-->
         <!--======== Form Validation Content Start End ========-->

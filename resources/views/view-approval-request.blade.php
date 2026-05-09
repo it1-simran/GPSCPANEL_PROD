@@ -187,6 +187,96 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
   #approvalRequests thead th.sorting,
   #approvalRequests thead th.sorting_asc,
   #approvalRequests thead th.sorting_desc { padding-right: 22px !important; }
+
+  /* Resend/Send request modal styling */
+  #accountRequestModal .modal-dialog {
+    max-width: 620px;
+    margin: 60px auto;
+  }
+  #accountRequestModal .modal-content {
+    border: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.24);
+  }
+  #accountRequestModal .modal-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%);
+    border-bottom: 1px solid rgba(59,130,246,0.28);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #accountRequestModal .modal-title {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+  #accountRequestModal .arm-close {
+    border: 0;
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #accountRequestModal .arm-close:hover {
+    background: #3b82f6;
+  }
+  #accountRequestModal .modal-body {
+    background: #f8fafc;
+    padding: 18px 18px 10px;
+  }
+  #accountRequestModal .modal-body .form-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 6px;
+  }
+  #accountRequestModal .modal-body .form-control {
+    min-height: 42px;
+    border: 1px solid #d6deeb;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #334155;
+    box-shadow: none;
+  }
+  #accountRequestModal .modal-body .form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+  }
+  #accountRequestModal .modal-footer {
+    border-top: 1px solid #e5ebf4;
+    background: #f8fafc;
+    padding: 12px 18px 16px;
+  }
+  #accountRequestModal .modal-footer .btn-secondary {
+    border: 0;
+    background: #e5e7eb;
+    color: #4b5563;
+    border-radius: 8px;
+    font-weight: 600;
+    min-width: 90px;
+  }
+  #accountRequestModal .modal-footer .request-submit-btn {
+    border: 0;
+    background: linear-gradient(135deg, #76CF1C, #5fa816);
+    color: #0f172a;
+    border-radius: 8px;
+    font-weight: 700;
+    min-width: 140px;
+    box-shadow: 0 4px 10px rgba(118,207,28,0.3);
+  }
+  #accountRequestModal .modal-footer .request-submit-btn:hover {
+    filter: brightness(1.06);
+  }
 </style>
 <section id="main-content">
   <section class="wrapper">
@@ -223,6 +313,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         @csrf
                                         <div class="modal-header">
                                             <h5 class="modal-title" id="accountRequestModalLabel">Send Account Request</h5>
+                                            <button type="button" class="arm-close" onclick="closeRequestModal()" aria-label="Close">
+                                                <i class="fa fa-times"></i>
+                                            </button>
                                         </div>
 
                                         <div class="modal-body">
@@ -246,7 +339,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" onclick="closeRequestModal()">Close</button>
-                                            <button type="submit" class="btn btn-primary">Send Request</button>
+                                            <button type="submit" class="btn btn-primary request-submit-btn">Send Request</button>
                                         </div>
                                     </form>
                                 </div>
@@ -329,9 +422,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             <td>{{ $request->userType ? ucfirst($request->userType) : 'N/A' }}</td>
                                             <td>{{ $request->deviceCategory ?: 'N/A' }}</td>
                                             @php
-                                                $configurations = json_decode($request->configurations, true);
-                                                $deviceIp = $configurations['ip_test']['value'] ?? 'N/A';
-                                                $devicePort = $configurations['port']['value'] ?? 'N/A';
+                                                $configurations = json_decode($request->configurations, true) ?: [];
+                                                $deviceIp = \App\Helper\CommonHelper::emptyToNA($configurations['ip_test']['value'] ?? null);
+                                                $devicePort = \App\Helper\CommonHelper::emptyToNA($configurations['port']['value'] ?? null);
                                             @endphp
                                             <td>{{ $deviceIp }}</td>
                                             <td>{{ $devicePort }}</td>
@@ -470,9 +563,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         <td>{{ $request->userType ? ucfirst($request->userType) : 'N/A' }}</td>
                                         <td>{{ $request->deviceCategory ?: 'N/A' }}</td>
                                         @php
-                                            $configurations = json_decode($request->configurations, true);
-                                            $deviceIp = $configurations['ip_test']['value'] ?? 'N/A';
-                                            $devicePort = $configurations['port']['value'] ?? 'N/A';
+                                            $configurations = json_decode($request->configurations, true) ?: [];
+                                            $deviceIp = \App\Helper\CommonHelper::emptyToNA($configurations['ip_test']['value'] ?? null);
+                                            $devicePort = \App\Helper\CommonHelper::emptyToNA($configurations['port']['value'] ?? null);
                                         @endphp
                                         <td>{{ $deviceIp }}</td>
                                         <td>{{ $devicePort }}</td>

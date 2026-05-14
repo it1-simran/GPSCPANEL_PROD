@@ -224,7 +224,7 @@ class TestPlanExecutionService
 
     protected function handleValidateResponse(TestPlanStep $step, ImeiDevice $device, TestPlanExecution $execution)
     {
-        $protocolId = $step->config['protocol_id'] ?? null;
+        $protocolId = $step->config['protocol_id'] ?? $execution->testPlan->protocol_id ?? null;
         $packetTypeId = $step->config['packet_type_id'] ?? null;
         $rules = $step->config['rules'] ?? [];
 

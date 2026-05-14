@@ -18,6 +18,8 @@
     }
     .adv-table {
         padding: 20px;
+        background: #fff;
+        border-radius: 12px;
     }
     .table thead th {
         background: #f8fafc;
@@ -92,6 +94,11 @@
         vertical-align: middle !important;
         color: #1e293b;
         font-size: 13px;
+        border-top: 1px solid #eef2f7 !important;
+        border-bottom: 1px solid #eef2f7 !important;
+    }
+    .table tbody tr:hover td {
+        background: #f8fbff !important;
     }
     .badge {
         padding: 6px 12px;
@@ -220,9 +227,155 @@
         font-size: 11px;
         margin: 0 2px;
     }
+
+    /* —— Responsive (test plans page) —— */
+    .test-plans-page .bc-card {
+        max-width: 100%;
+        box-sizing: border-box;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+    }
+    /* One row: home + trail; trail scrolls horizontally on narrow screens */
+    .test-plans-page .bc-trail {
+        display: flex;
+        flex-wrap: nowrap;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        gap: 2px;
+        align-items: center;
+        padding: 2px 0;
+    }
+    .test-plans-page .bc-trail::-webkit-scrollbar {
+        height: 4px;
+    }
+    .test-plans-page .bc-trail::-webkit-scrollbar-thumb {
+        background: rgba(118, 207, 28, 0.35);
+        border-radius: 4px;
+    }
+    .test-plans-page .bc-trail li {
+        flex-shrink: 0;
+    }
+    .test-plans-page .bc-home-box {
+        margin-right: 0;
+    }
+
+    .test-plans-page .test-plans-panel-title {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-width: 0;
+    }
+    .test-plans-page .test-plans-panel-title strong {
+        font-size: 14px;
+        font-size: clamp(12px, 3.5vw, 16px);
+        line-height: 1.3;
+        word-break: break-word;
+    }
+    .test-plans-page .test-plans-panel-actions {
+        min-width: 0;
+    }
+    .test-plans-page .test-plans-panel-actions .create-btn {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .test-plans-page .test-plans-adv-table {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .test-plans-page .test-plans-adv-table #test-plans-table_wrapper {
+        overflow-x: auto !important;
+        max-width: 100%;
+    }
+    .test-plans-page .test-plans-adv-table table#test-plans-table {
+        min-width: 720px;
+        width: auto !important;
+    }
+
+    @media (max-width: 767px) {
+        .test-plans-page .breadcrumb-wrap {
+            padding: 8px 0 10px;
+            margin-bottom: 10px;
+        }
+        .test-plans-page .bc-card {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 10px;
+        }
+        .test-plans-page .bc-home-box {
+            width: 28px;
+            height: 28px;
+            margin-right: 0;
+            border-radius: 7px;
+        }
+        .test-plans-page .bc-home-box i {
+            font-size: 12px;
+        }
+        .test-plans-page .bc-trail li a,
+        .test-plans-page .bc-trail li span.bc-label {
+            font-size: 11px;
+            letter-spacing: 0.2px;
+        }
+        .test-plans-page .bc-sep {
+            font-size: 9px;
+            margin: 0 1px;
+        }
+        .test-plans-page .panel-heading .row {
+            margin-left: 0;
+            margin-right: 0;
+        }
+        .test-plans-page .test-plans-panel-actions {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(148, 163, 184, 0.25);
+            text-align: left !important;
+        }
+        .test-plans-page .test-plans-panel-actions .create-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 10px 14px !important;
+            font-size: 12px !important;
+            white-space: normal;
+            text-align: center;
+        }
+        .test-plans-page .adv-table {
+            padding: 12px 10px;
+        }
+        .test-plans-page #test-plans-table_wrapper .dataTables_length,
+        .test-plans-page #test-plans-table_wrapper .dataTables_filter {
+            float: none !important;
+            width: 100%;
+            text-align: left !important;
+            margin-bottom: 10px !important;
+        }
+        .test-plans-page #test-plans-table_wrapper .dataTables_filter label {
+            display: block;
+            width: 100%;
+        }
+        .test-plans-page #test-plans-table_wrapper .dataTables_filter input {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box;
+            margin-left: 0 !important;
+        }
+        .test-plans-page #test-plans-table_wrapper .dataTables_length select {
+            max-width: 100%;
+        }
+    }
 </style>
 
-<section id="main-content">
+<section id="main-content" class="test-plans-page">
     <section class="wrapper">
         <div class="row">
             <div class="col-lg-12">
@@ -254,12 +407,17 @@
                 <section class="panel">
                     <header class="panel-heading">
                         <div class="row">
-                            <div class="col-md-6" style="display: flex; align-items: center;">
-                                <i class="fa fa-list-alt" style="margin-right: 12px; font-size: 20px; color: #76CF1C;"></i>
-                                <strong style="font-size: 16px; letter-spacing: 0.5px;">AUTOMATED TEST PLANS</strong>
+                            <div class="col-xs-12 col-sm-6 test-plans-panel-title">
+                                <i class="fa fa-list-alt" style="font-size: 20px; color: #76CF1C; flex-shrink: 0;"></i>
+                                <strong style="letter-spacing: 0.5px;">AUTOMATED TEST PLANS</strong>
                             </div>
-                            <div class="col-md-6 text-right">
-                                <a href="{{ route('admin.test-plans.create') }}" class="btn create-btn">
+                            <div class="col-xs-12 col-sm-6 text-right test-plans-panel-actions">
+                                @php
+                                    $userType = auth()->check() ? strtolower(trim((string) auth()->user()->user_type)) : '';
+                                    $routePrefix = $userType === 'support' ? 'support' : 'admin';
+                                    $createRoute = $routePrefix . '.test-plans.create';
+                                @endphp
+                                <a href="{{ route($createRoute) }}" class="btn create-btn">
                                     <i class="fa fa-plus-circle" style="margin-right: 5px;"></i> CREATE NEW PLAN
                                 </a>
                             </div>
@@ -272,7 +430,7 @@
                             </div>
                         @endif
 
-                        <div class="adv-table">
+                        <div class="adv-table test-plans-adv-table">
                             <table class="table table-hover" id="test-plans-table" style="width:100%">
                                 <thead>
                                     <tr>
@@ -302,23 +460,58 @@
                                                     Active
                                                 </span>
                                             </td>
-                                            <td>
+                                            <!-- <td>
                                                 <div class="action-flex">
-                                                    <a href="{{ route('admin.test-plans.edit', $plan->id) }}" class="btn-action btn-edit" title="Edit Plan">
+                                                    @php
+                                                        $routePrefix = auth()->user() && auth()->user()->user_type === 'support' ? 'support' : 'admin';
+                                                    @endphp
+                                                    <a href="{{ route($routePrefix . '.test-plans.edit', $plan->id) }}" class="btn-action btn-edit" title="Edit Plan">
                                                         <i class="fa fa-pencil"></i>
                                                     </a>
-                                                    <a href="{{ route('admin.test-validate.index', ['test_plan_id' => $plan->id]) }}" class="btn-action btn-run" title="Run Plan">
+                                                    <a href="{{ route($routePrefix . '.test-validate.index', ['test_plan_id' => $plan->id]) }}" class="btn-action btn-run" title="Run Plan">
                                                         <i class="fa fa-play"></i>
                                                     </a>
                                                     <a href="javascript:void(0)" class="btn-action btn-delete" onclick="if(confirm('Are you sure you want to delete this plan?')) document.getElementById('delete-form-{{ $plan->id }}').submit();" title="Delete Plan">
                                                         <i class="fa fa-trash-o"></i>
                                                     </a>
-                                                    <form id="delete-form-{{ $plan->id }}" action="{{ route('admin.test-plans.destroy', $plan->id) }}" method="POST" style="display: none;">
+                                                    <form id="delete-form-{{ $plan->id }}" action="{{ route($routePrefix . '.test-plans.destroy', $plan->id) }}" method="POST" style="display: none;">
                                                         @csrf
                                                         @method('DELETE')
                                                     </form>
                                                 </div>
-                                            </td>
+                                            </td> -->
+
+                                            <td>
+    <div class="action-flex">
+        @php
+            $userType = auth()->check() ? strtolower(trim(auth()->user()->user_type)) : '';
+
+            $routePrefix = $userType === 'support'
+                ? 'support'
+                : 'admin';
+        @endphp
+
+        <a href="{{ route($routePrefix . '.test-plans.edit', $plan->id) }}" class="btn-action btn-edit" title="Edit Plan">
+            <i class="fa fa-pencil"></i>
+        </a>
+
+        <a href="{{ route($routePrefix . '.test-validate.index', ['test_plan_id' => $plan->id]) }}" class="btn-action btn-run" title="Run Plan">
+            <i class="fa fa-play"></i>
+        </a>
+
+        <a href="javascript:void(0)" class="btn-action btn-delete" onclick="if(confirm('Are you sure you want to delete this plan?')) document.getElementById('delete-form-{{ $plan->id }}').submit();" title="Delete Plan">
+            <i class="fa fa-trash-o"></i>
+        </a>
+
+        <form id="delete-form-{{ $plan->id }}" action="{{ route($routePrefix . '.test-plans.destroy', $plan->id) }}" method="POST" style="display: none;">
+            @csrf
+            @method('DELETE')
+        </form>
+    </div>
+</td>
+
+
+
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -334,74 +527,60 @@
 <script src="{{ asset('assets/vendors/datatable/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('assets/vendors/datatable/bootstrap/dataTables.bootstrap.js') }}"></script>
 <style>
-    /* Premium pagination bar for this page */
-    #test-plans-table_wrapper .dataTables_paginate {
-        display: flex;
-        align-items: center;
-        gap: 4px;
+    /* Datatable footer - same style as view-jig */
+    #test-plans-table_wrapper .row:last-child {
+        display: flex !important; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 8px; margin-top: 12px; padding: 8px 2px;
     }
+    #test-plans-table_wrapper .row:last-child > div {
+        float: none !important; width: auto !important; padding: 0 !important;
+        background: transparent !important; border: none !important; box-shadow: none !important;
+        flex: 0 0 auto;
+    }
+    #test-plans-table_wrapper .row:last-child > div:first-child { flex: 1 1 auto !important; }
+    #test-plans-table_wrapper .row:last-child > div:last-child  { flex: 0 0 auto !important; margin-left: auto; }
+
     #test-plans-table_wrapper .dataTables_info {
-        display: flex;
-        align-items: center;
+        display: flex !important; align-items: center; gap: 6px;
+        color: #64748b; font-size: 13px; font-weight: 500;
+        padding: 6px 0 !important; float: none !important;
+    }
+    #test-plans-table_wrapper .dataTables_info::before {
+        content:'\f0cb'; font-family:FontAwesome; color:#76CF1C; font-size:14px;
+    }
+
+    #test-plans-table_wrapper .dataTables_paginate {
+        display: flex !important; align-items: center; gap: 4px;
+        float: none !important; flex-wrap: wrap;
     }
     #test-plans-table_wrapper .dataTables_paginate .paginate_button {
-        border-radius: 8px !important;
-        min-width: 36px;
-        height: 36px;
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px !important;
-        font-weight: 700 !important;
-        padding: 0 10px !important;
-        border: 1.5px solid #e2e8f0 !important;
-        background: #fff !important;
-        color: #475569 !important;
-        transition: all 0.2s ease !important;
-        line-height: 1 !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+        background: transparent !important; border: none !important;
+        color: #64748b !important; border-radius: 6px !important; padding: 5px 11px !important;
+        font-size: 13px !important; font-weight: 600 !important; cursor: pointer;
+        transition: all 0.2s; box-shadow: none !important;
+        min-width: 32px; text-align: center; line-height: 1.5; display: inline-block;
     }
     #test-plans-table_wrapper .dataTables_paginate .paginate_button:hover {
-        background: #f0fce8 !important;
-        border-color: #76CF1C !important;
-        color: #76CF1C !important;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 8px rgba(118,207,28,0.15) !important;
+        background:#f1f5f9 !important; color:#76CF1C !important;
     }
     #test-plans-table_wrapper .dataTables_paginate .paginate_button.current,
     #test-plans-table_wrapper .dataTables_paginate .paginate_button.current:hover {
-        background: linear-gradient(135deg, #76CF1C 0%, #5cb815 100%) !important;
-        border-color: #76CF1C !important;
-        color: #fff !important;
-        box-shadow: 0 4px 12px rgba(118,207,28,0.4) !important;
-        transform: translateY(-1px);
+        background: #76CF1C !important; border: none !important;
+        color: #1e293b !important; font-weight: 800 !important; border-radius: 6px !important;
     }
-    #test-plans-table_wrapper .dataTables_paginate .paginate_button.disabled,
-    #test-plans-table_wrapper .dataTables_paginate .paginate_button.disabled:hover {
-        background: #f8fafc !important;
-        border-color: #f1f5f9 !important;
-        color: #cbd5e1 !important;
-        transform: none !important;
-        box-shadow: none !important;
-        cursor: not-allowed !important;
+    #test-plans-table_wrapper .dataTables_paginate .paginate_button.disabled {
+        color:#cbd5e1 !important; cursor:not-allowed !important;
     }
-    /* Bottom bar */
-    #test-plans-table_wrapper .row:last-child {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 10px 6px;
-        border-top: 1px solid #f1f5f9;
-        margin-top: 8px;
+    #test-plans-table_wrapper .dataTables_paginate span > span { display: none !important; }
+
+    #test-plans-table_wrapper .dataTables_length,
+    #test-plans-table_wrapper .dataTables_filter {
+        margin-bottom: 10px;
     }
-    #test-plans-table_info {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 6px 14px !important;
-        font-size: 12px !important;
-        color: #64748b !important;
-        font-weight: 600 !important;
+    @media (min-width: 768px) {
+        #test-plans-table_wrapper .dataTables_filter input {
+            min-width: 190px;
+        }
     }
 </style>
 <script>
@@ -418,13 +597,8 @@ $(document).ready(function() {
             search: "",
             searchPlaceholder: "Search plans...",
             lengthMenu: "Show _MENU_ entries",
-            info: "<i class='fa fa-table' style='color:#76CF1C;margin-right:5px;'></i> Showing _START_–_END_ of <strong>_TOTAL_</strong> plans",
-            infoEmpty: "No plans found",
-            zeroRecords: "No matching plans found",
-            paginate: {
-                previous: "<i class='fa fa-chevron-left'></i>",
-                next:     "<i class='fa fa-chevron-right'></i>"
-            }
+            infoEmpty: "No entries to show",
+            zeroRecords: "No matching plans found"
         }
     });
 });

@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DeviceController;
@@ -21,10 +20,14 @@ use App\Exports\EsimExport;
 use App\Exports\EsimMasterExport;
 use App\Exports\FirmwareExport;
 use App\Exports\ModelExport;
+use App\Exports\ImeiListExport;
+use App\Exports\DeviceLogExport;
 use App\Http\Controllers\ImeiController;
+use App\Http\Controllers\DashboardPingStatsController;
 use App\Http\Controllers\JigController;
 use App\Http\Controllers\versionController;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Support\AuthenticatedRedirect;
 
 Route::get('/clear-cache', function () {
     Artisan::call('config:clear');
@@ -36,19 +39,7 @@ Route::get('/clear-cache', function () {
 });
 
 Route::get('/', function () {
-    if (Auth::check()) {
-        switch (strtolower(Auth::user()->user_type)) {
-            case 'admin':
-                return redirect('/admin');
-            case 'user':
-                return redirect('/user');
-            case 'reseller':
-                return redirect('/reseller');
-            default:
-                return redirect('/');
-        }
-    }
-    return view('welcome');
+    return AuthenticatedRedirect::redirectIfAuthenticated() ?? view('welcome');
 });
 
 // Auth Routes
@@ -99,6 +90,8 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
             'update' => 'admin.test-plans.update',
             'destroy' => 'admin.test-plans.destroy',
         ]);
+        Route::get('/admin/packet-analyzer', [\App\Http\Controllers\PacketAnalyzerController::class, 'index'])->name('admin.packet-analyzer.index');
+        Route::post('/admin/packet-analyzer/analyze', [\App\Http\Controllers\PacketAnalyzerController::class, 'analyze'])->name('admin.packet-analyzer.analyze');
         Route::get('/admin/test-validate', [\App\Http\Controllers\TestPlanExecutionController::class, 'index'])->name('admin.test-validate.index');
         Route::post('/admin/test-execute', [\App\Http\Controllers\TestPlanExecutionController::class, 'execute'])->name('admin.test-execute');
         Route::get('/admin/test-report/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'report'])->name('admin.test-report');
@@ -112,6 +105,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
         Route::put('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'update'])->name('imei-devices.update');
         Route::delete('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'destroy'])->name('imei-devices.destroy');
         Route::patch('/admin/imei-devices/{imei_device}/toggle-status', [\App\Http\Controllers\ImeiDeviceController::class, 'toggleStatus'])->name('imei-devices.toggle-status');
+        Route::get('/admin/dashboard/ping-stats', DashboardPingStatsController::class)->name('admin.dashboard.ping-stats');
     Route::get('/admin', fn() => view('dashboard'));
 
     // Export Routes
@@ -129,6 +123,9 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
 
     Route::get('/esim-masters-export-excel', fn() => Excel::download(new EsimMasterExport, 'esimMasters.xlsx'))->name('esimMasters.excel');
     Route::get('/esim-masters-export-csv', fn() => Excel::download(new EsimMasterExport, 'esimMasters.csv'))->name('esimMasters.csv');
+
+    Route::get('/imei-list-export-excel', fn() => Excel::download(new ImeiListExport, 'uploaded-imeis.xlsx'))->name('imeiList.excel');
+    Route::get('/imei-list-export-csv', fn() => Excel::download(new ImeiListExport, 'uploaded-imeis.csv'))->name('imeiList.csv');
 
     Route::get('/firmware-export-excel', fn() => Excel::download(new FirmwareExport, 'firmware.xlsx'))->name('firmware.excel');
     Route::get('/firmware-export-csv', fn() => Excel::download(new FirmwareExport, 'firmware.csv'))->name('firmware.csv');
@@ -177,6 +174,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/admin/view-models', [FirmwareController::class, 'viewModals']);
     Route::get('/admin/view-esim-customers', [FirmwareController::class, 'esimCustomer']);
     Route::get('/admin/view-imeis', [ImeiController::class, 'viewImei']);
+    Route::delete('/admin/uploaded-imei/{id}', [ImeiController::class, 'destroy'])->name('imei.uploaded.destroy');
     Route::get('/admin/view-jig', [JigController::class, 'viewJig']);
     Route::post('/admin/submit-jig', [JigController::class, 'create']);
     Route::delete('/admin/delete-jig/{id}', [JigController::class, 'delete']);
@@ -198,7 +196,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::delete('/admin/delete-esim-customer/{id}', [FirmwareController::class, 'deleteEsimCustomer']);
     Route::delete('/admin/delete-backend/{id}', [FirmwareController::class, 'deleteBackend']);
     Route::delete('/admin/delete-firmware/{id}/{response}', [FirmwareController::class, 'deleteFirmware']);
-    Route::delete('/admin/delete-modal/{id}/{reponse}', [FirmwareController::class, 'deletemodal']);
+    Route::delete('/admin/delete-modal/{id}/{response}', [FirmwareController::class, 'deletemodal']);
     Route::get('/admin/view-firmware-models/{id}', [FirmwareController::class, 'viewFirmwareModel']);
 
     /* ======================= Device Management Routes ======================= */
@@ -247,7 +245,8 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/admin/get-data-fields', [DeviceController::class, 'getDataFields'])->name('dataFields.get');
     Route::get('/admin/add-device-category', [DeviceCategoryController::class, 'index'])->name('deviceCategory.add');
     Route::get('/admin/edit-device-category/{id}', [DeviceCategoryController::class, 'update'])->name('deviceCategory.update');
-    Route::get('/admin/View-device-category', [DeviceCategoryController::class, 'show'])->name('deviceCategory.view');
+    Route::permanentRedirect('/admin/View-device-category', '/admin/view-device-category');
+    Route::get('/admin/view-device-category', [DeviceCategoryController::class, 'show'])->name('deviceCategory.view');
     Route::post('/admin/store-device-category', [DeviceCategoryController::class, 'store'])->name('deviceCategory.store');
     Route::post('/admin/update-device-category', [DeviceCategoryController::class, 'updateDeviceCategory'])->name('deviceCategory.updateDeviceCategory');
     Route::post('/admin/update-device-parameter', [DeviceCategoryController::class, 'updateDeviceParameters'])->name('deviceCategory.updateDeviceParameter');
@@ -333,7 +332,8 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::patch('/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations']);
     Route::post('/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations']);
     // Device Category
-    Route::get('/View-device-category', [DeviceCategoryController::class, 'show'])->name('deviceCategory.view');
+    Route::permanentRedirect('View-device-category', '/reseller/view-device-category');
+    Route::get('/view-device-category', [DeviceCategoryController::class, 'show'])->name('reseller.deviceCategory.view');
     Route::post('/get-multiple-categories', [DeviceCategoryController::class, 'getMultipleDeviceCategory']);
     Route::post('/get-template', [DeviceCategoryController::class, 'getTemplateValue']);
     Route::post('/get-device-category', [DeviceCategoryController::class, 'getDeviceCategory']);
@@ -420,8 +420,21 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::get('/tracker/protocols/{protocol}/packet-types', [\App\Http\Controllers\LiveTrackerController::class, 'packetTypes'])->name('support.tracker.protocol.packet-types');
 
     /* ======================= Automated Test Plan Routes (Support) ======================= */
-    Route::get('/test-plans', [\App\Http\Controllers\TestPlanController::class, 'index'])->name('support.test-plans.index');
+    Route::resource('test-plans', \App\Http\Controllers\TestPlanController::class)->names([
+        'index' => 'support.test-plans.index',
+        'create' => 'support.test-plans.create',
+        'store' => 'support.test-plans.store',
+        'edit' => 'support.test-plans.edit',
+        'update' => 'support.test-plans.update',
+        'destroy' => 'support.test-plans.destroy',
+    ]);
+    Route::get('/packet-analyzer', [\App\Http\Controllers\PacketAnalyzerController::class, 'index'])->name('support.packet-analyzer.index');
+    Route::post('/packet-analyzer/analyze', [\App\Http\Controllers\PacketAnalyzerController::class, 'analyze'])->name('support.packet-analyzer.analyze');
     Route::get('/test-validate', [\App\Http\Controllers\TestPlanExecutionController::class, 'index'])->name('support.test-validate.index');
+    Route::post('/test-execute', [\App\Http\Controllers\TestPlanExecutionController::class, 'execute'])->name('support.test-execute');
+    Route::get('/test-report/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'report'])->name('support.test-report');
+    Route::post('/test-stop/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'stop'])->name('support.test-stop');
+    Route::get('/test-stream/{execution}', [\App\Http\Controllers\TestPlanExecutionController::class, 'stream'])->name('support.test-stream');
 
     Route::get('/imei-devices', [\App\Http\Controllers\ImeiDeviceController::class, 'index'])->name('support.imei-devices.index');
     Route::get('/imei-devices/create', [\App\Http\Controllers\ImeiDeviceController::class, 'create'])->name('support.imei-devices.create');

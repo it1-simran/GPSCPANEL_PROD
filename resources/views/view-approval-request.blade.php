@@ -277,6 +277,129 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
   #accountRequestModal .modal-footer .request-submit-btn:hover {
     filter: brightness(1.06);
   }
+
+  /* ========== RESPONSIVE — Tablet ========== */
+  @media (max-width: 991px) {
+    #main-content { padding-top: 62px !important; }
+    #main-content .wrapper { padding: 0 8px !important; }
+
+    .var-breadcrumb {
+      flex-wrap: wrap;
+      border-radius: 14px;
+      padding: 6px 12px 6px 8px;
+    }
+    .var-breadcrumb .bc-item { white-space: normal; }
+
+    .var-title-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .var-title-row h2 { font-size: 14px; }
+    .var-btn-primary { height: 30px; font-size: 12px; padding: 0 12px; }
+
+    .custom-tabs { gap: 5px; }
+    .tab-btn { padding: 4px 10px; font-size: 11px; }
+
+    #approvalRequests_wrapper .dataTables_filter {
+      float: none !important;
+      display: block !important;
+      max-width: 100% !important;
+      text-align: left !important;
+      margin-bottom: 8px !important;
+    }
+    #approvalRequests_wrapper .dataTables_length {
+      display: block !important;
+      margin-bottom: 6px !important;
+    }
+    #approvalRequests_wrapper .dataTables_filter input {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    #approvalRequests_wrapper .dataTables_scroll {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #approvalRequests_wrapper .dataTables_info {
+      float: none !important;
+      max-width: 100% !important;
+      text-align: center !important;
+    }
+    #approvalRequests_wrapper .dataTables_paginate {
+      float: none !important;
+      max-width: 100% !important;
+      text-align: center !important;
+      margin-top: 8px !important;
+    }
+
+    #accountRequestModal .modal-dialog {
+      max-width: calc(100vw - 24px) !important;
+      margin: 40px auto !important;
+    }
+  }
+
+  /* ========== RESPONSIVE — Mobile ========== */
+  @media (max-width: 767px) {
+    #main-content { padding-top: 56px !important; }
+    #main-content .wrapper { padding: 0 4px !important; }
+
+    .var-breadcrumb-wrap { padding: 8px 0 10px !important; }
+    .var-breadcrumb {
+      flex-wrap: wrap;
+      font-size: 11px;
+      padding: 5px 10px 5px 6px;
+      gap: 2px;
+      border-radius: 12px;
+    }
+    .var-breadcrumb .bc-home { width: 24px; height: 24px; margin-right: 6px; }
+    .var-breadcrumb .bc-home i { font-size: 11px; }
+    .var-breadcrumb .bc-item { font-size: 11px; white-space: normal; }
+    .var-breadcrumb .bc-sep { margin: 0 4px; font-size: 10px; }
+
+    .c_title { padding: 12px 14px !important; }
+    .var-title-row h2 { font-size: 13px; }
+    .var-btn-primary { height: 28px; font-size: 11px; padding: 0 10px; border-radius: 6px; }
+
+    .custom-tabs { gap: 4px; padding: 8px 0 4px; }
+    .tab-btn { padding: 4px 10px; font-size: 11px; border-radius: 16px; }
+
+    #approvalRequests thead th { font-size: 10px !important; padding: 6px 8px !important; }
+    #approvalRequests tbody td { font-size: 11px !important; padding: 8px !important; }
+
+    .var-btn-approve, .var-btn-reject, .var-btn-resend, .var-btn-view {
+      padding: 4px 8px; font-size: 10px; gap: 2px;
+    }
+    .var-badge { font-size: 9px; padding: 2px 7px; }
+
+    #approvalRequests_wrapper .dataTables_paginate .pagination > li > a,
+    #approvalRequests_wrapper .dataTables_paginate .pagination > li > span {
+      min-width: 28px !important; height: 28px !important; padding: 0 8px !important; font-size: 11px !important;
+    }
+
+    #accountRequestModal .modal-dialog {
+      max-width: calc(100vw - 20px) !important;
+      margin: 30px auto !important;
+    }
+    #accountRequestModal .modal-body { padding: 16px !important; }
+    #accountRequestModal .modal-footer { padding: 12px 16px !important; }
+    #accountRequestModal .modal-footer .request-submit-btn { width: 100%; min-width: auto; }
+  }
+
+  /* ========== RESPONSIVE — Small phone ========== */
+  @media (max-width: 480px) {
+    #main-content { padding-top: 52px !important; }
+
+    .var-breadcrumb { padding: 4px 8px 4px 5px; }
+    .var-breadcrumb .bc-home { width: 22px; height: 22px; }
+    .var-breadcrumb .bc-item { font-size: 10px; }
+
+    .c_title { padding: 10px 10px !important; }
+    .var-title-row h2 { font-size: 12px; }
+
+    .tab-btn { padding: 3px 8px; font-size: 10px; }
+
+    #approvalRequests thead th { font-size: 9px !important; padding: 5px 6px !important; }
+    #approvalRequests tbody td { font-size: 10px !important; padding: 6px !important; }
+    .var-btn-approve, .var-btn-reject, .var-btn-resend, .var-btn-view { font-size: 9px; padding: 3px 6px; }
+  }
 </style>
 <section id="main-content">
   <section class="wrapper">
@@ -852,6 +975,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         gap: 14px;
         margin-bottom: 18px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        min-width: 0;
     }
     #viewDetailsModal .summary-avatar {
         width: 46px; height: 46px;
@@ -863,16 +987,32 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         color: #76CF1C;
         border: 2px solid #76CF1C;
     }
+    #viewDetailsModal .summary-details {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
     #viewDetailsModal .summary-details h4 {
         margin: 0 0 2px;
         font-weight: 700;
         font-size: 15px;
         color: #1e293b;
+        word-break: break-word;
+        overflow-wrap: anywhere;
     }
     #viewDetailsModal .summary-details p {
         margin: 0;
         font-size: 12px;
         color: #64748b;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+    #viewDetailsModal #view_status_badge_container {
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
     }
 
     /* ── Detail Cards Grid ── */
@@ -1018,6 +1158,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.3;
+        max-width: 100%;
+        box-sizing: border-box;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        display: inline-block;
     }
     .status-approved-p  { background: #dcfce7; color: #16a34a; }
     .status-pending-p   { background: #fef9c3; color: #a16207; }
@@ -1052,7 +1200,52 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         #viewDetailsModal .details-cards-grid { grid-template-columns: 1fr 1fr; }
         #viewDetailsModal .modal-dialog { margin: 10px; max-width: calc(100% - 20px); }
     }
-</style>
+
+    /* Narrow phones: stack status badge on its own row so long labels (e.g. REQUESTMAILSENT) stay inside the card */
+    @media (max-width: 576px) {
+        #viewDetailsModal .user-summary-card {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto auto;
+            align-items: start;
+            column-gap: 12px;
+            row-gap: 10px;
+            padding: 12px 14px;
+        }
+        #viewDetailsModal .summary-avatar {
+            grid-column: 1;
+            grid-row: 1;
+        }
+        #viewDetailsModal .summary-details {
+            grid-column: 2;
+            grid-row: 1;
+            min-width: 0;
+        }
+        #viewDetailsModal #view_status_badge_container {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            justify-content: center;
+            max-width: none;
+        }
+        #viewDetailsModal #view_status_badge_container .status-badge-premium {
+            width: 100%;
+        }
+        #viewDetailsModal .info-modal-body {
+            padding: 14px 12px;
+        }
+        #viewDetailsModal .portal-modal-header {
+            padding: 12px 14px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        #viewDetailsModal .portal-modal-header .modal-title {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+        }
+        #viewDetailsModal .details-cards-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 <script>
     function closeRequestModal() {

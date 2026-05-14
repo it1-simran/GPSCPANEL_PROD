@@ -266,20 +266,152 @@
         box-shadow: 0 0 0 3px rgba(118,207,28,0.1) !important;
     }
     .input-group-addon i { color: #76CF1C; }
+
+    /* ── Create test plan: responsive ── */
+    .test-plan-create-page .step-item-heading {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        box-sizing: border-box;
+    }
+    .test-plan-create-page .step-item-heading > div:first-child {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+    .test-plan-create-page .step-item-heading > div:last-child {
+        flex-shrink: 0;
+        display: flex;
+        gap: 8px;
+    }
+    .test-plan-create-page .step-item-heading strong {
+        word-break: break-word;
+        line-height: 1.25;
+    }
+    .test-plan-create-page .step-form-row {
+        display: flex;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    .test-plan-create-page .step-form-row > [class*="col-"] {
+        float: none;
+    }
+    .test-plan-create-page .step-item.panel {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 767px) {
+        .test-plan-create-page .plan-info-card {
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .test-plan-create-page .section-header {
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .test-plan-create-page .steps-drop-zone {
+            padding: 12px !important;
+            margin-bottom: 20px !important;
+        }
+        .test-plan-create-page section.panel > .panel-body {
+            padding: 16px !important;
+        }
+        .test-plan-create-page section.panel > .panel-heading {
+            padding: 14px 16px !important;
+        }
+        .test-plan-create-page .step-item .step-item-heading {
+            padding: 12px 14px !important;
+            align-items: flex-start;
+        }
+        .test-plan-create-page .step-item .step-item-heading > div:last-child {
+            margin-left: auto;
+        }
+        .test-plan-create-page .step-item .step-item-heading strong {
+            font-size: 11px;
+            letter-spacing: 0.35px;
+        }
+        .test-plan-create-page .step-item .panel-body {
+            padding: 14px 12px !important;
+        }
+        .test-plan-create-page .step-form-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        .test-plan-create-page .step-form-row > [class*="col-"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: 0 0 auto !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        .test-plan-create-page .step-form-row .form-group {
+            margin-bottom: 14px !important;
+        }
+        .test-plan-create-page .rule-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+        }
+        .test-plan-create-page .rule-row .form-control {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: none !important;
+        }
+        .test-plan-create-page .rule-row .remove-rule {
+            align-self: flex-end;
+        }
+        .test-plan-create-page .action-bar {
+            padding: 16px 14px;
+        }
+        .test-plan-create-page .add-step-actions-wrap {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px;
+        }
+        .test-plan-create-page .add-step-actions-wrap .add-step-btn {
+            width: 100% !important;
+            justify-content: center;
+            margin: 0 !important;
+            box-sizing: border-box;
+        }
+        .test-plan-create-page .form-footer {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px;
+            padding-top: 20px;
+        }
+        .test-plan-create-page .form-footer .btn-cancel,
+        .test-plan-create-page .form-footer .btn-save {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+    }
 </style>
 
-<section id="main-content">
+<section id="main-content" class="test-plan-create-page">
     <section class="wrapper">
         <div class="row">
-            <div class="col-md-10 col-md-offset-1">
+            <div class="col-xs-12 col-md-10 col-md-offset-1">
                 <section class="panel" style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: none;">
                     <header class="panel-heading" style="background: #0f172a !important; color: white !important; border-radius: 15px 15px 0 0; padding: 25px !important; border: none;">
                         <i class="fa fa-magic" style="margin-right: 10px; color: #96c93d;"></i> <strong style="font-size: 18px; letter-spacing: 0.5px;">Design Your Automation Workflow</strong>
                     </header>
                     <div class="panel-body" style="padding: 35px;">
-                        <form action="{{ route('admin.test-plans.store') }}" method="POST" class="form-horizontal tasi-form" id="test-plan-form">
+                        @php
+                            $userType = auth()->check() ? strtolower(trim((string) auth()->user()->user_type)) : '';
+                            $routePrefix = $userType === 'support' ? 'support' : 'admin';
+                        @endphp
+                        <form action="{{ route($routePrefix . '.test-plans.store') }}" method="POST" class="form-horizontal tasi-form" id="test-plan-form">
                             @csrf
-
                             {{-- Plan Info Card --}}
                             <div class="plan-info-card">
                                 <div class="section-header" style="margin-bottom: 22px;">
@@ -288,7 +420,7 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-xs-12 col-md-6">
                                         <div class="pf-group">
                                             <label class="pf-label">
                                                 <i class="fa fa-tag"></i> Plan Name
@@ -297,7 +429,22 @@
                                                 placeholder="e.g., Critical Alert Validation" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-xs-12 col-md-6">
+                                        <div class="pf-group">
+                                            <label class="pf-label">
+                                                <i class="fa fa-exchange"></i> Protocol
+                                            </label>
+                                            <select name="protocol_id" id="plan_protocol_id" class="pf-input" required>
+                                                <option value="">Select Protocol...</option>
+                                                @foreach($protocols as $p)
+                                                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xs-12 col-md-12">
                                         <div class="pf-group">
                                             <label class="pf-label">
                                                 <i class="fa fa-align-left"></i> Description
@@ -331,7 +478,7 @@
                             {{-- Add Step Action Bar --}}
                             <div class="action-bar">
                                 <p class="action-bar-title"><i class="fa fa-plus-circle" style="color:#76CF1C; margin-right:5px;"></i> Add Action to Sequence</p>
-                                <div>
+                                <div class="add-step-actions-wrap" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 4px;">
                                     <button type="button" class="add-step-btn add-step" data-type="send_command">
                                         <i class="fa fa-paper-plane"></i> Send Command
                                     </button>
@@ -349,7 +496,7 @@
 
                             {{-- Footer --}}
                             <div class="form-footer">
-                                <a href="{{ route('admin.test-plans.index') }}" class="btn-cancel">
+                                <a href="{{ route($routePrefix . '.test-plans.index') }}" class="btn-cancel" style="margin-top: 10px;">
                                     <i class="fa fa-times"></i> Cancel
                                 </a>
                                 <button type="submit" class="btn-save">
@@ -369,7 +516,7 @@
 <!-- Step Templates -->
 <template id="step-template-send_command">
     <div class="panel panel-default step-item" data-type="send_command" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -382,8 +529,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="send_command">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-4">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-4">
                     <div class="form-group" style="margin: 0;">
                         <label>Command Type</label>
                         <select name="steps[INDEX][config][command_type]" class="form-control" required>
@@ -392,7 +539,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-xs-12 col-md-8">
                     <div class="form-group" style="margin: 0;">
                         <label>Command String</label>
                         <input type="text" name="steps[INDEX][config][command_text]" class="form-control" placeholder="e.g., ENG_STOP_CONFIRM" required>
@@ -405,7 +552,7 @@
 
 <template id="step-template-wait_for_response">
     <div class="panel panel-default step-item" data-type="wait_for_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -418,8 +565,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="wait_for_response">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-4">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-4">
                     <div class="form-group" style="margin: 0;">
                         <label>Timeout Duration</label>
                         <div class="input-group">
@@ -435,7 +582,7 @@
 
 <template id="step-template-validate_response">
     <div class="panel panel-default step-item" data-type="validate_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -448,19 +595,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="validate_response">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-6">
-                    <div class="form-group" style="margin: 0;">
-                        <label>Protocol</label>
-                        <select name="steps[INDEX][config][protocol_id]" class="form-control protocol-select" required>
-                            <option value="">Select Protocol...</option>
-                            @foreach($protocols as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-12">
                     <div class="form-group" style="margin: 0;">
                         <label>Packet Type</label>
                         <select name="steps[INDEX][config][packet_type_id]" class="form-control packet-type-select" required disabled>
@@ -485,7 +621,7 @@
 
 <template id="step-template-alert_evaluation">
     <div class="panel panel-default step-item" data-type="alert_evaluation" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -498,19 +634,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="alert_evaluation">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-6">
-                    <div class="form-group" style="margin: 0;">
-                        <label>Protocol</label>
-                        <select class="form-control protocol-select" required>
-                            <option value="">Select Protocol...</option>
-                            @foreach($protocols as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-12">
                     <div class="form-group" style="margin: 0;">
                         <label>Packet Type</label>
                         <select name="steps[INDEX][config][packet_type_id]" class="form-control packet-type-select" required disabled>
@@ -533,6 +658,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
 $(document).ready(function() {
+    const routePrefix = @json($routePrefix);
     let stepCount = 0;
     const packetFields = {}; // Store fields for each packet type
     const packetAlerts = {}; // Store alerts for each packet type
@@ -566,6 +692,45 @@ $(document).ready(function() {
         });
     });
 
+    let currentPacketTypes = [];
+
+    $('#plan_protocol_id').change(function() {
+        const protocolId = $(this).val();
+        
+        if (!protocolId) {
+            currentPacketTypes = [];
+            $('.packet-type-select').html('<option value="">Select Type...</option>').prop('disabled', true);
+            $('.rules-section, .alerts-section').hide();
+            return;
+        }
+
+        $('.packet-type-select').html('<option value="">Loading...</option>').prop('disabled', true);
+
+        $.get(`/${routePrefix}/tracker/protocols/${protocolId}/packet-types`, function(data) {
+            currentPacketTypes = data.packet_types;
+            let options = '<option value="">Select Type...</option>';
+            data.packet_types.forEach(function(pt) {
+                options += `<option value="${pt.id}">${pt.name}</option>`;
+                packetFields[pt.id] = pt.fields;
+                packetAlerts[pt.id] = pt.alerts;
+            });
+            
+            if (currentPacketTypes.length === 0) {
+                $('.packet-type-select').html('<option value="">No packet types found</option>').prop('disabled', true);
+                $('.rules-section, .alerts-section').show();
+                $('.rules-container, .alerts-container').html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;"><i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> No packet types available for this protocol.</div>');
+            } else {
+                $('.packet-type-select').html(options).prop('disabled', false);
+                $('.rules-container').empty();
+                $('.alerts-container').empty();
+                $('.rules-section, .alerts-section').hide();
+            }
+        }).fail(function() {
+            alert('Error loading packet types. Please try again.');
+            $('.packet-type-select').html('<option value="">Error</option>');
+        });
+    });
+
     $('.add-step').click(function() {
         const type = $(this).data('type');
         const template = $('#step-template-' + type).html();
@@ -574,6 +739,25 @@ $(document).ready(function() {
         const $step = $(html);
         $('#steps-container').append($step);
         $('#empty-steps-msg').hide();
+        
+        if (type === 'validate_response' || type === 'alert_evaluation') {
+            const $packetSelect = $step.find('.packet-type-select');
+            if (!$('#plan_protocol_id').val()) {
+                alert('Please select a Protocol at the top of the form first.');
+                $step.find('.rules-section, .alerts-section').show();
+                $step.find('.rules-container, .alerts-container').html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;"><i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> Please select a Protocol first.</div>');
+            } else if (currentPacketTypes.length > 0) {
+                let options = '<option value="">Select Type...</option>';
+                currentPacketTypes.forEach(function(pt) {
+                    options += `<option value="${pt.id}">${pt.name}</option>`;
+                });
+                $packetSelect.html(options).prop('disabled', false);
+            } else {
+                $packetSelect.html('<option value="">No packet types found</option>').prop('disabled', true);
+                $step.find('.rules-section, .alerts-section').show();
+                $step.find('.rules-container, .alerts-container').html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;"><i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> No packet types available for this protocol.</div>');
+            }
+        }
         
         updateStepIndices();
         stepCount++;
@@ -586,31 +770,6 @@ $(document).ready(function() {
         if ($('.step-item').length === 0) {
             $('#empty-steps-msg').show();
         }
-    });
-
-    $(document).on('change', '.protocol-select', function() {
-        const protocolId = $(this).val();
-        const $panelBody = $(this).closest('.panel-body');
-        const $packetSelect = $panelBody.find('.packet-type-select');
-        const $rulesSection = $panelBody.find('.rules-section');
-        const $alertsSection = $panelBody.find('.alerts-section');
-        
-        if (!protocolId) {
-            $packetSelect.html('<option value="">Select Type...</option>').prop('disabled', true);
-            $rulesSection.hide();
-            $alertsSection.hide();
-            return;
-        }
-
-        $.get(`/admin/tracker/protocols/${protocolId}/packet-types`, function(data) {
-            let options = '<option value="">Select Type...</option>';
-            data.packet_types.forEach(function(pt) {
-                options += `<option value="${pt.id}">${pt.name}</option>`;
-                packetFields[pt.id] = pt.fields;
-                packetAlerts[pt.id] = pt.alerts;
-            });
-            $packetSelect.html(options).prop('disabled', false);
-        });
     });
 
     $(document).on('change', '.packet-type-select', function() {
@@ -690,21 +849,24 @@ $(document).ready(function() {
         
         const alerts = packetAlerts[packetTypeId] || [];
         
+        if (alerts.length === 0) {
+            $container.html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;">' +
+                    '<i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> No active alerts configured for this packet type.' +
+                    '</div>');
+            return;
+        }
+        
         let html = '<div style="margin-bottom: 15px;">' +
             '<div class="checkbox" style="margin:0;"><label style="font-weight:600; color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][evaluate_all]" class="evaluate-all-alerts" checked value="1"> Evaluate all active alerts for this packet</label></div>' +
             '</div>';
             
-        if (alerts.length > 0) {
-            html += '<div class="specific-alerts-container" style="display: none; flex-wrap:wrap; gap:15px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">';
-            alerts.forEach(function(alert) {
-                html += '<div class="checkbox" style="margin:0; width: 100%;">' +
-                    '<label style="color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][alert_ids][]" class="specific-alert-checkbox" value="' + alert.id + '" checked> ' + alert.name + '</label>' +
-                    '</div>';
-            });
-            html += '</div>';
-        } else {
-            html += '<div class="specific-alerts-container" style="display: none; padding-top: 10px; border-top: 1px dashed #e2e8f0;"><p class="small text-muted">No specific alerts available for this packet type.</p></div>';
-        }
+        html += '<div class="specific-alerts-container" style="display: none; flex-wrap:wrap; gap:15px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">';
+        alerts.forEach(function(alert) {
+            html += '<div class="checkbox" style="margin:0; width: 100%;">' +
+                '<label style="color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][alert_ids][]" class="specific-alert-checkbox" value="' + alert.id + '" checked> ' + alert.name + '</label>' +
+                '</div>';
+        });
+        html += '</div>';
         
         $container.html(html);
     }

@@ -1,57 +1,302 @@
 @extends('layouts.apps')
 @section('content')
+@php
+    $routePrefix = $url_type ?? 'admin';
+@endphp
 <style>
-    body {
-        padding: 40px;
-        background-color: #f8f9fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    #main-content.edit-device-category-page .wrapper {
+        padding-top: 8px !important;
     }
 
-    .select-container {
-        max-width: 500px;
-        margin: auto;
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    .edit-device-category-page .edc-breadcrumb-wrap {
+        padding: 4px 0 10px 0;
+        margin: 0;
     }
 
-    .select2-container--default .select2-selection--multiple {
-        border: 1px solid #ced4da;
-        border-radius: 5px;
-        padding: 5px;
-        min-height: 40px;
+    .edit-device-category-page .edc-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        row-gap: 6px;
+        background: #1e293b;
+        border-radius: 50px;
+        padding: 6px 18px 6px 8px;
+        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
     }
 
-    label {
-        font-weight: 600;
+    .edit-device-category-page .edc-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        background: #76CF1C;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        flex-shrink: 0;
+        color: #1e293b;
+        text-decoration: none;
+    }
+
+    .edit-device-category-page .edc-breadcrumb .bc-home i { font-size: 13px; }
+
+    .edit-device-category-page .edc-breadcrumb .bc-item {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .edit-device-category-page .edc-breadcrumb .bc-sep {
+        color: rgba(255, 255, 255, 0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+
+    .edit-device-category-page .edc-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    .edit-device-category-page .edc-breadcrumb a.bc-item:hover { color: #e2e8f0; }
+
+    .edit-device-category-page .c_panel { margin-top: 0 !important; }
+
+    .edit-device-category-page .c_title h2::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .edit-device-category-page .edc-panel-title {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        color: #ffffff !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .edit-device-category-page .edc-panel-title > i { color: #76CF1C; font-size: 14px; }
+
+    .edit-device-category-page .edc-form-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 18px 20px 8px;
+        background: #fff;
+        margin-top: 8px;
+    }
+
+    .edit-device-category-page .edc-section-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 16px 0;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .edit-device-category-page .select2-container--default .select2-selection--multiple {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 4px 6px;
+        min-height: 44px;
+    }
+
+    .edit-device-category-page .select2-container {
+        padding: 0 !important;
+    }
+
+    .edit-device-category-page .edc-dynamic-field {
+        margin-bottom: 0 !important;
+    }
+
+    .edit-device-category-page .edc-dynamic-field-inner {
+        display: grid;
+        grid-template-columns: 118px minmax(120px, 1fr) 94px minmax(180px, 1.15fr) minmax(160px, 0.95fr) 78px 40px;
+        gap: 10px 12px;
+        align-items: center;
+        padding: 10px 12px;
+        border: 1px solid #e7edf5;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fbfdff 0%, #f8fafc 100%);
         margin-bottom: 10px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .edit-device-category-page .edc-dynamic-field-inner:hover {
+        border-color: #d8e2ef;
+        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
     }
 
-    .select2-container {
-        padding: 0px !important;
+    @media (max-width: 1199px) {
+        .edit-device-category-page .edc-dynamic-field-inner {
+            grid-template-columns: 1fr 1fr;
+            grid-auto-flow: dense;
+        }
+        .edit-device-category-page .edc-field-label { grid-column: 1 / -1; }
+        .edit-device-category-page .edc-field-actions { justify-self: end; }
+    }
+
+    @media (max-width: 767px) {
+        .edit-device-category-page .edc-dynamic-field-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+
+    .edit-device-category-page .edc-field-label strong { font-size: 13px; color: #0f172a; }
+
+    .edit-device-category-page .edc-field-id {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    .edit-device-category-page .edc-field-name .form-control:disabled {
+        background: #e2e8f0;
+        color: #334155;
+        font-weight: 600;
+        width: 100%;
+    }
+
+    .edit-device-category-page .edc-field-default-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+        align-self: center;
+    }
+
+    .edit-device-category-page .edc-validation-meta {
+        font-size: 11px;
+        color: #64748b;
+        line-height: 1.45;
+    }
+
+    .edit-device-category-page .edc-validation-meta strong { color: #475569; font-weight: 600; }
+
+    .edit-device-category-page .edc-field-required .edc-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .edit-device-category-page .edc-field-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .edit-device-category-page .edc-field-actions .btn.remove-input {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        padding: 0 !important;
+        line-height: 1 !important;
+        border-radius: 7px;
+        box-sizing: border-box;
+        text-align: center;
+    }
+
+    .edit-device-category-page .edc-field-actions .btn.remove-input i.fa {
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        width: 100%;
+        height: 100%;
+    }
+
+    .edit-device-category-page .edc-field-actions .btn.remove-input i.fa::before {
+        vertical-align: middle;
+        line-height: 1;
+    }
+
+    .edit-device-category-page .edc-save-row {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+        margin-left: 0;
+        margin-right: 0;
+        clear: both;
+    }
+
+    .edit-device-category-page .edc-save-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        width: 100%;
+        float: none;
+    }
+
+    .edit-device-category-page .edc-form-card .form-horizontal .control-label {
+        text-align: right;
+        padding-top: 8px;
+    }
+
+    @media (max-width: 991px) {
+        .edit-device-category-page .edc-form-card .form-horizontal .control-label {
+            text-align: left;
+            padding-top: 0;
+            margin-bottom: 6px;
+        }
+    }
+
+    .edit-device-category-page .edc-dynamic-field-inner {
+        align-items: start;
+    }
+
+    .edit-device-category-page .edc-field-label,
+    .edit-device-category-page .edc-field-name,
+    .edit-device-category-page .edc-field-default-label,
+    .edit-device-category-page .edc-field-default-input,
+    .edit-device-category-page .edc-field-required,
+    .edit-device-category-page .edc-field-actions {
+        align-self: center;
+    }
+
+    .edit-device-category-page .edc-field-meta {
+        align-self: center;
     }
 </style>
-<section id="main-content">
+<section id="main-content" class="edit-device-category-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Device Category</a></li>
-                        <li><a href="/{{$url_type}}/View-device-category">View
-                                Device Categories</a></li>
-                        <li class="active"><a href="#">Edit Device
-                                Category</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="edc-breadcrumb-wrap">
+            <nav class="edc-breadcrumb" aria-label="Breadcrumb">
+                <a href="{{ url($routePrefix) }}" class="bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+                <a href="{{ url($routePrefix) }}" class="bc-item">Home</a>
+                <span class="bc-sep">›</span>
+                <a href="{{ url($routePrefix . '/view-device-category') }}" class="bc-item">Device category</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Edit device category</span>
+            </nav>
         </div>
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <h2>Edit Device Category</h2>
+                        <div class="row bgx-title-container">
+                            <div class="col-xs-12">
+                                <h2 class="edc-panel-title"><i class="fa fa-pencil-square-o"></i> Edit device category</h2>
+                            </div>
+                        </div>
                         <div class="clearfix"></div>
                     </div><!--/.c_title-->
                     <div class="c_content">
@@ -75,14 +320,14 @@
                             </div>
                             @endif
                         </div>
-                        <div class="card bordered-1 ">
+                        <div class="edc-form-card">
                             <form class="validator form-horizontal"
                                 id="editDeviceCategory"
                                 name="editDeviceCategory" method="post"
-                                action="/{{$url_type}}/update-device-category">
+                                action="{{ url($routePrefix . '/update-device-category') }}">
                                 @csrf
-                                <div class='col-lg-12'>
-                                    <h5><b>Device Configurations</b></h5>
+                                <div class="col-lg-12">
+                                    <h5 class="edc-section-title">Device configurations</h5>
                                 </div>
                                 <div class="form-group ">
                                     <label for="curl"
@@ -148,9 +393,9 @@
                                 <div class="form-group">
                                     <label for="deviceName"
                                         class="control-label col-lg-3">Select
-                                        Data Fields <span
+                                        data fields <span
                                             class="require">*</span></label>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-8">
                                         <select id="user-select"
                                             name="user_select[]"
                                             class="form-control"
@@ -165,12 +410,10 @@
                                         value="{{$device_category->id}}" />
                                 </div>
 
-                                <hr>
-
-                                <div class="form-group ">
-                                    <div class="col-lg-offset-3 col-lg-6">
-                                        <button class="btn btn-primary btn-flat"
-                                            type="submit">Save</button>
+                                <div class="form-group edc-save-row">
+                                    <div class="col-xs-12 edc-save-actions">
+                                        <button class="btn btn-success btn-flat" type="submit"><i class="fa fa-save"></i> Save</button>
+                                        <a href="{{ url($routePrefix . '/view-device-category') }}" class="btn btn-default btn-flat" style="margin-top: 10px;" >Cancel</a>
                                     </div>
                                 </div>
                             </form>
@@ -181,7 +424,10 @@
         </div>
     </section>
 </section>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+@stop
+
+@section('scripts')
 <script>
     let selectedOptions = <?php echo json_encode($device_category->inputs);  ?>;
     var selectedIds = selectedOptions.map(item => item?.id);
@@ -189,7 +435,7 @@
     let selectedOrder = [];
     $(document).ready(function() {
         $('#user-select').select2({
-            placeholder: 'Select devices',
+            placeholder: 'Select data fields',
             allowClear: true
         });
 
@@ -235,7 +481,7 @@
                 let validationRule = '';
                 switch (item.inputType) {
                     case 'select':
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p>`;
+                        validationRule = `<div class="edc-validation-meta"><div><strong>Type</strong> · ${item.inputType}</div></div>`;
                         defaultInput = `
                         <select class="form-control" name="default[]" id="defaultValue${item.id}">
                             ${selectOptions.map((opt, i) => `
@@ -247,10 +493,10 @@
                         break;
 
                     case 'multiselect':
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p>`;
+                        validationRule = `<div class="edc-validation-meta"><div><strong>Type</strong> · ${item.inputType}</div></div>`;
 
                         const selectId = `defaultValue${item.id}`;
-                        const selectedValues = validationConfig.selectValues || [];;
+                        const selectedValues = validationConfig.selectValues || [];
                         console.log("validationConfig ==>", validationConfig);
                         defaultInput = `
                         <select class="form-control select2-multiselect" name="default[${index}][]" id="${selectId}" multiple style="width: 100%; height: auto;">
@@ -274,58 +520,55 @@
                             });
                         }, 0);
                         break;
-                    case 'number':
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p><p><b>min:</b> ${validationConfig.numberInput?.min ?? ''} <br><b>max:</b> ${validationConfig.numberInput?.max ?? ''}</p>`;
-                        defaultInput = `<input type="number" class="form-control no-space-allowed"
-                         name="default[]" id="defaultValue${item.id}"
-                         placeholder="Enter Number"
-                         value ="${selectedOptions[index]?.default ? selectedOptions[index]?.default : ''}";
-                         min="${validationConfig.numberInput?.min ?? ''}"
-                         max="${validationConfig.numberInput?.max ?? ''}" />`;
+                    case 'number': {
+                        const nMin = validationConfig.numberInput?.min ?? '';
+                        const nMax = validationConfig.numberInput?.max ?? '';
+                        const rangeTxt = (nMin !== '' || nMax !== '') ? `${nMin} – ${nMax}` : '—';
+                        validationRule = `<div class="edc-validation-meta"><div><strong>Type</strong> · number</div><div><strong>Range</strong> · ${rangeTxt}</div></div>`;
+                        const numDef = selectedOptions[index]?.default != null && selectedOptions[index]?.default !== ''
+                            ? String(selectedOptions[index].default).replace(/"/g, '&quot;')
+                            : '';
+                        defaultInput = `<input type="number" class="form-control no-space-allowed" name="default[]" id="defaultValue${item.id}" placeholder="Enter number" value="${numDef}" min="${nMin}" max="${nMax}" />`;
                         break;
+                    }
 
                     case 'text':
                     case 'IP/URL':
                     case 'text_array':
-                    default:
+                    default: {
                         let addClassTextArray = item.inputType === 'text_array' ? 'text-array-space' : '';
                         let addClassIpUrl = item.inputType === 'IP/URL' ? 'ip-url-space' : '';
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p><p><b>maxlength:</b> ${validationConfig.maxValueInput ?? ''}</p>`;
-                        defaultInput = `<input type="text" class="form-control no-space-allowed ${addClassTextArray} ${addClassIpUrl}"
-                         name="default[]" id="defaultValue${item.id}"
-                         placeholder="Enter Value"
-                         value ="${selectedOptions[index]?.default ? selectedOptions[index]?.default : ''}";
-                         maxlength="${validationConfig.maxValueInput ?? ''}" />`;
+                        const maxL = validationConfig.maxValueInput ?? '';
+                        validationRule = `<div class="edc-validation-meta"><div><strong>Type</strong> · ${item.inputType}</div><div><strong>Max length</strong> · ${maxL !== '' ? maxL : '—'}</div></div>`;
+                        const textDef = selectedOptions[index]?.default != null && selectedOptions[index]?.default !== ''
+                            ? String(selectedOptions[index].default).replace(/"/g, '&quot;')
+                            : '';
+                        defaultInput = `<input type="text" class="form-control no-space-allowed ${addClassTextArray} ${addClassIpUrl}" name="default[]" id="defaultValue${item.id}" placeholder="Enter value" value="${textDef}" maxlength="${maxL}" />`;
                         break;
+                    }
                 }
 
                 const html = `
-              <div class="form-group" id="device-input-${item.id}">
-                <label class="control-label col-lg-3">Field ${index + 1} <span class="require">*</span><p>ID : ${item.id}</p></label>
-                <div class="row d-flex">
-                  <div class="col-lg-3">
-                    <input class="form-control" placeholder="Enter Input Name" type="text" disabled name="name[${item.id}]" value="${item.fieldName}" style="width: fit-content;" required />
-                    <input type="hidden" name="nameParameters[]" id="nameParameters${item.id}" value="${item.fieldName}" />
+              <div class="form-group edc-dynamic-field" id="device-input-${item.id}">
+                <div class="edc-dynamic-field-inner">
+                  <div class="edc-field-label">
+                    <strong>Field ${index + 1}</strong> <span class="require">*</span>
+                    <div class="edc-field-id">ID · ${item.id}</div>
+                  </div>
+                  <div class="edc-field-name">
+                    <input class="form-control" type="text" disabled name="name[${item.id}]" value="${String(item.fieldName).replace(/"/g, '&quot;')}" required />
+                    <input type="hidden" name="nameParameters[]" id="nameParameters${item.id}" value="${String(item.fieldName).replace(/"/g, '&quot;')}" />
                     <input type="hidden" name="idParameters[]" id="idParameters${item.id}" value="${item.id}" />
-                
                   </div>
-                  <div class="col-lg-2">
-                    <label class="control-label">Default Value <span class="require">*</span></label>
-                  </div>
-                  <div class="col-lg-3">
-                    ${defaultInput}
-                  </div>
-                  <div class="col-lg-3">
-                    ${validationRule}
-                  </div>
-                  <div class="col-lg-1 d-flex bgx-checkbox-custom">
+                  <div class="edc-field-default-label">Default value <span class="require">*</span></div>
+                  <div class="edc-field-default-input">${defaultInput}</div>
+                  <div class="edc-field-meta">${validationRule}</div>
+                  <div class="edc-field-required">
                     <input type="hidden" name="inputFieldRequired[${index}]" value="off">
-                    <input type="checkbox" name="inputFieldRequired[${index}]" value="on" ${selectedOptions[index]?.requiredFieldInput ? 'checked' : ''}/>
-                </div>
-                  <div class="col-lg-1 bgx-del-button-container">
-                    <button type="button" class="btn btn-danger btn-sm remove-input" data-id="${item.id}">
-                      <img src="/assets/icons/cross.svg" />
-                    </button>
+                    <label class="edc-check"><input type="checkbox" name="inputFieldRequired[${index}]" value="on" ${selectedOptions[index]?.requiredFieldInput ? 'checked' : ''}/> Required</label>
+                  </div>
+                  <div class="edc-field-actions">
+                    <button type="button" class="btn btn-danger btn-sm remove-input" data-id="${item.id}" title="Remove field" style="margin-top: 1px;"><i class="fa fa-trash"></i></button>
                     <input type="hidden" name="inputType[]" value="${item.inputType}" required />
                   </div>
                 </div>
@@ -404,7 +647,7 @@
                 '<input class="form-control onlynumberdecimal col-lg-3" placeholder="Enter Value" type="text" name="selectValues[' + inputCount + '][]" required/>' +
                 '</div>' +
                 '<div class="col-lg-2 bgx-del-button-container">' +
-                '<button type="button" class="btn btn-danger btn-sm remove-option"><img src="/assets/icons/cross.svg" /></button>' +
+                '<button type="button" class="btn btn-danger btn-sm remove-option"><i class="fa fa-times"></i></button>' +
                 '</div>' +
                 '</div>';
             $(this).closest(".form-group").find(".select-options-container").append(optionsHtml);
@@ -560,5 +803,4 @@
         });
     });
 </script>
-
-@stop
+@endsection

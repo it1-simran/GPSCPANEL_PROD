@@ -36,10 +36,8 @@ class EsimMasterExport implements FromCollection,WithHeadings
             'CCID',
             'Customer Name',
             'EsimID',
-            'Configurations Input',
             'Created At',
             'Updated At',
-            // Add more headings as needed
         ];
     }
 

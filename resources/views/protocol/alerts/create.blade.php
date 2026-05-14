@@ -5,20 +5,22 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<section id="main-content">
+@php
+    $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+@endphp
+<section id="main-content" class="protocol-page alert-config-page">
     <section class="wrapper alert-config-container">
-        <div class="top-page-header mb-4">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        @php $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols'; @endphp
-                        <li><a href="{{ route($routePrefix . '.index') }}">Protocols</a></li>
-                        <li><a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}">Packet Types</a></li>
-                        <li><a href="{{ route($routePrefix . '.packet-types.alerts', $packetType->id) }}">Alerts</a></li>
-                        <li class="active"><a href="#">{{ isset($alert) ? 'Edit' : 'Configure New' }} Alert</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="protocol-breadcrumb-wrap">
+            <nav class="protocol-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+                <span class="bc-sep">›</span>
+                <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" class="bc-item">Packet Types</a>
+                <span class="bc-sep">›</span>
+                <a href="{{ route($routePrefix . '.packet-types.alerts', $packetType->id) }}" class="bc-item">Alerts</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">{{ isset($alert) ? 'Edit Alert' : 'Configure New Alert' }}</span>
+            </nav>
         </div>
 
         <div class="alert-master-card animate__animated animate__fadeIn">
@@ -88,12 +90,12 @@
                     <!-- Main Area: Condition Grid -->
                     <div class="col-lg-8 col-xl-9">
                         <div class="config-main-area">
-                            <div class="main-area-header d-flex justify-content-between align-items-center w-100">
-                                <div class="d-flex align-items-center">
-                                    <span class="step-num">02</span>
-                                    <h4 style="padding-right: 10px; padding-top:10px">Rule Conditions</h4>
+                            <div class="rule-conditions-head">
+                                <span class="step-num" aria-hidden="true">02</span>
+                                <div class="rule-conditions-head__body">
+                                    <h4 class="rule-conditions-head__title">Rule Conditions</h4>
+                                    <span id="conditionCount" class="badge-count" role="status">0 Fields Active</span>
                                 </div>
-                                <div id="conditionCount" class="badge-count">0 Fields Active</div>
                             </div>
 
                             <div id="conditionsContainer" class="u-conditions-grid">
@@ -174,10 +176,70 @@
         font-family: 'Inter', sans-serif;
     }
 
+    /* Match protocol pages: tight top, pill breadcrumb above card */
+    .alert-config-page .wrapper.alert-config-container {
+        padding-top: 8px !important;
+    }
+
     .alert-config-container {
-        padding: 30px 40px;
+        padding: 0 24px 28px;
         max-width: 1400px;
         margin: 0 auto;
+    }
+
+    .alert-config-page .protocol-breadcrumb-wrap {
+        padding: 4px 0 14px 0 !important;
+        margin: 0 !important;
+    }
+
+    .alert-config-page .protocol-breadcrumb {
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: wrap;
+        row-gap: 6px;
+        background: #1e293b !important;
+        border-radius: 50px !important;
+        padding: 6px 18px 6px 8px !important;
+        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18) !important;
+    }
+
+    .alert-config-page .protocol-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #76CF1C;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+
+    .alert-config-page .protocol-breadcrumb .bc-home i {
+        color: #1e293b;
+        font-size: 13px;
+    }
+
+    .alert-config-page .protocol-breadcrumb .bc-item {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .alert-config-page .protocol-breadcrumb .bc-sep {
+        color: rgba(255, 255, 255, 0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+
+    .alert-config-page .protocol-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    .alert-config-page .protocol-breadcrumb a.bc-item:hover {
+        color: #e2e8f0;
     }
 
     .alert-master-card {
@@ -191,7 +253,7 @@
     /* Header Section */
     .alert-header-section {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        padding: 60px 50px;
+        padding: 28px 32px 36px;
         color: white;
         position: relative;
         overflow: hidden;
@@ -252,7 +314,7 @@
 
     /* Sidebar Area */
     .ultra-premium-form {
-        padding: 40px 50px;
+        padding: 28px 32px 36px;
     }
 
     .config-sidebar-card {
@@ -266,6 +328,11 @@
 
     .custom-layout-row {
         gap: 0;
+    }
+
+    /* Prevent horizontal bleed / double-edge scrollbar in narrow layouts */
+    .alert-config-page .custom-layout-row > [class*="col-"] {
+        min-width: 0;
     }
 
     .sidebar-header {
@@ -344,25 +411,47 @@
         font-size: 0.9rem;
     }
 
-    /* Main Area */
+    /* Main Area — Rule Conditions header (step + title + badge column) */
     .config-main-area {
         padding-left: 20px;
+        min-width: 0;
+        overflow-x: hidden;
     }
 
-    .main-area-header {
+    .rule-conditions-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
         margin-bottom: 30px;
         padding-bottom: 20px;
         border-bottom: 1px solid var(--u-border);
+        width: 100%;
+        box-sizing: border-box;
     }
 
-    .main-area-header h4 {
+    .rule-conditions-head .step-num {
+        flex-shrink: 0;
+        align-self: flex-start;
+        margin-top: 2px;
+    }
+
+    .rule-conditions-head__body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .rule-conditions-head__title {
         font-family: 'Plus Jakarta Sans', sans-serif;
         font-weight: 700;
         font-size: 1.3rem;
         margin: 0;
+        padding: 0;
         color: var(--u-text);
-        margin-left: 15px;
-        line-height: 1;
+        line-height: 1.25;
     }
 
     .badge-count {
@@ -372,8 +461,10 @@
         border-radius: 100px;
         font-size: 0.9rem;
         font-weight: 700;
-        display: flex;
+        display: inline-flex;
         align-items: center;
+        white-space: nowrap;
+        max-width: 100%;
     }
 
     /* Conditions Grid */
@@ -381,6 +472,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 20px;
+        min-width: 0;
     }
 
     .u-condition-card {
@@ -618,6 +710,224 @@
     .info-item i {
         color: var(--u-primary);
         font-size: 14px;
+    }
+
+    /* ---- Tablet: stacked columns, drop sidebar sticky ---- */
+    @media (max-width: 991px) {
+        .alert-config-container {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+        }
+
+        .config-sidebar-card {
+            position: static !important;
+        }
+
+        .config-main-area {
+            padding-left: 0 !important;
+            margin-top: 20px;
+        }
+
+        .ultra-premium-form {
+            padding: 22px 18px 30px !important;
+        }
+
+        .alert-header-section {
+            padding: 24px 22px 30px !important;
+        }
+
+        .header-content h1 {
+            font-size: 1.85rem !important;
+        }
+
+        .u-conditions-grid {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+    }
+
+    /* ---- Phone: full-width breadcrumb bar, tighter chrome, single-column grid ---- */
+    @media (max-width: 767px) {
+        .alert-config-page > section.wrapper.alert-config-container {
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+            box-sizing: border-box !important;
+        }
+
+        .alert-config-container {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            padding-bottom: 18px !important;
+            max-width: none !important;
+        }
+
+        .alert-config-page .protocol-breadcrumb-wrap {
+            width: calc(100% + 16px) !important;
+            max-width: none !important;
+            margin-left: -8px !important;
+            margin-right: -8px !important;
+            padding-top: 2px !important;
+            padding-bottom: 10px !important;
+        }
+
+        .alert-config-page .protocol-breadcrumb {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: flex-start !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            border-radius: 0 !important;
+            padding: 12px 14px !important;
+            row-gap: 10px !important;
+            column-gap: 6px !important;
+        }
+
+        .alert-config-page .protocol-breadcrumb .bc-home {
+            flex-shrink: 0 !important;
+        }
+
+        .alert-config-page .protocol-breadcrumb .bc-item,
+        .alert-config-page .protocol-breadcrumb .bc-sep {
+            font-size: 12px !important;
+        }
+
+        .alert-config-page .protocol-breadcrumb .bc-item.active {
+            flex: 1 1 100% !important;
+            padding-top: 8px !important;
+            margin-top: 2px !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+            line-height: 1.35 !important;
+        }
+
+        .alert-master-card {
+            border-radius: 14px !important;
+        }
+
+        .header-illustration {
+            display: none !important;
+        }
+
+        .glow-sphere {
+            display: none !important;
+        }
+
+        .alert-header-section {
+            padding: 16px 14px 20px !important;
+        }
+
+        .alert-badge {
+            font-size: 0.65rem !important;
+            padding: 5px 12px !important;
+            margin-bottom: 14px !important;
+        }
+
+        .header-content h1 {
+            font-size: 1.4rem !important;
+            line-height: 1.2 !important;
+            margin-bottom: 10px !important;
+        }
+
+        .header-content p {
+            font-size: 0.9rem !important;
+            line-height: 1.45 !important;
+            max-width: none !important;
+        }
+
+        .ultra-premium-form {
+            padding: 14px 12px 20px !important;
+        }
+
+        .config-sidebar-card {
+            padding: 16px 14px !important;
+            border-radius: 14px !important;
+        }
+
+        .sidebar-header {
+            margin-bottom: 20px !important;
+        }
+
+        .config-main-area {
+            margin-top: 16px !important;
+            padding-left: 0 !important;
+        }
+
+        .rule-conditions-head {
+            gap: 12px !important;
+            margin-bottom: 20px !important;
+            padding-bottom: 16px !important;
+        }
+
+        .rule-conditions-head__title {
+            font-size: 1.1rem !important;
+        }
+
+        .rule-conditions-head__body {
+            gap: 8px !important;
+        }
+
+        .badge-count {
+            font-size: 0.8rem !important;
+            padding: 6px 14px !important;
+        }
+
+        .u-conditions-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+        }
+
+        .u-condition-card {
+            padding: 14px !important;
+            border-radius: 14px !important;
+        }
+
+        .u-condition-card:hover {
+            transform: none !important;
+        }
+
+        .condition-inputs {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+        }
+
+        .u-condition-card .c-arrow {
+            display: none !important;
+        }
+
+        .u-empty-state {
+            padding: 36px 14px !important;
+            border-radius: 16px !important;
+        }
+
+        .u-empty-state .empty-icon img {
+            width: 64px !important;
+            height: auto !important;
+        }
+
+        .u-form-footer {
+            flex-direction: column-reverse !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            padding-top: 24px !important;
+        }
+
+        .u-form-footer .btn-u-primary,
+        .u-form-footer .btn-u-secondary {
+            width: 100% !important;
+            justify-content: center !important;
+            height: 50px !important;
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+        }
+
+        .config-sidebar-info {
+            margin-top: 16px !important;
+        }
+
+        .alert-config-page .select2-container {
+            max-width: 100% !important;
+        }
     }
 </style>
 

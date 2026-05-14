@@ -10,7 +10,7 @@
         border: none;
         border-radius: 12px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
-        overflow: hidden;
+        overflow: visible;
         transition: all 0.3s ease;
     }
 
@@ -135,7 +135,10 @@
         border-radius: 10px;
         background: #fff;
         padding: 0 20px 20px;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
     }
 
     .protocol-table {
@@ -507,5 +510,118 @@
     }
     .protocol-table th.text-center, .protocol-table td.text-center {
         text-align: center !important;
+    }
+
+    /* Beat global .c_panel { overflow: hidden } so table can scroll horizontally */
+    .protocol-page .c_panel.protocol-panel {
+        overflow: visible !important;
+    }
+
+    @media (max-width: 767px) {
+        .protocol-page .c_panel .c_title {
+            padding: 12px 14px 14px !important;
+        }
+        .protocol-page .c_panel .c_title h2 {
+            font-size: 14px !important;
+            line-height: 1.3 !important;
+        }
+        .protocol-page .c_panel .c_title .protocol-page-title-row {
+            gap: 10px !important;
+            margin: 0 !important;
+        }
+        .protocol-page .c_panel .c_title .protocol-page-title-col {
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        .protocol-page .c_panel .c_title .protocol-page-actions-col {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 4px !important;
+        }
+        .protocol-page .c_panel .c_title .protocol-add-btn,
+        .protocol-page .c_panel .c_title .bgx-title-container .protocol-add-btn {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: 44px !important;
+            padding: 10px 16px !important;
+            box-sizing: border-box !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .protocol-page .c_content {
+            padding: 16px 12px 18px !important;
+        }
+        .protocol-stats-row {
+            padding: 0 4px;
+            margin-bottom: 14px;
+        }
+        .protocol-stats-row > [class*="col-"] {
+            margin-bottom: 10px;
+        }
+        .protocol-stat-card {
+            padding: 12px 14px;
+            min-height: 0;
+        }
+        .protocol-stat-card h3 {
+            font-size: 20px;
+        }
+        .protocol-table-wrap {
+            padding: 0 6px 14px !important;
+        }
+        .protocol-page .dataTables_wrapper {
+            overflow-x: auto !important;
+            max-width: 100%;
+            margin-top: 10px;
+        }
+        .protocol-page #protocol_table {
+            min-width: 720px !important;
+            width: auto !important;
+        }
+        .protocol-page .dataTables_wrapper .dataTables_length,
+        .protocol-page .dataTables_wrapper .dataTables_filter {
+            float: none !important;
+            width: 100% !important;
+            text-align: left !important;
+            margin-bottom: 10px !important;
+        }
+        .protocol-page .dataTables_wrapper .dataTables_filter label {
+            display: block;
+            width: 100%;
+        }
+        .protocol-page .dataTables_wrapper .dataTables_filter input {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
+            margin-top: 8px;
+            box-sizing: border-box;
+        }
+        .protocol-page .dataTables_wrapper .dataTables_filter input:focus {
+            width: 100% !important;
+        }
+        .protocol-page .dataTables_wrapper .dataTables_info {
+            float: none !important;
+            width: 100%;
+            text-align: center;
+            padding-top: 10px;
+        }
+        .protocol-page .dataTables_wrapper .dataTables_paginate {
+            float: none !important;
+            width: 100%;
+            text-align: center;
+            padding-top: 8px;
+        }
+        .protocol-page .dataTables_wrapper .dataTables_paginate ul.pagination {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .protocol-name-cell {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .protocol-actions {
+            flex-wrap: wrap;
+            gap: 6px;
+        }
     }
 </style>

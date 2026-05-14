@@ -91,23 +91,140 @@
         background: #edf2f7;
         border-color: #cbd5e0;
     }
+
+    /* —— Edit test plan: responsive —— */
+    .test-plan-edit-page .step-item-heading {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        box-sizing: border-box;
+    }
+    .test-plan-edit-page .step-item-heading > div:first-child {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+    .test-plan-edit-page .step-item-heading > div:last-child {
+        flex-shrink: 0;
+        display: flex;
+        gap: 8px;
+    }
+    .test-plan-edit-page .step-item-heading strong {
+        word-break: break-word;
+        line-height: 1.25;
+    }
+
+    .test-plan-edit-page .step-form-row {
+        display: flex;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    .test-plan-edit-page .step-item.panel {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 767px) {
+        .test-plan-edit-page #steps-container {
+            padding: 12px !important;
+            margin-bottom: 20px !important;
+        }
+        .test-plan-edit-page .panel > .panel-body {
+            padding: 16px !important;
+        }
+        .test-plan-edit-page .panel > .panel-heading {
+            padding: 14px 16px !important;
+        }
+        .test-plan-edit-page .step-item-heading {
+            align-items: flex-start;
+        }
+        .test-plan-edit-page .step-item .step-item-heading strong {
+            font-size: 11px;
+            letter-spacing: 0.35px;
+        }
+        .test-plan-edit-page .step-item-heading > div:last-child {
+            margin-left: auto;
+        }
+        .test-plan-edit-page .step-form-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        .test-plan-edit-page .step-form-row > [class*="col-"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: 0 0 auto !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        .test-plan-edit-page .step-form-row .form-group {
+            margin-bottom: 14px !important;
+        }
+        .test-plan-edit-page .rule-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+        }
+        .test-plan-edit-page .rule-row .form-control {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: none !important;
+        }
+        .test-plan-edit-page .rule-row .remove-rule {
+            align-self: flex-end;
+        }
+        .test-plan-edit-page .exec-seq-head {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+        }
+        .test-plan-edit-page .add-step-actions {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        .test-plan-edit-page .add-step-actions .add-step {
+            width: 100% !important;
+            margin: 4px 0 !important;
+        }
+        .test-plan-edit-page .form-actions-footer {
+            text-align: center !important;
+        }
+        .test-plan-edit-page .form-actions-footer .btn {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            margin: 8px 0 !important;
+            box-sizing: border-box;
+        }
+        .test-plan-edit-page .top-plan-fields > [class*="col-"] {
+            margin-bottom: 8px;
+        }
+    }
 </style>
 
-<section id="main-content">
+<section id="main-content" class="test-plan-edit-page">
     <section class="wrapper">
         <div class="row">
-            <div class="col-md-10 col-md-offset-1">
+            <div class="col-xs-12 col-md-10 col-md-offset-1">
                 <section class="panel" style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: none;">
                     <header class="panel-heading" style="background: #0f172a !important; color: white !important; border-radius: 15px 15px 0 0; padding: 25px !important; border: none;">
                         <i class="fa fa-edit" style="margin-right: 10px; color: #96c93d;"></i> <strong style="font-size: 18px; letter-spacing: 0.5px;">Modify Test Plan: {{ $testPlan->name }}</strong>
                     </header>
                     <div class="panel-body" style="padding: 35px;">
-                        <form action="{{ route('admin.test-plans.update', $testPlan->id) }}" method="POST" class="form-horizontal tasi-form" id="test-plan-form">
+                        @php
+                            $userType = auth()->check() ? strtolower(trim((string) auth()->user()->user_type)) : '';
+                            $routePrefix = $userType === 'support' ? 'support' : 'admin';
+                        @endphp
+                        <form action="{{ route($routePrefix . '.test-plans.update', $testPlan->id) }}" method="POST" class="form-horizontal tasi-form" id="test-plan-form">
                             @csrf
                             @method('PUT')
                             
-                            <div class="row">
-                                <div class="col-md-6">
+                            <div class="row top-plan-fields">
+                                <div class="col-xs-12 col-md-4">
                                     <div class="form-group" style="margin: 0 0 25px 0;">
                                         <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Plan Name</label>
                                         <div class="input-group">
@@ -116,7 +233,21 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-xs-12 col-md-4">
+                                    <div class="form-group" style="margin: 0 0 25px 0;">
+                                        <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Protocol</label>
+                                        <div class="input-group">
+                                            <span class="input-group-addon"><i class="fa fa-exchange text-primary"></i></span>
+                                            <select name="protocol_id" id="plan_protocol_id" class="form-control" style="border-radius: 0 10px 10px 0;" required>
+                                                <option value="">Select Protocol...</option>
+                                                @foreach($protocols as $p)
+                                                    <option value="{{ $p->id }}" {{ $testPlan->protocol_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-md-4">
                                     <div class="form-group" style="margin: 0 0 25px 0;">
                                         <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Description</label>
                                         <div class="input-group">
@@ -127,7 +258,7 @@
                                 </div>
                             </div>
 
-                            <div style="margin: 40px 0 20px 0; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                            <div class="exec-seq-head" style="margin: 40px 0 20px 0; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
                                 <h4 style="margin: 0; font-weight: 800; color: #4a5568; text-transform: uppercase; font-size: 13px; letter-spacing: 1.5px;">Execution Sequence</h4>
                                 <span class="badge" id="step-count-badge" style="background: #ebf8ff; color: #2b6cb0; padding: 6px 12px; font-weight: 800; border: 1px solid #bee3f8;">{{ $testPlan->steps->count() }} STEPS</span>
                             </div>
@@ -147,7 +278,7 @@
                                         elseif($step->step_type == 'alert_evaluation') { $typeLabel = 'EVALUATE ALERTS'; }
                                     @endphp
                                     <div class="panel panel-default step-item" data-type="{{ $step->step_type }}" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid {{ $borderCol }}; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                                        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+                                        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
                                             <div style="display: flex; align-items: center;">
                                                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                                                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;">{{ $step->sequence }}</span> 
@@ -162,8 +293,8 @@
                                             <input type="hidden" name="steps[{{ $index }}][step_type]" value="{{ $step->step_type }}">
                                             
                                             @if($step->step_type == 'send_command')
-                                                <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-4">
+                                                <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                                                    <div class="col-xs-12 col-md-4">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Command Type</label>
                                                             <select name="steps[{{ $index }}][config][command_type]" class="form-control" required>
@@ -172,7 +303,7 @@
                                                             </select>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-8">
+                                                    <div class="col-xs-12 col-md-8">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Command String</label>
                                                             <input type="text" name="steps[{{ $index }}][config][command_text]" class="form-control" value="{{ $step->config['command_text'] ?? '' }}" required>
@@ -180,8 +311,8 @@
                                                     </div>
                                                 </div>
                                             @elseif($step->step_type == 'wait_for_response')
-                                                <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-4">
+                                                <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                                                    <div class="col-xs-12 col-md-4">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Timeout Duration</label>
                                                             <div class="input-group">
@@ -192,19 +323,8 @@
                                                     </div>
                                                 </div>
                                             @elseif($step->step_type == 'validate_response')
-                                                <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-6">
-                                                        <div class="form-group" style="margin: 0;">
-                                                            <label>Protocol</label>
-                                                            <select name="steps[{{ $index }}][config][protocol_id]" class="form-control protocol-select" required>
-                                                                <option value="">Select Protocol...</option>
-                                                                @foreach($protocols as $p)
-                                                                    <option value="{{ $p->id }}" {{ ($step->config['protocol_id'] ?? '') == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6">
+                                                <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                                                    <div class="col-xs-12 col-md-12">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Packet Type</label>
                                                             <select name="steps[{{ $index }}][config][packet_type_id]" class="form-control packet-type-select" required data-initial-value="{{ $step->config['packet_type_id'] ?? '' }}">
@@ -239,19 +359,8 @@
                                                     </button>
                                                 </div>
                                             @elseif($step->step_type == 'alert_evaluation')
-                                                <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-6">
-                                                        <div class="form-group" style="margin: 0;">
-                                                            <label>Protocol</label>
-                                                            <select class="form-control protocol-select" required>
-                                                                <option value="">Select Protocol...</option>
-                                                                @foreach($protocols as $p)
-                                                                    <option value="{{ $p->id }}" {{ ($step->config['protocol_id'] ?? '') == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6">
+                                                <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                                                    <div class="col-xs-12 col-md-12">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Packet Type</label>
                                                             <select name="steps[{{ $index }}][config][packet_type_id]" class="form-control packet-type-select" required data-initial-value="{{ $step->config['packet_type_id'] ?? '' }}">
@@ -275,10 +384,10 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-xs-12 col-md-12">
                                     <div style="background: #fff; padding: 25px; border-radius: 15px; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
                                         <p style="font-weight: 800; color: #718096; margin-bottom: 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Add Action to Sequence</p>
-                                        <div class="btn-group">
+                                        <div class="btn-group add-step-actions" style="display: flex; flex-wrap: wrap; justify-content: center;">
                                             <button type="button" class="btn btn-info add-step" data-type="send_command" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
                                                 <i class="fa fa-paper-plane" style="margin-right: 5px; color: #96c93d;"></i> Send Command
                                             </button>
@@ -296,8 +405,8 @@
                                 </div>
                             </div>
 
-                            <div style="margin-top: 50px; text-align: right; border-top: 2px solid #edf2f7; padding-top: 30px;">
-                                <a href="{{ route('admin.test-plans.index') }}" class="btn btn-default" style="margin-top:10px; padding: 12px 30px; margin-right: 15px; border-radius: 10px; font-weight: 700;">Cancel</a>
+                            <div class="form-actions-footer" style="margin-top: 50px; text-align: right; border-top: 2px solid #edf2f7; padding-top: 30px;">
+                                <a href="{{ route($routePrefix . '.test-plans.index') }}" class="btn btn-default" style="margin-top:10px; padding: 12px 30px; margin-right: 15px; border-radius: 10px; font-weight: 700;">Cancel</a>
                                 <button type="submit" class="btn btn-primary" style="padding: 12px 45px; border-radius: 10px; font-weight: 700; background: #96c93d !important; color: white !important; border: none; box-shadow: 0 10px 20px rgba(150, 201, 61, 0.2);">
                                     <i class="fa fa-save" style="margin-right: 8px;"></i> Update Test Plan
                                 </button>
@@ -313,7 +422,7 @@
 <!-- Step Templates -->
 <template id="step-template-send_command">
     <div class="panel panel-default step-item" data-type="send_command" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -326,8 +435,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="send_command">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-4">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-4">
                     <div class="form-group" style="margin: 0;">
                         <label>Command Type</label>
                         <select name="steps[INDEX][config][command_type]" class="form-control" required>
@@ -336,7 +445,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-xs-12 col-md-8">
                     <div class="form-group" style="margin: 0;">
                         <label>Command String</label>
                         <input type="text" name="steps[INDEX][config][command_text]" class="form-control" placeholder="e.g., ENG_STOP_CONFIRM" required>
@@ -349,7 +458,7 @@
 
 <template id="step-template-wait_for_response">
     <div class="panel panel-default step-item" data-type="wait_for_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -362,8 +471,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="wait_for_response">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-4">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-4">
                     <div class="form-group" style="margin: 0;">
                         <label>Timeout Duration</label>
                         <div class="input-group">
@@ -379,7 +488,7 @@
 
 <template id="step-template-validate_response">
     <div class="panel panel-default step-item" data-type="validate_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -392,19 +501,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="validate_response">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-6">
-                    <div class="form-group" style="margin: 0;">
-                        <label>Protocol</label>
-                        <select name="steps[INDEX][config][protocol_id]" class="form-control protocol-select" required>
-                            <option value="">Select Protocol...</option>
-                            @foreach($protocols as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-12">
                     <div class="form-group" style="margin: 0;">
                         <label>Packet Type</label>
                         <select name="steps[INDEX][config][packet_type_id]" class="form-control packet-type-select" required disabled>
@@ -429,7 +527,7 @@
 
 <template id="step-template-alert_evaluation">
     <div class="panel panel-default step-item" data-type="alert_evaluation" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -442,19 +540,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="alert_evaluation">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-6">
-                    <div class="form-group" style="margin: 0;">
-                        <label>Protocol</label>
-                        <select class="form-control protocol-select" required>
-                            <option value="">Select Protocol...</option>
-                            @foreach($protocols as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-12">
                     <div class="form-group" style="margin: 0;">
                         <label>Packet Type</label>
                         <select name="steps[INDEX][config][packet_type_id]" class="form-control packet-type-select" required disabled>
@@ -477,6 +564,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
 $(document).ready(function() {
+    const routePrefix = @json($routePrefix);
     let stepCount = {{ $testPlan->steps->count() }};
     const packetFields = {};
     const packetAlerts = {};
@@ -496,6 +584,8 @@ $(document).ready(function() {
         }
     });
 
+    let currentPacketTypes = [];
+
     // Expand / Collapse Step
     $(document).on('click', '.toggle-step', function(e) {
         e.stopPropagation();
@@ -510,12 +600,81 @@ $(document).ready(function() {
         });
     });
 
-    // Initial population for existing steps
-    $('.protocol-select').each(function() {
-        if ($(this).val()) {
-            $(this).trigger('change', [true]); // true = isInitial
+    $('#plan_protocol_id').change(function(e, isInitial) {
+        const protocolId = $(this).val();
+        
+        if (!protocolId) {
+            currentPacketTypes = [];
+            $('.packet-type-select').html('<option value="">Select Type...</option>').prop('disabled', true);
+            $('.rules-section, .alerts-section').hide();
+            return;
         }
+
+        if (!isInitial) {
+            $('.packet-type-select').html('<option value="">Loading...</option>').prop('disabled', true);
+        }
+
+        $.get(`/${routePrefix}/tracker/protocols/${protocolId}/packet-types`, function(data) {
+            currentPacketTypes = data.packet_types;
+            data.packet_types.forEach(function(pt) {
+                packetFields[pt.id] = pt.fields;
+                packetAlerts[pt.id] = pt.alerts;
+            });
+            
+            $('.packet-type-select').each(function() {
+                const $select = $(this);
+                const initialPacketId = isInitial ? $select.data('initial-value') : null;
+                
+                if (currentPacketTypes.length === 0) {
+                    $select.html('<option value="">No packet types found</option>').prop('disabled', true);
+                    const $panelBody = $select.closest('.panel-body');
+                    $panelBody.find('.rules-section, .alerts-section').show();
+                    $panelBody.find('.rules-container, .alerts-container').html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;"><i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> No packet types available for this protocol.</div>');
+                } else {
+                    let options = '<option value="">Select Type...</option>';
+                    data.packet_types.forEach(function(pt) {
+                        const selected = (isInitial && pt.id == initialPacketId) ? 'selected' : '';
+                        options += `<option value="${pt.id}" ${selected}>${pt.name}</option>`;
+                    });
+                    $select.html(options).prop('disabled', false);
+                }
+
+                if (isInitial && initialPacketId && currentPacketTypes.length > 0) {
+                    const $panelBody = $select.closest('.panel-body');
+                    $panelBody.find('.field-select').each(function() {
+                        const initialField = $(this).data('initial-value');
+                        populateFieldSelect($(this), initialPacketId, initialField);
+                    });
+                    
+                    const stepType = $panelBody.closest('.step-item').data('type');
+                    if (stepType === 'validate_response') {
+                        const $rulesContainer = $panelBody.find('.rules-container');
+                        if ($rulesContainer.children().length === 0) {
+                            $panelBody.find('.add-rule-btn').click();
+                        }
+                    } else if (stepType === 'alert_evaluation') {
+                        const stepIdx = $panelBody.closest('.step-item').find('.step-index').text() - 1;
+                        fetchAndRenderAlerts(initialPacketId, $panelBody.find('.alerts-container'), stepIdx, true);
+                    }
+                } else if (!isInitial && currentPacketTypes.length > 0) {
+                    const $panelBody = $select.closest('.panel-body');
+                    $panelBody.find('.rules-container').empty();
+                    $panelBody.find('.alerts-container').empty();
+                    $panelBody.find('.rules-section, .alerts-section').hide();
+                }
+            });
+        }).fail(function() {
+            alert('Error loading packet types. Please try again.');
+            if (!isInitial) {
+                $('.packet-type-select').html('<option value="">Error</option>');
+            }
+        });
     });
+
+    // Initial population for existing steps
+    if ($('#plan_protocol_id').val()) {
+        $('#plan_protocol_id').trigger('change', [true]);
+    }
 
     $('.add-step').click(function() {
         const type = $(this).data('type');
@@ -525,6 +684,25 @@ $(document).ready(function() {
         const $step = $(html);
         $('#steps-container').append($step);
         $('#empty-steps-msg').hide();
+        
+        if (type === 'validate_response' || type === 'alert_evaluation') {
+            const $packetSelect = $step.find('.packet-type-select');
+            if (!$('#plan_protocol_id').val()) {
+                alert('Please select a Protocol at the top of the form first.');
+                $step.find('.rules-section, .alerts-section').show();
+                $step.find('.rules-container, .alerts-container').html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;"><i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> Please select a Protocol first.</div>');
+            } else if (currentPacketTypes.length > 0) {
+                let options = '<option value="">Select Type...</option>';
+                currentPacketTypes.forEach(function(pt) {
+                    options += `<option value="${pt.id}">${pt.name}</option>`;
+                });
+                $packetSelect.html(options).prop('disabled', false);
+            } else {
+                $packetSelect.html('<option value="">No packet types found</option>').prop('disabled', true);
+                $step.find('.rules-section, .alerts-section').show();
+                $step.find('.rules-container, .alerts-container').html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;"><i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> No packet types available for this protocol.</div>');
+            }
+        }
         
         updateStepIndices();
         stepCount++;
@@ -539,43 +717,6 @@ $(document).ready(function() {
         }
     });
 
-    $(document).on('change', '.protocol-select', function(e, isInitial) {
-        const protocolId = $(this).val();
-        const $panelBody = $(this).closest('.panel-body');
-        const $packetSelect = $panelBody.find('.packet-type-select');
-        const initialPacketId = $packetSelect.data('initial-value');
-        
-        if (!protocolId) {
-            $packetSelect.html('<option value="">Select Type...</option>').prop('disabled', true);
-            return;
-        }
-
-        $.get(`/admin/tracker/protocols/${protocolId}/packet-types`, function(data) {
-            let options = '<option value="">Select Type...</option>';
-            data.packet_types.forEach(function(pt) {
-                const selected = (isInitial && pt.id == initialPacketId) ? 'selected' : '';
-                options += `<option value="${pt.id}" ${selected}>${pt.name}</option>`;
-                packetFields[pt.id] = pt.fields;
-                packetAlerts[pt.id] = pt.alerts;
-            });
-            $packetSelect.html(options).prop('disabled', false);
-            
-            if (isInitial && initialPacketId) {
-                // If we have rules, populate the field selects
-                $panelBody.find('.field-select').each(function() {
-                    const initialField = $(this).data('initial-value');
-                    populateFieldSelect($(this), initialPacketId, initialField);
-                });
-                
-                // If alert evaluation, render alerts
-                if ($panelBody.closest('.step-item').data('type') === 'alert_evaluation') {
-                    const stepIdx = $panelBody.closest('.step-item').find('.step-index').text() - 1;
-                    fetchAndRenderAlerts(initialPacketId, $panelBody.find('.alerts-container'), stepIdx, true);
-                }
-            }
-        });
-    });
-
     $(document).on('change', '.packet-type-select', function() {
         const packetTypeId = $(this).val();
         const $panelBody = $(this).closest('.panel-body');
@@ -585,8 +726,9 @@ $(document).ready(function() {
             if (stepType === 'validate_response') {
                 const $rulesSection = $panelBody.find('.rules-section');
                 $rulesSection.show();
-                // We don't empty if it's the first manual change after page load if rules exist? 
-                // Actually, if they change the packet type, rules SHOULD probably be reset or at least field options updated.
+                const stepIdx = $panelBody.find('.add-rule-btn').data('step-index');
+                $(`#rules-container-${stepIdx}`).empty();
+                addRuleRow(stepIdx, packetTypeId);
             } else if (stepType === 'alert_evaluation') {
                 const $alertsSection = $panelBody.find('.alerts-section');
                 $alertsSection.show();
@@ -661,6 +803,13 @@ $(document).ready(function() {
         
         const alerts = packetAlerts[packetTypeId] || [];
         
+        if (alerts.length === 0) {
+            $container.html('<div style="padding: 15px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030;">' +
+                    '<i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i> No active alerts configured for this packet type.' +
+                    '</div>');
+            return;
+        }
+
         // For edit view, we might need to get initial selected values from hidden input or data attributes
         // But since we replace the HTML, let's just default to evaluate_all = true if not isInitial
         let isEvaluateAll = true;
@@ -685,18 +834,14 @@ $(document).ready(function() {
             '<div class="checkbox" style="margin:0;"><label style="font-weight:600; color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][evaluate_all]" class="evaluate-all-alerts" value="1" ' + (isEvaluateAll ? 'checked' : '') + '> Evaluate all active alerts for this packet</label></div>' +
             '</div>';
             
-        if (alerts.length > 0) {
-            html += '<div class="specific-alerts-container" style="display: ' + (isEvaluateAll ? 'none' : 'flex') + '; flex-wrap:wrap; gap:15px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">';
-            alerts.forEach(function(alert) {
-                const isChecked = isEvaluateAll || (!isInitial) || selectedAlerts.includes(alert.id);
-                html += '<div class="checkbox" style="margin:0; width: 100%;">' +
-                    '<label style="color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][alert_ids][]" class="specific-alert-checkbox" value="' + alert.id + '" ' + (isChecked ? 'checked' : '') + '> ' + alert.name + '</label>' +
-                    '</div>';
-            });
-            html += '</div>';
-        } else {
-            html += '<div class="specific-alerts-container" style="display: ' + (isEvaluateAll ? 'none' : 'block') + '; padding-top: 10px; border-top: 1px dashed #e2e8f0;"><p class="small text-muted">No specific alerts available for this packet type.</p></div>';
-        }
+        html += '<div class="specific-alerts-container" style="display: ' + (isEvaluateAll ? 'none' : 'flex') + '; flex-wrap:wrap; gap:15px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">';
+        alerts.forEach(function(alert) {
+            const isChecked = isEvaluateAll || (!isInitial) || selectedAlerts.includes(alert.id);
+            html += '<div class="checkbox" style="margin:0; width: 100%;">' +
+                '<label style="color:#4a5568;"><input type="checkbox" name="steps[' + stepIdx + '][config][alert_ids][]" class="specific-alert-checkbox" value="' + alert.id + '" ' + (isChecked ? 'checked' : '') + '> ' + alert.name + '</label>' +
+                '</div>';
+        });
+        html += '</div>';
         
         $container.html(html);
     }

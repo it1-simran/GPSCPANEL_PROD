@@ -21,6 +21,8 @@ class CheckUserType
         'dealer' => ['dealer', 'user'],
         'user' => ['user'],
         'support' => ['support'],
+        /** Writers use the same app areas as end users; keep explicit so check.role:user passes. */
+        'writer' => ['writer', 'user'],
     ];
 
     public function handle($request, Closure $next, ...$types)

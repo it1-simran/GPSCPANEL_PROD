@@ -16,6 +16,7 @@ use App\Devicelog;
 use DB;
 use Auth;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -1125,10 +1126,18 @@ class DeviceController extends Controller
      */
     public function destroy(Device $device, $id)
     {
-        $device_data = Device::find($id);
-        $device_data->is_deleted = '1';
-        $device_data->delete();
-        return redirect()->back()->with(['error' => $device_data->imei . '-Device deleted Successfully', 'device_category_id' => $device_data->device_category_id]);
+        try {
+            $device_data = Device::find($id);
+            if (!$device_data) {
+                return redirect()->back()->with('error', 'Device not found.');
+            }
+            $device_data->is_deleted = '1';
+            $device_data->delete();
+
+            return redirect()->back()->with(['error' => $device_data->imei . '-Device deleted Successfully', 'device_category_id' => $device_data->device_category_id]);
+        } catch (QueryException $e) {
+            return redirect()->back()->with('error', 'This device cannot be deleted because other records still reference it.');
+        }
     }
     public function deleteAll(Request $request)
     {
@@ -1138,8 +1147,17 @@ class DeviceController extends Controller
     }
     public function userassignAll(Request $request)
     {
+        $idsRaw = (string) ($request->ids ?? '');
+        $devices = array_values(array_filter(array_map('trim', explode(',', $idsRaw)), function ($id) {
+            return $id !== '';
+        }));
+        if (count($devices) === 0) {
+            return response()->json([
+                'success' => '',
+                'error' => 'Please select at least one device.',
+            ], 422);
+        }
         $master_id = Auth::user()->id;
-        $devices = explode(",", $request->ids);
         $user_id = $request->user_id;
         $user_info = DB::table('writers')->select('writers.*')->where(['writers.id' => $user_id])->first();
         $user_device_cateogories = explode(',', $user_info->device_category_id);
@@ -1285,8 +1303,17 @@ class DeviceController extends Controller
     }
     public function userassigtemplateAll(Request $request)
     {
-        $deviceIds = explode(",", $request->ids);
+        $idsRaw = (string) ($request->ids ?? '');
+        $deviceIds = array_values(array_filter(array_map('trim', explode(',', $idsRaw)), function ($id) {
+            return $id !== '';
+        }));
+        if (count($deviceIds) === 0) {
+            return response()->json(['error' => 'Please select at least one device.'], 422);
+        }
         $templateId = $request->temp_id;
+        if ($templateId === null || $templateId === '') {
+            return response()->json(['error' => 'Please select a template.'], 422);
+        }
         $template = Template::find($templateId);
         // dd($template);
 

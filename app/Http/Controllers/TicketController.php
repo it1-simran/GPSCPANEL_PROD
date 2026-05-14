@@ -58,18 +58,24 @@ class TicketController extends Controller
     {
         try {
             $ticket = TicketModel::findOrFail($id);
-            $ticket->status = 'Resolved';   // assuming you have a `status` column
-            $ticket->is_read = 1;           // optional: also mark as read
+            if (isset($ticket->status) && strcasecmp((string) $ticket->status, 'Resolved') === 0) {
+                return json_encode([
+                    'status' => 200,
+                    'message' => 'Ticket was already resolved.',
+                ]);
+            }
+            $ticket->status = 'Resolved';
+            $ticket->is_read = 1;
             $ticket->save();
 
             return json_encode([
                 'status' => 200,
-                'message' => 'Ticket marked as resolved successfully!'
+                'message' => 'Ticket marked as resolved successfully!',
             ]);
         } catch (\Exception $e) {
             return json_encode([
                 'status' => 500,
-                'message' => 'Something went wrong. Please try again.'
+                'message' => 'Something went wrong. Please try again.',
             ]);
         }
     }

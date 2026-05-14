@@ -12,6 +12,7 @@ class TestPlan extends Model
     protected $fillable = [
         'name',
         'description',
+        'protocol_id',
         'is_active',
     ];
 

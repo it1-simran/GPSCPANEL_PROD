@@ -9,6 +9,14 @@ use Illuminate\Http\Request;
 
 class TestPlanController extends Controller
 {
+    private function testPlanIndexRouteName(): string
+    {
+        $userType = auth()->check() ? strtolower(trim((string) auth()->user()->user_type)) : '';
+        $routePrefix = $userType === 'support' ? 'support' : 'admin';
+
+        return $routePrefix . '.test-plans.index';
+    }
+
     public function index()
     {
         $testPlans = TestPlan::withCount('steps')->latest()->get();
@@ -26,6 +34,7 @@ class TestPlanController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'protocol_id' => 'required|exists:protocols,id',
             'steps' => 'required|array|min:1',
             'steps.*.step_type' => 'required|string',
             'steps.*.config' => 'required|array',
@@ -34,6 +43,7 @@ class TestPlanController extends Controller
         $testPlan = TestPlan::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? '',
+            'protocol_id' => $validated['protocol_id'],
         ]);
 
         foreach ($request->input('steps') as $index => $stepData) {
@@ -44,7 +54,7 @@ class TestPlanController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.test-plans.index')->with('success', 'Test Plan created successfully.');
+        return redirect()->route($this->testPlanIndexRouteName())->with('success', 'Test Plan created successfully.');
     }
 
     public function edit(TestPlan $testPlan)
@@ -59,6 +69,7 @@ class TestPlanController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'protocol_id' => 'required|exists:protocols,id',
             'steps' => 'required|array|min:1',
             'steps.*.step_type' => 'required|string',
             'steps.*.config' => 'required|array',
@@ -67,6 +78,7 @@ class TestPlanController extends Controller
         $testPlan->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? '',
+            'protocol_id' => $validated['protocol_id'],
         ]);
 
         $testPlan->steps()->delete();
@@ -79,12 +91,12 @@ class TestPlanController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.test-plans.index')->with('success', 'Test Plan updated successfully.');
+        return redirect()->route($this->testPlanIndexRouteName())->with('success', 'Test Plan updated successfully.');
     }
 
     public function destroy(TestPlan $testPlan)
     {
         $testPlan->delete();
-        return redirect()->route('admin.test-plans.index')->with('success', 'Test Plan deleted successfully.');
+        return redirect()->route($this->testPlanIndexRouteName())->with('success', 'Test Plan deleted successfully.');
     }
 }

@@ -1,17 +1,19 @@
 @extends('layouts.apps')
 @section('content')
-<section id="main-content">
+<section id="main-content" class="protocol-page protocol-fields-page">
   <section class="wrapper">
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-            <li><a href="{{ route('protocols.index') }}">Protocol Management</a></li>
-            <li><a href="{{ route('protocols.packet-types', $packetType->protocol_id) }}">Packet Types</a></li>
-            <li class="active"><a href="#">Interactive Builder ({{ $packetType->name }})</a></li>
-          </ul>
-        </nav>
-      </div>
+    @php
+      $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+    @endphp
+    <div class="protocol-breadcrumb-wrap">
+      <nav class="protocol-breadcrumb">
+        <div class="bc-home"><i class="fa fa-home"></i></div>
+        <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+        <span class="bc-sep">›</span>
+        <a href="{{ route($routePrefix . '.packet-types', $packetType->protocol_id) }}" class="bc-item">Packet Types</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">Fields Builder</span>
+      </nav>
     </div>
 
     <div class="row">
@@ -251,6 +253,58 @@
 </script>
 
 <style>
+  .protocol-fields-page .wrapper {
+    padding-top: 8px !important;
+  }
+
+  .protocol-fields-page .protocol-breadcrumb-wrap {
+    padding: 4px 0 12px 0 !important;
+    margin: 0 !important;
+  }
+
+  .protocol-fields-page .protocol-breadcrumb {
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #1e293b !important;
+    border-radius: 50px !important;
+    padding: 6px 18px 6px 8px !important;
+    box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18) !important;
+  }
+
+  .protocol-fields-page .protocol-breadcrumb .bc-home {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #76CF1C;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+  }
+
+  .protocol-fields-page .protocol-breadcrumb .bc-home i {
+    color: #1e293b;
+    font-size: 13px;
+  }
+
+  .protocol-fields-page .protocol-breadcrumb .bc-item {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .protocol-fields-page .protocol-breadcrumb .bc-sep {
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0 8px;
+    font-size: 12px;
+  }
+
+  .protocol-fields-page .protocol-breadcrumb .bc-item.active {
+    color: #76CF1C;
+    font-weight: 700;
+  }
+
   .drag-handle {
     cursor: move;
   }

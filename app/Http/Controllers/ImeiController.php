@@ -41,4 +41,19 @@ class ImeiController extends Controller
         }
         return redirect()->back()->with('success', 'CSV file imported successfully.');
     }
+
+    /**
+     * Remove an uploaded IMEI row from the `imeis` table (not eSIM customers).
+     */
+    public function destroy($id)
+    {
+        $imei = ImeiModel::find($id);
+        if (!$imei) {
+            return redirect()->back()->with('error', 'IMEI record not found.');
+        }
+        $label = $imei->imei;
+        $imei->delete();
+
+        return redirect()->back()->with('success', 'IMEI ' . $label . ' was deleted successfully.');
+    }
 }

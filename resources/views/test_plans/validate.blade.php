@@ -166,22 +166,111 @@
         .console-body::-webkit-scrollbar-thumb:hover {
             background: #444;
         }
+
+        /* —— Test validate page: responsive —— */
+        .test-validate-page .test-validate-panel-title {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-width: 0;
+        }
+        .test-validate-page .test-validate-panel-title strong {
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            line-height: 1.25;
+            word-break: break-word;
+        }
+        .test-validate-page .test-validate-layout > [class*="col-"] {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 767px) {
+            #main-content.test-validate-page > section.wrapper {
+                padding-left: 6px !important;
+                padding-right: 6px !important;
+            }
+            .test-validate-page .panel-body {
+                padding: 12px 8px !important;
+            }
+            .test-validate-page .panel-heading {
+                padding: 12px 14px !important;
+            }
+            .test-validate-page .test-validate-panel-title strong {
+                font-size: 13px;
+                letter-spacing: 0.35px;
+            }
+            .test-validate-page .control-card {
+                padding: 14px 12px;
+                border-radius: 10px;
+                margin-bottom: 14px;
+            }
+            .test-validate-page .test-validate-console-wrap {
+                margin-top: 0;
+            }
+            .test-validate-page .console-panel {
+                height: 52vh;
+                min-height: 260px;
+                max-height: 520px;
+            }
+            .test-validate-page .console-header {
+                padding: 10px 12px;
+                font-size: 11px;
+                flex-wrap: wrap;
+                gap: 6px;
+                row-gap: 4px;
+            }
+            .test-validate-page .console-body {
+                padding: 12px 10px;
+                font-size: 12px;
+                line-height: 1.55;
+            }
+            .test-validate-page .status-section {
+                margin-top: 16px;
+                padding: 14px 12px;
+            }
+            .test-validate-page .btn-start {
+                height: auto;
+                min-height: 44px;
+                padding-top: 12px;
+                padding-bottom: 12px;
+            }
+            .test-validate-page .exec-status-row {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .test-validate-page > section.wrapper > .row > .col-lg-12 {
+                padding-left: 4px !important;
+                padding-right: 4px !important;
+            }
+            .test-validate-page .log-entry {
+                padding-left: 10px;
+                word-break: break-word;
+            }
+            .test-validate-page .test-validate-empty-hint {
+                margin-top: 36px !important;
+            }
+            .test-validate-page .test-validate-empty-hint p {
+                font-size: 12px !important;
+                letter-spacing: 1px !important;
+                padding: 0 8px;
+            }
     </style>
 
-    <section id="main-content">
+    <section id="main-content" class="test-validate-page">
         <section class="wrapper">
             <div class="row">
                 <div class="col-lg-12">
                     <section class="panel">
                         <header class="panel-heading">
-                            <div style="display: flex; align-items: center;">
-                                <i class="fa fa-terminal" style="margin-right: 12px; font-size: 20px; color: #76CF1C;"></i>
-                                <strong style="font-size: 16px; letter-spacing: 0.5px;">TEST AUTOMATION CONSOLE</strong>
+                            <div class="test-validate-panel-title">
+                                <i class="fa fa-terminal" style="margin-right: 12px; font-size: 20px; color: #76CF1C; flex-shrink: 0;"></i>
+                                <strong>TEST AUTOMATION CONSOLE</strong>
                             </div>
                         </header>
                         <div class="panel-body" style="padding: 30px;">
-                            <div class="row">
-                                <div class="col-md-4">
+                            <div class="row test-validate-layout">
+                                <div class="col-xs-12 col-md-4 test-validate-controls">
                                     <div class="control-card">
                                         <form id="execution-form">
                                             @csrf
@@ -214,7 +303,7 @@
                                         </form>
 
                                         <div id="execution-status" class="status-section" style="display:none;">
-                                            <div
+                                            <div class="exec-status-row"
                                                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                                 <span
                                                     style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">Status</span>
@@ -233,7 +322,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-8">
+                                <div class="col-xs-12 col-md-8 test-validate-console-wrap">
                                     <div class="console-panel">
                                         <div class="console-header">
                                             <span><i class="fa fa-angle-right"></i> EXECUTION_CONSOLE</span>
@@ -241,7 +330,7 @@
                                         </div>
                                         <div class="console-body" id="logs-container">
                                             <div id="logs-list">
-                                                <div style="text-align: center; color: #444; margin-top: 100px;">
+                                                <div class="test-validate-empty-hint" style="text-align: center; color: #444; margin-top: 100px;">
                                                     <i class="fa fa-plug fa-4x"
                                                         style="display: block; margin-bottom: 20px; opacity: 0.1;"></i>
                                                     <p style="letter-spacing: 2px; font-size: 14px; color: #555;">INITIALIZE
@@ -263,6 +352,11 @@
         $(document).ready(function () {
             let eventSource = null;
             let executionId = null;
+            @php
+                $userType = auth()->check() ? strtolower(trim((string) auth()->user()->user_type)) : '';
+                $routePrefix = $userType === 'support' ? 'support' : 'admin';
+            @endphp
+            const routePrefix = '{{ $routePrefix }}';
 
             $('#execution-form').submit(function (e) {
                 e.preventDefault();
@@ -274,7 +368,7 @@
                 $('#status-badge').css({ 'background': '#e0f2fe', 'color': '#0369a1' }).text('RUNNING');
                 $('#log-stats').text('CONNECTING...');
 
-                $.post('{{ route("admin.test-execute") }}', data, function (response) {
+                $.post(`/${routePrefix}/test-execute`, data, function (response) {
                     if (response.success) {
                         executionId = response.execution_id;
                         $('#start-btn').hide();
@@ -289,7 +383,7 @@
 
             $('#stop-btn').click(function () {
                 if (confirm('Are you sure you want to stop the test execution?')) {
-                    $.post(`/admin/test-stop/${executionId}`, { _token: '{{ csrf_token() }}' }, function () {
+                    $.post(`/${routePrefix}/test-stop/${executionId}`, { _token: '{{ csrf_token() }}' }, function () {
                         if (eventSource) eventSource.close();
                         $('#status-badge').css({ 'background': '#fee2e2', 'color': '#991b1b' }).text('STOPPED');
                         $('#stop-btn').hide();
@@ -301,7 +395,7 @@
             function startStreaming(id) {
                 if (eventSource) eventSource.close();
 
-                eventSource = new EventSource(`/admin/test-stream/${id}`);
+                eventSource = new EventSource(`/${routePrefix}/test-stream/${id}`);
                 $('#log-stats').text('STREAMING');
 
                 eventSource.addEventListener('log', function (e) {

@@ -126,10 +126,14 @@ class AlertService
     protected function triggerAlert($alert, $parsedData, ?ImeiLog $log, array $satisfiedConditions)
     {
         $packetName = $alert->packetType->name;
-        $imei = $log ? $log->imei : 'Unknown Device';
+        $imei = 'Unknown Device';
+        if ($log) {
+            $log->loadMissing('device');
+            $imei = $log->device ? $log->device->imei : 'Unknown Device';
+        }
         
         $subject = "Alert Triggered: {$alert->name}";
-        $description = "Packet Alert '{$alert->name}' triggered for packet type '{$packetName}' on device {$imei}.\n\n";
+        $description = "Packet Alert [{$alert->name}] triggered for packet type [{$packetName}] on device [{$imei}].\n\n";
         $description .= "Conditions Satisfied:\n" . implode("\n", $satisfiedConditions);
         $description .= "\n\nRaw Data Context: " . ($log ? $log->raw_packet : 'N/A');
 

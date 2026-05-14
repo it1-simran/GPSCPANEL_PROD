@@ -206,17 +206,17 @@ class CommonHelper
                         if (Auth::user()->user_type == 'Admin') {
                             $html .= '<td>';
                             if (isset($config['is_editable']) && $config['is_editable']['value'] == '1') {
-                                $html .= '<button class="btn btn-success btn-sm">Yes</button>';
+                                $html .= '<button class="btn btn-success btn-sm"><i class="fa fa-check"></i> Yes</button>';
                             } else {
-                                $html .= '<button class="btn btn-danger btn-sm">No</button>';
+                                $html .= '<button class="btn btn-danger btn-sm"><i class="fa fa-times"></i> No</button>';
                             }
                             $html .= '</td>';
-                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/admin/view-device-logs/' . $contact->id . '" style="color:#fff;">Logs</a></button></td>';
+                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/admin/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
                         }
                         if (Auth::user()->user_type == 'Support') {
-                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;">Logs</a></button></td>';
+                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
                         }
-                        $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info">View Configuration</a></td>';
+                        $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info"><i class="fa fa-cog"></i> View Configuration</a></td>';
                         if (Auth::user()->user_type == 'User' && (int)$category->is_certification_enable === 1) {
                             $html .= '<td><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/device/' . $contact->id . '/certificate') . '" class="btn btn-success btn-sm" data-device-id="' . $contact->id . '" data-category-id="' . $category->id . '">Certificate</a></td>';
                         }
@@ -225,7 +225,7 @@ class CommonHelper
                             $html .= '<form action="' . route('device.delete', $contact->id) . '" method="post">';
                             $html .= csrf_field();
                             $html .= method_field('DELETE');
-                            $html .= '<button onClick="javascript:return confirm(\'Are you sure you want to delete this?\');" class="btn btn-danger btn-sm" type="submit">Delete</button>';
+                            $html .= '<button onClick="javascript:return confirm(\'Are you sure you want to delete this?\');" class="btn btn-danger btn-sm" type="submit"><i class="fa fa-trash"></i> Delete</button>';
                             $html .= '</form>';
                             $html .= '</td>';
                         }

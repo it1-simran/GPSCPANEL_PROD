@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="utf-8">
@@ -181,7 +181,152 @@
 
         /* Floating Animation */
         .float-wrap {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 48px 24px 56px;
             animation: float 6s ease-in-out infinite;
+        }
+
+        /* Radar / sonar layer (behind pin + title) */
+        .radar-stage {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: visible;
+        }
+
+        .radar-dots {
+            position: absolute;
+            inset: -8%;
+            background-image: radial-gradient(circle, rgba(118, 207, 28, 0.22) 1px, transparent 1px);
+            background-size: 18px 18px;
+            opacity: 0.35;
+            mask-image: radial-gradient(ellipse 75% 70% at 50% 22%, black 0%, transparent 72%);
+            -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 22%, black 0%, transparent 72%);
+        }
+
+        .radar-static-rings {
+            position: absolute;
+            left: 50%;
+            top: 96px;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 280px;
+        }
+
+        .radar-static-rings span {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(118, 207, 28, 0.18);
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(118, 207, 28, 0.06) inset;
+        }
+
+        .radar-static-rings span:nth-child(1) { width: 72px; height: 72px; }
+        .radar-static-rings span:nth-child(2) { width: 120px; height: 120px; opacity: 0.85; }
+        .radar-static-rings span:nth-child(3) { width: 180px; height: 180px; opacity: 0.65; }
+        .radar-static-rings span:nth-child(4) { width: 248px; height: 248px; opacity: 0.45; }
+
+        .radar-sweep {
+            position: absolute;
+            left: 50%;
+            top: 96px;
+            width: 260px;
+            height: 260px;
+            margin: -130px 0 0 -130px;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg 285deg,
+                rgba(118, 207, 28, 0.45) 300deg,
+                rgba(118, 207, 28, 0.08) 330deg,
+                transparent 360deg
+            );
+            -webkit-mask-image: radial-gradient(circle, transparent 38%, black 40%, black 92%, transparent 94%);
+            mask-image: radial-gradient(circle, transparent 38%, black 40%, black 92%, transparent 94%);
+            opacity: 0.55;
+            animation: radarSweep 5s linear infinite;
+        }
+
+        @keyframes radarSweep {
+            to { transform: rotate(360deg); }
+        }
+
+        .radar-ripples {
+            position: absolute;
+            left: 50%;
+            top: 96px;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+        }
+
+        .radar-ripples span {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 48px;
+            height: 48px;
+            margin: -24px 0 0 -24px;
+            border: 2px solid rgba(118, 207, 28, 0.55);
+            border-radius: 50%;
+            box-shadow: 0 0 16px rgba(118, 207, 28, 0.25);
+            animation: sonarRipple 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+        }
+
+        .radar-ripples span:nth-child(1) { animation-delay: 0s; }
+        .radar-ripples span:nth-child(2) { animation-delay: 0.8s; }
+        .radar-ripples span:nth-child(3) { animation-delay: 1.6s; }
+        .radar-ripples span:nth-child(4) { animation-delay: 2.4s; }
+
+        @keyframes sonarRipple {
+            0% {
+                transform: scale(0.35);
+                opacity: 0.75;
+            }
+            100% {
+                transform: scale(9);
+                opacity: 0;
+            }
+        }
+
+        .radar-perspective {
+            position: absolute;
+            left: 50%;
+            bottom: -20px;
+            width: 420px;
+            height: 140px;
+            transform: translateX(-50%) perspective(280px) rotateX(68deg);
+            transform-origin: 50% 100%;
+            opacity: 0.35;
+        }
+
+        .radar-perspective i {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            width: 1px;
+            height: 200px;
+            margin-left: -0.5px;
+            transform-origin: 50% 100%;
+            background: linear-gradient(to top, rgba(118, 207, 28, 0.5), transparent);
+        }
+
+        .radar-perspective i:nth-child(1) { transform: rotate(-32deg); }
+        .radar-perspective i:nth-child(2) { transform: rotate(0deg); }
+        .radar-perspective i:nth-child(3) { transform: rotate(32deg); }
+
+        .hero-foreground {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         @keyframes float {
@@ -204,56 +349,62 @@
         .dec-1 { top: -100px; left: -100px; }
         .dec-2 { bottom: -100px; right: -100px; }
 
-        /* Car Animation Styles */
-        .car-container {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            height: 0;
-            pointer-events: none;
-            z-index: 20;
-            transform: translateY(-50%);
+        /* Same 3D GPS pin as login (login_new.blade.php) */
+        .pin-icon-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 6px;
         }
 
-        .car {
-            position: absolute;
-            width: 48px;
-            height: 48px;
-            fill: var(--primary);
-            filter: drop-shadow(0 0 15px var(--primary));
+        .welcome-pin-outer {
             opacity: 0;
-            animation: zigzagRun 6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            transform: translateY(-32px);
+            animation: welcomePinEntrance 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s forwards;
         }
 
-        @keyframes zigzagRun {
-            0% { 
-                left: -10%; 
-                top: 0; 
-                transform: rotate(10deg) scale(0.8); 
-                opacity: 0; 
+        @keyframes welcomePinEntrance {
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
-            10% { opacity: 1; }
-            25% { 
-                left: 15%; 
-                top: -80px; 
-                transform: rotate(-20deg) scale(1); 
+        }
+
+        .welcome-pin {
+            width: 72px;
+            height: 96px;
+            filter: drop-shadow(0 0 24px rgba(118, 207, 28, 0.65)) drop-shadow(0 16px 32px rgba(0, 0, 0, 0.45));
+            animation: welcomePinFloat 2.8s ease-in-out infinite;
+        }
+
+        .welcome-pin svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        @keyframes welcomePinFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .radar-sweep,
+            .radar-ripples span,
+            .float-wrap,
+            .welcome-pin {
+                animation: none !important;
             }
-            50% { 
-                left: 30%; 
-                top: 80px; 
-                transform: rotate(20deg) scale(1.1); 
+            .welcome-pin-outer {
+                animation: none !important;
+                opacity: 1 !important;
+                transform: none !important;
             }
-            75% { 
-                left: 45%; 
-                top: -80px; 
-                transform: rotate(-20deg) scale(1); 
+            .radar-sweep {
+                opacity: 0.2;
             }
-            100% { 
-                left: 50%; 
-                top: -110px; 
-                transform: translateX(-50%) rotate(0deg) scale(1.1); 
-                opacity: 1; 
+            .radar-ripples span {
+                opacity: 0 !important;
+                transform: none !important;
             }
         }
     </style>
@@ -261,12 +412,6 @@
 <body>
     <div class="decoration dec-1"></div>
     <div class="decoration dec-2"></div>
-
-    <div class="car-container">
-        <svg class="car" viewBox="0 0 24 24">
-            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
-        </svg>
-    </div>
 
     <div class="full-height">
         <div class="top-right links">
@@ -280,11 +425,46 @@
         <div class="content">
             <div class="float-wrap">
                 <!-- <span class="badge">Next-Gen Fleet Management</span> -->
+                <div class="radar-stage" aria-hidden="true">
+                    <div class="radar-dots"></div>
+                    <div class="radar-perspective">
+                        <i></i><i></i><i></i>
+                    </div>
+                    <div class="radar-static-rings">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="radar-sweep"></div>
+                    <div class="radar-ripples">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                </div>
+                <div class="hero-foreground">
+                <div class="pin-icon-wrap" aria-hidden="true">
+                    <div class="welcome-pin-outer">
+                        <div class="welcome-pin">
+                            <svg viewBox="0 0 48 64" xmlns="http://www.w3.org/2000/svg" fill="none">
+                                <defs>
+                                    <linearGradient id="welcomeGPin" x1="24" y1="4" x2="24" y2="56" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#d9f99d"/>
+                                        <stop offset="0.4" stop-color="#76cf1c"/>
+                                        <stop offset="1" stop-color="#3f6212"/>
+                                    </linearGradient>
+                                </defs>
+                                <path fill="url(#welcomeGPin)" stroke="#14532d" stroke-width="1.2"
+                                    d="M24 4C16.82 4 11 9.82 11 17c0 11.2 13 25.5 13 25.5S37 28.2 37 17C37 9.82 31.18 4 24 4z"/>
+                                <ellipse cx="24" cy="54" rx="9" ry="4" fill="rgba(0,0,0,0.25)"/>
+                                <circle cx="24" cy="17" r="5.5" fill="rgba(255,255,255,0.95)"/>
+                                <circle cx="24" cy="17" r="2.8" fill="#166534"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
                 <h1 class="title">
                     <span class="word">GPS</span>
                     <span class="word">Control</span>
                     <span class="word">Panel</span>
                 </h1>
+                </div>
                 <!-- <p class="subtitle">
                     Precision. Reliability. Control.
                 </p> -->

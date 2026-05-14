@@ -834,14 +834,14 @@ $errors = json_decode($device['errors'], true);
     }
 
     .vdc-main-card .view-device-configuration > .col-lg-5 {
-        width: 35% !important;
-        max-width: 35% !important;
-        flex: 0 0 35% !important;
+        width: 50% !important;
+        max-width: 50% !important;
+        flex: 0 0 50% !important;
     }
     .vdc-main-card .view-device-configuration > .col-lg-7 {
-        width: 65% !important;
-        max-width: 65% !important;
-        flex: 0 0 65% !important;
+        width: 50% !important;
+        max-width: 50% !important;
+        flex: 0 0 50% !important;
         min-width: 0;
     }
     .vdc-main-card .bgx-map-configurations {
@@ -866,11 +866,12 @@ $errors = json_decode($device['errors'], true);
         float: none;
     }
     .vdc-main-card #map {
-        height: 280px !important;
-        min-height: 280px !important;
-        max-height: 280px !important;
         width: 100% !important;
         max-width: 100% !important;
+        aspect-ratio: 1 / 1 !important;
+        height: auto !important;
+        min-height: unset !important;
+        max-height: 480px !important;
         margin-left: auto !important;
         margin-right: auto !important;
         display: block;
@@ -887,9 +888,7 @@ $errors = json_decode($device['errors'], true);
             flex: 0 0 100% !important;
         }
         .vdc-main-card #map {
-            height: 240px !important;
-            min-height: 240px !important;
-            max-height: 240px !important;
+            max-height: 320px !important;
         }
     }
 </style>

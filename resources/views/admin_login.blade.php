@@ -12,7 +12,8 @@
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <link rel="shortcut icon" href="">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
     <title>Thema Admin Boostrap Template</title>
 
     <!-- Start Global plugin css -->

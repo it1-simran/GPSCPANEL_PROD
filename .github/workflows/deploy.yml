@@ -20,9 +20,12 @@ jobs:
             cd /var/www/html/GPSCPANEL_PROD
             git checkout main
             git pull origin main
-            chmod -R 777 storage bootstrap/cache
+            sudo chmod -R 777 storage bootstrap/cache
             export APP_DEBUG=false
             composer install --no-dev --optimize-autoloader
+            php artisan optimize:clear
             php artisan migrate --force
-            php artisan config:clear
-            php artisan cache:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            sudo chmod -R 777 storage bootstrap/cache

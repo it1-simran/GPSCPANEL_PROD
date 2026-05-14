@@ -6,11 +6,126 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
 @section('content')
-<section id="main-content">
+<style>
+  #main-content.view-esim-page .wrapper { padding-top: 8px !important; }
+  #main-content.view-esim-page .top-page-header { margin: 0 0 10px !important; padding: 0 !important; background: transparent !important; }
+  #main-content.view-esim-page .page-breadcrumb { padding: 0 !important; margin: 0 !important; }
+  .view-esim-page .ve-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: #13233d;
+    border-radius: 999px;
+    padding: 8px 18px 8px 8px;
+    box-shadow: 0 5px 14px rgba(15, 23, 42, 0.22);
+  }
+  .view-esim-page .ve-breadcrumb .bc-home {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #76CF1C;
+    color: #0f172a;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .view-esim-page .ve-breadcrumb .bc-item {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .view-esim-page .ve-breadcrumb .bc-sep { color: rgba(255,255,255,.35); font-size: 12px; }
+  .view-esim-page .ve-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
+  .view-esim-page .ve-breadcrumb .bc-item:hover { color: #ffffff; }
+  .view-esim-page .ve-title-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .view-esim-page .ve-title-actions .btn {
+    min-height: 34px;
+    border-radius: 10px !important;
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .view-esim-page .ve-title-actions .btn-dl-excel {
+    background: #76CF1C !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 12px rgba(118, 207, 28, 0.35);
+  }
+  .view-esim-page .ve-title-actions .btn-dl-csv {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #dbe4ef !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  }
+  .view-esim-page .ve-title-actions .btn-add-esim {
+    background: #76CF1C !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 12px rgba(118, 207, 28, 0.35);
+  }
+  .view-esim-page .c_breadcrumbs { display: none !important; }
+  .view-esim-page .c_breadcrumbs ul {
+    margin: 0 !important;
+  }
+  .view-esim-page .ve-actions-inner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .view-esim-page .ve-actions-inner form { margin: 0; display: inline; }
+  .view-esim-page .ve-icon-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    vertical-align: middle;
+  }
+  .view-esim-page .ve-icon-btn-edit {
+    background: #1d283e !important;
+    color: #fff !important;
+  }
+  .view-esim-page .ve-icon-btn-edit:hover { filter: brightness(1.08); color: #fff !important; }
+  .view-esim-page .ve-icon-btn-delete {
+    background: #e25552 !important;
+    color: #fff !important;
+  }
+  .view-esim-page .ve-icon-btn-delete:hover { filter: brightness(1.06); color: #fff !important; }
+</style>
+<section id="main-content" class="view-esim-page">
   <section class="wrapper">
     <!--======== Page Title and Breadcrumbs Start ========-->
     <div class="top-page-header">
       <div class="page-breadcrumb">
+        <nav class="ve-breadcrumb" aria-label="Breadcrumb">
+          <a href="{{ url('admin') }}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
+          <a href="{{ url('admin') }}" class="bc-item">Home</a>
+          <span class="bc-sep">›</span>
+          <a href="#" class="bc-item">Firmware Management</a>
+          <span class="bc-sep">›</span>
+          <span class="bc-item active">View ESIM Masters</span>
+        </nav>
         <nav class="c_breadcrumbs">
           <ul>
             <li><a href="#">Firmware Management</a></li>
@@ -30,10 +145,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 <h2>View ESim</h2>
               </div>
               <div class="col-lg-6 text-right">
-
-                <button type="button" class="btn btn-success" onclick="openModel()">
-                  Add eSIM
-                </button>
+                <div class="ve-title-actions">
+                  @if(Auth::user()->user_type == "Admin")
+                  <a href="{{ route('esim.excel') }}" class="btn btn-dl-excel"><i class="fa fa-file-excel-o"></i>Download Excel</a>
+                  <a href="{{ route('esim.csv') }}" class="btn btn-dl-csv"><i class="fa fa-file-text-o"></i>Download CSV</a>
+                  @endif
+                  <button type="button" class="btn btn-add-esim" onclick="openModel()" style="margin-top: 1px;">
+                    <i class="fa fa-plus"></i>Add eSIM
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -57,12 +177,6 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
               </div>
               @endif
             </div>
-            @if(Auth::user()->user_type == "Admin")
-              <div class="col-lg-12 text-right margin-bottom-10">
-                <a href="{{ route('esim.excel') }}" class="btn btn-success">Download Excel</a>
-                <a href="{{ route('esim.csv') }}" class="btn btn-success">Download CSV</a>
-              </div>
-            @endif
             <table id="esim" class="example table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 14px;">
               <thead>
                 <tr>
@@ -73,8 +187,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   <th>NO of CCID</th>
                   <th style="width: 12px;">Created at</th>
                   <th>Last Edit</th>
-                  <th>Edit</th>
-                  <th>Delete</th>
+                  <th style="min-width: 96px; text-align: center;">Actions</th>
                 </tr>
               </thead>
               <?php
@@ -91,15 +204,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   <td>{{$esim->ccids_count}}</td>
                   <td>{{CommonHelper::getDateAsTimeZone($esim->created_at)}}</td>
                   <td>{{CommonHelper::getDateAsTimeZone($esim->updated_at)}}</td>
-                  <td> <a class="btn btn-primary btn-raised rippler rippler-default" onclick='editEsim(@json($esim))'>Edit
-                    </a></td>
-                  <td>
-                    <form action="/{{$url_type}}/delete-esim/{{$esim->id}}" method="post">
-                      @csrf
-                      @method('DELETE')
-                      <button onClick="javascript:return confirm('Are you sure you want to delete this?');" class="btn btn-danger btn-sm margin-top-1" type="submit">Delete</button>
-
-                    </form>
+                  <td class="text-center">
+                    <div class="ve-actions-inner">
+                      <button type="button" class="btn ve-icon-btn ve-icon-btn-edit" onclick='editEsim(@json($esim))' title="Edit" aria-label="Edit"><i class="fa fa-pencil"></i></button>
+                      <form action="/{{$url_type}}/delete-esim/{{$esim->id}}" method="post" style="display:inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn ve-icon-btn ve-icon-btn-delete" onclick="return confirm('Are you sure you want to delete this?');" title="Delete" aria-label="Delete"><i class="fa fa-trash"></i></button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
                 <?php
@@ -120,26 +233,24 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
 <!-- Modal -->
 
-<div class="modal" id="addESIMModal" aria-hidden="true">
+<div class="modal gp-managed-modal" id="addESIMModal" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-        <h5 class="modal-title" id="addESIMModalLabel">Add eSIM</h5>
-      </div>
       <form id="addESIMForm" onsubmit="return false" method="post">
-        @csrf;
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title" id="addESIMModalLabel"><i class="fa fa-mobile gp-man-modal-title-icon" aria-hidden="true"></i><span id="addESIMModalTitleText">Add eSIM</span></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
         <div class="modal-body">
-          <!-- Form to Add eSIM -->
           <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
           <div class="margin-bottom-10">
-            <label for="esimName" class="form-label">eSIM Make </label>
+            <label for="esimName" class="form-label">eSIM Make</label>
             <input type="text" class="form-control" id="esimName" name="esimName" required>
-
           </div>
           <div class="margin-bottom-10">
             <label for="esimProvider1" class="form-label">Profile 1</label>
-            <select id="esimProvider1" name="esimProvider1" class="form-control" class="esimProvider">
+            <select id="esimProvider1" name="esimProvider1" class="form-control esimProvider">
               <option value="Airtel">Airtel</option>
               <option value="Bsnl">Bsnl</option>
               <option value="Jio">Jio</option>
@@ -148,19 +259,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           </div>
           <div class="margin-bottom-10">
             <label for="esimProvider2" class="form-label">Profile 2</label>
-            <select id="esimProvider2" name="esimProvider2" class="form-control" class="esimProvider">
-              <!-- <option value="Airtel">Airtel</option>
-              <option value="Bsnl">Bsnl</option>
-              <option value="Jio">Jio</option>
-              <option value="VI">VI</option> -->
+            <select id="esimProvider2" name="esimProvider2" class="form-control esimProvider">
             </select>
           </div>
-
+          <input type="hidden" name="esimId" id="esimId" value="" />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal" aria-hidden="true">Close</button>
-          <button type="submit" id="submitESIMBtn" class="btn btn-primary" form="addESIMForm">Submit</button>
-          <input type="hidden" name="esimId" id="esimId" value="" />
+          <button type="button" class="btn gp-modal-btn-close" data-dismiss="modal">Close</button>
+          <button type="submit" id="submitESIMBtn" class="btn gp-modal-btn-submit">Submit</button>
         </div>
       </form>
     </div>
@@ -171,7 +277,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 <script>
   function editEsim(esimData) {
     console.log(esimData);
-    $('#addESIMModalLabel').text("Edit Esim");
+    $('#addESIMModalTitleText').text('Edit eSIM');
     $('#esimId').val(esimData.id);
     $('#esimName').val(esimData.name);
     $('#esimProvider1').val(esimData.profile_1).trigger('change');
@@ -294,7 +400,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
   });
 
   function openModel() {
-    $('#addESIMModalLabel').text("ADD Esim");
+    $('#addESIMModalTitleText').text('Add eSIM');
     $('#esimId').val('');
     $('#esimName').val('');
     $('#esimProvider1').val('Airtel').trigger('change');

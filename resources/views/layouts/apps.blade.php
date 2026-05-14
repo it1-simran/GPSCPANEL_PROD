@@ -65,7 +65,8 @@ if ($userType === 'admin') {
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <meta name="author" content="JSD Electronics">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <link rel="shortcut icon" href="">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
     <title>@yield('title', 'GPS Control Panel')</title>
 
     <!-- Start Global plugin css -->
@@ -88,6 +89,7 @@ if ($userType === 'admin') {
     <link href="{{ asset('assets/vendors/jquery.multi-select/css/multi-select.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/vendors/select2/select2.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/custom.css?nocache=' . time()) }}" rel="stylesheet" />
+    @include('partials.gps-notifications-assets')
 
     <!-- ===== Loader: Hide INSTANTLY in head if NOT a reload (before any paint) ===== -->
     <script>
@@ -133,36 +135,58 @@ if ($userType === 'admin') {
             box-shadow: none !important;
             flex-shrink: 0;
         }
-        header.header .brand .logo {
-            color: #ffffff !important;
-            font-size: 14px !important;
-            font-weight: 800 !important;
-            letter-spacing: 2px !important;
+        /* Beat theme.css `a.logo span { color: #FF6C60 }` — label must stay neutral / white */
+        header.header .brand a.logo,
+        header.header .brand a.logo:link,
+        header.header .brand a.logo:visited,
+        header.header .brand a.logo:hover,
+        header.header .brand a.logo:focus {
+            color: #f8fafc !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.06em !important;
             text-transform: uppercase !important;
             text-decoration: none !important;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
         }
-        /* GPS dot pulse animation */
+        /* Brand GPS pin (replaces generic dot — matches favicon / loader) */
         header.header .brand .logo::before {
-            content: '';
-            display: inline-block;
-            width: 9px;
-            height: 9px;
-            background: #76CF1C;
-            border-radius: 50%;
-            box-shadow: 0 0 0 0 rgba(118,207,28,0.7);
-            animation: navPulse 2s ease-in-out infinite;
-            flex-shrink: 0;
+            content: none !important;
+            display: none !important;
         }
-        @keyframes navPulse {
-            0%   { box-shadow: 0 0 0 0   rgba(118,207,28,0.7); }
-            60%  { box-shadow: 0 0 0 7px rgba(118,207,28,0); }
-            100% { box-shadow: 0 0 0 0   rgba(118,207,28,0); }
+        header.header .brand .logo .brand-gps-mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1px solid rgba(118, 207, 28, 0.35);
+            flex-shrink: 0;
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.06) inset,
+                0 4px 12px rgba(0, 0, 0, 0.2);
+            color: transparent !important;
+        }
+        header.header .brand .logo .brand-gps-mark svg {
+            width: 18px;
+            height: 18px;
+            fill: #76CF1C;
+            display: block;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.35));
+        }
+        header.header .brand .logo .brand-area-label {
+            color: rgba(248, 250, 252, 0.98) !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.1em !important;
+            line-height: 1.2;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
         }
 
-        /* ---- Hamburger toggle ---- */
+        /* ---- Hamburger toggle (subtle frame + brand green icon) ---- */
         header.header .brand .sidebar-toggle-box {
             cursor: pointer;
             width: 36px;
@@ -170,26 +194,25 @@ if ($userType === 'admin') {
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            border: 1px solid rgba(118,207,28,0.5);
-            background: rgba(118,207,28,0.16);
-            box-shadow: inset 0 0 0 1px rgba(118,207,28,0.08);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
             transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
             flex-shrink: 0;
         }
-        /* Keep same boxed look across all interaction states */
         header.header .brand .sidebar-toggle-box.active,
         header.header .brand .sidebar-toggle-box:focus,
         header.header .brand .sidebar-toggle-box:active {
-            border: 1px solid rgba(118,207,28,0.5) !important;
-            background: rgba(118,207,28,0.16) !important;
-            box-shadow: inset 0 0 0 1px rgba(118,207,28,0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            background: rgba(255, 255, 255, 0.07) !important;
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
             outline: none !important;
         }
         header.header .brand .sidebar-toggle-box:hover {
-            background: rgba(118,207,28,0.24);
-            border-color: rgba(118,207,28,0.65);
-            box-shadow: 0 0 0 3px rgba(118,207,28,0.16);
+            background: rgba(118, 207, 28, 0.12);
+            border-color: rgba(118, 207, 28, 0.35);
+            box-shadow: 0 0 0 2px rgba(118, 207, 28, 0.12);
         }
         /* Reset the fa-bars div — prevent white box from theme styles */
         header.header .brand .sidebar-toggle-box .fa-bars {
@@ -279,17 +302,25 @@ if ($userType === 'admin') {
         header.header .top-nav .nav-link .fa-bell {
             font-size: 16px !important;
         }
-        /* Notification badge */
-        header.header .top-nav .badge-danger {
+        /* Notification badge (pill — grows with digit count; not a fixed circle) */
+        header.header .top-nav .nav-link .badge-danger {
             background: #ef4444 !important;
-            font-size: 9px !important;
-            min-width: 16px;
-            height: 16px;
-            line-height: 16px;
-            padding: 0 4px;
-            border-radius: 8px;
-            top: 4px !important;
-            right: 4px !important;
+            color: #fff !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            min-width: 1.125rem;
+            min-height: 18px;
+            height: auto !important;
+            line-height: 1.15;
+            padding: 3px 8px !important;
+            border-radius: 999px !important;
+            top: 2px !important;
+            right: 2px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            white-space: nowrap;
+            box-sizing: border-box;
         }
 
         /* ---- Search box ---- */
@@ -414,6 +445,42 @@ if ($userType === 'admin') {
         }
         .dropdown-usermenu li a:hover i {
             color: #76CF1C !important;
+        }
+
+        /* ================================================================
+           SIDEBAR LOGOUT (Mobile only)
+        ================================================================ */
+        .sidebar-logout-mobile {
+            display: none;
+        }
+        @media (max-width: 991px) {
+            .sidebar-logout-mobile {
+                display: block !important;
+                margin-top: 8px !important;
+                border-top: 1px solid rgba(255,255,255,0.08) !important;
+                padding-top: 8px !important;
+            }
+            .sidebar-logout-mobile > a {
+                display: flex !important;
+                align-items: center !important;
+                gap: 10px !important;
+                padding: 10px 18px !important;
+                color: #ef4444 !important;
+                font-size: 13px !important;
+                font-weight: 600 !important;
+                border-radius: 8px !important;
+                margin: 0 10px !important;
+                transition: background 0.2s !important;
+            }
+            .sidebar-logout-mobile > a:hover {
+                background: rgba(239,68,68,0.12) !important;
+            }
+            .sidebar-logout-mobile > a .icon-sidebar {
+                font-size: 16px !important;
+                width: 20px !important;
+                text-align: center !important;
+                color: #ef4444 !important;
+            }
         }
 
         /* ================================================================
@@ -687,11 +754,258 @@ if ($userType === 'admin') {
             letter-spacing: 2px;
             text-transform: uppercase;
         }
+
+        /* ============================================================
+           RESPONSIVE HEADER — Tablet & Mobile
+           These rules MUST live in inline <style> to override both
+           style-responsive.css AND the header styles above.
+           ============================================================ */
+        @media (max-width: 991px) {
+            header.header {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                position: fixed !important;
+                top: 0 !important; left: 0 !important; right: 0 !important;
+                width: 100% !important;
+                height: 56px !important;
+                min-height: 56px !important;
+                z-index: 1050 !important;
+                overflow: visible !important;
+            }
+            header.header .brand {
+                min-width: auto !important;
+                width: auto !important;
+                flex: 0 0 auto !important;
+                float: none !important;
+                position: static !important;
+                padding: 0 12px !important;
+                height: 56px !important;
+                border-right: none !important;
+                border-bottom: none !important;
+                background: transparent !important;
+            }
+            header.header .top-nav,
+            .top-nav {
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                flex: 1 1 0% !important;
+                float: none !important;
+                position: static !important;
+                height: 56px !important;
+                padding: 0 10px !important;
+                overflow: hidden !important;
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+            }
+            header.header .top-nav ul.nav {
+                display: flex !important;
+                height: 56px !important;
+                gap: 2px !important;
+                flex-wrap: nowrap !important;
+            }
+            header.header .top-nav ul.nav > li {
+                height: 56px !important;
+            }
+            header.header .top-nav li.search-box .search {
+                width: 120px !important; height: 32px !important;
+                font-size: 11px !important; padding: 0 10px !important;
+            }
+            /* Reseller: keep global search visible; give it remaining width */
+            body.user-reseller header.header .brand {
+                max-width: min(220px, 42vw) !important;
+                min-width: 0 !important;
+                flex-shrink: 1 !important;
+            }
+            body.user-reseller header.header .brand a.logo {
+                min-width: 0 !important;
+                flex: 1 1 auto !important;
+            }
+            body.user-reseller header.header .brand .logo .brand-area-label {
+                white-space: normal !important;
+                overflow-wrap: break-word;
+                word-break: break-word;
+                line-height: 1.15 !important;
+            }
+            body.user-reseller header.header .top-nav li.search-box {
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+                max-width: none !important;
+            }
+            body.user-reseller header.header .top-nav li.search-box .search {
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+            }
+            header.header .top-nav ul.nav > li.dropdown:last-child {
+                border-left: none !important;
+                margin-left: 4px !important; padding-left: 4px !important;
+            }
+            .nav-email-text { display: none !important; }
+            .sidebar-toggle-box {
+                position: static !important; float: none !important;
+                border-bottom: none !important; margin-right: 0 !important;
+            }
+        }
+
+        @media (max-width: 767px) {
+            header.header {
+                height: 52px !important;
+                min-height: 52px !important;
+                padding: 0 !important;
+            }
+            header.header .brand,
+            .brand {
+                width: auto !important;
+                float: none !important;
+                position: static !important;
+                padding: 0 10px !important;
+                height: 52px !important;
+                background: transparent !important;
+                border-bottom: none !important;
+            }
+            header.header .brand .logo { gap: 8px !important; }
+            header.header .brand .logo .brand-gps-mark {
+                width: 30px !important; height: 30px !important; border-radius: 8px !important;
+            }
+            header.header .brand .logo .brand-gps-mark svg {
+                width: 15px !important; height: 15px !important;
+            }
+            header.header .brand .logo .brand-area-label {
+                font-size: 11px !important; letter-spacing: 0.05em !important;
+            }
+            header.header .brand .sidebar-toggle-box {
+                width: 32px !important; height: 32px !important;
+            }
+            header.header .top-nav,
+            .top-nav {
+                display: flex !important;
+                visibility: visible !important;
+                padding: 0 8px 0 0 !important;
+                height: 52px !important;
+                float: none !important;
+                margin-bottom: 0 !important;
+            }
+            header.header .top-nav ul.nav {
+                display: flex !important;
+                height: 52px !important; gap: 0 !important; flex-wrap: nowrap !important;
+            }
+            header.header .top-nav ul.nav > li { height: 52px !important; }
+            header.header .top-nav .nav-item .d-flex.bg-primary { display: none !important; }
+            body:not(.user-reseller) header.header .top-nav li.search-box { display: none !important; }
+            body.user-reseller header.header {
+                min-height: 52px !important;
+                height: auto !important;
+            }
+            body.user-reseller header.header .brand,
+            body.user-reseller .brand {
+                max-width: min(200px, 50vw) !important;
+                min-width: 0 !important;
+                flex-shrink: 1 !important;
+                min-height: 52px !important;
+                height: auto !important;
+                padding: 0 6px !important;
+            }
+            body.user-reseller header.header .brand a.logo {
+                min-width: 0 !important;
+                flex: 1 1 auto !important;
+            }
+            body.user-reseller header.header .brand .logo .brand-area-label {
+                white-space: normal !important;
+                overflow-wrap: break-word;
+                word-break: break-word;
+                line-height: 1.15 !important;
+            }
+            body.user-reseller header.header .top-nav,
+            body.user-reseller .top-nav {
+                flex: 1 1 0% !important;
+                min-width: 0 !important;
+            }
+            body.user-reseller header.header .top-nav ul.nav {
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+            body.user-reseller header.header .top-nav li.search-box {
+                display: flex !important;
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+                max-width: none !important;
+            }
+            body.user-reseller header.header .top-nav li.search-box .search {
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                height: 32px !important;
+                font-size: 11px !important;
+                padding: 0 10px !important;
+            }
+            header.header .top-nav .nav-link { padding: 6px 8px !important; }
+            header.header .top-nav ul.nav > li.dropdown:last-child {
+                border-left: none !important;
+                margin-left: 2px !important; padding-left: 4px !important;
+            }
+            .nav-email-text, .nav-user-avatar + .fa-angle-down { display: none !important; }
+            .nav-user-avatar { width: 30px !important; height: 30px !important; font-size: 13px !important; }
+        }
+
+        @media (max-width: 480px) {
+            header.header {
+                height: 48px !important; min-height: 48px !important;
+            }
+            header.header .brand, .brand {
+                height: 48px !important; padding: 0 8px !important;
+                width: auto !important; float: none !important; position: static !important;
+            }
+            header.header .brand .logo .brand-area-label {
+                font-size: 10px !important; letter-spacing: 0.04em !important;
+            }
+            header.header .brand .logo .brand-gps-mark {
+                width: 26px !important; height: 26px !important;
+            }
+            header.header .brand .logo .brand-gps-mark svg {
+                width: 13px !important; height: 13px !important;
+            }
+            header.header .brand .sidebar-toggle-box {
+                width: 28px !important; height: 28px !important;
+            }
+            header.header .top-nav, .top-nav {
+                height: 48px !important; padding: 0 6px 0 0 !important;
+                display: flex !important;
+            }
+            header.header .top-nav ul.nav,
+            header.header .top-nav ul.nav > li {
+                height: 48px !important;
+            }
+            body.user-reseller header.header .brand,
+            body.user-reseller .brand {
+                max-width: min(185px, 52vw) !important;
+                padding: 0 5px !important;
+            }
+            body.user-reseller header.header,
+            body.user-reseller header.header.fixed-top {
+                min-height: 48px !important;
+                height: auto !important;
+            }
+            body.user-reseller header.header .brand,
+            body.user-reseller .brand {
+                min-height: 48px !important;
+                height: auto !important;
+            }
+            .nav-user-avatar {
+                width: 26px !important;
+                height: 26px !important;
+                font-size: 11px !important;
+            }
+        }
     </style>
     @stack('styles')
 </head>
 
-<body id="default-scheme">
+<body id="default-scheme" class="{{ $userType === 'reseller' ? 'user-reseller' : '' }}">
+    @include('partials.gps-flash-pull')
 
     <!-- ===== Global Page Loader ===== -->
     <div id="page-loader" role="status" aria-label="Loading page">
@@ -718,23 +1032,27 @@ if ($userType === 'admin') {
             <!--logo start-->
             <div class="brand">
                 @if(Auth::user()->user_type == 'Admin')
-                    <a href="/admin" class="logo" style="margin-top: 1px;">
-                        Admin Area
+                    <a href="/admin" class="logo" style="margin-top: 1px; margin-left: 1px;">
+                        @include('partials.brand-gps-mark')
+                        <span class="brand-area-label">Admin Area</span>
                     </a>
                 @elseif(Auth::user()->user_type == 'Reseller')
-                    <a href="/reseller" class="logo" style="margin-top: 1px;">
-                        Manufacturer Area
+                    <a href="/reseller" class="logo" style="margin-top: 1px; margin-left: 1px;">
+                        @include('partials.brand-gps-mark')
+                        <span class="brand-area-label">Manufacturer Area</span>
                     </a>
                 @elseif(Auth::user()->user_type == 'Support')
-                    <a href="/user" class="logo" style="margin-top: 1px;">
-                        Support Area
+                    <a href="/support" class="logo" style="margin-top: 1px; margin-left: 1px;">
+                        @include('partials.brand-gps-mark')
+                        <span class="brand-area-label">Support Area</span>
                     </a>
-                @else(Auth::user()->user_type!=='User')
-                    <a href="/user" class="logo" style="margin-top: 1px;">
-                        Dealer Area
+                @else
+                    <a href="/user" class="logo" style="margin-top: 1px; margin-left: 1px;">
+                        @include('partials.brand-gps-mark')
+                        <span class="brand-area-label">Dealer Area</span>
                     </a>
                 @endif
-                <div class="sidebar-toggle-box" style="margin-top: 1px;">
+                <div class="sidebar-toggle-box" style="margin-top: 1px; margin-left: 1px;">
                     <div class="fa fa-bars"></div>
                 </div>
             </div>
@@ -756,8 +1074,7 @@ if ($userType === 'admin') {
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-bell fa-lg"></i>
                                 @if($ticketCount > 0)
-                                    <span class="badge badge-danger rounded-circle position-absolute" id="notificationCount"
-                                        style="font-size: 0.7rem; top: 0px; right: 0px;">
+                                    <span class="badge badge-danger position-absolute" id="notificationCount">
                                         {{ $ticketCount }}
                                     </span>
                                 @endif
@@ -960,45 +1277,41 @@ if ($userType === 'admin') {
                                 </ul>
                             </li>
 
-                            <li
-                                class='sub-menu {{ request()->is('admin/imei-devices', 'admin/tracker*') ? 'active' : '' }}'>
-                                <a href="#"
-                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/imei-devices', 'admin/tracker*') ? 'active' : '' }}">
-                                    <span class='icon-sidebar pe-7s-map-marker fa-2x'></span><span>Live Tracking</span>
-                                </a>
-                                <ul class='sub'>
-                                    <li class="{{ request()->is('admin/imei-devices') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/imei-devices') }}"
-                                            class="{{ request()->is('admin/imei-devices') ? 'active' : '' }}">
-                                            Manage Trackers
-                                        </a>
-                                    </li>
-                                    <li class="{{ request()->is('admin/tracker*') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/tracker') }}"
-                                            class="{{ request()->is('admin/tracker*') ? 'active' : '' }}">
-                                            Live Track / Logs
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
+                                <li
+                                    class='sub-menu {{ request()->is('admin/imei-devices', 'admin/test-plans*', 'admin/protocols*', 'admin/packet-analyzer*') ? 'active' : '' }}'>
+                                    <a href="#"
+                                        class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/imei-devices', 'admin/test-plans*', 'admin/protocols*', 'admin/packet-analyzer*') ? 'active' : '' }}">
+                                        <span class='icon-sidebar pe-7s-science fa-2x'></span><span>Testing Tools</span>
+                                    </a>
+                                    <ul class='sub'>
+                                        <li class="{{ request()->is('admin/imei-devices') ? 'active' : '' }}">
+                                            <a href="{{ url('admin/imei-devices') }}"
+                                                class="{{ request()->is('admin/imei-devices') ? 'active' : '' }}">
+                                                Manage Trackers
+                                            </a>
+                                        </li>
+                                        <li class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
+                                            <a href="{{ url('admin/test-plans') }}"
+                                                class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
+                                                Manage Test Plans
+                                            </a>
+                                        </li>
+                                        <li class="{{ request()->is('admin/protocols*') ? 'active' : '' }}">
+                                            <a href="{{ route('protocols.index') }}"
+                                                class="{{ request()->is('admin/protocols*') ? 'active' : '' }}">
+                                                Protocol Management
+                                            </a>
+                                        </li>
+                                        <li class="{{ request()->is('admin/packet-analyzer*') ? 'active' : '' }}">
+                                            <a href="{{ route('admin.packet-analyzer.index') }}"
+                                                class="{{ request()->is('admin/packet-analyzer*') ? 'active' : '' }}">
+                                                Packet Analyzer
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
 
-                            <li class='sub-menu {{ request()->is('admin/test-plans*', 'admin/test-validate*') ? 'active' : '' }}'>
-                                <a href="#" class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/test-plans*', 'admin/test-validate*') ? 'active' : '' }}">
-                                    <span class='icon-sidebar pe-7s-rocket fa-2x'></span><span>Test Automation</span>
-                                </a>
-                                <ul class='sub'>
-                                    <li class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/test-plans') }}" class="{{ request()->is('admin/test-plans*') ? 'active' : '' }}">
-                                            Manage Test Plans
-                                        </a>
-                                    </li>
-                                    <li class="{{ request()->is('admin/test-validate*') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/test-validate') }}" class="{{ request()->is('admin/test-validate*') ? 'active' : '' }}">
-                                            Test Validation Page
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
+
 
                             <li
                                 class='sub-menu {{ request()->is('admin/add-template', 'admin/view-template', 'admin/assign-setting-bulk') ? 'active' : '' }}'>
@@ -1029,9 +1342,9 @@ if ($userType === 'admin') {
                             </li>
 
                             <li
-                                class='sub-menu {{ request()->is('admin/add-device-category', 'admin/View-device-category', 'admin/restore-device-category', 'admin/view-device-category-fields') ? 'active' : '' }}'>
+                                class='sub-menu {{ request()->is('admin/add-device-category', 'admin/view-device-category', 'admin/restore-device-category', 'admin/view-device-category-fields') ? 'active' : '' }}'>
                                 <a href="#"
-                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/add-device-category', 'admin/View-device-category', 'admin/restore-device-category', 'admin/view-device-category-fields') ? 'active' : '' }}">
+                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/add-device-category', 'admin/view-device-category', 'admin/restore-device-category', 'admin/view-device-category-fields') ? 'active' : '' }}">
                                     <span class='icon-sidebar pe-7s-safe fa-2x'></span><span>Device Category</span>
                                 </a>
                                 <ul class='sub'>
@@ -1041,9 +1354,9 @@ if ($userType === 'admin') {
                                             Add Device Category
                                         </a>
                                     </li>
-                                    <li class="{{ request()->is('admin/View-device-category') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/View-device-category') }}"
-                                            class="{{ request()->is('admin/View-device-category') ? 'active' : '' }}">
+                                    <li class="{{ request()->is('admin/view-device-category') ? 'active' : '' }}">
+                                        <a href="{{ url('admin/view-device-category') }}"
+                                            class="{{ request()->is('admin/view-device-category') ? 'active' : '' }}">
                                             View Device Category
                                         </a>
                                     </li>
@@ -1062,12 +1375,7 @@ if ($userType === 'admin') {
                                 </ul>
                             </li>
 
-                            <li class="{{ request()->is('admin/protocols*') ? 'active' : '' }}">
-                                <a href="{{ route('protocols.index') }}"
-                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/protocols*') ? 'active' : '' }}">
-                                    <span class='icon-sidebar pe-7s-link fa-2x'></span><span>Protocol Management</span>
-                                </a>
-                            </li>
+
 
                             <li
                                 class='sub-menu {{ request()->is('admin/view-esim-customers', 'admin/view-models', 'admin/view-firmware', 'admin/view-backend', 'admin/view-esim') ? 'active' : '' }}'>
@@ -1190,9 +1498,9 @@ if ($userType === 'admin') {
                                 </ul>
                             </li>
 
-                            <li class="{{ request()->is('reseller/View-device-category') ? 'active' : '' }}">
-                                <a href="{{ url('reseller/View-device-category') }}"
-                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/View-device-category') ? 'active' : '' }}">
+                            <li class="{{ request()->is('reseller/view-device-category') ? 'active' : '' }}">
+                                <a href="{{ url('reseller/view-device-category') }}"
+                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/view-device-category') ? 'active' : '' }}">
                                     <span class='icon-sidebar icon-home fa-2x'></span><span>View Device Category</span>
                                 </a>
                             </li>
@@ -1354,10 +1662,10 @@ if ($userType === 'admin') {
                                 </li>
 
                                 <li
-                                    class='sub-menu {{ request()->is('support/imei-devices*', 'support/tracker*') ? 'active' : '' }}'>
+                                    class='sub-menu {{ request()->is('support/imei-devices*', 'support/test-plans*', 'support/protocols*', 'support/packet-analyzer*') ? 'active' : '' }}'>
                                     <a href="#"
-                                        class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/imei-devices*', 'support/tracker*') ? 'active' : '' }}">
-                                        <span class='icon-sidebar pe-7s-map-marker fa-2x'></span><span>Live Tracking</span>
+                                        class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/imei-devices*', 'support/test-plans*', 'support/protocols*', 'support/packet-analyzer*') ? 'active' : '' }}">
+                                        <span class='icon-sidebar pe-7s-science fa-2x'></span><span>Testing Tools</span>
                                     </a>
                                     <ul class='sub'>
                                         <li class="{{ request()->is('support/imei-devices*') ? 'active' : '' }}">
@@ -1366,39 +1674,30 @@ if ($userType === 'admin') {
                                                 Manage Trackers
                                             </a>
                                         </li>
-                                        <li class="{{ request()->is('support/tracker*') ? 'active' : '' }}">
-                                            <a href="{{ url('support/tracker') }}"
-                                                class="{{ request()->is('support/tracker*') ? 'active' : '' }}">
-                                                Live Track / Logs
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-
-                                <li class='sub-menu {{ request()->is('support/test-plans*', 'support/test-validate*') ? 'active' : '' }}'>
-                                    <a href="#" class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/test-plans*', 'support/test-validate*') ? 'active' : '' }}">
-                                        <span class='icon-sidebar pe-7s-rocket fa-2x'></span><span>Test Automation</span>
-                                    </a>
-                                    <ul class='sub'>
                                         <li class="{{ request()->is('support/test-plans*') ? 'active' : '' }}">
-                                            <a href="{{ url('support/test-plans') }}" class="{{ request()->is('support/test-plans*') ? 'active' : '' }}">
+                                            <a href="{{ url('support/test-plans') }}"
+                                                class="{{ request()->is('support/test-plans*') ? 'active' : '' }}">
                                                 Manage Test Plans
                                             </a>
                                         </li>
-                                        <li class="{{ request()->is('support/test-validate*') ? 'active' : '' }}">
-                                            <a href="{{ url('support/test-validate') }}" class="{{ request()->is('support/test-validate*') ? 'active' : '' }}">
-                                                Test Validation Page
+                                        <li class="{{ request()->is('support/protocols*') ? 'active' : '' }}">
+                                            <a href="{{ route('support.protocols.index') }}"
+                                                class="{{ request()->is('support/protocols*') ? 'active' : '' }}">
+                                                Protocol Management
+                                            </a>
+                                        </li>
+                                        <li class="{{ request()->is('support/packet-analyzer*') ? 'active' : '' }}">
+                                            <a href="{{ route('support.packet-analyzer.index') }}"
+                                                class="{{ request()->is('support/packet-analyzer*') ? 'active' : '' }}">
+                                                Packet Analyzer
                                             </a>
                                         </li>
                                     </ul>
                                 </li>
 
-                                <li class="{{ request()->is('support/protocols*') ? 'active' : '' }}">
-                                    <a href="{{ route('support.protocols.index') }}"
-                                        class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/protocols*') ? 'active' : '' }}">
-                                        <span class='icon-sidebar pe-7s-link fa-2x'></span><span>Protocol Management</span>
-                                    </a>
-                                </li>
+
+
+
 
                             @endif
                             <!--<li class="{{ request()->is('user') ? 'active' : '' }}">-->
@@ -1430,6 +1729,15 @@ if ($userType === 'admin') {
                             <!--    </ul>-->
                             <!--</li>-->
                         @endif
+
+                        {{-- Mobile logout button --}}
+                        <li class="sidebar-logout-mobile">
+                            <a href="{{ route('logout') }}"
+                               onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                               class="hvr-bounce-to-right-sidebar-parent">
+                                <span class="icon-sidebar fa fa-sign-out fa-2x"></span><span>Logout</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <!-- sidebar menu end-->
@@ -1669,6 +1977,105 @@ if ($userType === 'admin') {
         })();
     </script>
     <!-- ===== End Page Loader Script ===== -->
+    @yield('scripts')
+
+    <!-- ===== Mobile Sidebar Toggle ===== -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <script>
+    (function() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        var mainContent = document.getElementById('main-content');
+        if (!sidebar || !overlay) return;
+
+        function isMobile() { return window.innerWidth <= 991; }
+
+        function isSidebarOpen() {
+            return sidebar.classList.contains('mobile-open') ||
+                   sidebar.classList.contains('show-left-bar-mobile');
+        }
+
+        function openSidebar() {
+            sidebar.classList.add('mobile-open');
+            sidebar.classList.remove('hide-left-bar');
+            overlay.classList.add('active');
+            if (mainContent) {
+                mainContent.classList.remove('merge-left');
+            }
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('mobile-open', 'show-left-bar-mobile');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('click', function(e) {
+            var toggleBtn = e.target.closest('.sidebar-toggle-box');
+            if (!toggleBtn || !isMobile()) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            if (isSidebarOpen()) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }, true);
+
+        var touchStartX = 0;
+        sidebar.addEventListener('touchstart', function(e) {
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+        sidebar.addEventListener('touchend', function(e) {
+            var diff = touchStartX - e.changedTouches[0].clientX;
+            if (diff > 60 && isMobile()) closeSidebar();
+        }, { passive: true });
+
+        // Also watch for theme.js toggling show-left-bar-mobile directly (fallback)
+        if (window.MutationObserver) {
+            var observer = new MutationObserver(function(mutations) {
+                if (!isMobile()) return;
+                mutations.forEach(function(m) {
+                    if (m.attributeName === 'class') {
+                        var hasOpen = sidebar.classList.contains('show-left-bar-mobile') ||
+                                      sidebar.classList.contains('mobile-open');
+                        if (hasOpen) {
+                            overlay.classList.add('active');
+                        } else {
+                            overlay.classList.remove('active');
+                        }
+                    }
+                });
+            });
+            observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        overlay.addEventListener('click', function() {
+            closeSidebar();
+        });
+
+        if (sidebar) {
+            sidebar.addEventListener('click', function(e) {
+                var link = e.target.closest('a[href]');
+                if (!link || !isMobile()) return;
+                var href = link.getAttribute('href') || '';
+                if (href && href !== '#' && !href.startsWith('javascript:')) {
+                    setTimeout(closeSidebar, 200);
+                }
+            });
+        }
+
+        window.addEventListener('resize', function() {
+            if (!isMobile()) {
+                overlay.classList.remove('active');
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    })();
+    </script>
+    @include('partials.gps-flash-scripts')
 </body>
 
 </html>

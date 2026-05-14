@@ -11,6 +11,91 @@ $currentEmail = Auth::user()->email;
 ?>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <style>
+  /* ─── Toast Notification ─── */
+  .gps-toast-container {
+    position: fixed; top: 24px; right: 24px; z-index: 99999;
+    display: flex; flex-direction: column; gap: 10px;
+    pointer-events: none;
+  }
+  .gps-toast {
+    pointer-events: auto;
+    display: flex; align-items: center; gap: 12px;
+    min-width: 300px; max-width: 420px;
+    padding: 14px 20px; border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.06);
+    transform: translateX(120%); opacity: 0;
+    animation: gpsToastIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    font-family: inherit;
+  }
+  .gps-toast.removing {
+    animation: gpsToastOut 0.3s ease forwards;
+  }
+  @keyframes gpsToastIn {
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes gpsToastOut {
+    to { transform: translateX(120%); opacity: 0; }
+  }
+  .gps-toast-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .gps-toast-body { flex: 1; }
+  .gps-toast-title {
+    font-size: 13px; font-weight: 800; margin: 0 0 2px;
+    letter-spacing: 0.2px;
+  }
+  .gps-toast-msg {
+    font-size: 12.5px; font-weight: 500; margin: 0;
+    opacity: 0.85; line-height: 1.4;
+  }
+  .gps-toast-close {
+    background: none; border: none; font-size: 16px;
+    cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
+    padding: 0; line-height: 1; flex-shrink: 0;
+  }
+  .gps-toast-close:hover { opacity: 1; }
+  .gps-toast-progress {
+    position: absolute; bottom: 0; left: 0; height: 3px;
+    border-radius: 0 0 12px 12px;
+    animation: gpsToastProgress 3s linear forwards;
+  }
+  @keyframes gpsToastProgress {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+  /* Warning variant */
+  .gps-toast.toast-warning {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: #fff; position: relative; overflow: hidden;
+  }
+  .gps-toast.toast-warning .gps-toast-icon {
+    background: rgba(251,191,36,0.15); color: #fbbf24;
+  }
+  .gps-toast.toast-warning .gps-toast-close { color: rgba(255,255,255,0.5); }
+  .gps-toast.toast-warning .gps-toast-progress { background: #fbbf24; }
+  /* Success variant */
+  .gps-toast.toast-success {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: #fff; position: relative; overflow: hidden;
+  }
+  .gps-toast.toast-success .gps-toast-icon {
+    background: rgba(118,207,28,0.15); color: #76CF1C;
+  }
+  .gps-toast.toast-success .gps-toast-close { color: rgba(255,255,255,0.5); }
+  .gps-toast.toast-success .gps-toast-progress { background: #76CF1C; }
+  /* Error variant */
+  .gps-toast.toast-error {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: #fff; position: relative; overflow: hidden;
+  }
+  .gps-toast.toast-error .gps-toast-icon {
+    background: rgba(239,68,68,0.15); color: #ef4444;
+  }
+  .gps-toast.toast-error .gps-toast-close { color: rgba(255,255,255,0.5); }
+  .gps-toast.toast-error .gps-toast-progress { background: #ef4444; }
+
   #main-content .wrapper { padding-top: 10px !important; }
 
   /* Breadcrumb (reference style) */
@@ -55,6 +140,8 @@ $currentEmail = Auth::user()->email;
     font-size: 16px !important;
     font-weight: 700 !important;
     text-transform: uppercase;
+    text-align: left !important;
+    float: none !important;
   }
   #main-content .c_content.tabs { padding: 16px 16px 10px !important; }
 
@@ -132,53 +219,8 @@ $currentEmail = Auth::user()->email;
   #main-content .tabs .user-responsive { background: linear-gradient(135deg,#1e293b,#2d3f55) !important; }
   #main-content .tabs .template-responsive { background: linear-gradient(135deg,#1e293b,#2d3f55) !important; }
 
-  /* Datatable look */
-  #main-content .tabs .dataTables_wrapper .dataTables_length label,
-  #main-content .tabs .dataTables_wrapper .dataTables_filter label {
-    font-size: 12px;
-    color: #64748b;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-  #main-content .tabs .dataTables_wrapper .dataTables_length select,
-  #main-content .tabs .dataTables_wrapper .dataTables_filter input {
-    height: 32px;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 0 10px;
-    font-size: 12px;
-    color: #334155;
-    background: #f8fafc;
-    box-shadow: none !important;
-    text-indent: 0 !important;
-    opacity: 1 !important;
-  }
-  #main-content .tabs .dataTables_wrapper .dataTables_length select {
-    min-width: 78px;
-    line-height: 30px;
-    padding: 0 26px 0 10px !important;
-    appearance: auto;
-    -webkit-appearance: menulist;
-    -moz-appearance: menulist;
-    color: #1e293b !important;
-    font-weight: 600 !important;
-    background-color: #fff !important;
-    -webkit-text-fill-color: #1e293b !important;
-  }
-  #main-content .tabs .dataTables_wrapper .dataTables_length select option {
-    color: #1e293b !important;
-    background: #fff !important;
-  }
-  #main-content .tabs .dataTables_wrapper .dataTables_length {
-    margin-bottom: 8px;
-  }
-  #main-content .tabs .dataTables_wrapper .dataTables_filter input {
-    min-width: 190px;
-    background: #fff !important;
-  }
+  /* Datatable look — defer to global design system in custom.css,
+     only add page-specific overrides here */
   #main-content .tabs .tabcontent > .col-lg-12.text-right.margin-bottom-10 {
     margin-bottom: 10px !important;
     display: flex;
@@ -202,39 +244,89 @@ $currentEmail = Auth::user()->email;
     background: linear-gradient(135deg,#76CF1C,#67bb19) !important;
     color: #0f172a !important;
   }
-  #main-content .tabs .dataTables_wrapper .dataTables_scrollHead,
+
+  /* DataTables scroll wrapper — let the global design system handle header/body styles,
+     just ensure the scroll containers don't break the layout */
+  #main-content .tabs .dataTables_wrapper .dataTables_scroll {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #main-content .tabs .dataTables_wrapper .dataTables_scrollHead {
+    background: #1e293b !important;
+    border-bottom: none !important;
+  }
   #main-content .tabs .dataTables_wrapper .dataTables_scrollBody {
-    border-color: #e5e7eb !important;
+    border-top: none !important;
   }
-  #main-content .tabs table.example thead th {
-    background: transparent !important;
-    color: #64748b !important;
-    font-size: 11px !important;
-    text-transform: uppercase;
-    font-weight: 700 !important;
-    border-bottom: 2px solid #f1f5f9 !important;
-  }
-  #main-content .tabs table.example tbody td {
-    background: #fff !important;
-    font-size: 12px !important;
-    color: #334155 !important;
-  }
+
+  /* Checkbox column sizing */
   #main-content .tabs table.example thead th:first-child {
     min-width: 110px !important;
     white-space: nowrap !important;
   }
   #main-content .tabs table.example thead th:first-child input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
     margin-left: 6px;
     vertical-align: middle;
     position: relative;
     top: -1px;
+    cursor: pointer;
   }
   #main-content .tabs table.example tbody td:first-child input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
     vertical-align: middle;
+    cursor: pointer;
+  }
+
+  /* Action buttons inside table cells — compact row actions */
+  #main-content .tabs table.example .btn,
+  #main-content .tabs table.example a.btn {
+    padding: 5px 10px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    line-height: 1.35 !important;
+    min-height: 0 !important;
+    vertical-align: middle;
+  }
+  #main-content .tabs table.example .btn i,
+  #main-content .tabs table.example a.btn i {
+    font-size: 11px !important;
+    margin-right: 4px !important;
+  }
+  #main-content .tabs table.example .btn-carrot {
+    background: linear-gradient(135deg, #f97316, #ea580c) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 5px 10px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #fff !important;
+    box-shadow: 0 2px 5px rgba(249,115,22,0.22) !important;
+  }
+  #main-content .tabs table.example .btn-carrot a {
+    color: #fff !important;
+    text-decoration: none !important;
+  }
+  #main-content .tabs table.example .btn-info,
+  #main-content .tabs table.example a.btn-info {
+    background: linear-gradient(135deg, #1e293b, #334155) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 5px 10px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #fff !important;
+    box-shadow: 0 2px 5px rgba(30,41,59,0.18) !important;
+  }
+  #main-content .tabs table.example .btn-success {
+    box-shadow: 0 1px 4px rgba(22, 101, 52, 0.2) !important;
+  }
+  #main-content .tabs table.example .btn-danger {
+    box-shadow: 0 1px 4px rgba(185, 28, 28, 0.2) !important;
   }
 
   /* Assign Account/Template modals */
@@ -331,6 +423,227 @@ $currentEmail = Auth::user()->email;
     padding: 9px 14px !important;
     box-shadow: 0 8px 16px rgba(15, 23, 42, 0.22);
   }
+
+  /* ========== RESPONSIVE — Tablet ========== */
+  @media (max-width: 991px) {
+    #main-content { padding-top: 62px !important; }
+    #main-content .wrapper { padding: 0 8px !important; }
+
+    .vd-breadcrumb {
+      flex-wrap: wrap;
+      border-radius: 14px;
+      padding: 6px 12px 6px 8px;
+    }
+    .vd-breadcrumb .bc-item { white-space: normal; }
+
+    #main-content .c_title .row.bgx-title-container {
+      flex-direction: column !important;
+    }
+    #main-content .c_title .row.bgx-title-container > div {
+      width: 100% !important;
+      max-width: 100% !important;
+      flex: 0 0 100% !important;
+      text-align: left !important;
+    }
+    .dc-title-actions {
+      justify-content: flex-start !important;
+      flex-wrap: wrap !important;
+      gap: 6px !important;
+      margin-top: 8px !important;
+    }
+
+    #main-content .tabs .tablinks {
+      padding: 5px 10px !important;
+      font-size: 11px !important;
+      margin-bottom: 6px !important;
+    }
+
+    #main-content .tabs .vdc-tab-toolbar-right .vdc-filter-form {
+      flex-wrap: wrap !important;
+    }
+    #main-content .tabs .vdc-tab-toolbar-right .vdc-filter-form select.form-control {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+    }
+
+    .filter-container, .vd-filter-form {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 6px !important;
+    }
+    .filter-container select, .filter-container .btn {
+      width: 100% !important;
+    }
+  }
+
+  /* ========== RESPONSIVE — Mobile ========== */
+  @media (max-width: 767px) {
+    #main-content { padding-top: 56px !important; }
+    #main-content .wrapper { padding: 0 4px !important; }
+
+    .gps-toast-container { right: 10px !important; left: 10px !important; max-width: none !important; }
+    .gps-toast { min-width: auto !important; max-width: none !important; font-size: 13px !important; }
+
+    .vd-breadcrumb-wrap { padding: 8px 0 10px !important; }
+    .vd-breadcrumb {
+      flex-wrap: wrap;
+      font-size: 11px;
+      padding: 5px 10px 5px 6px;
+      gap: 2px;
+      border-radius: 12px;
+    }
+    .vd-breadcrumb .bc-home { width: 24px; height: 24px; margin-right: 6px; }
+    .vd-breadcrumb .bc-home i { font-size: 11px; }
+    .vd-breadcrumb .bc-item { font-size: 11px; white-space: normal; }
+    .vd-breadcrumb .bc-sep { margin: 0 4px; font-size: 10px; }
+
+    #main-content .c_title { padding: 12px 14px !important; }
+    #main-content .c_title h2 { font-size: 13px !important; }
+    #main-content .c_title .row.bgx-title-container {
+      flex-direction: column !important;
+    }
+    #main-content .c_title .row.bgx-title-container > div {
+      width: 100% !important;
+      max-width: 100% !important;
+      flex: 0 0 100% !important;
+      text-align: left !important;
+    }
+    /* Add Device button in title */
+    #main-content .c_title .btn.btn-success {
+      font-size: 11px !important;
+      padding: 5px 12px !important;
+      border-radius: 6px !important;
+      margin-top: 6px !important;
+      display: inline-block !important;
+    }
+    .dc-title-actions {
+      justify-content: flex-start !important;
+      flex-wrap: wrap !important;
+      gap: 6px !important;
+      margin-top: 8px !important;
+    }
+
+    #main-content .c_content.tabs { padding: 10px 8px !important; }
+
+    #main-content .tabs .tablinks {
+      padding: 4px 8px !important;
+      font-size: 10px !important;
+      border-radius: 6px !important;
+      margin-right: 3px !important;
+      margin-bottom: 5px !important;
+    }
+
+    /* All action buttons inside tab content */
+    #main-content .tabs .delete_all,
+    #main-content .tabs .user-responsive,
+    #main-content .tabs .template-responsive,
+    #main-content .tabs .btn {
+      font-size: 11px !important;
+      padding: 5px 10px !important;
+      border-radius: 6px !important;
+    }
+
+    #main-content .tabs .tabcontent > div[style*="margin-bottom"] {
+      gap: 5px 6px !important;
+    }
+
+    #main-content .tabs .tabcontent > .col-lg-12.text-right.margin-bottom-10 {
+      flex-wrap: wrap !important;
+      justify-content: flex-start !important;
+      gap: 5px !important;
+    }
+    #main-content .tabs .tabcontent > .col-lg-12.text-right.margin-bottom-10 .btn {
+      font-size: 11px !important;
+      padding: 5px 10px !important;
+      margin: 0 !important;
+    }
+
+    .filter-container, .vd-filter-form {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 6px !important;
+    }
+    .filter-container select, .filter-container .btn {
+      width: 100% !important;
+    }
+
+    /* Filter form: keep inline, compact */
+    #main-content .tabs .vdc-tab-toolbar-right {
+      width: 100% !important;
+      margin-left: 0 !important;
+    }
+    #main-content .tabs .vdc-tab-toolbar-right .vdc-filter-form {
+      flex-wrap: nowrap !important;
+      width: 100% !important;
+      gap: 6px !important;
+    }
+    #main-content .tabs .vdc-tab-toolbar-right .vdc-filter-form select.form-control {
+      flex: 1 1 0% !important;
+      width: auto !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      font-size: 11px !important;
+      height: 32px !important;
+    }
+    #main-content .tabs .vdc-tab-toolbar-right .vdc-filter-form .btn {
+      width: auto !important;
+      flex-shrink: 0 !important;
+      font-size: 11px !important;
+      padding: 5px 14px !important;
+      height: 32px !important;
+    }
+
+    /* Pagination: compact and wrap properly */
+    .dataTables_wrapper .dataTables_paginate {
+      text-align: center !important;
+      float: none !important;
+      max-width: 100% !important;
+      padding-top: 8px !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .pagination {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      gap: 3px !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .pagination > li > a,
+    .dataTables_wrapper .dataTables_paginate .pagination > li > span {
+      min-width: 28px !important;
+      height: 28px !important;
+      padding: 0 6px !important;
+      font-size: 11px !important;
+      border-radius: 6px !important;
+    }
+    .dataTables_wrapper .dataTables_info {
+      float: none !important;
+      text-align: center !important;
+      max-width: 100% !important;
+      font-size: 11px !important;
+      padding-top: 6px !important;
+    }
+  }
+
+  /* ========== RESPONSIVE — Small phone ========== */
+  @media (max-width: 480px) {
+    #main-content { padding-top: 52px !important; }
+
+    .vd-breadcrumb { padding: 4px 8px 4px 5px; }
+    .vd-breadcrumb .bc-home { width: 22px; height: 22px; }
+    .vd-breadcrumb .bc-item { font-size: 10px; }
+
+    #main-content .c_title { padding: 10px 10px !important; }
+    #main-content .c_title h2 { font-size: 12px !important; }
+
+    #main-content .tabs .tablinks { padding: 3px 6px !important; font-size: 9px !important; }
+
+    #main-content .tabs .delete_all,
+    #main-content .tabs .user-responsive,
+    #main-content .tabs .template-responsive {
+      font-size: 10px !important;
+      padding: 4px 8px !important;
+    }
+  }
 </style>
 <section id="main-content">
   <section class="wrapper">
@@ -356,7 +669,7 @@ $currentEmail = Auth::user()->email;
         <div class="c_panel">
           <div class="c_title" style="margin-bottom: 10px;">
             <div class="row bgx-title-container">
-              <div class="col-lg-6">
+              <div class="{{ Auth::user()->user_type == 'Admin' ? 'col-lg-6' : 'col-lg-12' }}">
                 @if(Auth::user()->user_type=='Admin' and url('admin/view-device-assign')==url()->current())
                 <h2>Show Assigned Devices</h2>
                 @elseif(Auth::user()->user_type=='Admin' and url('admin/view-device-unassign')==url()->current())
@@ -454,7 +767,42 @@ $currentEmail = Auth::user()->email;
       white-space: nowrap !important;
   }
 </style>
+<div class="gps-toast-container" id="gpsToastContainer"></div>
 <script>
+  function showToast(msg, type, title) {
+    type = type || 'warning';
+    if (typeof window.showGpsToast === 'function') {
+      var map = { warning: 'warning', success: 'success', error: 'error', danger: 'error', info: 'info' };
+      var t = map[type] || 'warning';
+      var titles = { warning: 'Warning', success: 'Success', error: 'Error', info: 'Information' };
+      var resolvedTitle = title || titles[type] || titles[t] || 'Notice';
+      window.showGpsToast(t, resolvedTitle, msg, { durationMs: 5000 });
+      return;
+    }
+    var icons = { warning: 'fa-exclamation-triangle', success: 'fa-check-circle', error: 'fa-times-circle' };
+    var titles = { warning: 'Warning', success: 'Success', error: 'Error' };
+    title = title || titles[type];
+    var container = document.getElementById('gpsToastContainer');
+    var toast = document.createElement('div');
+    toast.className = 'gps-toast toast-' + type;
+    toast.innerHTML =
+      '<div class="gps-toast-icon"><i class="fa ' + icons[type] + '"></i></div>' +
+      '<div class="gps-toast-body"><p class="gps-toast-title">' + title + '</p><p class="gps-toast-msg">' + msg + '</p></div>' +
+      '<button class="gps-toast-close">&times;</button>' +
+      '<div class="gps-toast-progress"></div>';
+    toast.querySelector('.gps-toast-close').addEventListener('click', function() {
+      toast.classList.add('removing');
+      setTimeout(function() { toast.remove(); }, 300);
+    });
+    container.appendChild(toast);
+    setTimeout(function() {
+      if (toast.parentNode) {
+        toast.classList.add('removing');
+        setTimeout(function() { toast.remove(); }, 300);
+      }
+    }, 3000);
+  }
+
   $(document).ready(function() {
     function initializeDataTables() {
       $('.example').each(function() {
@@ -545,7 +893,7 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
         var categoryId = $(this).data('category-id');
         $("#user-responsive" + categoryId).modal('show');
@@ -559,7 +907,7 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
         var categoryId = $(this).data('category-id');
         $("#template-responsive" + categoryId).modal('show');
@@ -572,7 +920,7 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
         var check = confirm("Are you sure want to delete these Device?");
         if (check == true) {
@@ -611,7 +959,7 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
         var join_selected_values = allVals.join(",");
         var id = $(this).data('attr');
@@ -662,7 +1010,7 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
         var join_selected_values = allVals.join(",");
         var temp_id = $(this).closest('.modal-body').find('.assignDeviceTemp').val();

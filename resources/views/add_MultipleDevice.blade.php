@@ -93,6 +93,84 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         width: 100% !important;
     }
     #main-content #commentForm .select2-container { width: 100% !important; }
+
+    /* CAN Protocol modal — header padding, close alignment, vertical position */
+    #canModal .amd-can-modal-dialog {
+        margin: 8vh auto 30px;
+        max-width: 560px;
+    }
+    #canModal .amd-can-modal-content {
+        border: none;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+    }
+    #canModal .amd-can-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        gap: 12px;
+        padding: 16px 18px;
+        min-height: 56px;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-bottom: 1px solid rgba(118, 207, 28, 0.28);
+    }
+    #canModal .amd-can-modal-header .modal-title {
+        float: none;
+        margin: 0;
+        padding: 0;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #f8fafc;
+        line-height: 1.4;
+        flex: 1;
+        min-width: 0;
+    }
+    #canModal .amd-can-modal-header .close {
+        float: none;
+        position: static;
+        margin: 0;
+        padding: 8px 12px;
+        font-size: 22px;
+        font-weight: 300;
+        line-height: 1;
+        opacity: 0.9;
+        color: #e2e8f0;
+        text-shadow: none;
+        outline: none;
+    }
+    #canModal .amd-can-modal-header .close:hover,
+    #canModal .amd-can-modal-header .close:focus {
+        opacity: 1;
+        color: #76CF1C;
+    }
+    #canModal .amd-can-modal-body {
+        padding: 20px 22px 8px;
+        background: #f8fafc;
+    }
+    #canModal .amd-can-modal-footer {
+        padding: 14px 18px 18px;
+        margin-top: 0;
+        text-align: right;
+        background: #f1f5f9;
+        border-top: 1px solid #e2e8f0;
+    }
+    #canModal .amd-can-submit-btn {
+        min-width: 120px;
+        font-weight: 700;
+        border-radius: 8px;
+        padding: 10px 20px;
+    }
+    #canModal .amd-can-modal-body .form-control,
+    #canModal .amd-can-modal-body select {
+        border-radius: 8px;
+    }
+    #canModal .amd-can-modal-body .select2-container {
+        width: 100% !important;
+    }
 </style>
 <!--main content start-->
 <div class="modal" id="imeiPreviewModal" aria-hidden="true">
@@ -383,18 +461,19 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     </section>
 </section>
 
-<!-- Modal -->
-<div class="modal" id="canModal" aria-hidden="true">
-    <div class="modal-dialog modal-md">
-        <div class="modal-content">
+<!-- Modal: CAN Protocol (scoped styling #canModal) -->
+<div class="modal amd-can-modal-root" id="canModal" tabindex="-1" role="dialog" aria-labelledby="canModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-md amd-can-modal-dialog" role="document">
+        <div class="modal-content amd-can-modal-content">
 
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-                <h5 class="modal-title">CAN Protocol Configuration</h5>
-
+            <div class="modal-header amd-can-modal-header">
+                <h5 class="modal-title" id="canModalTitle">CAN Protocol Configuration</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body amd-can-modal-body">
                 <div class="row">
                     <div class="col-md-12">
                         <form id="canForm">
@@ -436,19 +515,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     </select>
                                 </div>
                                 <div id="dynamicCanFields"></div>
-                                <!-- Submit -->
-                                <!-- <button type="button" class="btn btn-success mt-4">Generate JSON</button> -->
                         </form>
                     </div>
-                    <div class="col-md-12 text-right">
-                        <button type="button" class="btn btn-success mt-4" onclick="generateJSON()">Submit</button>
-                    </div>
                 </div>
-                <!-- Output JSON -->
-                <!-- <div class="mt-4">
-                    <label class="form-label">Generated JSON:</label>
-                    <textarea class="form-control" id="outputJson" rows="10" readonly></textarea>
-                </div> -->
+            </div>
+            <div class="modal-footer amd-can-modal-footer">
+                <button type="button" class="btn btn-success amd-can-submit-btn" onclick="generateJSON()">Submit</button>
             </div>
 
         </div>

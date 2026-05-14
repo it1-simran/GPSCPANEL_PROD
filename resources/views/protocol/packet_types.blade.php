@@ -1,19 +1,17 @@
 @extends('layouts.apps')
 @section('content')
-<section id="main-content">
-    <section class="wrapper protocol-page">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        @php
-                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
-                        @endphp
-                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
-                        <li class="active"><a href="#">Packet Types</a></li>
-                    </ul>
-                </nav>
-            </div>
+<section id="main-content" class="protocol-page packet-types-page">
+    <section class="wrapper">
+        @php
+            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+        @endphp
+        <div class="protocol-breadcrumb-wrap">
+            <nav class="protocol-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Packet Types</span>
+            </nav>
         </div>
 
         <div class="row">
@@ -22,7 +20,11 @@
                     <div class="c_title" style="margin-bottom: 10px;">
                         <div class="row bgx-title-container">
                             <div class="col-lg-6 col-md-6 col-sm-6">
-                                <h2>Packet Types: <span>{{ $protocol->name }}</span></h2>
+                                <h2 class="pkt-title">
+                                    <i class="fa fa-cubes"></i>
+                                    Packet Types
+                                    <span class="pkt-title-protocol">{{ $protocol->name }}</span>
+                                </h2>
                             </div>
                             <div class="col-lg-6 col-md-6 col-sm-6 text-right">
                                 <a href="{{ route($routePrefix . '.packet-types.create', $protocol->id) }}" class="btn btn-success protocol-add-btn">
@@ -144,6 +146,102 @@
 </section>
 
 @include('protocol.partials.protocol_styles')
+<style>
+    .packet-types-page .wrapper {
+        padding-top: 8px !important;
+    }
+
+    .packet-types-page .protocol-breadcrumb-wrap {
+        padding: 6px 0 14px 0;
+    }
+
+    .packet-types-page .protocol-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        background: #1e293b;
+        border-radius: 50px;
+        padding: 6px 18px 6px 8px;
+        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
+    }
+
+    .packet-types-page .protocol-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #76CF1C;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+    }
+
+    .packet-types-page .protocol-breadcrumb .bc-home i {
+        color: #1e293b;
+        font-size: 13px;
+    }
+
+    .packet-types-page .protocol-breadcrumb .bc-item {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .packet-types-page .protocol-breadcrumb .bc-sep {
+        color: rgba(255, 255, 255, 0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+
+    .packet-types-page .protocol-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    .packet-types-page .c_title {
+        margin-bottom: 12px !important;
+    }
+
+    /* Remove inherited leading pseudo icon from global c_title h2 */
+    .packet-types-page .c_title h2::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .packet-types-page .pkt-title {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        color: #ffffff !important;
+        font-size: 19px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+    }
+
+    .packet-types-page .pkt-title > i {
+        color: #76CF1C;
+        font-size: 15px;
+        width: 22px;
+        text-align: center;
+    }
+
+    .packet-types-page .pkt-title-protocol {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 8px;
+        padding: 4px 11px;
+        border-radius: 999px;
+        background: rgba(118, 207, 28, 0.16);
+        color: #cfff9f !important;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        border: 1px solid rgba(118, 207, 28, 0.36);
+    }
+</style>
 
 <script>
     $(function () {

@@ -58,49 +58,43 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 }
 .vv-btn-view:hover { transform: translateY(-1px); filter: brightness(1.1); color: #fff; text-decoration: none; }
 
-/* ===== TABLE ===== */
+/* ===== TABLE (Unified Site Style) ===== */
+.vv-table-wrap {
+    border: 1px solid #dbe4ef;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
 #esim {
     width: 100% !important;
-    border-collapse: separate !important;
-    border-spacing: 0 6px !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
     border: none !important;
 }
-#esim.table  { border: none !important; }
-#esim > thead > tr > th,
-#esim > tbody > tr > td { border: none !important; }
-#esim > tbody > tr:nth-child(odd) > td,
-#esim > tbody > tr:nth-child(even) > td { background-color: transparent !important; }
-
-/* Header */
 #esim thead th {
-    background: transparent !important; color: #64748b !important;
-    font-size: 11px !important; text-transform: uppercase !important;
-    letter-spacing: 0.8px !important; font-weight: 700 !important;
-    padding: 8px 14px !important; border-bottom: 2px solid #f1f5f9 !important;
+    background: linear-gradient(180deg, #132035 0%, #1f314f 100%) !important;
+    color: #dbe9ff !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-weight: 700 !important;
+    padding: 12px 11px !important;
+    border: none !important;
     white-space: nowrap;
 }
-
-/* Rows */
-#esim tbody tr { background: #fff; transition: box-shadow 0.2s, background 0.2s; }
-#esim tbody tr:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-
-/* Cells */
 #esim tbody td {
-    vertical-align: middle !important; padding: 13px 14px !important;
-    background: #fff !important; color: #334155; font-size: 13px;
-    border-top: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important;
-    border-left: none !important; border-right: none !important;
+    vertical-align: middle !important;
+    padding: 12px 11px !important;
+    background: #fff !important;
+    color: #243447;
+    font-size: 13px;
+    border-top: 1px solid #edf2f8 !important;
+    border-left: none !important;
+    border-right: none !important;
 }
-#esim tbody tr:hover td { background: #f8faff !important; }
-#esim tbody td:first-child {
-    border-left: 1px solid #e9ecef !important;
-    border-top-left-radius: 8px !important; border-bottom-left-radius: 8px !important;
-    color: #94a3b8; font-weight: 700;
-}
-#esim tbody td:last-child {
-    border-right: 1px solid #e9ecef !important;
-    border-top-right-radius: 8px !important; border-bottom-right-radius: 8px !important;
-}
+#esim tbody tr:nth-child(even) td { background: #fbfdff !important; }
+#esim tbody tr:hover td { background: #f2f8ff !important; }
 
 /* Version cell */
 .vv-version-cell { display: flex; align-items: center; gap: 10px; }
@@ -220,6 +214,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             @endif
 
             {{-- TABLE --}}
+            <div class="vv-table-wrap">
             <table id="esim" class="table">
               <thead>
                 <tr>
@@ -274,6 +269,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 @endforeach
               </tbody>
             </table>
+            </div>
 
           </div>{{--/.c_content--}}
         </div>{{--/.c_panel--}}

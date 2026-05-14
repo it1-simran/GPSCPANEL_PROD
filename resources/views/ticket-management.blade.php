@@ -588,11 +588,16 @@ use App\Helper\CommonHelper;
 .tk-modal-close:hover { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #ef4444; }
 
 /* Body */
-.tk-modal-body { padding: 22px; background: #fff; }
+.tk-modal-body { padding: 22px; background: #fff; min-width: 0; overflow-x: hidden; }
 
 /* Subject row */
-.tk-modal-subject-row { margin-bottom: 18px; }
-.tk-modal-subject { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+.tk-modal-subject-row { margin-bottom: 18px; min-width: 0; }
+.tk-modal-subject {
+    font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
 .tk-modal-type-pill {
     display: inline-block;
     background: rgba(118,207,28,0.12); color: #5a9e12;
@@ -602,7 +607,7 @@ use App\Helper\CommonHelper;
 }
 
 /* Sections */
-.tk-modal-section { margin-bottom: 18px; }
+.tk-modal-section { margin-bottom: 18px; min-width: 0; }
 .tk-modal-section-title {
     font-size: 12px; font-weight: 700; color: #64748b;
     text-transform: uppercase; letter-spacing: 0.8px;
@@ -614,6 +619,11 @@ use App\Helper\CommonHelper;
     border-left: 3px solid #76CF1C;
     border-radius: 6px; padding: 12px 14px;
     color: #334155; font-size: 13px; line-height: 1.6;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 /* File buttons */

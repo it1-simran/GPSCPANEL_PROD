@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Svg\Tag\Rect;
 
 class RegisterController extends Controller
@@ -521,14 +522,21 @@ class RegisterController extends Controller
   }
   public function deleteWriter(Request $request, $id)
   {
-    $contact = Writer::find($id);
-    $contact->is_deleted = '1';
-    $contact->save();
-    self::manageEditDelAccs($id, $request->all(), 'delete');
-    if (Auth::user()->user_type == 'Admin') {
-      return redirect('admin/view-user')->with('error',  $contact->email . '-Deleted Successfully');
-    } else {
-      return redirect('reseller/view-user')->with('error',  $contact->email . '-Deleted Successfully');
+    try {
+      $contact = Writer::find($id);
+      if (!$contact) {
+        return redirect()->back()->with('error', 'User not found.');
+      }
+      $contact->is_deleted = '1';
+      $contact->save();
+      self::manageEditDelAccs($id, $request->all(), 'delete');
+      if (Auth::user()->user_type == 'Admin') {
+        return redirect('admin/view-user')->with('error',  $contact->email . '-Deleted Successfully');
+      } else {
+        return redirect('reseller/view-user')->with('error',  $contact->email . '-Deleted Successfully');
+      }
+    } catch (QueryException $e) {
+      return redirect()->back()->with('error', 'This user cannot be deleted because other records still depend on it.');
     }
   }
   public function getuserinfo(Request $request)

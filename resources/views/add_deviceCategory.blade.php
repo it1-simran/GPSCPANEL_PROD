@@ -1,17 +1,112 @@
 @extends('layouts.apps')
 @section('content')
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<!-- Select2 JS -->
+<!-- Select2 JS (page uses Select2 v4 API; layout already loads jQuery) -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<!--<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />-->
 <style>
-    body {
-        padding: 40px;
-        background-color: #f8f9fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    #main-content.add-device-category-page .wrapper {
+        padding-top: 8px !important;
+    }
+
+    .add-device-category-page .dc-breadcrumb-wrap {
+        padding: 4px 0 10px 0;
+        margin: 0;
+    }
+
+    .add-device-category-page .dc-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        row-gap: 6px;
+        background: #1e293b;
+        border-radius: 50px;
+        padding: 6px 18px 6px 8px;
+        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        background: #76CF1C;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        flex-shrink: 0;
+        color: #1e293b;
+        text-decoration: none;
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-home i {
+        font-size: 13px;
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-item {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-sep {
+        color: rgba(255, 255, 255, 0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    .add-device-category-page .dc-breadcrumb a.bc-item:hover {
+        color: #e2e8f0;
+    }
+
+    .add-device-category-page .dc-breadcrumb.dc-breadcrumb--scroll {
+        max-width: 100%;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    .add-device-category-page .dc-breadcrumb.dc-breadcrumb--scroll .bc-home {
+        flex-shrink: 0;
+    }
+
+    .add-device-category-page .dc-breadcrumb-wrap + .row {
+        margin-top: 2px;
+    }
+
+    .add-device-category-page .c_panel {
+        margin-top: 0 !important;
+        overflow: visible !important;
+    }
+
+    .add-device-category-page .c_title h2::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .add-device-category-page .dc-panel-title {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        color: #ffffff !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .add-device-category-page .dc-panel-title > i {
+        color: #76CF1C;
+        font-size: 14px;
     }
 
     .select-container {
@@ -30,32 +125,285 @@
         min-height: 40px;
     }
 
-    label {
+    /* Scoped — avoid affecting modal / Select2 dropdown markup */
+    .add-device-category-page .c_content label,
+    .add-device-category-page #addDeviceCategory label {
         font-weight: 600;
-        margin-bottom: 10px;
+    }
+
+    .add-device-category-page #addDeviceCategory .control-label {
+        margin-bottom: 6px;
+    }
+
+    /* BS3 horizontal forms default to right-aligned labels — looks broken vs full-width checkbox rows */
+    .add-device-category-page #addDeviceCategory.form-horizontal .control-label {
+        text-align: left !important;
+    }
+
+    .add-device-category-page #addDeviceCategory .adc-step1-device-config > .form-group::after,
+    .add-device-category-page #addDeviceCategory #certificationFields .form-group::after {
+        content: "";
+        display: table;
+        clear: both;
     }
 
     .select2-container {
         padding: 0px !important;
     }
+
+    /* Dynamic selected data-fields row styling */
+    .add-device-category-page .adc-dynamic-field {
+        margin-bottom: 10px;
+    }
+    .add-device-category-page .adc-dynamic-inner {
+        display: grid;
+        grid-template-columns: 120px minmax(110px, 1fr) 102px minmax(160px, 1.15fr) minmax(150px, 0.95fr) 78px 40px;
+        gap: 10px 12px;
+        align-items: center;
+        padding: 10px 12px;
+        border: 1px solid #e7edf5;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fbfdff 0%, #f8fafc 100%);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .add-device-category-page .adc-field-label strong {
+        font-size: 13px;
+        color: #0f172a;
+    }
+    .add-device-category-page .adc-field-id {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 2px;
+    }
+    .add-device-category-page .adc-field-name .form-control:disabled {
+        background: #e2e8f0;
+        color: #334155;
+        font-weight: 600;
+    }
+    .add-device-category-page .adc-default-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+    }
+    .add-device-category-page .adc-validation-meta {
+        min-width: 132px;
+        font-size: 12px;
+        color: #475569;
+        line-height: 1.3;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+        white-space: nowrap;
+    }
+    .add-device-category-page .adc-validation-meta b {
+        color: #475569;
+        font-weight: 600;
+    }
+    .add-device-category-page .adc-validation-meta p {
+        margin: 0 !important;
+        padding: 0;
+    }
+    .add-device-category-page .adc-required-cell {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .add-device-category-page .adc-required-cell input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+    }
+    .add-device-category-page .adc-remove-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .add-device-category-page .adc-remove-cell .btn.remove-input {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        padding: 0 !important;
+        line-height: 1 !important;
+        border-radius: 7px;
+        text-align: center;
+    }
+    .add-device-category-page .adc-remove-cell .btn.remove-input i.fa {
+        margin: 0 !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        font-size: 11px;
+        line-height: 1;
+    }
+
+    @media (max-width: 1199px) {
+        .add-device-category-page .adc-dynamic-inner {
+            grid-template-columns: 1fr 1fr;
+        }
+        .add-device-category-page .adc-field-label {
+            grid-column: 1 / -1;
+        }
+        .add-device-category-page .adc-remove-cell {
+            justify-content: flex-end;
+        }
+    }
+
+    /* Section heading inside form step */
+    .add-device-category-page .dc-form-section-title-wrap {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-bottom: 8px;
+    }
+    .add-device-category-page .dc-form-section-title {
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: #0f172a;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+    }
+
+    /* Step 1 — compact checkbox rows (label + control on one line) */
+    .add-device-category-page .adc-checkbox-line {
+        margin-bottom: 6px;
+    }
+
+    .add-device-category-page .adc-checkbox-line-inner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 40px;
+        padding: 2px 0;
+    }
+
+    .add-device-category-page .adc-checkbox-line-inner .adc-checkbox-input {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .add-device-category-page .adc-checkbox-line-inner .adc-checkbox-text {
+        margin: 0;
+        font-weight: 600;
+        cursor: pointer;
+        line-height: 1.35;
+    }
+
+    .add-device-category-page .adc-step1-device-config .form-group {
+        margin-bottom: 12px;
+    }
+
+    .add-device-category-page .adc-form-actions {
+        margin-top: 8px;
+        margin-bottom: 0;
+    }
+
+    .add-device-category-page .adc-next-btn,
+    .add-device-category-page .adc-step-nav-btn {
+        min-height: 44px;
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .add-device-category-page .adc-step2-prev-wrap,
+    .add-device-category-page .adc-step2-submit-wrap {
+        float: none !important;
+    }
+
+    @media (max-width: 991px) {
+        .add-device-category-page .dc-breadcrumb-wrap {
+            padding: 2px 0 6px 0;
+        }
+
+        .add-device-category-page .dc-breadcrumb {
+            border-radius: 999px;
+            padding: 5px 14px 5px 6px;
+        }
+
+        .add-device-category-page .c_content {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+            padding-top: 14px !important;
+            padding-bottom: 18px !important;
+        }
+
+        .add-device-category-page .adc-step1-device-config .form-horizontal .control-label,
+        .add-device-category-page .form-step .form-horizontal .control-label {
+            text-align: left !important;
+            padding-top: 0 !important;
+        }
+
+        .add-device-category-page .adc-next-btn {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .add-device-category-page .adc-form-actions > div {
+            text-align: center !important;
+        }
+
+        .add-device-category-page .adc-step2-actions .adc-step-nav-btn {
+            width: 100%;
+        }
+
+        .add-device-category-page .adc-step2-prev-wrap {
+            margin-bottom: 10px;
+        }
+
+        .add-device-category-page .adc-step2-prev-wrap,
+        .add-device-category-page .adc-step2-submit-wrap {
+            flex: 1 1 100%;
+            width: 100% !important;
+            max-width: 100% !important;
+            text-align: center !important;
+        }
+
+        .add-device-category-page #user-select + .select2-container {
+            width: 100% !important;
+        }
+
+        .add-device-category-page .c_content input.form-control {
+            min-height: 42px;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .add-device-category-page .adc-step2-actions .adc-step2-prev-wrap {
+            text-align: left;
+        }
+
+        .add-device-category-page .adc-step2-actions .adc-step2-submit-wrap {
+            text-align: right;
+        }
+    }
 </style>
-<section id="main-content">
+<section id="main-content" class="add-device-category-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Device Category</a></li>
-                        <li class="active"><a href="#">Add Device Category</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="dc-breadcrumb-wrap">
+            <nav class="dc-breadcrumb dc-breadcrumb--scroll" aria-label="Breadcrumb">
+                <a href="{{ url($url_type) }}" class="bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+                <a href="{{ url($url_type) }}" class="bc-item">Home</a>
+                <span class="bc-sep">›</span>
+                <a href="{{ url($url_type . '/view-device-category') }}" class="bc-item">Device category</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Add device category</span>
+            </nav>
         </div>
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <h2>Add Device Category</h2>
+                        <h2 class="dc-panel-title"><i class="fa fa-plus-circle"></i> Add device category</h2>
                         <div class="clearfix"></div>
                     </div><!--/.c_title-->
                     <div class="c_content">
@@ -79,84 +427,92 @@
                         <form class="validator form-horizontal" id="addDeviceCategory" name="addDeviceCategory" method="post" action="#" onsubmit="return false;">
                             @csrf
                             <div class="form-step form-step-active">
-                                <div class='col-lg-12'>
-                                    <h5><b>Device Configurations</b></54>
+                                <div class='col-xs-12 dc-form-section-title-wrap'>
+                                    <h5 class="dc-form-section-title">Device Configurations</h5>
                                 </div>
-                                <div class="form-group ">
-                                    <label for="curl" class="control-label col-lg-3"><b>Is ESIM </b></label>
-                                    <div class="col-lg-6">
-                                        <input type="checkbox" class='default_template_checkbnox' name="is_esim" id="is_esim">
+                                <div class="adc-step1-device-config clearfix">
+                                <div class="form-group adc-checkbox-line">
+                                    <div class="col-xs-12">
+                                        <div class="adc-checkbox-line-inner">
+                                            <input type="checkbox" class="default_template_checkbnox adc-checkbox-input" name="is_esim" id="is_esim">
+                                            <label for="is_esim" class="adc-checkbox-text"><b>Is ESIM</b></label>
+                                        </div>
                                     </div>
                                 </div>
-                                 <div class="form-group ">
-                                    <label for="curl" class="control-label col-lg-3"><b>Is Certification Enable </b></label>
-                                    <div class="col-lg-6">
-                                        <input type="checkbox" class='default_template_checkbnox' name="is_certification_enable" id="is_certification_enable">
+                                <div class="form-group adc-checkbox-line">
+                                    <div class="col-xs-12">
+                                        <div class="adc-checkbox-line-inner">
+                                            <input type="checkbox" class="default_template_checkbnox adc-checkbox-input" name="is_certification_enable" id="is_certification_enable">
+                                            <label for="is_certification_enable" class="adc-checkbox-text"><b>Is Certification Enable</b></label>
+                                        </div>
                                     </div>
                                 </div>
                                 <div id="certificationFields" style="display: none;">
                                     <div class="form-group">
-                                        <label for="arai_tac_no" class="control-label col-lg-3">ARAI/ TAC NO</label>
-                                        <div class="col-lg-6">
+                                        <label for="arai_tac_no" class="control-label col-xs-12 col-lg-3">ARAI/ TAC NO</label>
+                                        <div class="col-xs-12 col-lg-6">
                                             <input class="form-control" id="arai_tac_no" type="text" name="arai_tac_no" />
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="arai_date" class="control-label col-lg-3">Date</label>
-                                        <div class="col-lg-6">
+                                        <label for="arai_date" class="control-label col-xs-12 col-lg-3">Date</label>
+                                        <div class="col-xs-12 col-lg-6">
                                             <input class="form-control" id="arai_date" type="date" name="arai_date" />
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="certification_model_name" class="control-label col-lg-3">Model Name</label>
-                                        <div class="col-lg-6">
+                                        <label for="certification_model_name" class="control-label col-xs-12 col-lg-3">Model Name</label>
+                                        <div class="col-xs-12 col-lg-6">
                                             <input class="form-control" id="certification_model_name" type="text" name="certification_model_name" />
                                         </div>
                                     </div>
                                 </div>
-                                <div class="form-group ">
-                                    <label for="curl" class="control-label col-lg-3"><b>Is Can Enable </b></label>
-                                    <div class="col-lg-6">
-                                        <input type="checkbox" class='default_template_checkbnox' name="is_can_enable" id="is_can_enable">
+                                <div class="form-group adc-checkbox-line">
+                                    <div class="col-xs-12">
+                                        <div class="adc-checkbox-line-inner">
+                                            <input type="checkbox" class="default_template_checkbnox adc-checkbox-input" name="is_can_enable" id="is_can_enable">
+                                            <label for="is_can_enable" class="adc-checkbox-text"><b>Is Can Enable</b></label>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="deviceName" class="control-label col-lg-3">Device Name <span class="require">*</span></label>
-                                    <div class="col-lg-6">
+                                    <label for="deviceName" class="control-label col-xs-12 col-lg-3">Device Name <span class="require">*</span></label>
+                                    <div class="col-xs-12 col-lg-6">
                                         <input class="form-control" id="deviceName" type="text" placeholder="Enter Device Name" name="deviceName" required />
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="deviceName" class="control-label col-lg-3">Select Data Fields <span class="require">*</span></label>
-                                    <div class="col-lg-6">
+                                    <label for="user-select" class="control-label col-xs-12 col-lg-3">Select Data Fields <span class="require">*</span></label>
+                                    <div class="col-xs-12 col-lg-6">
                                         <select id="user-select" name="user_select[]" class="form-control" style="width: 100%;height:auto;" multiple></select>
                                     </div>
                                 </div>
+                                </div><!-- /.adc-step1-device-config -->
                                 <div id="selectedDeviceInput"></div>
                                 <!--<div id="dynamicInput"></div>-->
                                 <!--<div class="col-sm-12 text-right">-->
                                 <!--    <button type="button" class="btn btn-info btn-sm" id="addInput">Add More</button>-->
                                 <!--</div>-->
-                                <div class="form-group">
-                                    <div class="col-lg-12 text-right">
-                                        <button type="button" class="btn btn-primary next-btn margin-top-10" disabled="true">Next</button>
+                                <div class="form-group adc-form-actions">
+                                    <div class="col-xs-12 text-right">
+                                        <button type="button" class="btn btn-primary next-btn adc-next-btn margin-top-10" disabled="true">Next</button>
                                     </div>
                                 </div>
                             </div>
                             <div class="form-step">
                                 <div class="form-group">
-                                    <label for="template_name" class="control-label col-lg-3">Template Name <span class="require">*</span></label>
-                                    <div class="col-lg-6">
-                                        <input class="form-control" type="text" placeholder="Enter Template Name" name="template_name" required />
+                                    <label for="template_name" class="control-label col-xs-12 col-lg-3">Template Name <span class="require">*</span></label>
+                                    <div class="col-xs-12 col-lg-6">
+                                        <input class="form-control" id="template_name" type="text" placeholder="Enter Template Name" name="template_name" required />
                                     </div>
                                 </div>
                                 <div id="inputSecondStep"></div>
-                                <div class="form-group row margin-top-10">
-                                    <div class="col-lg-6">
-                                        <button type="button" class="btn btn-primary btn-flat prev-btn">Previous</button>
+                                <div class="form-group adc-step2-actions row margin-top-10">
+                                    <div class="col-xs-12 col-lg-6 adc-step2-prev-wrap">
+                                        <button type="button" class="btn btn-primary btn-flat prev-btn adc-step-nav-btn">Previous</button>
                                     </div>
-                                    <div class="col-lg-6 text-right">
-                                        <button class="btn btn-primary btn-flat submit-btn-action" type="submit">Save</button>
+                                    <div class="col-xs-12 col-lg-6 text-right adc-step2-submit-wrap">
+                                        <button class="btn btn-primary btn-flat submit-btn-action adc-step-nav-btn" type="submit">Save</button>
                                     </div>
                                 </div>
                             </div>
@@ -466,32 +822,34 @@
                         break;
                 }
 
-                const html = `
-              <div class="form-group" id="device-input-${item.id}">
-                <label class="control-label col-lg-3">Field ${index + 1} <span class="require">*</span><p>ID : ${item.id}</p></label>
-                <div class="row d-flex">
-                  <div class="col-lg-3">
-                    <input class="form-control" placeholder="Enter Input Name" type="text" disabled name="name[${item.id}]" style="width: fit-content;" value="${item.fieldName}" required />
+            const html = `
+              <div class="form-group adc-dynamic-field" id="device-input-${item.id}">
+                <div class="adc-dynamic-inner">
+                  <div class="adc-field-label">
+                    <strong>Field ${index + 1} <span class="require">*</span></strong>
+                    <div class="adc-field-id">ID : ${item.id}</div>
+                  </div>
+                  <div class="adc-field-name">
+                    <input class="form-control" type="text" disabled name="name[${item.id}]" value="${item.fieldName}" required />
                     <input type="hidden" name="nameParameters[]" id="nameParameters${item.id}" value="${item.fieldName}" />
                     <input type="hidden" name="idParameters[]" id="idParameters${item.id}" value="${item.id}" />
-                
                   </div>
-                  <div class="col-lg-2">
-                    <label class="control-label">Default Value <span class="require">*</span></label>
+                  <div class="adc-default-label">
+                    Default Value <span class="require">*</span>
                   </div>
-                  <div class="col-lg-3">
+                  <div class="adc-default-input">
                     ${defaultInput}
                   </div>
-                  <div class="col-lg-3">
+                  <div class="adc-validation-meta">
                     ${validationRule}
                   </div>
-                  <div class="col-lg-1 d-flex bgx-checkbox-custom">
+                  <div class="adc-required-cell">
                     <input type="hidden" name="inputFieldRequired[]" value="false">
                     <input type="checkbox" checked name="inputFieldRequired[]" value="true"/>
-                </div>
-                  <div class="col-lg-1 bgx-del-button-container">
-                    <button type="button" class="btn btn-danger btn-sm remove-input" data-id="${item.id}">
-                      <img src="/assets/icons/cross.svg" />
+                  </div>
+                  <div class="adc-remove-cell">
+                    <button type="button" style="margin-top: 1px;" class="btn btn-danger btn-sm remove-input" data-id="${item.id}" title="Remove field">
+                      <i class="fa fa-trash"></i>
                     </button>
                     <input type="hidden" name="inputType[]" value="${item.inputType}" required />
                   </div>
@@ -791,8 +1149,8 @@
                             <input type="hidden" name="inputFieldRequired[${inputCount}]" value="false">
                             <input type="checkbox" checked name="inputFieldRequired[${inputCount}]" value="true"/>
                         </div>
-                        <div class="col-lg-1 bgx-del-button-container">
-                            <button type="button" class="btn btn-danger btn-sm remove-input margin-top-1"><img src="/assets/icons/cross.svg" /></button>
+                        <div class="col-lg-1 bgx-del-button-container adc-remove-cell">
+                            <button type="button" class="btn btn-danger btn-sm remove-input margin-top-1" title="Remove field"><i class="fa fa-trash"></i></button>
                         </div>
                     </div>
                     <div class="append-number-options mt-2" style="display:none;">
@@ -1016,7 +1374,7 @@
                 data: formData,
                 success: function(response) {
                     $("#alert_msg").html('<div class="col-sm-12 alert alert-success" role="alert">Successfully added device category.</div>');
-                    // window.location.href = '/admin/View-device-category';
+                    // window.location.href = '/admin/view-device-category';
                 },
                 error: function(xhr, status, error) {
                     console.error("AJAX request failed");
@@ -1049,7 +1407,4 @@
         toggleCertificationFields();
     });
 </script>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!--<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>-->
 @stop

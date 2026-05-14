@@ -13,30 +13,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 .tv-page { font-family: 'Inter', sans-serif; }
 #main-content .wrapper { padding-top: 8px !important; }
 
-/* Breadcrumb */
-.tv-breadcrumb-wrap { padding: 8px 0 14px 0; }
-.tv-breadcrumb {
-    display: inline-flex;
-    align-items: center;
-    background: #1e293b;
-    border-radius: 50px;
-    padding: 6px 18px 6px 8px;
-    box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
-}
-.tv-breadcrumb .bc-home {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: #76CF1C;
-    color: #1e293b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 10px;
-}
-.tv-breadcrumb .bc-item { color: rgba(255,255,255,0.68); font-size: 13px; font-weight: 500; }
-.tv-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
-.tv-breadcrumb .bc-sep { color: rgba(255,255,255,0.35); margin: 0 8px; }
+/* Breadcrumb — uses global .c_breadcrumbs from custom.css */
 
 /* Panel + title */
 .c_panel {
@@ -75,48 +52,152 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     box-shadow: 0 4px 12px rgba(118,207,28,0.3);
 }
 
-/* Table style (version-control reference) */
-#esim {
+/* --- View ticket: DataTable (dark #1e293b header, clean body — matches modern table UI) --- */
+.tv-ticket-table-wrap { padding: 0 2px 6px; }
+#esim_wrapper.dataTables_wrapper {
+    padding: 18px 18px 22px;
+    background: #fff;
+    border-radius: 0 0 12px 12px;
+}
+#esim_wrapper .dataTables_length,
+#esim_wrapper .dataTables_filter { margin-bottom: 14px; }
+#esim_wrapper .dataTables_length label,
+#esim_wrapper .dataTables_filter label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+#esim_wrapper .dataTables_length select {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 6px 28px 6px 12px !important;
+    height: auto !important;
+    width: auto !important;
+    min-width: 76px;
+    font-weight: 600;
+    color: #1e293b;
+    background: #fff;
+}
+#esim_wrapper .dataTables_filter input[type="search"] {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 8px 14px !important;
+    margin-left: 10px !important;
+    min-width: 200px;
+    font-size: 13px;
+}
+#esim_wrapper .dataTables_filter input[type="search"]:focus {
+    outline: none;
+    border-color: #76CF1C !important;
+    box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.18);
+}
+#esim_wrapper .dataTables_info {
+    padding-top: 14px;
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+#esim_wrapper .dataTables_paginate { padding-top: 8px; }
+#esim_wrapper .dataTables_paginate .pagination > li > a {
+    border-radius: 8px !important;
+    margin: 0 3px;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+    padding: 6px 12px !important;
+}
+#esim_wrapper .dataTables_paginate .pagination > .active > a,
+#esim_wrapper .dataTables_paginate .pagination > .active > a:focus {
+    background: #1e293b !important;
+    border-color: #1e293b !important;
+    color: #fff !important;
+}
+
+table#esim.dataTable {
     width: 100% !important;
     border-collapse: separate !important;
-    border-spacing: 0 6px !important;
+    border-spacing: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 8px !important;
     border: none !important;
 }
-#esim.table { border: none !important; }
-#esim > thead > tr > th,
-#esim > tbody > tr > td { border: none !important; }
-#esim thead th {
-    background: transparent !important;
-    color: #64748b !important;
+table#esim.dataTable thead > tr > th {
+    background: #1e293b !important;
+    color: #fff !important;
     font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.55px !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.8px !important;
-    font-weight: 700 !important;
-    padding: 8px 14px !important;
-    border-bottom: 2px solid #f1f5f9 !important;
-}
-#esim tbody tr { background: #fff; transition: box-shadow 0.2s, background 0.2s; }
-#esim tbody tr:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-#esim tbody td {
+    padding: 14px 16px !important;
+    border: none !important;
     vertical-align: middle !important;
-    padding: 13px 14px !important;
+}
+table#esim.dataTable thead > tr > th:first-child { border-top-left-radius: 10px; }
+table#esim.dataTable thead > tr > th:last-child { border-top-right-radius: 10px; }
+table#esim.dataTable thead .sorting:after,
+table#esim.dataTable thead .sorting_asc:after,
+table#esim.dataTable thead .sorting_desc:after {
+    color: rgba(255, 255, 255, 0.55) !important;
+    opacity: 1 !important;
+}
+table#esim.dataTable thead .sorting:after { opacity: 0.35 !important; }
+
+table#esim.dataTable tbody > tr > td {
+    padding: 15px 16px !important;
+    border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
     background: #fff !important;
-    color: #334155;
     font-size: 13px;
-    border-top: 1px solid #e9ecef !important;
-    border-bottom: 1px solid #e9ecef !important;
+    color: #334155;
+    vertical-align: middle !important;
 }
-#esim tbody td:first-child {
-    border-left: 1px solid #e9ecef !important;
-    border-top-left-radius: 8px !important;
-    border-bottom-left-radius: 8px !important;
-    color: #94a3b8;
+table#esim.dataTable.table-condensed tbody > tr > td { padding: 15px 16px !important; }
+table#esim.dataTable tbody tr:hover > td { background: #f8fafc !important; }
+table#esim.dataTable tbody > tr > td:first-child {
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.tv-badge-open {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
     font-weight: 700;
+    background: rgba(245, 158, 11, 0.16);
+    color: #b45309;
 }
-#esim tbody td:last-child {
-    border-right: 1px solid #e9ecef !important;
-    border-top-right-radius: 8px !important;
-    border-bottom-right-radius: 8px !important;
+.tv-badge-resolved {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(118, 207, 28, 0.2);
+    color: #3f6212;
+}
+.tv-badge-other {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #475569;
+}
+.btn-tv-delete {
+    background: #fff !important;
+    border: 1px solid #fecaca !important;
+    color: #b91c1c !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    padding: 6px 14px !important;
+    margin-top: 0 !important;
+}
+.btn-tv-delete:hover {
+    background: #fef2f2 !important;
+    border-color: #f87171 !important;
+    color: #991b1b !important;
 }
 
 /* Modal theme */
@@ -189,13 +270,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
 <section id="main-content" class="tv-page">
     <section class="wrapper">
-        <div class="tv-breadcrumb-wrap">
-            <nav class="tv-breadcrumb">
-                <div class="bc-home"><i class="fa fa-home"></i></div>
-                <span class="bc-item">Support Management</span>
-                <span class="bc-sep">›</span>
-                <span class="bc-item active">Raise Ticket</span>
-            </nav>
+        <div class="top-page-header">
+            <div class="page-breadcrumb">
+                <nav class="c_breadcrumbs">
+                    <ul>
+                        <li><a href="#">Support Management</a></li>
+                        <li class="active"><a href="#">View Ticket</a></li>
+                    </ul>
+                </nav>
+            </div>
         </div>
         <div class="row">
             <div class="col-md-12">
@@ -216,7 +299,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         </div>
                         <div class="clearfix"></div>
                     </div><!--/.c_title-->
-                    <div class="c_content">
+                    <div class="c_content tv-ticket-table-wrap">
                         <div class="row" id="alert_msg">
                             @if ($message = Session::get('success'))
                             <div class="col-sm-12 alert alert-success" role="alert">
@@ -240,16 +323,16 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             <a href="{{ route('backend.csv') }}" class="btn btn-success">Download CSV</a>
                         </div>
                         @endif
-                        <table id="esim" class="example table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 14px;">
+                        <table id="esim" class="example table table-condensed cf" style="width: 100%; font-size: 14px;">
                             <thead>
                                 <tr>
                                     <th>Sr. No.</th>
                                     <th>Ticket Type</th>
                                     <th>Ticket Subject</th>
-                                    <th>Decription</th>
+                                    <th>Description</th>
                                     <th>Status</th>
                                     <th>Created at</th>
-                                    <th>Updated By</th>
+                                    <th>Updated at</th>
                                     <th>Delete</th>
                                 </tr>
                             </thead>
@@ -265,11 +348,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     <td>{{$list->description}}</td>
                                     <td>
                                         @if(strtolower($list->status) === 'open')
-                                        <span class="badge bg-warning text-dark">Open</span>
+                                        <span class="tv-badge-open">Open</span>
                                         @elseif(strtolower($list->status) === 'resolved')
-                                        <span class="badge bg-success text-white">Resolved</span>
+                                        <span class="tv-badge-resolved">Resolved</span>
                                         @else
-                                        <span class="badge bg-secondary text-white">{{ ucfirst($list->status) }}</span>
+                                        <span class="tv-badge-other">{{ ucfirst($list->status) }}</span>
                                         @endif
                                     </td>
 
@@ -279,7 +362,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         <form action="/{{$url_type}}/delete-backend/{{$list->id}}" method="post">
                                             @csrf
                                             @method('DELETE')
-                                            <button onClick="javascript:return confirm('Are you sure you want to delete this?');" class="btn btn-danger btn-sm margin-top-1" type="submit">Delete</button>
+                                            <button onClick="javascript:return confirm('Are you sure you want to delete this?');" class="btn btn-sm btn-tv-delete" type="submit">Delete</button>
 
                                         </form>
                                     </td>

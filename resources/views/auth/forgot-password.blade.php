@@ -6,6 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>GPS CPANEL - Forgot Password</title>
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
+    @include('partials.gps-notifications-assets')
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -233,10 +236,19 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        @media (max-width: 480px) {
+            .login-card { padding: 28px 20px; border-radius: 16px; margin: 0 12px; }
+            .login-header h1 { font-size: 1.6rem; }
+            .login-header { margin-bottom: 24px; }
+            .form-group { margin-bottom: 16px; }
+            .form-control { padding: 12px 14px; font-size: 14px; }
+        }
     </style>
 </head>
 
 <body>
+    @include('partials.gps-flash-pull')
     <div class="login-card">
         <div class="login-header">
             <a href="{{ url('/') }}" class="brand">
@@ -319,6 +331,7 @@
 
     <script src="{{ asset('assets/js/global-plugins.js') }}"></script>
     <script src="{{ asset('assets/js/theme.js') }}"></script>
+    @include('partials.gps-flash-scripts')
     <script type="text/javascript">
         $(document).ready(function() {  
             $('#forgotPassword').submit(function() {
@@ -341,7 +354,7 @@
                             var hiddenEmail = email.charAt(0) + "********" + email.slice(email.indexOf("@"));
                             $('#getSendMail').text(hiddenEmail);
                         } else {
-                            alert(result.message);
+                            showGpsToast('error', 'Error', result.message);
                             btn.prop('disabled', false).text('Get Verification Code');
                         }
                     },
@@ -352,7 +365,7 @@
                             let res = JSON.parse(xhr.responseText);
                             if (res.message) errorMsg = res.message;
                         } catch(e) {}
-                        alert(errorMsg);
+                        showGpsToast('error', 'Error', errorMsg);
                     }
                 });
             });
@@ -383,7 +396,7 @@
                                 $link.removeClass('disabled').css('opacity', '1');
                             }, 5000);
                         } else {
-                            alert(result.message);
+                            showGpsToast('error', 'Error', result.message);
                             $link.removeClass('disabled').css('opacity', '1');
                             $msg.fadeOut();
                         }
@@ -396,7 +409,7 @@
                             let res = JSON.parse(xhr.responseText);
                             if (res.message) errorMsg = res.message;
                         } catch(e) {}
-                        alert(errorMsg);
+                        showGpsToast('error', 'Error', errorMsg);
                     }
                 });
             });
@@ -418,7 +431,7 @@
                             $('#header-desc').text('Secure your account');
                             $('#userId').val(result.id);
                         } else {
-                            alert(result.message);
+                            showGpsToast('error', 'Error', result.message);
                             btn.prop('disabled', false).text('Verify Code');
                         }
                     },
@@ -429,7 +442,7 @@
                             let res = JSON.parse(xhr.responseText);
                             if (res.message) errorMsg = res.message;
                         } catch(e) {}
-                        alert(errorMsg);
+                        showGpsToast('error', 'Error', errorMsg);
                     }
                 });
             });
@@ -458,10 +471,12 @@
                     success: function(response) {
                         let result = JSON.parse(response);
                         if (result.status == 200) {
-                            alert("Password reset successful! Redirecting to login...");
-                            window.location.href = "{{ route('login') }}";
+                            showGpsToast('success', 'Password updated', 'Redirecting to sign in…', { durationMs: 2200 });
+                            setTimeout(function () {
+                                window.location.href = "{{ route('login') }}";
+                            }, 1600);
                         } else {
-                            alert(result.message);
+                            showGpsToast('error', 'Error', result.message);
                             btn.prop('disabled', false).text('Update Password');
                         }
                     },
@@ -472,7 +487,7 @@
                             let res = JSON.parse(xhr.responseText);
                             if (res.message) errorMsg = res.message;
                         } catch(e) {}
-                        alert(errorMsg);
+                        showGpsToast('error', 'Error', errorMsg);
                     }
                 });
             });

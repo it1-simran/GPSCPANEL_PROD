@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Live Tracker Traffic Simulator with Command Testing
  * Run this script with: php simulate_traffic.php
@@ -14,7 +13,7 @@
 // Configuration
 $baseUrl = "http://127.0.0.1:8000";
 $apiIngestUrl = "$baseUrl/api/packets/ingest";
-$imei = isset($argv[1]) ? $argv[1] : "925456677644555";
+$imei = isset($argv[1]) ? $argv[1] : "490154203237518";
 $trafficIterations = 15;
 $trafficDelay = 1; // Seconds between traffic packets
 

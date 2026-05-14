@@ -16,220 +16,348 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Register - GPS Control Panel</title>
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #0bb2d4, #0992ad);
-            font-family: 'Raleway', sans-serif;
+            background: #0f172a;
+            font-family: 'Segoe UI', 'Raleway', sans-serif;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed; top: -40%; right: -20%;
+            width: 700px; height: 700px;
+            background: radial-gradient(circle, rgba(118,207,28,0.08) 0%, transparent 70%);
+            border-radius: 50%; pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed; bottom: -30%; left: -15%;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(118,207,28,0.05) 0%, transparent 70%);
+            border-radius: 50%; pointer-events: none;
+        }
+
+        .reg-wrapper {
+            min-height: 100vh; display: flex;
+            align-items: center; justify-content: center;
+            padding: 40px 16px;
         }
 
         .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.15);
-            padding: 30px;
-            background: #fff;
+            border: none !important;
+            border-radius: 20px !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05) !important;
+            padding: 0 !important;
+            background: #fff !important;
+            overflow: hidden;
+            max-width: 750px;
+            width: 100%;
         }
+        .card-accent-bar {
+            height: 5px; width: 100%;
+            background: linear-gradient(90deg, #76CF1C, #1e293b, #76CF1C);
+        }
+        .card-inner { padding: 36px 36px 28px; }
+
+        .card-logo {
+            text-align: center; margin-bottom: 8px;
+        }
+        .card-logo .logo-ring {
+            width: 56px; height: 56px; border-radius: 14px;
+            background: linear-gradient(135deg, rgba(118,207,28,0.12), rgba(118,207,28,0.05));
+            border: 2px solid rgba(118,207,28,0.2);
+            display: inline-flex; align-items: center; justify-content: center;
+            margin-bottom: 12px;
+        }
+        .card-logo .logo-ring i { color: #76CF1C; font-size: 22px; }
 
         .card h2 {
-            font-weight: 700;
-            color: #0bb2d4;
+            font-weight: 800 !important; color: #0f172a !important;
+            font-size: 22px !important; margin-bottom: 4px !important;
+            letter-spacing: -0.3px;
+        }
+        .card .reg-subtitle {
+            color: #94a3b8; font-size: 13px; font-weight: 500;
+            margin-bottom: 28px; text-align: center;
         }
 
         .form-label {
-            font-weight: 600;
-            color: #333;
+            font-weight: 700 !important; color: #334155 !important;
+            font-size: 12.5px !important; letter-spacing: 0.2px;
+            margin-bottom: 5px !important;
+        }
+
+        .form-control, .form-select {
+            min-height: 42px !important;
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: 10px !important;
+            font-size: 13px !important; color: #334155 !important;
+            background: #f8fafc !important;
+            transition: all 0.2s !important;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #76CF1C !important;
+            box-shadow: 0 0 0 3px rgba(118,207,28,0.12) !important;
+            background: #fff !important;
+        }
+        .form-control[readonly] {
+            background: #f1f5f9 !important; color: #64748b !important;
         }
 
         .btn-custom {
-            background: #0bb2d4;
-            color: #fff;
-            font-weight: 600;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+            color: #0f172a !important; font-weight: 800 !important;
+            border-radius: 10px !important; border: none !important;
+            padding: 12px 0 !important; font-size: 14px !important;
+            letter-spacing: 0.3px; transition: all 0.2s !important;
+            box-shadow: 0 6px 20px rgba(118,207,28,0.3) !important;
         }
-
         .btn-custom:hover {
-            background: #0992ad;
+            filter: brightness(1.06);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(118,207,28,0.35) !important;
+            color: #0f172a !important;
         }
 
-        .form-footer {
-            text-align: center;
-            margin-top: 15px;
-        }
+        .form-footer { text-align: center; margin-top: 15px; }
+        .form-footer a { color: #76CF1C; font-weight: 600; text-decoration: none; }
+        .form-footer a:hover { text-decoration: underline; }
 
-        .form-footer a {
-            color: #0bb2d4;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .form-footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Select2 Bootstrap 5 Styling Fix */
+        /* Select2 */
         .select2-container .select2-selection--single {
-            height: 38px !important;
-            border: 1px solid #ced4da !important;
-            border-radius: 0.375rem !important;
+            height: 42px !important;
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: 10px !important;
             padding: 0.375rem 0.75rem !important;
-            display: flex !important;
-            align-items: center !important;
+            display: flex !important; align-items: center !important;
+            background: #f8fafc !important;
         }
         .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: normal !important;
-            padding-left: 0 !important;
-            color: #212529 !important;
+            line-height: normal !important; padding-left: 0 !important;
+            color: #334155 !important; font-size: 13px !important;
         }
         .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 36px !important;
-            top: 1px !important;
-            right: 10px !important;
+            height: 40px !important; top: 1px !important; right: 10px !important;
+        }
+        .select2-container--open .select2-selection--single {
+            border-color: #76CF1C !important;
+            box-shadow: 0 0 0 3px rgba(118,207,28,0.12) !important;
         }
         .select2-dropdown {
-            border: 1px solid #ced4da !important;
-            border-radius: 0.375rem !important;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: 10px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+        }
+        .select2-results__option--highlighted {
+            background: #76CF1C !important; color: #0f172a !important;
         }
 
         .config-header-bg {
-            background-color: #f8f9fa;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border-left: 4px solid #0bb2d4;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #333;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            padding: 12px 16px; border-radius: 10px;
+            margin-bottom: 20px; border-left: 4px solid #76CF1C;
+            font-size: 14px; font-weight: 700; color: #fff;
+            letter-spacing: 0.3px;
         }
-        .require {
-            color: red;
-            font-weight: bold;
-            margin-left: 3px;
+
+        .require { color: #ef4444; font-weight: 700; margin-left: 3px; }
+
+        /* Alerts */
+        .alert-success {
+            background: linear-gradient(135deg, rgba(118,207,28,0.08), rgba(118,207,28,0.04)) !important;
+            border: 1px solid rgba(118,207,28,0.25) !important; color: #2d6a0e !important;
+            border-radius: 10px !important;
+        }
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(239,68,68,0.06), rgba(239,68,68,0.03)) !important;
+            border: 1px solid rgba(239,68,68,0.2) !important; color: #b91c1c !important;
+            border-radius: 10px !important;
+        }
+        .alert-warning {
+            border-radius: 10px !important;
+        }
+
+        /* OTP Modal */
+        #otpModal .modal-content {
+            border: none !important; border-radius: 20px !important;
+            overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25) !important;
+        }
+        #otpModal .modal-header {
+            background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+            border: none !important; padding: 18px 24px !important;
+        }
+        #otpModal .modal-title {
+            color: #fff !important; font-weight: 700 !important;
+            font-size: 16px !important;
+        }
+        #otpModal .modal-header .btn-close {
+            filter: invert(1); opacity: 0.6;
+        }
+        #otpModal .modal-body {
+            padding: 28px 24px 16px !important;
+        }
+        #otpModal .btn-success {
+            background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+            border: none !important; color: #0f172a !important;
+            font-weight: 800 !important; border-radius: 10px !important;
+            box-shadow: 0 4px 14px rgba(118,207,28,0.3) !important;
+        }
+        #otpModal .btn-outline-secondary {
+            border-radius: 10px !important; font-weight: 600 !important;
+        }
+
+        @media (max-width: 768px) {
+            .card-inner { padding: 24px 20px 20px; }
+        }
+        @media (max-width: 480px) {
+            .reg-wrapper { padding: 16px 8px; }
+            .card { border-radius: 14px !important; }
+            .card-inner { padding: 20px 14px 16px; }
+            .card-logo .logo-ring { width: 48px; height: 48px; font-size: 20px; }
+            .card h2 { font-size: 1.3rem; }
+            .reg-subtitle { font-size: 13px; }
+            .form-label { font-size: 11px; }
+            .form-control, .form-select { font-size: 13px; min-height: 38px; }
+            .btn-custom { font-size: 14px; padding: 11px; }
         }
     </style>
 </head>
 
 <body>
-    <div class="d-flex justify-content-center align-items-center">
-        <div class="card  col-sm-7 mx-auto">
-            @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <strong>✅ Success!</strong> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            @endif
+    <div class="reg-wrapper">
+        <div class="card">
+            <div class="card-accent-bar"></div>
+            <div class="card-inner">
 
-            <div class="alert alert-danger alert-dismissible fade showErrorMSG show" role="alert" style="display:none;">
-                <p class="errorMsgText" style="margin-bottom: 0;"></p>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+                <div class="card-logo">
+                    <div class="logo-ring"><i class="fa fa-user-plus"></i></div>
+                </div>
 
-            @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <strong>⚠️ Please fix the following errors:</strong>
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            @endif
+                @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <strong>Success!</strong> {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                @endif
 
-            @if(isset($user) && in_array($user->status, ['RejectedBySupport', 'RejectedByAdmin']) && $user->description)
-            <div class="alert alert-warning border-start border-danger border-4 shadow-sm mb-4" role="alert">
-                <div class="d-flex align-items-center">
-                    <i class="fa fa-exclamation-circle text-danger me-3" style="font-size: 1.5rem;"></i>
-                    <div>
-                        <h6 class="fw-bold text-danger mb-1">Attention: Previous Request Rejected</h6>
-                        <p class="mb-0 text-muted small"><strong>Reason:</strong> "{{ $user->description }}"</p>
-                        <p class="mb-0 text-muted small mt-1">Please update the information below and resubmit.</p>
+                <div class="alert alert-danger alert-dismissible fade showErrorMSG show" role="alert" style="display:none;">
+                    <p class="errorMsgText" style="margin-bottom: 0;"></p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Please fix the following errors:</strong>
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                @endif
+
+                @if(isset($user) && in_array($user->status, ['RejectedBySupport', 'RejectedByAdmin']) && $user->description)
+                <div class="alert alert-warning border-start border-danger border-4 shadow-sm mb-4" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-exclamation-circle text-danger me-3" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <h6 class="fw-bold text-danger mb-1">Attention: Previous Request Rejected</h6>
+                            <p class="mb-0 text-muted small"><strong>Reason:</strong> "{{ $user->description }}"</p>
+                            <p class="mb-0 text-muted small mt-1">Please update the information below and resubmit.</p>
+                        </div>
                     </div>
                 </div>
+                @endif
+
+                <h2 class="text-center">Create Account</h2>
+                <p class="reg-subtitle">Fill in the details below to complete your registration</p>
+
+                <form method="POST" id="registerForm" action="{{ route('register.user.store') }}" class="row">
+                    @csrf
+
+                    <div class="mb-3 col-sm-6">
+                        <label for="name" class="form-label"><i class="fa fa-user" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Full Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="Enter your name" required value="{{ $name ?? '' }}" readonly>
+                    </div>
+
+                    <div class="mb-3 col-sm-6">
+                        <label for="email" class="form-label"><i class="fa fa-envelope" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="Enter your email" required value="{{ $email ?? '' }}" readonly>
+                    </div>
+                    <div class="mb-3 col-sm-6">
+                        <label for="phone" class="form-label"><i class="fa fa-phone" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Phone Number</label>
+                        <input type="text"
+                            name="phone"
+                            class="form-control"
+                            placeholder="Enter phone number"
+                            maxlength="10"
+                            pattern="\d{10}"
+                            title="Phone number must be exactly 10 digits"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            required>
+                    </div>
+
+                    <div class="mb-3 col-sm-6">
+                        <label for="timezone" class="form-label"><i class="fa fa-globe" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> TimeZones <span class="require">*</span></label>
+                        <select name="timezone" class="select2" id="timezone">
+                            <option value="">Please Select Time Zone</option>
+                            @foreach($timeZones as $timezone)
+                            @php
+                            $tzValue = $timezone->name . ' (' . $timezone->utc_offset . ')';
+                            @endphp
+                            <option value="{{ $timezone->name }}" {{ $timezone->name == 'Asia/Kolkata' ? 'selected' : '' }}>
+                                {{ $tzValue }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3 col-sm-6">
+                        <label for="user_type" class="form-label"><i class="fa fa-id-badge" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Account Type</label>
+                        <select class="form-select" disabled required>
+                            <option value="">Select Account Type</option>
+                            <option value="dealer" {{ (isset($user) && strtolower($user->userType) == 'dealer') ? 'selected' : '' }}>Dealer</option>
+                            <option value="manufacturer" {{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'selected' : '' }}>Manufacturer</option>
+                        </select>
+                        <input type="hidden" name="user_type" value="{{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'manufacturer' : 'dealer' }}">
+                    </div>
+                    <div class="mb-3 col-sm-6">
+                        <label for="device_category" class="form-label"><i class="fa fa-cubes" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Device Category</label>
+                        <select id="deviceCategorySelect" name="device_category" class="form-select" required>
+                            <option value="">Select Category</option>
+                            @foreach($deviceCategory as $category)
+                            <option value="{{$category->id}}">{{$category->device_category_name}}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div id="deviceConfigWrapper" style="display:none;">
+                        <h5 class="mt-4 config-header-bg"><i class="fa fa-cogs" style="margin-right:8px;color:#76CF1C;"></i> Default Configuration</h5>
+                        <div id="deviceConfigFields" class="row"></div>
+                    </div>
+                    <button type="button" id="registerBtn" class="btn btn-custom w-100 mt-2">
+                        <span class="btn-text"><i class="fa fa-check-circle" style="margin-right:6px;"></i> Register</span>
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
+
+                </form>
             </div>
-            @endif
-
-            <h2 class="text-center mb-4">Create Account</h2>
-
-            <form method="POST" id="registerForm" action="{{ route('register.user.store') }}" class="row">
-                @csrf
-
-                <div class="mb-3 col-sm-6">
-                    <label for="name" class="form-label">Full Name</label>
-                    <input type="text" name="name" class="form-control" placeholder="Enter your name" required value="{{ $name ?? '' }}" readonly>
-                </div>
-
-                <div class="mb-3 col-sm-6">
-                    <label for="email" class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-control" placeholder="Enter your email" required value="{{ $email ?? '' }}" readonly>
-                </div>
-                <div class="mb-3 col-sm-6">
-                    <label for="phone" class="form-label">Phone Number</label>
-                    <input type="text"
-                        name="phone"
-                        class="form-control"
-                        placeholder="Enter phone number"
-                        maxlength="10"
-                        pattern="\d{10}"
-                        title="Phone number must be exactly 10 digits"
-                        oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                        required>
-                </div>
-
-                <div class="mb-3 col-sm-6">
-                    <label for="timezone" class="form-label">TimeZones <span class="require">*</span></label>
-                    <select name="timezone" class="select2" id="timezone">
-                        <option value="">Please Select Time Zone</option>
-                        @foreach($timeZones as $timezone)
-                        @php
-                        $tzValue = $timezone->name . ' (' . $timezone->utc_offset . ')';
-                        @endphp
-                        <option value="{{ $timezone->name }}" {{ $timezone->name == 'Asia/Kolkata' ? 'selected' : '' }}>
-                            {{ $tzValue }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mb-3 col-sm-6">
-                    <label for="user_type" class="form-label">Account Type</label>
-                    <select class="form-select" disabled required>
-                        <option value="">Select Account Type</option>
-                        <option value="dealer" {{ (isset($user) && strtolower($user->userType) == 'dealer') ? 'selected' : '' }}>Dealer</option>
-                        <option value="manufacturer" {{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'selected' : '' }}>Manufacturer</option>
-                    </select>
-                    <input type="hidden" name="user_type" value="{{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'manufacturer' : 'dealer' }}">
-                </div>
-                <div class="mb-3 col-sm-6">
-                    <label for="device_category" class="form-label">Device Category</label>
-                    <select id="deviceCategorySelect" name="device_category" class="form-select" required>
-                        <option value="">Select Category</option>
-                        @foreach($deviceCategory as $category)
-                        <option value="{{$category->id}}">{{$category->device_category_name}}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div id="deviceConfigWrapper" style="display:none;">
-                    <h5 class="mt-4 config-header-bg">Default Configuration</h5>
-                    <div id="deviceConfigFields" class="row"></div>
-                </div>
-                <button type="button" id="registerBtn" class="btn btn-custom w-100">
-                    <span class="btn-text">Register</span>
-                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                </button>
-
-            </form>
         </div>
     </div>
     <div class="modal fade" id="otpModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content shadow-lg rounded-4 border-0">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-dark">🔐 Email Verification</h5>
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa fa-lock" style="margin-right:8px;color:#76CF1C;"></i> Email Verification</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
@@ -267,19 +395,18 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
 </html>
 <style>
     .otp-input {
-        width: 50px;
-        height: 55px;
-        font-size: 1.5rem;
-        text-align: center;
+        width: 50px; height: 55px;
+        font-size: 1.5rem; text-align: center;
         border-radius: 10px;
-        border: 1px solid #ddd;
-        transition: 0.2s;
+        border: 1.5px solid #e2e8f0;
+        background: #f8fafc;
+        transition: 0.2s; font-weight: 700;
+        color: #0f172a;
     }
-
     .otp-input:focus {
-        border-color: #198754;
-        box-shadow: 0 0 5px rgba(25, 135, 84, 0.4);
-        outline: none;
+        border-color: #76CF1C;
+        box-shadow: 0 0 0 3px rgba(118,207,28,0.15);
+        outline: none; background: #fff;
     }
 </style>
 <!-- Bootstrap JS -->

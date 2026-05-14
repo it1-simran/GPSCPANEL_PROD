@@ -1,26 +1,27 @@
 @extends('layouts.apps')
 @section('content')
-<section id="main-content">
+@php
+    $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+@endphp
+<section id="main-content" class="protocol-page protocol-create-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        @php
-                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
-                        @endphp
-                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
-                        <li class="active"><a href="#">Add New Protocol</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="protocol-breadcrumb-wrap">
+            <nav class="protocol-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Add New Protocol</span>
+            </nav>
         </div>
 
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <h2>Create New Protocol</h2>
+                        <h2 class="create-protocol-title">
+                            <i class="fa fa-cubes"></i>
+                            Create New Protocol
+                        </h2>
                         <div class="clearfix"></div>
                     </div>
                     <div class="c_content">
@@ -36,11 +37,11 @@
 
                         <form class="form-horizontal" method="POST" action="{{ route($routePrefix . '.store') }}">
                             @csrf
-                            
+
                             <div class="form-group">
                                 <label class="control-label col-md-3 col-sm-12">Protocol Name <span class="text-danger">*</span></label>
                                 <div class="col-md-6 col-sm-12">
-                                    <input type="text" name="name" class="form-control" required 
+                                    <input type="text" name="name" class="form-control" required
                                         placeholder="e.g. HTTP, MQTT, Custom Binary" value="{{ old('name') }}">
                                 </div>
                             </div>
@@ -48,7 +49,7 @@
                             <div class="form-group">
                                 <label class="control-label col-md-3 col-sm-12">Description (Optional)</label>
                                 <div class="col-md-6 col-sm-12">
-                                    <textarea name="description" class="form-control" rows="4" 
+                                    <textarea name="description" class="form-control" rows="4"
                                         placeholder="Briefly describe the protocol's purpose...">{{ old('description') }}</textarea>
                                 </div>
                             </div>
@@ -69,4 +70,93 @@
         </div>
     </section>
 </section>
+<style>
+    .protocol-create-page .wrapper {
+        padding-top: 8px !important;
+    }
+
+    .protocol-create-page .protocol-breadcrumb-wrap {
+        padding: 4px 0 12px 0 !important;
+        margin: 0 !important;
+    }
+
+    .protocol-create-page .protocol-breadcrumb {
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: wrap;
+        row-gap: 6px;
+        background: #1e293b !important;
+        border-radius: 50px !important;
+        padding: 6px 18px 6px 8px !important;
+        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18) !important;
+    }
+
+    .protocol-create-page .protocol-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #76CF1C;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+
+    .protocol-create-page .protocol-breadcrumb .bc-home i {
+        color: #1e293b;
+        font-size: 13px;
+    }
+
+    .protocol-create-page .protocol-breadcrumb .bc-item {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .protocol-create-page .protocol-breadcrumb .bc-sep {
+        color: rgba(255, 255, 255, 0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+
+    .protocol-create-page .protocol-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    .protocol-create-page .protocol-breadcrumb a.bc-item:hover {
+        color: #e2e8f0;
+    }
+
+    .protocol-create-page .c_title {
+        margin-top: 4px !important;
+    }
+
+    .protocol-create-page .c_title h2::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .protocol-create-page .create-protocol-title {
+        display: inline-flex !important;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0;
+        color: #ffffff !important;
+        font-size: 19px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+    }
+
+    .protocol-create-page .create-protocol-title > i {
+        color: #76CF1C;
+        font-size: 15px;
+        width: 22px;
+        text-align: center;
+    }
+</style>
 @endsection

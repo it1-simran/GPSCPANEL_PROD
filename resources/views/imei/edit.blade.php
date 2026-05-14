@@ -1,5 +1,8 @@
 @extends('layouts.apps')
 @section('content')
+@php
+    $routePrefix = auth()->check() && auth()->user()->user_type === 'Support' ? 'support.' : '';
+@endphp
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
     .btn-premium {
@@ -14,15 +17,17 @@
     }
     
     .btn-premium-success {
-        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(46, 204, 113, 0.2);
+        background: #76CF1C !important;
+        border: none !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 15px rgba(118, 207, 28, 0.25);
     }
     
     .btn-premium-success:hover {
+        background: #65b515 !important;
+        color: #ffffff !important;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.3);
-        filter: brightness(1.1);
+        box-shadow: 0 6px 20px rgba(118, 207, 28, 0.35);
     }
     
     .btn-premium-cancel {
@@ -40,30 +45,138 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
     }
+
+    /* Same pill breadcrumb + title pattern as imei index / protocol pages */
+    #main-content.imei-page.imei-edit-page .wrapper {
+        padding-top: 8px !important;
+    }
+
+    .imei-edit-page .imei-breadcrumb-wrap {
+        padding: 4px 0 12px 0 !important;
+        margin: 0 !important;
+    }
+
+    .imei-edit-page .imei-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        row-gap: 6px;
+        background: #1e293b;
+        border-radius: 50px;
+        padding: 6px 18px 6px 8px;
+        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
+    }
+
+    .imei-edit-page .imei-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        background: #76CF1C;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+
+    .imei-edit-page .imei-breadcrumb .bc-home i {
+        color: #1e293b;
+        font-size: 13px;
+    }
+
+    .imei-edit-page .imei-breadcrumb .bc-item {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .imei-edit-page .imei-breadcrumb .bc-sep {
+        color: rgba(255, 255, 255, 0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+
+    .imei-edit-page .imei-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    .imei-edit-page .imei-breadcrumb a.bc-item:hover {
+        color: #e2e8f0;
+    }
+
+    .imei-edit-page .c_title.imei-edit-c-title {
+        margin-top: 4px !important;
+        padding: 11px 22px !important;
+    }
+
+    .imei-edit-page .c_title.imei-edit-c-title h2::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .imei-edit-page .imei-edit-title {
+        display: inline-flex !important;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 !important;
+        color: #ffffff !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.35px;
+        text-transform: uppercase;
+    }
+
+    .imei-edit-page .imei-edit-title > i {
+        color: #76CF1C;
+        font-size: 14px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .imei-edit-page .imei-edit-pill {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: rgba(118, 207, 28, 0.16);
+        color: #cfff9f !important;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        border: 1px solid rgba(118, 207, 28, 0.36);
+        max-width: 100%;
+        word-break: break-all;
+    }
 </style>
-<section id="main-content">
+<section id="main-content" class="imei-page imei-edit-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Live Tracking</a></li>
-                        <li class="active"><a href="#">Edit IMEI Recording</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="imei-breadcrumb-wrap">
+            <nav class="imei-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ route($routePrefix . 'imei-devices.index') }}" class="bc-item">Manage Trackers</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Edit IMEI Recording</span>
+            </nav>
         </div>
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
-                    <div class="c_title"><h2>Edit IMEI Recording</h2><div class="clearfix"></div></div>
+                    <div class="c_title imei-edit-c-title">
+                        <h2 class="imei-edit-title">
+                            <i class="fa fa-list"></i>
+                            Edit IMEI Recording
+                            <span class="imei-edit-pill">{{ $imei_device->imei }}</span>
+                        </h2>
+                        <div class="clearfix"></div>
+                    </div>
                     <div class="c_content">
                         @if ($errors->any())
                             <div class="alert alert-danger"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
                         @endif
-                        @php
-                            $routePrefix = auth()->check() && auth()->user()->user_type === 'Support' ? 'support.' : '';
-                        @endphp
                         <form class="form-horizontal" method="POST" action="{{ route($routePrefix . 'imei-devices.update', $imei_device->id) }}">
                             @csrf
                             @method('PUT')
@@ -92,7 +205,7 @@
                             <div class="form-group">
                                 <div class="col-lg-offset-3 col-lg-9">
                                     <button type="submit" class="btn btn-premium btn-premium-success">Update</button>
-                                    <a href="{{ route($routePrefix . 'imei-devices.index') }}" class="btn btn-premium btn-premium-cancel">Cancel</a>
+                                    <a href="{{ route($routePrefix . 'imei-devices.index') }}" style="margin-top: 10px;" class="btn btn-premium btn-premium-cancel">Cancel</a>
                                 </div>
                             </div>
                         </form>

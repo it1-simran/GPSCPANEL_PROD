@@ -19,6 +19,7 @@ use App\notifications;
 use Illuminate\Container\EntryNotFoundException;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Illuminate\Database\QueryException;
 
 class FirmwareController extends Controller
 {
@@ -199,65 +200,72 @@ class FirmwareController extends Controller
     }
     public function deleteFirmware($id, $response)
     {
-        $firmware =  Firmware::find($id);
-        if (!$firmware) {
-            return response()->json(['error' => 'Item not found.'], 404);
-        }
-        $devicecategoryName = DB::table('device_categories')->select('device_category_name')->where(['id' => $firmware->device_category_id])->first();
-        if ($response == "true") {
-            $modal = Modal::where(['firmware_id' => $id]);
-            $modal->delete();
-            $devices = DB::table('devices')
-                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.firmware_id')) = ?", [$id])
-                ->get();
-            foreach ($devices as $device) {
-                $configuration  = json_decode($device->configurations);
-                $configuration->firmware_id = "0";
-                $configuration->firmware_file = "0";
-                $configuration->firmware_version = "0";
-                $configuration->modelName = $devicecategoryName->device_category_name;
-                $configuration->vendorId = "0";
-                DB::table('devices')
-                    ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.firmware_id')) = ?", [$id])
-                    ->update([
-                        'configurations' => json_encode($configuration)
-                    ]);
+        try {
+            $firmware =  Firmware::find($id);
+            if (!$firmware) {
+                return response()->json(['error' => 'Item not found.'], 404);
             }
+            $devicecategoryName = DB::table('device_categories')->select('device_category_name')->where(['id' => $firmware->device_category_id])->first();
+            if ($response == "true") {
+                $modal = Modal::where(['firmware_id' => $id]);
+                $modal->delete();
+                $devices = DB::table('devices')
+                    ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.firmware_id')) = ?", [$id])
+                    ->get();
+                foreach ($devices as $device) {
+                    $configuration  = json_decode($device->configurations);
+                    $configuration->firmware_id = "0";
+                    $configuration->firmware_file = "0";
+                    $configuration->firmware_version = "0";
+                    $configuration->modelName = $devicecategoryName->device_category_name;
+                    $configuration->vendorId = "0";
+                    DB::table('devices')
+                        ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.firmware_id')) = ?", [$id])
+                        ->update([
+                            'configurations' => json_encode($configuration)
+                        ]);
+                }
+            }
+            $firmware->delete();
+
+            return redirect()->back()->with(['error' => $firmware->name . ' deleted Successfully']);
+        } catch (QueryException $e) {
+            return redirect()->back()->with('error', 'This firmware cannot be deleted because devices or other data still reference it.');
         }
-        $firmware->delete();
-        return redirect()->back()->with(['error' => $firmware->name . ' deleted Successfully']);
     }
     public function deleteModal($id, $response)
     {
         $modal =  modal::find($id);
-        // dd($modal);
-        $firmware = DB::table('firmware')->select('device_category_id')->where(['id' => $modal->firmware_id])->first();
-        $devicecategoryName = DB::table('device_categories')->select('device_category_name')->where(['id' => $firmware->device_category_id])->first();
-        //  dd($devicecategoryName);
         if (!$modal) {
             return response()->json(['error' => 'Item not found.'], 404);
         }
-        if ($response == "true") {
-            $devices = DB::table('devices')
-                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.modelName')) = ?", [$modal->name])
-                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.firmware_id')) = ?", [$modal->firmware_id])
-                ->get();
-
-            foreach ($devices as $device) {
-                $configuration  = json_decode($device->configurations);
-                $configuration->modelName = $devicecategoryName->device_category_name;
-                $configuration->vendorId = "0";
-                DB::table('devices')
+        try {
+            $firmware = DB::table('firmware')->select('device_category_id')->where(['id' => $modal->firmware_id])->first();
+            $devicecategoryName = DB::table('device_categories')->select('device_category_name')->where(['id' => $firmware->device_category_id])->first();
+            if ($response == "true") {
+                $devices = DB::table('devices')
                     ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.modelName')) = ?", [$modal->name])
                     ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.firmware_id')) = ?", [$modal->firmware_id])
-                    ->update([
-                        'configurations' => json_encode($configuration)
-                    ]);
-            }
-        }
-        $modal->delete();
+                    ->get();
 
-        return redirect()->back()->with(['error' => $modal->name . ' deleted Successfully']);
+                foreach ($devices as $device) {
+                    $configuration  = json_decode($device->configurations);
+                    $configuration->modelName = $devicecategoryName->device_category_name;
+                    $configuration->vendorId = "0";
+                    DB::table('devices')
+                        ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.modelName')) = ?", [$modal->name])
+                        ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(configurations, '$.firmware_id')) = ?", [$modal->firmware_id])
+                        ->update([
+                            'configurations' => json_encode($configuration)
+                        ]);
+                }
+            }
+            $modal->delete();
+
+            return redirect()->back()->with(['error' => $modal->name . ' deleted Successfully']);
+        } catch (QueryException $e) {
+            return redirect()->back()->with('error', 'This model cannot be deleted because devices still reference it.');
+        }
     }
     protected function formatWithLeadingZero($number)
     {

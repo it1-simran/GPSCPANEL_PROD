@@ -6,28 +6,346 @@
   rel="stylesheet">
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<section id="main-content">
-  <section class="wrapper protocol-builder-page">
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-                        @php
-                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
-                        @endphp
-                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
-                        <li><a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}">Packet Types</a></li>
-                        <li class="active"><a href="#">{{ isset($packetType) ? 'Edit' : 'Create' }} Packet Configuration</a></li>
-          </ul>
-        </nav>
-      </div>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.protocol-builder-page { font-family: 'Inter', sans-serif; }
+#main-content.protocol-builder-page .wrapper { padding-top: 10px !important; }
+
+/* Breadcrumb */
+.protocol-breadcrumb-wrap { padding: 4px 0 14px 0; }
+.protocol-breadcrumb {
+    display: inline-flex; align-items: center; flex-wrap: wrap; row-gap: 6px;
+    background: #1e293b; border-radius: 50px; padding: 6px 18px 6px 8px;
+    box-shadow: 0 4px 16px rgba(30,41,59,0.18);
+}
+.protocol-breadcrumb .bc-home {
+    width: 30px; height: 30px; border-radius: 50%; background: #76CF1C;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-right: 10px; flex-shrink: 0;
+}
+.protocol-breadcrumb .bc-home i { color: #1e293b; font-size: 13px; }
+.protocol-breadcrumb .bc-item { color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 500; text-decoration: none; }
+.protocol-breadcrumb .bc-sep { color: rgba(255,255,255,0.35); margin: 0 8px; font-size: 12px; }
+.protocol-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
+.protocol-breadcrumb a.bc-item:hover { color: #e2e8f0; }
+
+/* Panel */
+.protocol-builder-page .c_panel {
+    border: none !important; border-radius: 14px !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06) !important;
+    overflow: hidden !important;
+}
+
+/* Config Heading */
+.pkt-config-heading {
+    background: #1e293b !important; padding: 16px 24px !important;
+    border-bottom: none !important;
+}
+.pkt-config-title {
+    color: #fff !important; font-size: 17px !important; font-weight: 800 !important;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    display: flex !important; align-items: center; gap: 10px;
+}
+.pkt-config-title > i { color: #76CF1C; font-size: 16px; }
+.pkt-config-title h2::before { content: none !important; display: none !important; }
+.pkt-config-protocol-pill {
+    display: inline-flex; align-items: center; padding: 3px 12px;
+    border-radius: 999px; background: rgba(118,207,28,0.16);
+    color: #cfff9f; font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    border: 1px solid rgba(118,207,28,0.36);
+}
+
+/* Content Area */
+.protocol-builder-page .c_content { padding: 24px !important; background: #f8fafc; }
+
+/* Section Cards */
+.section-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+}
+.section-header {
+    background: #fff; padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.section-header h4 {
+    margin: 0; font-size: 14px; font-weight: 800; color: #1e293b;
+    text-transform: uppercase; letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 8px;
+}
+.section-header h4 i { color: #76CF1C; font-size: 14px; }
+.section-body { padding: 20px; }
+
+/* Header Actions (Smart Analyzer, Add Parameter) */
+.header-actions { display: flex; gap: 8px; }
+
+/* Form Elements */
+.premium-label {
+    font-size: 11px; font-weight: 700; color: #475569;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+}
+.premium-input, .premium-select {
+    border: 1px solid #e2e8f0 !important; border-radius: 8px !important;
+    padding: 8px 12px !important; font-size: 13px !important;
+    color: #1e293b !important; background: #fff !important;
+    height: 40px !important; transition: all 0.2s !important;
+    font-weight: 500 !important;
+}
+.premium-input:focus, .premium-select:focus {
+    border-color: #76CF1C !important;
+    box-shadow: 0 0 0 3px rgba(118,207,28,0.15) !important;
+    outline: none !important;
+}
+.premium-textarea {
+    border: 1px solid #e2e8f0 !important; border-radius: 8px !important;
+    padding: 12px !important; font-size: 13px !important; color: #1e293b !important;
+    font-weight: 500 !important; resize: vertical;
+}
+.premium-textarea:focus {
+    border-color: #76CF1C !important;
+    box-shadow: 0 0 0 3px rgba(118,207,28,0.15) !important;
+    outline: none !important;
+}
+.premium-label-bold { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+
+/* Builder Table */
+.table-custom { border-collapse: separate !important; border-spacing: 0 !important; border: none !important; }
+.table-custom thead th {
+    background: #1e293b !important; color: #fff !important;
+    font-size: 11px !important; font-weight: 800 !important;
+    text-transform: uppercase !important; letter-spacing: 0.5px !important;
+    padding: 12px 14px !important; border: none !important;
+    white-space: nowrap !important; vertical-align: middle !important;
+}
+.table-custom thead th:first-child { border-top-left-radius: 10px; }
+.table-custom thead th:last-child { border-top-right-radius: 10px; }
+.table-custom tbody td {
+    padding: 10px 14px !important; border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important; vertical-align: middle !important;
+    background: #fff !important; font-size: 13px !important;
+}
+.table-custom tbody tr:hover td { background: #f8fafc !important; }
+
+/* Drag handle */
+.drag-handle { cursor: grab; color: #cbd5e1; }
+.drag-handle:active { cursor: grabbing; }
+.drag-handle i { font-size: 14px; }
+
+/* Row animation */
+.field-row.animate-in { animation: fadeSlideIn 0.3s ease forwards; }
+.field-row.animate-out { animation: fadeSlideOut 0.3s ease forwards; }
+@keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeSlideOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateX(30px); } }
+
+/* Buttons */
+.btn-glass-primary {
+    background: #1e293b !important; color: #fff !important;
+    border: none !important; border-radius: 8px !important;
+    font-weight: 700 !important; font-size: 12px !important;
+    padding: 6px 14px !important; box-shadow: 0 2px 8px rgba(30,41,59,0.2);
+}
+.btn-glass-primary:hover { background: #0f172a !important; transform: translateY(-1px); }
+
+.btn-glass-info {
+    background: linear-gradient(135deg,#76CF1C,#5fa816) !important;
+    color: #1e293b !important; border: none !important;
+    border-radius: 8px !important; font-weight: 800 !important;
+    font-size: 12px !important; padding: 6px 14px !important;
+    box-shadow: 0 2px 8px rgba(118,207,28,0.3);
+}
+.btn-glass-info:hover { box-shadow: 0 4px 12px rgba(118,207,28,0.4); transform: translateY(-1px); }
+
+.btn-glass-secondary {
+    background: #e2e8f0 !important; color: #475569 !important;
+    border: none !important; border-radius: 8px !important;
+    font-weight: 700 !important; font-size: 13px !important; padding: 8px 20px !important;
+}
+.btn-glass-secondary:hover { background: #cbd5e1 !important; color: #1e293b !important; }
+
+.btn-premium-success {
+    background: linear-gradient(135deg,#76CF1C,#5fa816) !important;
+    color: #1e293b !important; border: none !important;
+    border-radius: 10px !important; font-weight: 800 !important;
+    font-size: 14px !important; padding: 10px 28px !important;
+    box-shadow: 0 4px 14px rgba(118,207,28,0.35);
+    text-transform: uppercase; letter-spacing: 0.4px;
+}
+.btn-premium-success:hover { box-shadow: 0 6px 20px rgba(118,207,28,0.45); transform: translateY(-2px); }
+
+.btn-premium-primary {
+    background: #1e293b !important; color: #fff !important;
+    border: none !important; border-radius: 8px !important;
+    font-weight: 700 !important; padding: 8px 20px !important;
+    box-shadow: 0 3px 10px rgba(30,41,59,0.2);
+}
+.btn-premium-primary:hover { background: #0f172a !important; transform: translateY(-1px); }
+
+/* Form actions */
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* Premium scroll */
+.premium-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.premium-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+.premium-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* ===== ANALYZER MODAL — Fresh Card Design ===== */
+#analyzerModal .az-modal-content {
+    border: none !important; border-radius: 20px !important;
+    overflow: hidden !important; position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.05) !important;
+    background: #fff !important;
+}
+#analyzerModal .az-accent-bar {
+    height: 5px; width: 100%;
+    background: linear-gradient(90deg, #76CF1C, #1e293b, #76CF1C);
+}
+#analyzerModal .az-close {
+    position: absolute; top: 18px; right: 20px; z-index: 10;
+    background: #f1f5f9 !important; border: none !important;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #64748b !important; font-size: 18px; cursor: pointer;
+    transition: all 0.2s;
+}
+#analyzerModal .az-close:hover {
+    background: #e2e8f0 !important; color: #1e293b !important;
+    transform: rotate(90deg);
+}
+#analyzerModal .az-body { padding: 32px 32px 24px; }
+
+/* Hero section */
+#analyzerModal .az-hero { text-align: center; margin-bottom: 28px; }
+#analyzerModal .az-icon-ring {
+    width: 60px; height: 60px; border-radius: 16px; margin: 0 auto 14px;
+    background: linear-gradient(135deg, rgba(118,207,28,0.12), rgba(118,207,28,0.05));
+    border: 2px solid rgba(118,207,28,0.2);
+    display: flex; align-items: center; justify-content: center;
+}
+#analyzerModal .az-icon-ring i { color: #76CF1C; font-size: 22px; }
+#analyzerModal .az-title {
+    font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 6px;
+    letter-spacing: -0.3px;
+}
+#analyzerModal .az-subtitle {
+    font-size: 13px; color: #64748b; margin: 0; font-weight: 500; line-height: 1.5;
+}
+
+/* Field groups */
+#analyzerModal .az-field-group { margin-bottom: 18px; }
+#analyzerModal .az-label {
+    display: block; font-size: 11px; font-weight: 800; color: #1e293b;
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;
+}
+#analyzerModal .az-label i { color: #76CF1C; margin-right: 5px; font-size: 12px; }
+#analyzerModal .az-textarea {
+    width: 100%; border: 2px solid #e2e8f0; border-radius: 12px;
+    padding: 14px 16px; font-size: 13px; font-family: 'Consolas', monospace;
+    color: #1e293b; background: #f8fafc; resize: vertical;
+    transition: all 0.2s; line-height: 1.6;
+}
+#analyzerModal .az-textarea:focus {
+    border-color: #76CF1C; background: #fff;
+    box-shadow: 0 0 0 4px rgba(118,207,28,0.1);
+    outline: none;
+}
+#analyzerModal .az-textarea::placeholder { color: #94a3b8; font-weight: 400; }
+
+/* Delimiter row */
+#analyzerModal .az-delim-row {
+    display: flex; gap: 16px; align-items: flex-start; margin-bottom: 24px;
+}
+#analyzerModal .az-delim-field { flex: 0 0 120px; }
+#analyzerModal .az-delim-input {
+    width: 100%; height: 52px; border: 2px solid #e2e8f0; border-radius: 12px;
+    text-align: center; font-size: 24px; font-weight: 800; color: #1e293b;
+    background: #fff; transition: all 0.2s;
+}
+#analyzerModal .az-delim-input:focus {
+    border-color: #76CF1C; outline: none;
+    box-shadow: 0 0 0 4px rgba(118,207,28,0.1);
+}
+#analyzerModal .az-hint-box {
+    flex: 1; display: flex; align-items: flex-start; gap: 8px;
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+    padding: 12px 14px; font-size: 12px; color: #92400e; font-weight: 500;
+    line-height: 1.5; margin-top: 26px;
+}
+#analyzerModal .az-hint-box i { color: #f59e0b; font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+#analyzerModal .az-hint-box strong { color: #92400e; font-weight: 800; }
+
+/* Actions */
+#analyzerModal .az-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding-top: 20px; border-top: 1px solid #f1f5f9;
+}
+#analyzerModal .az-btn-cancel {
+    background: #f1f5f9 !important; color: #475569 !important;
+    border: none !important; border-radius: 10px !important;
+    font-weight: 700 !important; font-size: 13px !important;
+    padding: 10px 22px !important;
+}
+#analyzerModal .az-btn-cancel:hover { background: #e2e8f0 !important; color: #1e293b !important; }
+#analyzerModal .az-btn-go {
+    background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+    color: #1e293b !important; border: none !important;
+    border-radius: 10px !important; font-weight: 800 !important;
+    font-size: 13px !important; padding: 10px 24px !important;
+    box-shadow: 0 4px 14px rgba(118,207,28,0.35);
+    transition: all 0.2s;
+}
+#analyzerModal .az-btn-go:hover {
+    box-shadow: 0 6px 20px rgba(118,207,28,0.45);
+    transform: translateY(-1px);
+}
+#analyzerModal .az-btn-go i { margin-right: 6px; }
+
+/* Builder table inputs inside cells */
+.table-custom tbody td .form-control {
+    height: 36px !important; font-size: 12px !important;
+    border: 1px solid #e2e8f0 !important; border-radius: 6px !important;
+    padding: 4px 8px !important;
+}
+.table-custom tbody td .form-control:focus {
+    border-color: #76CF1C !important;
+    box-shadow: 0 0 0 2px rgba(118,207,28,0.12) !important;
+}
+.table-custom tbody td .btn-link.text-danger { color: #ef4444 !important; opacity: 0.7; }
+.table-custom tbody td .btn-link.text-danger:hover { opacity: 1; transform: scale(1.1); }
+
+/* Error box */
+.builder-error-box { border-radius: 10px !important; font-size: 13px; font-weight: 600; }
+
+@media (max-width: 768px) {
+    .header-actions { flex-wrap: wrap; }
+    .form-actions { flex-direction: column; }
+}
+</style>
+<section id="main-content" class="protocol-page protocol-builder-page">
+  <section class="wrapper">
+    @php
+      $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+    @endphp
+    <div class="protocol-breadcrumb-wrap">
+      <nav class="protocol-breadcrumb">
+        <div class="bc-home"><i class="fa fa-home"></i></div>
+        <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+        <span class="bc-sep">›</span>
+        <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" class="bc-item">Packet Types</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">{{ isset($packetType) ? 'Edit Packet Configuration' : 'Create Packet Configuration' }}</span>
+      </nav>
     </div>
 
     <div class="row">
       <div class="col-md-12">
         <div class="c_panel">
-          <div class="c_title d-flex justify-content-between align-items-center mb-4">
-            <h2 class="m-0">Packet Configuration: <span class="text-primary">{{ $protocol->name }}</span></h2>
+          <div class="c_title pkt-config-heading d-flex justify-content-between align-items-center">
+            <h2 class="pkt-config-title m-0">
+              <i class="fa fa-cubes"></i>
+              Packet Configuration
+              <span class="pkt-config-protocol-pill">{{ strtoupper($protocol->name) }}</span>
+            </h2>
           </div>
 
           <div class="c_content">
@@ -118,60 +436,49 @@
 </section>
 
 <div class="modal premium-modal" id="analyzerModal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content overflow-hidden">
-      <div class="modal-header-premium">
-        <div class="d-flex align-items-center" style="gap: 10px;">
-          <div class="header-icon mr-3">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:680px;">
+    <div class="modal-content az-modal-content">
+      {{-- Top accent bar --}}
+      <div class="az-accent-bar"></div>
+      {{-- Close --}}
+      <button type="button" class="az-close" data-dismiss="modal">&times;</button>
+
+      <div class="az-body">
+        {{-- Icon + Title --}}
+        <div class="az-hero">
+          <div class="az-icon-ring">
             <i class="fa fa-magic"></i>
           </div>
-          <div>
-            <h4 class="m-0 font-weight-bold">Smart Packet Analyzer</h4>
-            <small class="text-muted opacity-75">Automatically extract parameters from a raw string</small>
-          </div>
+          <h3 class="az-title">Smart Packet Analyzer</h3>
+          <p class="az-subtitle">Paste a raw packet string and auto-extract all parameters in one click.</p>
         </div>
-        <button type="button" class="close-premium" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body p-4 bg-light-soft">
-        <div class="info-card mb-4" style="margin-bottom: 20px;">
-          <div class="d-flex align-items-start" style="align-items: flex-start; gap: 10px;">
-            <i class="fa fa-info-circle text-primary mt-1 mr-3 fa-lg"></i>
-            <p class="mb-0 text-muted" style="line-height: 1.5;">
-              Paste your raw packet string below. The analyzer will detect fields based on the delimiter and populate
-              the parameter list for you.
-              <strong class="text-danger">Note:</strong> This will replace all current rows.
-            </p>
+
+        {{-- Packet Input --}}
+        <div class="az-field-group">
+          <label class="az-label"><i class="fa fa-code"></i> Raw Packet String</label>
+          <textarea id="samplePacket" class="az-textarea" rows="4"
+            placeholder="$NMP,JSD,2.2.6,NR,1,L,860269069112647,0,1,29042026..."></textarea>
+        </div>
+
+        {{-- Delimiter --}}
+        <div class="az-delim-row">
+          <div class="az-field-group az-delim-field">
+            <label class="az-label"><i class="fa fa-cut"></i> Delimiter</label>
+            <input type="text" id="analyzerDelim" value="," class="az-delim-input" maxlength="1">
+          </div>
+          <div class="az-hint-box">
+            <i class="fa fa-info-circle"></i>
+            <span>This will <strong>replace</strong> all current rows with the detected fields.</span>
           </div>
         </div>
 
-        <div class="form-group mb-4">
-          <label class="premium-label-bold">Paste Sample Packet String</label>
-          <textarea id="samplePacket" class="form-control premium-textarea shadow-sm" rows="5"
-            placeholder="Example: $NMP,JSD,2.2.6,NR,1,L,860269069112647..."></textarea>
+        {{-- Actions --}}
+        <div class="az-actions">
+          <button type="button" class="btn az-btn-cancel" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn az-btn-go" onclick="runAnalysis()">
+            <i class="fa fa-bolt"></i> Analyze & Populate
+          </button>
         </div>
-
-        <div class="row">
-          <div class="col-md-5">
-            <div class="form-group mb-0">
-              <label class="premium-label-bold">Separator / Delimiter</label>
-              <div class="input-group">
-                <div class="input-group-prepend">
-                  <span class="input-group-text bg-white border-right-0"></span>
-                </div>
-                <input type="text" id="analyzerDelim" value=","
-                  class="form-control premium-input border-left-0 font-weight-bold text-primary" maxlength="1"
-                  style="font-size: 1.2rem; height: 50px;">
-              </div>
-              <small class="text-muted mt-1 d-block">Character used to split the packet</small>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer border-0 p-4 bg-white justify-content-between">
-        <button type="button" class="btn btn-glass-secondary px-4 py-2" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-premium-primary btn-lg px-5 shadow-lg" onclick="runAnalysis()">
-          <i class="fa fa-bolt"></i> Analyze & Populate Now
-        </button>
       </div>
     </div>
   </div>
@@ -605,25 +912,56 @@
     line-height: 1.5;
   }
 
-  /* Breadcrumb Styling */
-  .c_breadcrumbs ul {
-    background: transparent;
-    padding: 0;
-    margin-bottom: 20px;
+  /* Compact top spacing + modern breadcrumb */
+  .protocol-builder-page .wrapper {
+    padding-top: 8px !important;
   }
 
-  .c_breadcrumbs ul li a {
-    color: #64748b;
+  .protocol-builder-page .protocol-breadcrumb-wrap {
+    padding: 4px 0 12px 0 !important;
+    margin: 0 !important;
+  }
+
+  .protocol-builder-page .protocol-breadcrumb {
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #1e293b !important;
+    border-radius: 50px !important;
+    padding: 6px 18px 6px 8px !important;
+    box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18) !important;
+  }
+
+  .protocol-builder-page .protocol-breadcrumb .bc-home {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #76CF1C;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+  }
+
+  .protocol-builder-page .protocol-breadcrumb .bc-home i {
+    color: #1e293b;
+    font-size: 13px;
+  }
+
+  .protocol-builder-page .protocol-breadcrumb .bc-item {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
     font-weight: 500;
-    transition: color 0.2s;
+    text-decoration: none;
   }
 
-  .c_breadcrumbs ul li a:hover {
-    color: var(--premium-primary);
+  .protocol-builder-page .protocol-breadcrumb .bc-sep {
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0 8px;
+    font-size: 12px;
   }
 
-  .c_breadcrumbs ul li.active a {
-    color: var(--premium-dark);
+  .protocol-builder-page .protocol-breadcrumb .bc-item.active {
+    color: #76CF1C;
     font-weight: 700;
   }
 
@@ -634,7 +972,8 @@
     box-shadow: none;
   }
 
-  .c_title h2 {
+  /* Main panel title uses .pkt-config-heading + .pkt-config-title (dark bar, pill protocol) */
+  .protocol-builder-page .c_title:not(.pkt-config-heading) h2 {
     font-family: 'Outfit', sans-serif;
     font-weight: 800;
     font-size: 1.75rem;
@@ -1023,18 +1362,55 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
 
-  .protocol-builder-page .c_title {
-    padding: 15px 20px;
-    border-bottom: 1px solid #eee;
-    background: #fff;
+  .protocol-builder-page .c_title.pkt-config-heading {
+    padding: 14px 22px !important;
+    margin-top: 4px !important;
+    margin-bottom: 0 !important;
+    background: #0f172a !important;
+    border-bottom: none !important;
+    border-radius: 14px 14px 0 0 !important;
   }
 
-  .protocol-builder-page .c_title h2 {
-    margin: 0;
-    font-size: 20px;
+  .protocol-builder-page .pkt-config-title {
+    display: inline-flex !important;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 !important;
+    color: #ffffff !important;
+    font-size: 19px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  .protocol-builder-page .pkt-config-title > i.fa {
+    color: #76CF1C;
+    font-size: 15px;
+    width: 22px;
+    text-align: center;
+  }
+
+  /* Same pill as Packet Types list (protocol name) */
+  .protocol-builder-page .pkt-config-protocol-pill {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: rgba(118, 207, 28, 0.16);
+    color: #cfff9f !important;
+    font-size: 11px;
     font-weight: 700;
-    color: #222;
-    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    border: 1px solid rgba(118, 207, 28, 0.36);
+  }
+
+  .protocol-builder-page .c_title.pkt-config-heading h2::before {
+    content: none !important;
+    display: none !important;
   }
 
   .protocol-builder-page .c_content {
@@ -1192,6 +1568,118 @@
 
   .protocol-builder-page .form-actions {
     margin-top: 16px;
+  }
+
+  /* ===== Narrow screens: full-width breadcrumb, tighter padding, scrollable builder table ===== */
+  @media (max-width: 767px) {
+    .protocol-builder-page > section.wrapper {
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Bleed breadcrumb to edges (wrapper uses horizontal padding) */
+    .protocol-builder-page .protocol-breadcrumb-wrap {
+      width: calc(100% + 16px) !important;
+      max-width: none !important;
+      margin-left: -8px !important;
+      margin-right: -8px !important;
+      padding-top: 2px !important;
+      padding-bottom: 10px !important;
+    }
+
+    .protocol-builder-page .protocol-breadcrumb {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: flex-start !important;
+      align-content: flex-start !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      border-radius: 0 !important;
+      padding: 12px 14px !important;
+      row-gap: 10px !important;
+      column-gap: 6px !important;
+    }
+
+    .protocol-builder-page .protocol-breadcrumb .bc-home {
+      margin-right: 10px !important;
+      flex-shrink: 0 !important;
+    }
+
+    .protocol-builder-page .protocol-breadcrumb .bc-item,
+    .protocol-builder-page .protocol-breadcrumb .bc-sep {
+      font-size: 12px !important;
+    }
+
+    /* Long page title on its own row, aligned with text block */
+    .protocol-builder-page .protocol-breadcrumb .bc-item.active {
+      flex: 1 1 100% !important;
+      margin-left: 0 !important;
+      padding-top: 8px !important;
+      margin-top: 2px !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+      line-height: 1.35 !important;
+    }
+
+    .protocol-builder-page .row {
+      margin-left: -6px !important;
+      margin-right: -6px !important;
+    }
+
+    .protocol-builder-page .row > [class*="col-"] {
+      padding-left: 6px !important;
+      padding-right: 6px !important;
+    }
+
+    .protocol-builder-page .c_content {
+      padding: 12px 10px !important;
+    }
+
+    .protocol-builder-page .c_title.pkt-config-heading {
+      padding: 12px 14px !important;
+      border-radius: 12px 12px 0 0 !important;
+    }
+
+    .protocol-builder-page .pkt-config-title {
+      font-size: 15px !important;
+      line-height: 1.35 !important;
+    }
+
+    .protocol-builder-page .pkt-config-protocol-pill {
+      font-size: 10px !important;
+      padding: 3px 8px !important;
+    }
+
+    .protocol-builder-page .section-body {
+      padding: 12px 10px !important;
+    }
+
+    .protocol-builder-page .section-header {
+      padding: 12px 12px !important;
+    }
+
+    .protocol-builder-page .table-responsive {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      max-width: 100% !important;
+    }
+
+    .protocol-builder-page .premium-scroll {
+      max-height: min(70vh, 520px) !important;
+      overflow-y: auto !important;
+    }
+
+    .protocol-builder-page .form-actions {
+      flex-direction: column-reverse !important;
+      align-items: stretch !important;
+      gap: 10px !important;
+    }
+
+    .protocol-builder-page .form-actions .btn {
+      width: 100% !important;
+      margin-top: 0 !important;
+    }
   }
 </style>
 @stop

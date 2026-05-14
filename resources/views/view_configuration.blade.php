@@ -438,6 +438,214 @@ $timeZones = TimezoneModel::all();
         margin-left: 10px;
         margin-right: 10px;
     }
+
+    /* ========== RESPONSIVE — Tablet ========== */
+    @media (max-width: 991px) {
+        #main-content { padding-top: 62px !important; }
+
+        .vc-breadcrumb-bar,
+        .vc-content-row {
+            margin-left: 6px;
+            margin-right: 6px;
+        }
+
+        .bgx-configurations .col-lg-5,
+        .bgx-configurations .col-lg-7,
+        .bgx-configurations .col-lg-9,
+        .bgx-configurations .col-lg-12 {
+            width: 100% !important;
+            float: none !important;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+
+        .configuration-item .col-lg-6 {
+            width: 100% !important;
+        }
+
+        .col-lg-6.mb-4 {
+            width: 100% !important;
+            float: none !important;
+        }
+
+        .vc-info-table .bgx-table-row {
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .vc-stat-badge {
+            font-size: 12px;
+            padding: 8px 12px;
+        }
+
+        .vc-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .vc-table {
+            min-width: 600px;
+        }
+    }
+
+    /* ========== RESPONSIVE — Mobile ========== */
+    @media (max-width: 767px) {
+        #main-content { padding-top: 56px !important; }
+
+        .vc-breadcrumb-bar {
+            border-radius: 10px;
+            padding: 6px 10px;
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+            margin-bottom: 14px;
+        }
+        .vc-breadcrumb li a,
+        .vc-breadcrumb li .vc-crumb-muted,
+        .vc-breadcrumb li.active span {
+            font-size: 11px;
+        }
+        .vc-breadcrumb .home-icon {
+            width: 24px;
+            height: 24px;
+            font-size: 10px;
+        }
+        .vc-breadcrumb .sep { font-size: 14px; }
+
+        .vc-content-row {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .vc-card-header {
+            padding: 12px 14px !important;
+        }
+        .vc-card-header h4 {
+            font-size: 13px !important;
+        }
+
+        .card-body.body-custom {
+            padding: 12px 10px !important;
+        }
+
+        .vc-section-title {
+            font-size: 12px;
+            padding: 8px 0 6px;
+            margin-bottom: 12px;
+        }
+
+        .vc-info-table .bgx-table-row {
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .vc-info-table .bgx-table-cell {
+            padding: 8px 10px;
+            font-size: 12px;
+        }
+        .vc-info-table .bgx-table-cell strong {
+            font-size: 10px;
+        }
+
+        .vc-stat-badge {
+            font-size: 11px;
+            padding: 7px 10px;
+            gap: 6px;
+        }
+
+        .bgx-configurations .col-lg-5,
+        .bgx-configurations .col-lg-7,
+        .bgx-configurations .col-lg-9,
+        .bgx-configurations .col-lg-12,
+        .col-lg-6.mb-4 {
+            width: 100% !important;
+            float: none !important;
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+
+        .configuration-item {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+        }
+        .configuration-item h6 {
+            font-size: 12px;
+            padding: 8px 10px;
+        }
+        .configuration-item [id^="config-"] p,
+        .configuration-item [id^="canConfig-"] p {
+            font-size: 11.5px;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .configuration-item [id^="config-"] p strong,
+        .configuration-item [id^="canConfig-"] p strong {
+            min-width: 0;
+            font-size: 11px;
+        }
+        .configuration-item .edit-btn {
+            width: 30px;
+            height: 30px;
+        }
+
+        .configuration-item .bgx-form-fields .form-group > .control-label,
+        .configuration-item .bgx-form-fields .form-group > div[class*="col-"] {
+            float: none !important;
+            width: 100% !important;
+        }
+        .configuration-item .bgx-form-fields .form-group > .control-label {
+            padding-top: 0 !important;
+            padding-right: 0 !important;
+            margin-bottom: 4px;
+        }
+
+        /* Edit form (user info) stacking */
+        .edit-user-configurations .form-group > .control-label {
+            float: none !important;
+            width: 100% !important;
+            text-align: left !important;
+            padding-top: 0 !important;
+            margin-bottom: 4px;
+        }
+        .edit-user-configurations .form-group > div[class*="col-"] {
+            float: none !important;
+            width: 100% !important;
+            padding-left: 0 !important;
+        }
+
+        .vc-table { min-width: 550px; }
+        .vc-table thead th {
+            font-size: 11px !important;
+            padding: 10px 8px !important;
+        }
+        .vc-table tbody td {
+            font-size: 12px;
+            padding: 8px !important;
+        }
+    }
+
+    /* ========== RESPONSIVE — Small phone ========== */
+    @media (max-width: 480px) {
+        #main-content { padding-top: 52px !important; }
+
+        .vc-breadcrumb-bar { padding: 5px 8px; }
+        .vc-breadcrumb li a,
+        .vc-breadcrumb li .vc-crumb-muted,
+        .vc-breadcrumb li.active span { font-size: 10px; }
+
+        .vc-card-header { padding: 10px 12px !important; }
+        .vc-card-header h4 { font-size: 12px !important; }
+
+        .card-body.body-custom { padding: 10px 8px !important; }
+
+        .vc-info-table .bgx-table-cell { padding: 6px 8px; font-size: 11px; }
+        .vc-stat-badge { font-size: 10.5px; padding: 6px 8px; }
+
+        .configuration-item { padding: 10px; }
+        .configuration-item h6 { font-size: 11px; padding: 6px 8px; }
+        .configuration-item [id^="config-"] p,
+        .configuration-item [id^="canConfig-"] p { font-size: 11px; }
+    }
 </style>
 @endpush
 

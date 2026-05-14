@@ -90,6 +90,7 @@ class LiveTrackerController extends Controller
             'selectedPacketTypeId' => $selectedPacketTypeId,
             'protocolValidationEnabled' => $protocolValidationEnabled,
             'alertValidationEnabled' => $alertValidationEnabled,
+            'alertHistory' => $alertValidationEnabled && $device ? $this->getAlertHistory($device->imei) : [],
         ]);
     }
 
@@ -254,7 +255,35 @@ class LiveTrackerController extends Controller
             'status_label' => $device->status_label,
             'total_count' => $totalCount,
             'effective_end_at' => $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'Y-m-d H:i:s') : null,
+            'alert_history' => $alertValidationEnabled ? $this->getAlertHistory($device->imei) : [],
         ]);
+    }
+
+    protected function getAlertHistory($imei)
+    {
+        return \App\Models\TicketModel::where('type', 'alert')
+            ->where(function($q) use ($imei) {
+                $q->where('description', 'like', "%[{$imei}]%")
+                  ->orWhere('description', 'like', "%device {$imei}%");
+            })
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(function($t) {
+                $name = str_replace("Alert Triggered: ", "", $t->subject);
+                // Fallback for name parsing if subject is generic
+                if (empty($name) || $name === $t->subject) {
+                    if (preg_match('/Packet Alert \[(.*?)\]/', $t->description, $m)) $name = $m[1];
+                    elseif (preg_match("/Packet Alert '(.*?)'/", $t->description, $m)) $name = $m[1];
+                }
+
+                return [
+                    'name' => $name ?: 'System Alert',
+                    'status' => 'fail',
+                    'description' => $t->description,
+                    'timestamp' => \App\Helper\CommonHelper::getDateAsTimeZone($t->created_at, 'Y-m-d H:i:s')
+                ];
+            });
     }
 
 

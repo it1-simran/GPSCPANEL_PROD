@@ -33,139 +33,576 @@ $get_default_template = DB::table('templates')
   #main-content .wrapper { padding-top: 10px !important; }
   .top-page-header { margin-bottom: 18px !important; }
 
-  /* Reference breadcrumb style (same visual language as view-jig) */
+  /* ─── Breadcrumb ─── */
   .eu-breadcrumb-wrap { padding: 14px 0 18px 0; }
   .eu-breadcrumb {
-    display: inline-flex;
-    align-items: center;
-    background: #1e293b;
-    border-radius: 50px;
-    padding: 6px 18px 6px 8px;
-    gap: 0;
+    display: inline-flex; align-items: center;
+    background: #1e293b; border-radius: 50px;
+    padding: 6px 18px 6px 8px; gap: 0;
     box-shadow: 0 4px 16px rgba(30,41,59,0.18);
   }
   .eu-breadcrumb .bc-home {
-    width: 30px;
-    height: 30px;
-    background: #76CF1C;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 10px;
-    flex-shrink: 0;
+    width: 30px; height: 30px; background: #76CF1C; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 10px; flex-shrink: 0;
   }
-  .eu-breadcrumb .bc-home i {
-    color: #1e293b;
-    font-size: 13px;
-  }
+  .eu-breadcrumb .bc-home i { color: #1e293b; font-size: 13px; }
   .eu-breadcrumb .bc-item {
-    color: rgba(255,255,255,0.65);
-    font-size: 13px;
-    font-weight: 500;
-    text-decoration: none;
-    white-space: nowrap;
+    color: rgba(255,255,255,0.65); font-size: 13px;
+    font-weight: 500; text-decoration: none; white-space: nowrap;
   }
-  .eu-breadcrumb .bc-sep {
-    color: rgba(255,255,255,0.35);
-    margin: 0 8px;
-    font-size: 12px;
-  }
-  .eu-breadcrumb .bc-item.active {
-    color: #76CF1C;
-    font-weight: 700;
-  }
+  .eu-breadcrumb .bc-sep { color: rgba(255,255,255,0.35); margin: 0 8px; font-size: 12px; }
+  .eu-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
 
-  /* Card + title */
+  /* ─── Main Card ─── */
   #main-content .c_panel {
-    border-radius: 12px !important;
-    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08) !important;
-    border: 0 !important;
-    overflow: hidden !important;
-    margin-bottom: 28px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 8px 32px rgba(15,23,42,0.10) !important;
+    border: 0 !important; overflow: hidden !important;
+    margin-bottom: 28px !important; background: #fff !important;
   }
   #main-content .c_panel .c_title {
     background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
     padding: 18px 24px !important;
-    border-bottom: 1px solid rgba(118, 207, 28, 0.25) !important;
+    border-bottom: 3px solid #76CF1C !important;
+    display: flex; align-items: center;
+  }
+  #main-content .c_panel .c_title::before {
+    content: '\f007'; font-family: 'FontAwesome';
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(118,207,28,0.15); display: flex;
+    align-items: center; justify-content: center;
+    color: #76CF1C; font-size: 16px; margin-right: 14px; flex-shrink: 0;
+    line-height: 36px; text-align: center;
   }
   #main-content .c_panel .c_title h2 {
-    color: #ffffff !important;
-    font-size: 21px !important;
-    font-weight: 700 !important;
-    margin: 0 !important;
-    text-transform: none !important;
-    letter-spacing: 0.2px !important;
+    color: #ffffff !important; font-size: 18px !important;
+    font-weight: 700 !important; margin: 0 !important;
+    text-transform: uppercase !important; letter-spacing: 0.5px !important;
+  }
+  #main-content .c_panel .c_content { padding: 24px 28px 8px !important; }
+  #main-content #alert_msg { margin: 0 !important; padding: 0 28px 22px !important; }
+
+  /* ─── Alert Styling ─── */
+  #main-content .alert-success {
+    background: linear-gradient(135deg, rgba(118,207,28,0.08), rgba(118,207,28,0.04)) !important;
+    border: 1px solid rgba(118,207,28,0.25) !important; color: #2d6a0e !important;
+    border-radius: 10px !important; font-weight: 600 !important; font-size: 13px !important;
+  }
+  #main-content .alert-danger {
+    background: linear-gradient(135deg, rgba(239,68,68,0.06), rgba(239,68,68,0.03)) !important;
+    border: 1px solid rgba(239,68,68,0.2) !important; color: #b91c1c !important;
+    border-radius: 10px !important; font-weight: 600 !important; font-size: 13px !important;
   }
 
-  #main-content .c_panel .c_content {
-    padding: 18px 22px 8px !important;
-  }
-  #main-content #alert_msg {
-    margin: 0 !important;
-    padding: 0 22px 22px !important;
-  }
-
-  /* Form layout */
+  /* ─── Form Layout ─── */
   #main-content .form-horizontal .form-group {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    margin-bottom: 16px !important;
+    margin-left: 0 !important; margin-right: 0 !important;
+    margin-bottom: 18px !important; padding: 4px 0 !important;
   }
-  #main-content .form-horizontal .control-label {
-    color: #334155 !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    text-align: left !important;
-    padding-top: 10px !important;
+  #main-content .form-horizontal .control-label,
+  #main-content .control-label {
+    color: #334155 !important; font-size: 13px !important;
+    font-weight: 700 !important; text-align: left !important;
+    padding-top: 10px !important; letter-spacing: 0.1px !important;
   }
+  .require { color: #ef4444 !important; font-weight: 700 !important; }
   #main-content .form-control,
   #main-content select.form-control,
   #main-content .select2-selection--single,
   #main-content .select2-selection--multiple {
-    min-height: 42px !important;
-    border: 1px solid #d2dbe8 !important;
-    border-radius: 8px !important;
-    box-shadow: none !important;
-    font-size: 13px !important;
-    color: #334155 !important;
-    background: #ffffff !important;
+    min-height: 42px !important; border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important; box-shadow: none !important;
+    font-size: 13px !important; color: #334155 !important;
+    background: #f8fafc !important; transition: all 0.2s ease !important;
   }
   #main-content .form-control:focus,
+  #main-content select.form-control:focus,
   #main-content .select2-container--focus .select2-selection--single,
   #main-content .select2-container--focus .select2-selection--multiple {
     border-color: #76CF1C !important;
-    box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12) !important;
+    box-shadow: 0 0 0 3px rgba(118,207,28,0.12) !important;
+    background: #fff !important;
   }
 
-  /* Primary actions */
+  /* ─── Checkbox toggle (2FA etc.) ─── */
+  #main-content input[type="checkbox"].form-check-input,
+  #main-content input[type="checkbox"] {
+    accent-color: #76CF1C !important; cursor: pointer !important;
+  }
+
+  /* ─── Device Category Checkboxes ─── */
+  .bgx-label-category {
+    font-weight: 600 !important; color: #475569 !important;
+    font-size: 13px !important;
+  }
+  .bgx-checkbox-category {
+    width: 18px !important; height: 18px !important;
+    accent-color: #76CF1C !important; cursor: pointer !important;
+  }
+
+  /* ─── Device Category Section Cards ─── */
+  #main-content .device-category-fields {
+    border: 1px solid #e2e8f0 !important; border-radius: 12px !important;
+    overflow: hidden !important; margin-bottom: 20px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+  }
+  #main-content .device-category-fields .card-title {
+    background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+    border-radius: 0 !important; padding: 14px 20px !important;
+    display: flex; align-items: center;
+  }
+  #main-content .device-category-fields .card-title::before {
+    content: '\f1b3'; font-family: 'FontAwesome';
+    color: #76CF1C; font-size: 15px; margin-right: 10px;
+  }
+  #main-content .device-category-fields .card-title h4 {
+    color: #ffffff !important; margin: 0 !important;
+    font-size: 14px !important; font-weight: 700 !important;
+    text-transform: uppercase !important; letter-spacing: 0.5px !important;
+  }
+  #main-content .device-category-fields .card-details {
+    padding: 20px 16px !important; background: #fff !important;
+  }
+
+  /* ─── CAN Configuration Area ─── */
+  .can-config-box {
+    background: #f8fafc; border: 1.5px solid #e2e8f0;
+    border-radius: 12px; padding: 18px 20px !important;
+    margin: 12px 0 8px; position: relative;
+  }
+  .can-config-label {
+    display: block; font-size: 13px !important; font-weight: 700 !important;
+    color: #334155 !important; margin-bottom: 8px !important;
+  }
+  .can-config-label i { color: #76CF1C; margin-right: 6px; }
+  .can-config-input-wrap {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  }
+  .can-config-input {
+    min-height: 34px !important; height: 34px !important;
+    font-size: 11.5px !important; color: #64748b !important;
+    background: #fff !important; padding: 4px 12px !important;
+    font-family: 'Courier New', monospace !important;
+    flex: 1;
+  }
+  .can-copy-btn {
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: #e2e8f0 !important; border: none !important;
+    border-radius: 8px !important; color: #475569 !important;
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+  .can-copy-btn:hover {
+    background: #76CF1C !important; color: #0f172a !important;
+  }
+  .can-copy-btn.copied {
+    background: #76CF1C !important; color: #0f172a !important;
+  }
+  .can-config-btn {
+    background: linear-gradient(135deg, #1e293b, #334155) !important;
+    border: 0 !important; color: #fff !important;
+    border-radius: 8px !important; padding: 9px 20px !important;
+    font-weight: 700 !important; font-size: 13px !important;
+    transition: all 0.2s !important;
+  }
+  .can-config-btn:hover {
+    background: linear-gradient(135deg, #334155, #475569) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(30,41,59,0.2) !important;
+  }
+
+  /* ─── Radio Buttons (Enable/Disable) ─── */
+  #main-content input[type="radio"] {
+    accent-color: #76CF1C !important; cursor: pointer !important;
+  }
+
+  /* ─── Primary Action Buttons ─── */
   #main-content .bgx-save-button .btn.btn-primary,
   #main-content .btn.btn-primary.btn-flat[type="submit"] {
     background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
-    border: 0 !important;
-    color: #0f172a !important;
-    border-radius: 8px !important;
-    padding: 11px 28px !important;
-    font-weight: 800 !important;
-    font-size: 14px !important;
-    box-shadow: 0 5px 14px rgba(118, 207, 28, 0.3) !important;
+    border: 0 !important; color: #0f172a !important;
+    border-radius: 10px !important; padding: 12px 36px !important;
+    font-weight: 800 !important; font-size: 14px !important;
+    box-shadow: 0 6px 20px rgba(118,207,28,0.30) !important;
+    letter-spacing: 0.3px !important; transition: all 0.2s !important;
   }
   #main-content .bgx-save-button .btn.btn-primary:hover,
   #main-content .btn.btn-primary.btn-flat[type="submit"]:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.05); transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(118,207,28,0.35) !important;
   }
 
-  /* Device category section header (GB429 etc.) */
-  #main-content .device-category-fields .card-title {
-    background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
-    border-radius: 8px 8px 0 0 !important;
-    padding: 10px 14px !important;
+  /* ─── HR Divider ─── */
+  #main-content hr {
+    border-top: 1px solid #e2e8f0 !important; margin: 0 28px !important;
   }
-  #main-content .device-category-fields .card-title h4 {
-    color: #ffffff !important;
-    margin: 0 !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
+
+  /* ═══════════════════════════════════════════════
+     CAN PROTOCOL CONFIGURATION MODAL — Premium
+     ═══════════════════════════════════════════════ */
+  .can-modal .modal-dialog { max-width: 560px; }
+  .can-modal .can-modal-content {
+    border: none !important; border-radius: 20px !important;
+    overflow: hidden !important; position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.05) !important;
+    background: #fff !important;
+  }
+  .can-modal .can-accent-bar {
+    height: 5px; width: 100%;
+    background: linear-gradient(90deg, #76CF1C, #1e293b, #76CF1C);
+  }
+  .can-modal .can-close {
+    position: absolute; top: 18px; right: 20px; z-index: 10;
+    background: #f1f5f9 !important; border: none !important;
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #64748b !important; font-size: 18px; cursor: pointer;
+    transition: all 0.2s; line-height: 1; padding: 0;
+  }
+  .can-modal .can-close:hover {
+    background: #e2e8f0 !important; color: #1e293b !important;
+    transform: rotate(90deg);
+  }
+  .can-modal .can-body { padding: 32px 32px 24px; }
+  .can-modal .can-hero { text-align: center; margin-bottom: 24px; }
+  .can-modal .can-icon-ring {
+    width: 56px; height: 56px; border-radius: 14px; margin: 0 auto 12px;
+    background: linear-gradient(135deg, rgba(118,207,28,0.12), rgba(118,207,28,0.05));
+    border: 2px solid rgba(118,207,28,0.2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .can-modal .can-icon-ring i { color: #76CF1C; font-size: 20px; }
+  .can-modal .can-title {
+    font-size: 19px; font-weight: 800; color: #0f172a; margin: 0 0 4px;
+    letter-spacing: -0.3px;
+  }
+  .can-modal .can-subtitle {
+    font-size: 12.5px; color: #94a3b8; margin: 0; font-weight: 500; line-height: 1.5;
+  }
+  .can-modal .can-field-group { margin-bottom: 16px; }
+  .can-modal .can-label {
+    display: block; font-size: 12.5px; font-weight: 700;
+    color: #334155; margin-bottom: 6px; letter-spacing: 0.2px;
+  }
+  .can-modal .can-label i { color: #76CF1C; margin-right: 6px; font-size: 12px; }
+  .can-modal .can-label .require { color: #ef4444; margin-left: 3px; }
+  .can-modal .can-field-group .form-control,
+  .can-modal .can-field-group select.form-control {
+    min-height: 42px !important; border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important; font-size: 13px !important;
+    color: #334155 !important; background: #f8fafc !important;
+    transition: all 0.2s !important; padding: 8px 14px !important;
+    width: 100% !important;
+  }
+  .can-modal .can-field-group .form-control:focus,
+  .can-modal .can-field-group select.form-control:focus {
+    border-color: #76CF1C !important;
+    box-shadow: 0 0 0 3px rgba(118,207,28,0.12) !important;
+    background: #fff !important;
+  }
+  .can-modal .can-dynamic-fields {
+    margin-top: 20px; padding-top: 16px;
+    border-top: 1px dashed #e2e8f0;
+  }
+  .can-modal .can-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;
+  }
+  .can-modal .can-btn-cancel {
+    background: #f1f5f9 !important; color: #64748b !important;
+    border: none !important; border-radius: 10px !important;
+    padding: 10px 22px !important; font-weight: 700 !important;
+    font-size: 13px !important; transition: all 0.2s !important;
+  }
+  .can-modal .can-btn-cancel:hover { background: #e2e8f0 !important; }
+  .can-modal .can-btn-submit {
+    background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+    color: #0f172a !important; border: none !important;
+    border-radius: 10px !important; padding: 10px 24px !important;
+    font-weight: 800 !important; font-size: 13px !important;
+    box-shadow: 0 4px 14px rgba(118,207,28,0.3) !important;
+    transition: all 0.2s !important;
+  }
+  .can-modal .can-btn-submit:hover {
+    filter: brightness(1.06); transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(118,207,28,0.35) !important;
+  }
+  .can-modal .can-btn-submit i { margin-right: 6px; }
+
+  /* ═══════════════════════════════════════════════
+     CONFIRMATION MODAL — Premium
+     ═══════════════════════════════════════════════ */
+  #userEditDelOptionsModal .modal-dialog { max-width: 520px; }
+  #userEditDelOptionsModal .modal-content {
+    border: none !important; border-radius: 20px !important;
+    overflow: hidden !important;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.05) !important;
+    background: #fff !important;
+  }
+  #userEditDelOptionsModal .modal-header {
+    background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+    border-bottom: 3px solid #76CF1C !important;
+    padding: 18px 24px !important;
+  }
+  #userEditDelOptionsModal .modal-header .modal-title {
+    color: #fff !important; font-size: 16px !important;
+    font-weight: 700 !important; text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+  }
+  #userEditDelOptionsModal .modal-header .modal-title strong {
+    color: #fff !important;
+  }
+  #userEditDelOptionsModal .modal-header .close {
+    color: rgba(255,255,255,0.6) !important; opacity: 1 !important;
+    text-shadow: none !important; font-size: 18px !important;
+  }
+  #userEditDelOptionsModal .modal-header .close:hover { color: #fff !important; }
+  #userEditDelOptionsModal .modal-body {
+    padding: 28px 28px 12px !important;
+  }
+  #userEditDelOptionsModal .modal-body .form-group {
+    margin-bottom: 12px !important; padding: 12px 16px !important;
+    background: #f8fafc !important; border-radius: 10px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    transition: all 0.2s !important; cursor: pointer;
+  }
+  #userEditDelOptionsModal .modal-body .form-group:hover {
+    border-color: #76CF1C !important;
+    background: rgba(118,207,28,0.04) !important;
+  }
+  #userEditDelOptionsModal .modal-body .control-label {
+    color: #334155 !important; font-size: 13px !important;
+    font-weight: 600 !important; cursor: pointer !important;
+    display: flex !important; align-items: center !important; gap: 10px !important;
+  }
+  #userEditDelOptionsModal .modal-body input[type="radio"] {
+    accent-color: #76CF1C !important; width: 18px !important;
+    height: 18px !important; flex-shrink: 0 !important;
+  }
+  #userEditDelOptionsModal .just_confirm {
+    font-size: 15px !important; font-weight: 600 !important;
+    color: #475569 !important; padding: 20px 0 !important;
+  }
+  #userEditDelOptionsModal .modal-footer {
+    border-top: 1px solid #f1f5f9 !important; padding: 16px 24px !important;
+  }
+  #userEditDelOptionsModal .modal-footer .btn {
+    border-radius: 10px !important; padding: 10px 24px !important;
+    font-weight: 700 !important; font-size: 13px !important;
+    border: none !important;
+  }
+  #userEditDelOptionsModal .modal-footer .btn-primary {
+    background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 14px rgba(118,207,28,0.3) !important;
+  }
+  #userEditDelOptionsModal .modal-footer .btn-primary:hover {
+    filter: brightness(1.06); transform: translateY(-1px);
+  }
+
+  /* ========== RESPONSIVE — Tablet ========== */
+  @media (max-width: 991px) {
+    #main-content { padding-top: 62px !important; }
+    #main-content .wrapper { padding: 0 8px !important; }
+
+    #main-content .c_panel .c_content { padding: 18px 16px 8px !important; }
+    #main-content #alert_msg { padding: 0 16px 14px !important; }
+    #main-content hr { margin: 0 16px !important; }
+
+    #main-content .form-horizontal .control-label,
+    #main-content .control-label {
+      float: none !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      flex: 0 0 100% !important;
+      text-align: left !important;
+      padding-top: 0 !important;
+      padding-bottom: 4px !important;
+    }
+    #main-content .form-horizontal .form-group > div[class*="col-"] {
+      float: none !important;
+      width: 100% !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    .col-lg-offset-3 { margin-left: 0 !important; }
+
+    .device-category-fields .card-details { padding: 14px 12px !important; }
+    .device-category-fields .card-details .form-group > .control-label,
+    .device-category-fields .card-details .form-group > div[class*="col-"] {
+      float: none !important;
+      width: 100% !important;
+    }
+  }
+
+  /* ========== RESPONSIVE — Mobile ========== */
+  @media (max-width: 767px) {
+    #main-content { padding-top: 56px !important; }
+    #main-content .wrapper { padding: 0 4px !important; }
+
+    .eu-breadcrumb-wrap { padding: 8px 0 10px !important; }
+    .eu-breadcrumb {
+      flex-wrap: wrap !important;
+      font-size: 11px !important;
+      padding: 5px 12px 5px 6px !important;
+      gap: 2px !important;
+      border-radius: 14px !important;
+    }
+    .eu-breadcrumb .bc-home { width: 24px; height: 24px; margin-right: 6px; }
+    .eu-breadcrumb .bc-home i { font-size: 11px; }
+    .eu-breadcrumb .bc-item { font-size: 11px; }
+    .eu-breadcrumb .bc-sep { margin: 0 4px; font-size: 10px; }
+
+    #main-content .c_panel .c_title {
+      padding: 12px 14px !important;
+      flex-wrap: wrap !important;
+    }
+    #main-content .c_panel .c_title::before {
+      width: 30px; height: 30px; font-size: 13px; margin-right: 10px;
+      line-height: 30px;
+    }
+    #main-content .c_panel .c_title h2 { font-size: 14px !important; }
+    #main-content .c_panel .c_content { padding: 12px 10px !important; }
+    #main-content #alert_msg { padding: 0 10px 12px !important; }
+    #main-content hr { margin: 0 10px !important; }
+
+    #main-content .form-horizontal .form-group {
+      flex-direction: column !important;
+      margin-bottom: 12px !important;
+    }
+    #main-content .form-horizontal .control-label,
+    #main-content .control-label {
+      text-align: left !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      flex: 0 0 100% !important;
+      padding-top: 0 !important;
+      padding-bottom: 4px !important;
+      font-size: 12px !important;
+    }
+    #main-content .form-horizontal .form-group > div[class*="col-"] {
+      float: none !important;
+      width: 100% !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    .col-lg-offset-3 { margin-left: 0 !important; }
+
+    #main-content .form-control,
+    #main-content select.form-control {
+      min-height: 38px !important;
+      font-size: 12px !important;
+      border-radius: 8px !important;
+    }
+
+    #main-content .bgx-save-button .btn.btn-primary,
+    #main-content .btn.btn-primary.btn-flat[type="submit"] {
+      padding: 10px 24px !important;
+      font-size: 13px !important;
+      width: 100% !important;
+      border-radius: 8px !important;
+    }
+
+    /* Device Categories — checkbox list compact */
+    .form-group.bgx-margin-bottom > .col-lg-6.bgx-margin-top {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    .form-group.bgx-margin-bottom .row.col-md-6 {
+      width: 100% !important;
+      float: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 4px 0 !important;
+      margin: 0 !important;
+    }
+    .form-group.bgx-margin-bottom .row.col-md-6 > .col-xs-6 {
+      width: auto !important;
+      float: none !important;
+      padding: 0 !important;
+      flex: 1 !important;
+    }
+    .form-group.bgx-margin-bottom .row.col-md-6 > .col-xs-6.text-right {
+      flex: 0 0 auto !important;
+      text-align: right !important;
+    }
+    .bgx-label-category { font-size: 12px !important; }
+    .bgx-checkbox-category { width: 16px !important; height: 16px !important; }
+
+    /* CAN Configuration — full width, no side gaps */
+    .can-config-box {
+      padding: 12px !important;
+      border-radius: 10px;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+    .can-config-input-wrap { flex-direction: column !important; gap: 6px !important; }
+    .can-config-input { font-size: 11px !important; width: 100% !important; }
+    .can-config-btn {
+      width: 100% !important;
+      text-align: center !important;
+      font-size: 12px !important;
+      padding: 8px 12px !important;
+      white-space: nowrap !important;
+    }
+    .can-config-label { font-size: 12px !important; }
+
+    .can-modal .modal-dialog { max-width: calc(100vw - 24px) !important; margin: 12px !important; }
+    .can-modal .can-body { padding: 16px !important; }
+    .can-modal .can-hero { padding: 20px 16px 14px !important; }
+    .can-modal .can-title { font-size: 16px; }
+    .can-modal .can-actions { flex-direction: column !important; }
+    .can-modal .can-actions .btn { width: 100% !important; }
+
+    #userEditDelOptionsModal .modal-dialog { max-width: calc(100vw - 24px) !important; margin: 12px !important; }
+
+    .device-category-fields { margin-bottom: 14px !important; }
+    .device-category-fields .card-title { padding: 10px 14px !important; }
+    .device-category-fields .card-title h4 { font-size: 12px !important; }
+    .device-category-fields .card-details { padding: 12px 8px !important; }
+    .device-category-fields .card-details .form-group > .control-label,
+    .device-category-fields .card-details .form-group > div[class*="col-"] {
+      float: none !important;
+      width: 100% !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+
+    /* Nested row padding fix for device category fields */
+    .device-category-fields .card-details .row {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+      padding: 0 !important;
+    }
+    .device-category-fields .card-details [class*="col-"] {
+      padding-left: 4px !important;
+      padding-right: 4px !important;
+    }
+  }
+
+  /* ========== RESPONSIVE — Small phone ========== */
+  @media (max-width: 480px) {
+    #main-content { padding-top: 52px !important; }
+
+    .eu-breadcrumb { padding: 4px 10px 4px 5px !important; }
+    .eu-breadcrumb .bc-home { width: 22px; height: 22px; }
+    .eu-breadcrumb .bc-item { font-size: 10px; }
+
+    #main-content .c_panel .c_title { padding: 10px 10px !important; }
+    #main-content .c_panel .c_title::before { width: 26px; height: 26px; font-size: 12px; margin-right: 8px; line-height: 26px; }
+    #main-content .c_panel .c_title h2 { font-size: 13px !important; }
+    #main-content .c_panel .c_content { padding: 10px 8px !important; }
+
+    #main-content .form-control,
+    #main-content select.form-control { min-height: 36px !important; font-size: 11.5px !important; }
+
+    .can-modal .can-body { padding: 12px !important; }
+    .can-modal .can-icon-ring { width: 44px; height: 44px; border-radius: 10px; }
+    .can-modal .can-title { font-size: 15px; }
+    .can-modal .can-subtitle { font-size: 11px; }
   }
 </style>
 <!--main content start-->
@@ -523,87 +960,82 @@ $get_default_template = DB::table('templates')
                   <input type="hidden" name="configuration[{{ $category->id }}][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['ping_interval']['value'])  ? $configurationValue['ping_interval']['value'] : '' }}" />
                   <input type="hidden" name="configuration[{{ $category->id }}][is_editable]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['is_editable']['value'])  ? $configurationValue['is_editable']['value'] : '' }}" />
                   @endif
-                  <div class="row">
-                    @if( $category->is_can_protocol == 1 )
-                    <div class="isCanEnable{{$category->id}}" style="padding: 0px 25px;">
-                      <label for="canConfigurationArr" class="control-label">
-                        CAN Configuration <span class="require">*</span>
-                      </label>
-                      <div class="col-lg-12 padding-1">
+                  @if( $category->is_can_protocol == 1 )
+                  <div class="row" style="padding: 0 15px;">
+                    <div class="col-lg-12">
+                      <div class="can-config-box isCanEnable{{$category->id}}">
+                        <label class="can-config-label"><i class="fa fa-cogs"></i> CAN Configuration <span class="require">*</span></label>
                         @php
                         $value = isset($canConfigurations[$category->id] ) ?$canConfigurations[$category->id]: [];
                         $result = is_array($value) ? json_encode($value) : $value;
                         @endphp
-                        <input type="text" class="form-control" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value="{{$result}}" readonly />
-                        <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display: none;"></div>
-                        <button type="button" class="btn btn-primary" onclick="openCanModal('{{ $category->id }}')">
-                          Configure CAN Protocol
+                        <div class="can-config-input-wrap">
+                          <input type="text" class="form-control can-config-input" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value="{{$result}}" readonly />
+                          <button type="button" class="can-copy-btn" onclick="copyCanConfig('canConfigurationArr{{$category->id}}')" title="Copy to clipboard">
+                            <i class="fa fa-copy"></i>
+                          </button>
+                        </div>
+                        <div class="alert alert-danger modelName_error" role="alert" style="display: none;"></div>
+                        <button type="button" class="btn btn-primary can-config-btn" onclick="openCanModal('{{ $category->id }}')">
+                          <i class="fa fa-sliders" style="margin-right:6px;"></i> Configure CAN Protocol
                         </button>
                       </div>
                     </div>
-                    @endif
                   </div>
+                  @endif
                 </div>
-                <div class="modal" id="canModal{{$category->id}}">
-                  <div class="modal-dialog modal-md">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">
-                          <i class="fa fa-times"></i>
-                        </button>
-                        <h5 class="modal-title">CAN Protocol Configuration</h5>
-                      </div>
-                      <div class="modal-body">
-                        <div class="row">
-                          <div class="col-md-12" style="padding: 0px 25px;">
-                            <div id="canForm">
-                              <!-- Protocol Selection -->
-                              <div class="form-group isCanEnable">
-                                <div style="margin:10px 0px;">
-                                  <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                  <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]" class="form-control">
-                                    <option value="">-- Select CAN Channel --</option>
-                                    <option value="1">CAN 1</option>
-                                    <option value="2">CAN 2</option>
-                                    <option value="3">CAN 3</option>
-                                    <option value="4">CAN 4</option>
-                                  </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                  <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                  <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control">
-                                    <option value="">-- Select Baud Rate --</option>
-                                    <option value="500">500 kbps</option>
-                                    <option value="250">250 kbps</option>
-                                  </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                  <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                  <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control">
-                                    <option value="">-- Select Can ID --</option>
-                                    <option value="0">Standard</option>
-                                    <option value="1">Extended</option>
-                                  </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                  <label for="can_protocol" class="control-label padding-left-3">
-                                    CAN Protocol <span class="require">*</span>
-                                  </label>
-                                  <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control" onchange="selectedCanProtocol(
-                                    '{{$category->id}}')">
-                                    <option value="">Select Protocol</option>
-                                    <option value="1">J1979</option>
-                                    <option value="2">J1939</option>
-                                    <option value="3">Custom CAN</option>
-                                  </select>
-                                </div>
-                                <div id="dynamicCanFields{{$category->id}}"></div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="col-md-12 text-right">
-                            <button type="button" class="btn btn-success mt-4" onclick="generateJSON('{{$category->id}}')">Submit</button>
-                          </div>
+                <div class="modal can-modal" id="canModal{{$category->id}}">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content can-modal-content">
+                      <div class="can-accent-bar"></div>
+                      <button type="button" class="can-close" data-dismiss="modal">&times;</button>
+                      <div class="can-body">
+                        <div class="can-hero">
+                          <div class="can-icon-ring"><i class="fa fa-sliders"></i></div>
+                          <h3 class="can-title">CAN Protocol Configuration</h3>
+                          <p class="can-subtitle">Configure CAN bus parameters for {{ CommonHelper::getDeviceCategoryName($category->id) }}</p>
+                        </div>
+                        <div class="can-field-group">
+                          <label class="can-label"><i class="fa fa-plug"></i> CAN Channel <span class="require">*</span></label>
+                          <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]" class="form-control">
+                            <option value="">-- Select CAN Channel --</option>
+                            <option value="1">CAN 1</option>
+                            <option value="2">CAN 2</option>
+                            <option value="3">CAN 3</option>
+                            <option value="4">CAN 4</option>
+                          </select>
+                        </div>
+                        <div class="can-field-group">
+                          <label class="can-label"><i class="fa fa-tachometer"></i> CAN Baud Rate <span class="require">*</span></label>
+                          <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control">
+                            <option value="">-- Select Baud Rate --</option>
+                            <option value="500">500 kbps</option>
+                            <option value="250">250 kbps</option>
+                          </select>
+                        </div>
+                        <div class="can-field-group">
+                          <label class="can-label"><i class="fa fa-tag"></i> CAN ID Type <span class="require">*</span></label>
+                          <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control">
+                            <option value="">-- Select CAN ID --</option>
+                            <option value="0">Standard</option>
+                            <option value="1">Extended</option>
+                          </select>
+                        </div>
+                        <div class="can-field-group">
+                          <label class="can-label"><i class="fa fa-cogs"></i> CAN Protocol <span class="require">*</span></label>
+                          <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control" onchange="selectedCanProtocol('{{$category->id}}')">
+                            <option value="">-- Select Protocol --</option>
+                            <option value="1">J1979</option>
+                            <option value="2">J1939</option>
+                            <option value="3">Custom CAN</option>
+                          </select>
+                        </div>
+                        <div class="can-dynamic-fields" id="dynamicCanFields{{$category->id}}"></div>
+                        <div class="can-actions">
+                          <button type="button" class="btn can-btn-cancel" data-dismiss="modal">Cancel</button>
+                          <button type="button" class="btn can-btn-submit" onclick="generateJSON('{{$category->id}}')">
+                            <i class="fa fa-check"></i> Submit
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -635,6 +1067,20 @@ $get_default_template = DB::table('templates')
 @stop
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script type="text/javascript">
+  function copyCanConfig(inputId) {
+    var input = document.getElementById(inputId);
+    var text = input.value;
+    navigator.clipboard.writeText(text).then(function() {
+      var btn = input.closest('.can-config-input-wrap').querySelector('.can-copy-btn');
+      btn.classList.add('copied');
+      btn.innerHTML = '<i class="fa fa-check"></i>';
+      setTimeout(function() {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<i class="fa fa-copy"></i>';
+      }, 1500);
+    });
+  }
+
   function openCanModal(index) {
     $('#canModal' + index).modal('show');
 
@@ -1533,78 +1979,76 @@ $get_default_template = DB::table('templates')
               htmlContent += '</div></div></div>';
               if (canEnable) {
                 htmlContent += `
-                <div class="isCanEnable` + deviceCategoryId + `" style="padding: 0px 25px;">
-                    <label for="canConfigurationArr" class="control-label" required>
-                        CAN Configuration <span class="require">*</span>
-                    </label>
-                    <div class="col-lg-12 padding-1">
-                        <input type="text" class="form-control" name="canConfigurationArr[${deviceCategoryId}]" id="canConfigurationArr${deviceCategoryId}" value="" readonly />
-                        <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display: none;"></div>
-                        <button type="button" class="btn btn-primary" onclick="openCanModal1(` + deviceCategoryId + `)">
-                            Configure CAN Protocol
+                <div class="row" style="padding: 0 15px;">
+                  <div class="col-lg-12">
+                    <div class="can-config-box isCanEnable${deviceCategoryId}">
+                      <label class="can-config-label"><i class="fa fa-cogs"></i> CAN Configuration <span class="require">*</span></label>
+                      <div class="can-config-input-wrap">
+                        <input type="text" class="form-control can-config-input" name="canConfigurationArr[${deviceCategoryId}]" id="canConfigurationArr${deviceCategoryId}" value="" readonly />
+                        <button type="button" class="can-copy-btn" onclick="copyCanConfig('canConfigurationArr${deviceCategoryId}')" title="Copy to clipboard">
+                          <i class="fa fa-copy"></i>
                         </button>
+                      </div>
+                      <div class="alert alert-danger modelName_error" role="alert" style="display: none;"></div>
+                      <button type="button" class="btn btn-primary can-config-btn" onclick="openCanModal1(${deviceCategoryId})">
+                        <i class="fa fa-sliders" style="margin-right:6px;"></i> Configure CAN Protocol
+                      </button>
                     </div>
+                  </div>
                 </div>`;
                 htmlContent += `
-                    <div class="modal" id="canModal1` + deviceCategoryId + `" aria-hidden="true">
-                      <div class="modal-dialog modal-md">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-                              <i class="fa fa-times"></i>
-                            </button>
-                            <h5 class="modal-title">CAN Protocol Configuration</h5>
-                          </div>
-                          <div class="modal-body">
-                            <div class="row">
-                              <div class="col-md-12" style="padding: 0px 25px;">
-                                <div id="canForm">
-                                  <!-- Protocol Selection -->
-                                    <div class="form-group isCanEnable">
-                                      <div style="margin:10px 0px;">
-                                        <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                        <select class="form-control" id="can_channel${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_channel]" required>
-                                          <option value="">-- Select CAN Channel --</option>
-                                          <option value="1">CAN 1</option>
-                                          <option value="2">CAN 2</option>
-                                          <option value="3">CAN 3</option>
-                                          <option value="4">CAN 4</option>
-                                        </select>
-                                      </div>
-                                      <div style="margin:10px 0px;">
-                                        <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                        <select id="can_baud_rate${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_baud_rate]" class="form-control" required>
-                                          <option value="">-- Select Baud Rate --</option>
-                                          <option value="500">500 kbps</option>
-                                          <option value="250">250 kbps</option>
-                                        </select>
-                                      </div>
-                                      <div style="margin:10px 0px;">
-                                        <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                        <select id="can_id_type${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_id_type]" class="form-control" required>
-                                          <option value="">-- Select Can ID --</option>
-                                          <option value="0">Standard</option>
-                                          <option value="1">Extended</option>
-                                        </select>
-                                      </div>
-                                      <div style="margin:10px 0px;">
-                                        <label for="can_protocol" class="control-label padding-left-3">
-                                          CAN Protocol <span class="require">*</span>
-                                        </label>
-                                        <select id="can_protocol${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_protocol]" class="form-control" onchange="selectedCanProtocol1(${deviceCategoryId})">
-                                          <option value="">Select Protocol</option>
-                                          <option value="1">J1979</option>
-                                          <option value="2">J1939</option>
-                                          <option value="3">Custom CAN</option>
-                                        </select>
-                                      </div>
-                                    </div>
-                                  <div id="dynamicCanFields1${deviceCategoryId}"></div>
-                                </div>
-                              </div>
-                              <div class="col-md-12 text-right">
-                                <button type="button" class="btn btn-success mt-4" onclick="generateJSON1(${deviceCategoryId})">Submit</button>
-                              </div>
+                    <div class="modal can-modal" id="canModal1${deviceCategoryId}" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content can-modal-content">
+                          <div class="can-accent-bar"></div>
+                          <button type="button" class="can-close" data-dismiss="modal">&times;</button>
+                          <div class="can-body">
+                            <div class="can-hero">
+                              <div class="can-icon-ring"><i class="fa fa-sliders"></i></div>
+                              <h3 class="can-title">CAN Protocol Configuration</h3>
+                              <p class="can-subtitle">Configure CAN bus parameters for ${data.device_category_name}</p>
+                            </div>
+                            <div class="can-field-group">
+                              <label class="can-label"><i class="fa fa-plug"></i> CAN Channel <span class="require">*</span></label>
+                              <select class="form-control" id="can_channel${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_channel]" required>
+                                <option value="">-- Select CAN Channel --</option>
+                                <option value="1">CAN 1</option>
+                                <option value="2">CAN 2</option>
+                                <option value="3">CAN 3</option>
+                                <option value="4">CAN 4</option>
+                              </select>
+                            </div>
+                            <div class="can-field-group">
+                              <label class="can-label"><i class="fa fa-tachometer"></i> CAN Baud Rate <span class="require">*</span></label>
+                              <select id="can_baud_rate${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_baud_rate]" class="form-control" required>
+                                <option value="">-- Select Baud Rate --</option>
+                                <option value="500">500 kbps</option>
+                                <option value="250">250 kbps</option>
+                              </select>
+                            </div>
+                            <div class="can-field-group">
+                              <label class="can-label"><i class="fa fa-tag"></i> CAN ID Type <span class="require">*</span></label>
+                              <select id="can_id_type${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_id_type]" class="form-control" required>
+                                <option value="">-- Select CAN ID --</option>
+                                <option value="0">Standard</option>
+                                <option value="1">Extended</option>
+                              </select>
+                            </div>
+                            <div class="can-field-group">
+                              <label class="can-label"><i class="fa fa-cogs"></i> CAN Protocol <span class="require">*</span></label>
+                              <select id="can_protocol${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_protocol]" class="form-control" onchange="selectedCanProtocol1(${deviceCategoryId})">
+                                <option value="">-- Select Protocol --</option>
+                                <option value="1">J1979</option>
+                                <option value="2">J1939</option>
+                                <option value="3">Custom CAN</option>
+                              </select>
+                            </div>
+                            <div class="can-dynamic-fields" id="dynamicCanFields1${deviceCategoryId}"></div>
+                            <div class="can-actions">
+                              <button type="button" class="btn can-btn-cancel" data-dismiss="modal">Cancel</button>
+                              <button type="button" class="btn can-btn-submit" onclick="generateJSON1(${deviceCategoryId})">
+                                <i class="fa fa-check"></i> Submit
+                              </button>
                             </div>
                           </div>
                         </div>

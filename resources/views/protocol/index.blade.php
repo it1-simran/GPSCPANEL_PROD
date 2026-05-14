@@ -1,29 +1,28 @@
 @extends('layouts.apps')
 @section('content')
-<section id="main-content">
-    <section class="wrapper protocol-page">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Protocol Management</a></li>
-                        <li class="active"><a href="#">Protocols</a></li>
-                    </ul>
-                </nav>
-            </div>
+<section id="main-content" class="protocol-page">
+    <section class="wrapper">
+        @php
+            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+        @endphp
+        <div class="protocol-breadcrumb-wrap">
+            <nav class="protocol-breadcrumb protocol-breadcrumb--scroll">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ url('admin') }}" class="bc-item">Home</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Protocols</span>
+            </nav>
         </div>
 
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel protocol-panel">
-                        @php
-                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
-                        @endphp
-                        <div class="row bgx-title-container">
-                            <div class="col-lg-6 col-md-6 col-sm-6">
+                    <div class="c_title" style="margin-bottom: 10px;">
+                        <div class="row bgx-title-container protocol-page-title-row">
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6 protocol-page-title-col">
                                 <h2>Protocol Management</h2>
                             </div>
-                            <div class="col-lg-6 col-md-6 col-sm-6 text-right">
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6 text-right protocol-page-actions-col">
                                 <a href="{{ route($routePrefix . '.create') }}" class="btn btn-success protocol-add-btn">
                                     <i class="fa fa-plus-circle"></i> Add New Protocol
                                 </a>
@@ -32,7 +31,7 @@
                         <div class="clearfix"></div>
                     </div>
 
-                    <div class="c_content" style="padding-left: 0; padding-right: 0;">
+                    <div class="c_content">
                         @if(session('success'))
                             <div class="alert alert-success">{{ session('success') }}</div>
                         @endif
@@ -44,31 +43,31 @@
                         @endphp
 
                         <div class="row protocol-stats-row">
-                            <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
                                 <div class="protocol-stat-card">
                                     <div>
                                         <h3>{{ $totalProtocols }}</h3>
                                         <p>Total Protocols</p>
                                     </div>
-                                    <span class="protocol-stat-icon protocol-stat-blue"><i class="fa fa-code-fork"></i></span>
+                                    <span class="protocol-stat-icon protocol-stat-cyan"><i class="fa fa-code-fork"></i></span>
                                 </div>
                             </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
                                 <div class="protocol-stat-card">
                                     <div>
                                         <h3>{{ $activeProtocols }}</h3>
                                         <p>Active Protocols</p>
                                     </div>
-                                    <span class="protocol-stat-icon protocol-stat-green"><i class="fa fa-check-circle"></i></span>
+                                    <span class="protocol-stat-icon protocol-stat-blue"><i class="fa fa-check-circle"></i></span>
                                 </div>
                             </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
                                 <div class="protocol-stat-card">
                                     <div>
                                         <h3>{{ $packetCount }}</h3>
-                                        <p>Packet Types</p>
+                                        <p>Total Packet Types</p>
                                     </div>
-                                    <span class="protocol-stat-icon protocol-stat-cyan"><i class="fa fa-list-ul"></i></span>
+                                    <span class="protocol-stat-icon protocol-stat-green"><i class="fa fa-list-ul"></i></span>
                                 </div>
                             </div>
                         </div>
@@ -77,16 +76,16 @@
                             <table id="protocol_table" class="table table-bordered table-striped protocol-table">
                                 <thead>
                                     <tr>
-                                        <th style="width:80px;" class="text-center">Sr. No.</th>
+                                        <th class="text-center">Sr. No.</th>
                                         <th>Protocol Name</th>
-                                        <th style="width:220px;" class="text-center">Packet Types</th>
-                                        <th style="width:130px;" class="text-center">Status</th>
-                                        <th style="width:140px;" class="text-center">Actions</th>
+                                        <th class="text-center">Packet Types</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($protocols as $index => $protocol)
-                                        <tr>
+                                        <tr class="p-0">
                                             <td class="text-center text-muted">{{ $index + 1 }}</td>
                                             <td>
                                                 <div class="protocol-name-cell">
@@ -98,10 +97,9 @@
                                                 </div>
                                             </td>
                                             <td class="text-center">
-                                                <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" class="btn btn-info btn-sm protocol-packet-btn">
-                                                    <i class="fa fa-list-ul"></i>
-                                                    <span>View Packets</span>
-                                                    <span class="badge protocol-count-badge">{{ $protocol->packet_types_count }}</span>
+                                                <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" class="btn btn-primary btn-sm protocol-manage-btn">
+                                                    <i class="fa fa-list-ul"></i> View Packets
+                                                    <span class="badge protocol-field-badge">{{ $protocol->packet_types_count }}</span>
                                                 </a>
                                             </td>
                                             <td class="text-center">
@@ -113,14 +111,14 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="protocol-actions">
-                                                    <a href="{{ route($routePrefix . '.edit', $protocol->id) }}" class="btn btn-warning btn-sm protocol-icon-btn" title="Edit">
-                                                        <i class="fa fa-pencil"></i>
+                                                    <a href="{{ route($routePrefix . '.edit', $protocol->id) }}" class="btn btn-warning btn-sm protocol-manage-btn">
+                                                        <i class="fa fa-pencil"></i> Edit
                                                     </a>
-                                                    <form action="{{ route($routePrefix . '.destroy', $protocol->id) }}" method="post">
+                                                    <form action="{{ route($routePrefix . '.destroy', $protocol->id) }}" method="POST" style="display:inline-flex; margin:0; padding:0;" onsubmit="return confirm('Are you sure you want to delete this protocol?');">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button onclick="return confirm('Are you sure you want to delete this protocol?');" class="btn btn-danger btn-sm protocol-icon-btn" type="submit" title="Delete">
-                                                            <i class="fa fa-trash"></i>
+                                                        <button type="submit" class="btn btn-danger protocol-delete-btn" style="margin-top: -2px;">
+                                                            <i class="fa fa-trash"></i> Delete
                                                         </button>
                                                     </form>
                                                 </div>
@@ -138,248 +136,131 @@
 </section>
 
 <style>
-    .protocol-page .protocol-panel {
-        border-radius: 6px;
-        overflow: hidden;
+    .protocol-page {
+        font-family: 'Inter', sans-serif;
     }
 
-    .protocol-page .bgx-title-container {
-        padding: 15px 20px;
-        margin-left: 0;
-        margin-right: 0;
-        border-bottom: 1px solid #eee;
+    #main-content.protocol-page .wrapper {
+        padding-top: 0 !important;
     }
 
-    .protocol-page .bgx-title-container h2 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 700;
-        color: #222;
-        line-height: 34px;
+    .protocol-breadcrumb-wrap {
+        margin-top: 0 !important;
+        padding: 0 0 14px 0 !important;
     }
 
-    .protocol-add-btn {
-        font-weight: 600;
-        border-radius: 4px;
-        padding: 8px 14px;
-    }
-
-    .protocol-add-btn i,
-    .protocol-packet-btn i,
-    .protocol-status i {
-        margin-right: 5px;
-    }
-
-    .protocol-stats-row {
-        margin-bottom: 18px;
-    }
-
-    .protocol-stat-card {
-        background: #fff;
-        border: 1px solid #eee;
-        border-radius: 6px;
-        padding: 15px;
-        display: flex;
+    .protocol-breadcrumb {
+        display: inline-flex;
         align-items: center;
-        justify-content: space-between;
-        min-height: 82px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
-        margin-bottom: 15px;
+        background: #1e293b;
+        border-radius: 50px;
+        padding: 6px 18px 6px 8px;
+        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
     }
 
-    .protocol-stat-card h3 {
-        margin: 0 0 4px 0;
-        font-size: 26px;
-        font-weight: 700;
-        color: #333;
-    }
-
-    .protocol-stat-card p {
-        margin: 0;
-        font-size: 13px;
-        color: #777;
-        font-weight: 600;
-    }
-
-    .protocol-stat-icon {
-        width: 42px;
-        height: 42px;
+    .protocol-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        background: #76CF1C;
         border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-    }
-
-    .protocol-stat-blue { color: #3498db; background: rgba(52, 152, 219, 0.12); }
-    .protocol-stat-green { color: #2ecc71; background: rgba(46, 204, 113, 0.12); }
-    .protocol-stat-cyan { color: #00a9c7; background: rgba(0, 169, 199, 0.12); }
-
-    .protocol-table-wrap {
-        border: 1px solid #e5e5e5;
-        border-radius: 6px;
-        background: #fff;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    .protocol-table {
-        margin-bottom: 0 !important;
-        width: 100% !important;
-        table-layout: auto;
-    }
-
-    .protocol-table thead th {
-        background: #f8f9fb;
-        color: #555;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .03em;
-        vertical-align: middle !important;
-        padding: 12px 14px !important;
-        border-bottom: 1px solid #ddd !important;
-    }
-
-    .protocol-table tbody td {
-        vertical-align: middle !important;
-        padding: 12px 14px !important;
-    }
-
-    .protocol-name-cell {
         display: flex;
         align-items: center;
-        gap: 10px;
-    }
-
-    .protocol-row-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 8px;
-        background: #f0f7ff;
-        color: #3498db;
-        display: inline-flex;
-        align-items: center;
         justify-content: center;
-        flex: 0 0 38px;
+        margin-right: 10px;
+        flex-shrink: 0;
     }
 
-    .protocol-name-cell strong {
-        display: block;
-        color: #333;
-        font-size: 14px;
-        line-height: 1.2;
+    .protocol-breadcrumb .bc-home i {
+        color: #1e293b;
+        font-size: 13px;
     }
 
-    .protocol-name-cell small {
-        display: block;
-        color: #888;
-        font-size: 11px;
-        margin-top: 3px;
+    .protocol-breadcrumb .bc-item {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
     }
 
-    .protocol-packet-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        border-radius: 4px;
-        font-weight: 600;
-        min-width: 132px;
-            white-space: nowrap;
-    }
-
-    .protocol-count-badge {
-        background: rgba(255, 255, 255, 0.25);
-        color: #fff;
-        min-width: 20px;
-        padding: 3px 6px;
-    }
-
-    .protocol-status {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 6px 10px;
-        min-width: 78px;
+    .protocol-breadcrumb .bc-sep {
+        color: rgba(255, 255, 255, 0.35);
+        margin: 0 8px;
         font-size: 12px;
     }
 
-    .protocol-actions {
-        /* display: flex; */
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
+    .protocol-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
     }
 
-    .protocol-actions form {
-        margin: 0;
-        display: inline-flex;
+    .protocol-breadcrumb--scroll {
+        max-width: 100%;
+        box-sizing: border-box;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
     }
-
-    .protocol-icon-btn {
-        width: 32px;
-        height: 32px;
-        padding: 0 !important;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-        }
-
-    .protocol-page .dataTables_wrapper {
-        width: 100% !important;
-        padding: 15px;
-    }
-
-    .protocol-page .dataTables_wrapper .dataTables_length,
-    .protocol-page .dataTables_wrapper .dataTables_filter {
-        margin: 0 0 12px 0;
-    }
-
-    .protocol-page .dataTables_wrapper .dataTables_filter input,
-    .protocol-page .dataTables_wrapper .dataTables_length select {
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        height: 34px;
-        padding: 6px 10px;
-        margin-left: 6px;
-    }
-
-    .protocol-page .dataTables_wrapper .dataTables_info {
-        padding-top: 12px;
-        color: #777;
-    }
-
-    .protocol-page .dataTables_wrapper .dataTables_paginate {
-        padding-top: 10px;
+    .protocol-breadcrumb--scroll .bc-item {
+        flex-shrink: 0;
     }
 
     @media (max-width: 767px) {
-        .protocol-page .text-right {
-            text-align: left !important;
-            margin-top: 10px;
+        #main-content.protocol-page > section.wrapper {
+            padding-left: 6px !important;
+            padding-right: 6px !important;
         }
-
-        .protocol-table-wrap {
-            border-radius: 4px;
+        .protocol-breadcrumb-wrap {
+            padding: 0 0 10px 0 !important;
+        }
+        .protocol-breadcrumb.protocol-breadcrumb--scroll {
+            display: flex;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 6px 12px 6px 6px;
+            border-radius: 12px;
+            justify-content: flex-start;
+        }
+        .protocol-page-title-row > [class*="col-"] {
+            text-align: left !important;
+            margin-bottom: 0 !important;
+        }
+        .protocol-page-title-row .protocol-page-actions-col {
+            text-align: left !important;
         }
     }
 </style>
 
+@include('protocol.partials.protocol_styles')
+<style>
+    /* Ensure packet count number is always visible */
+    #protocol_table td .protocol-field-badge {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Improve serial number visibility */
+    #protocol_table tbody td:first-child {
+        color: #334155 !important;
+        font-weight: 700 !important;
+    }
+</style>
+
 <script>
-$(function () {
-    var table = $('#protocol_table').DataTable({
-        pageLength: 10,
-        autoWidth: false,
-        order: [[0, 'asc']],
-        columnDefs: [
-            { orderable: false, targets: [4] }
-        ]
+    $(function () {
+        var table = $('#protocol_table').DataTable({
+            "paging": true,
+            "lengthChange": false,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "autoWidth": false
+        });
+
     });
-    
-    // Wrap table in a responsive div to enable simple horizontal scrolling without breaking headers
-    $('#protocol_table').wrap('<div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;"></div>');
-});
 </script>
 @endsection
 

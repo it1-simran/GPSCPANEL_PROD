@@ -7,7 +7,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-jig.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-jig.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-jig') }}">
 @endpush
 @section('content')
 

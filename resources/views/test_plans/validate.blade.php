@@ -2,7 +2,7 @@
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/test-plans-validate.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/test-plans-validate.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('test-plans-validate') }}">
 @endpush
 @section('title', 'Test Automation Console')
 

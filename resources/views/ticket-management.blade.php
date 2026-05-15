@@ -4,7 +4,7 @@ use App\Helper\CommonHelper;
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/ticket-management.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/ticket-management.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('ticket-management') }}">
 @endpush
 @section('content')
 

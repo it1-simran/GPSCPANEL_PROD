@@ -66,7 +66,7 @@ $errors = json_decode($device['errors'], true);
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-device-configurations.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-device-configurations.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-device-configurations') }}">
 @endpush
 @section('content')
     <div class="modal" id="deviceUserPreviewModal" aria-hidden="true">

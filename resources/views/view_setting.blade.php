@@ -17,7 +17,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-setting.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-setting.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-setting') }}">
 @endpush
 @section('content')
 <section id="main-content" class="view-template-config-page">

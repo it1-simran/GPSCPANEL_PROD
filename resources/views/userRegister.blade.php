@@ -24,7 +24,7 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
-    <link rel="stylesheet" href="{{ asset('assets/css/portal/pages/userregister.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/userregister.css')) }}" />
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('userregister') }}" />
 </head>
 
 <body>

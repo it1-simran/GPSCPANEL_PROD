@@ -7,7 +7,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/add-template.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/add-template.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('add-template') }}">
 @endpush
 @section('content')
 <!--main content start-->

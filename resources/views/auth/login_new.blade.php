@@ -11,7 +11,7 @@
     @include('partials.gps-notifications-assets')
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="{{ asset('assets/css/portal/pages/auth-login-new.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/auth-login-new.css')) }}" />
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('auth-login-new') }}" />
 </head>
 
 <body>

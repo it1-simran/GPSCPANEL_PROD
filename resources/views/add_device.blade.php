@@ -7,7 +7,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/add-device.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/add-device.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('add-device') }}">
 @endpush
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">

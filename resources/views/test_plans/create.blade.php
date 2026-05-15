@@ -2,7 +2,7 @@
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/test-plans-create.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/test-plans-create.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('test-plans-create') }}">
 @endpush
 @section('title', 'Create Test Plan')
 

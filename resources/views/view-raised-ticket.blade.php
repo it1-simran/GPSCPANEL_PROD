@@ -8,7 +8,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-raised-ticket.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-raised-ticket.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-raised-ticket') }}">
 @endpush
 @section('content')
 

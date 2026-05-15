@@ -6,7 +6,7 @@ use App\Helper\CommonHelper;
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/restore-devicecategory.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/restore-devicecategory.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('restore-devicecategory') }}">
 @endpush
 @section('content')
 @php

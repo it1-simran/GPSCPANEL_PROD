@@ -1,7 +1,7 @@
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/protocol-index.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/protocol-index.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('protocol-index') }}">
 @endpush
 @section('content')
 <section id="main-content" class="protocol-page">

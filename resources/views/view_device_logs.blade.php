@@ -8,7 +8,7 @@ use App\Helper\CommonHelper;
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-device-logs.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-device-logs.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-device-logs') }}">
 @endpush
 @section('content')
 

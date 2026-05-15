@@ -60,6 +60,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Static asset version (fallback when file is missing from public/)
+    |--------------------------------------------------------------------------
+    |
+    | Used by App\Support\PortalAssets when filemtime is unavailable.
+    | Bump APP_ASSET_VERSION after deploy if you need to invalidate browser cache.
+    |
+    */
+
+    'asset_version' => env('APP_ASSET_VERSION', '1'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

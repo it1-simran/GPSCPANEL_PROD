@@ -1,7 +1,7 @@
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/protocol-create.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/protocol-create.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('protocol-create') }}">
 @endpush
 @section('content')
 @php

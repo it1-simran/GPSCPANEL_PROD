@@ -11,7 +11,7 @@
     @include('partials.gps-notifications-assets')
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="{{ asset('assets/css/portal/pages/auth-forgot-password.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/auth-forgot-password.css')) }}" />
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('auth-forgot-password') }}" />
 </head>
 
 <body>

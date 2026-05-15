@@ -9,7 +9,7 @@ $configurations = json_decode($template_info->configurations);
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/edit-template.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/edit-template.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('edit-template') }}">
 @endpush
 @section('content')
 

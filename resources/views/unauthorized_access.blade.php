@@ -8,7 +8,7 @@
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
     
-    <link rel="stylesheet" href="{{ asset('assets/css/portal/pages/unauthorized-access.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/unauthorized-access.css')) }}" />
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('unauthorized-access') }}" />
 </head>
 <body>
     <div class="container">

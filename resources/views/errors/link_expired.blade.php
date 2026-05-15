@@ -7,7 +7,7 @@
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
     
-    <link rel="stylesheet" href="{{ asset('assets/css/portal/pages/errors-link-expired.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/errors-link-expired.css')) }}" />
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('errors-link-expired') }}" />
 </head>
 <body>
     <div class="container">

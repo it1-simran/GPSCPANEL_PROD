@@ -88,8 +88,8 @@ if ($userType === 'admin') {
     <link href="{{ asset('assets/fonts/Open-Sans/open-sans.css?family=Open+Sans:300,400,700') }}" rel="stylesheet" />
     <link href="{{ asset('assets/vendors/jquery.multi-select/css/multi-select.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/vendors/select2/select2.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/css/custom.css?nocache=' . time()) }}" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ asset('assets/css/portal/tokens.css') }}?v={{ filemtime(public_path('assets/css/portal/tokens.css')) }}" />
+    <link href="{{ \App\Support\PortalAssets::publicUrl('assets/css/custom.css') }}" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::publicUrl('assets/css/portal/tokens.css') }}" />
     @include('partials.gps-notifications-assets')
 
     <!-- ===== Loader: Hide INSTANTLY in head if NOT a reload (before any paint) ===== -->
@@ -106,7 +106,7 @@ if ($userType === 'admin') {
     </script>
 
     <!-- Page loader + header / nav (assets/css/portal/layout-shell.css) -->
-    <link rel="stylesheet" href="{{ asset('assets/css/portal/layout-shell.css') }}?v={{ filemtime(public_path('assets/css/portal/layout-shell.css')) }}">
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::publicUrl('assets/css/portal/layout-shell.css') }}">
     {{-- Page-specific portal CSS is stacked after @yield('content') so it wins over theme/custom.css like former inline <style> in Blade. --}}
 </head>
 

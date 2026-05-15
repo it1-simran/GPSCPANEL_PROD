@@ -20,7 +20,7 @@
   @extends('layouts.apps')
   
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/add-user.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/add-user.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('add-user') }}">
 @endpush
 @section('content')
   <!--main content start-->

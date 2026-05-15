@@ -406,58 +406,93 @@
         }
 
         .input-wrap {
+            --field-bg: #f4f6f3;
+            --field-bg-focus: #f8fbf6;
             display: flex;
-            align-items: center;
-            border: 1px solid var(--form-border);
-            border-radius: 12px;
-            background: #fafafa;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            align-items: stretch;
+            border: 1.5px solid #e2e8e0;
+            border-radius: 14px;
+            background: var(--field-bg);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
 
         .input-wrap:focus-within {
-            border-color: rgba(118, 207, 28, 0.55);
-            box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12);
-            background: #fff;
+            --field-bg: var(--field-bg-focus);
+            border-color: var(--lime);
+            box-shadow: 0 0 0 4px rgba(118, 207, 28, 0.14);
         }
 
         .input-wrap .ico {
             flex-shrink: 0;
-            width: 48px;
-            display: grid;
-            place-items: center;
-            color: #9ca3af;
+            width: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            color: #94a3b8;
+            transition: color 0.2s;
         }
 
-        .input-wrap .ico svg { width: 20px; height: 20px; }
+        .input-wrap:focus-within .ico {
+            color: var(--lime-dim);
+        }
+
+        .input-wrap .ico svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
 
         .input-wrap input {
             flex: 1;
             min-width: 0;
             border: none;
-            background: transparent;
-            padding: 14px 14px 14px 0;
+            background: transparent !important;
+            padding: 15px 14px 15px 0;
             font-family: inherit;
             font-size: 1rem;
             color: var(--form-text);
+            box-shadow: none;
         }
 
         .input-wrap input:focus { outline: none; }
 
         .input-wrap input::placeholder { color: #9ca3af; }
 
+        /* Keep autofill tint on the whole field, not a separate blue/white block */
+        .input-wrap input:-webkit-autofill,
+        .input-wrap input:-webkit-autofill:hover,
+        .input-wrap input:-webkit-autofill:focus,
+        .input-wrap input:-webkit-autofill:active {
+            -webkit-text-fill-color: var(--form-text) !important;
+            caret-color: var(--form-text);
+            transition: background-color 9999s ease-out 0s;
+            box-shadow: 0 0 0 1000px var(--field-bg) inset !important;
+        }
+
+        .input-wrap:focus-within input:-webkit-autofill,
+        .input-wrap:focus-within input:-webkit-autofill:hover,
+        .input-wrap:focus-within input:-webkit-autofill:focus {
+            box-shadow: 0 0 0 1000px var(--field-bg-focus) inset !important;
+        }
+
         .toggle-pw {
             flex-shrink: 0;
-            width: 38px;
-            min-width: 38px;
+            width: 44px;
+            min-width: 44px;
             align-self: stretch;
-            display: grid;
-            place-items: center;
-            padding: 0 10px 0 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin-right: 4px;
             border: none;
             background: transparent;
             cursor: pointer;
-            color: #9ca3af;
-            border-radius: 0 12px 12px 0;
+            color: #94a3b8;
+            border-radius: 10px;
             transition: color 0.2s, background 0.2s;
         }
 
@@ -467,9 +502,13 @@
             display: block;
         }
 
+        .input-wrap:focus-within .toggle-pw {
+            color: var(--lime-dim);
+        }
+
         .toggle-pw:hover {
             color: var(--lime-dim);
-            background: rgba(118, 207, 28, 0.06);
+            background: rgba(118, 207, 28, 0.1);
         }
 
         .row-opt {

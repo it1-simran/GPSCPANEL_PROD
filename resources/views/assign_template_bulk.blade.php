@@ -7,7 +7,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/assign-template-bulk.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/assign-template-bulk.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('assign-template-bulk') }}">
 @endpush
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">

@@ -2,7 +2,7 @@
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/dashboard.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/dashboard.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('dashboard') }}">
 @endpush
 
 @section('content')

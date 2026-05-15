@@ -5,7 +5,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-uploaded-imei.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-uploaded-imei.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-uploaded-imei') }}">
 @endpush
 @section('content')
 

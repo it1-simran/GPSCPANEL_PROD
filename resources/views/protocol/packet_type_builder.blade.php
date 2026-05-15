@@ -1,7 +1,7 @@
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/protocol-packet-type-builder.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/protocol-packet-type-builder.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('protocol-packet-type-builder') }}">
 @endpush
 @section('content')
 <!-- Google Fonts -->

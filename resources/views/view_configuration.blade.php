@@ -9,7 +9,7 @@ $timeZones = TimezoneModel::all();
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-configuration.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-configuration.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-configuration') }}">
 @endpush
 @section('content')
 

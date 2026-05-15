@@ -8,7 +8,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-esim-customer.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-esim-customer.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-esim-customer') }}">
 @endpush
 @section('content')
 @php

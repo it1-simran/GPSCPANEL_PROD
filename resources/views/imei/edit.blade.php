@@ -1,7 +1,7 @@
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/imei-edit.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/imei-edit.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('imei-edit') }}">
 @endpush
 @section('content')
 @php

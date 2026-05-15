@@ -2,7 +2,7 @@
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/packet-analyzer-index.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/packet-analyzer-index.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('packet-analyzer-index') }}">
 @endpush
 @section('content')
 

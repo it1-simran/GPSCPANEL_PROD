@@ -1,7 +1,7 @@
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-user.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-user.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-user') }}">
 @endpush
 @section('content')
 @include('modals.userEditDelOptions')

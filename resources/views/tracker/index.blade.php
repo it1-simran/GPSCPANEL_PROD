@@ -5,7 +5,7 @@ use App\Helper\CommonHelper;
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/tracker-index.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/tracker-index.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('tracker-index') }}">
 @endpush
 @section('title', $device ? $device->imei . ' (Live Logs)' : 'Tracker Logs')
 @section('content')

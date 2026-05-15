@@ -1,7 +1,7 @@
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/edit-user.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/edit-user.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('edit-user') }}">
 @endpush
 @section('content')
 <?php

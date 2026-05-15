@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
 
     
-    <link rel="stylesheet" href="{{ asset('assets/css/portal/pages/welcome.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/welcome.css')) }}" />
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('welcome') }}" />
 </head>
 <body>
     <div class="decoration dec-1"></div>

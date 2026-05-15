@@ -1,7 +1,7 @@
 @extends('layouts.apps')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/imei-create.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/imei-create.css')) }}">
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('imei-create') }}">
 @endpush
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">

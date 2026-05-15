@@ -5,110 +5,13 @@ use App\Helper\CommonHelper;
 $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/assign-template-bulk.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/assign-template-bulk.css')) }}">
+@endpush
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<style>
-    #main-content.assign-bulk-page .wrapper {
-        padding-top: 10px !important;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
 
-    .assign-bulk-breadcrumb-wrap {
-        padding: 4px 0 10px 0;
-        margin: 0;
-        background: transparent;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-
-    .assign-bulk-breadcrumb {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        align-content: center;
-        gap: 0 4px;
-        row-gap: 6px;
-        max-width: 100%;
-        width: 100%;
-        box-sizing: border-box;
-        background: #1e293b;
-        border-radius: 16px;
-        padding: 8px 12px 8px 8px;
-        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
-    }
-
-    .assign-bulk-breadcrumb .bc-home {
-        width: 30px;
-        height: 30px;
-        background: #76CF1C;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 8px;
-        flex-shrink: 0;
-        color: #1e293b;
-    }
-
-    .assign-bulk-breadcrumb .bc-home i {
-        font-size: 13px;
-    }
-
-    .assign-bulk-breadcrumb .bc-item {
-        color: rgba(255, 255, 255, 0.65);
-        font-size: 13px;
-        font-weight: 500;
-        text-decoration: none;
-        white-space: normal;
-        line-height: 1.35;
-        max-width: 100%;
-        overflow-wrap: break-word;
-        word-break: break-word;
-    }
-
-    .assign-bulk-breadcrumb .bc-sep {
-        color: rgba(255, 255, 255, 0.35);
-        margin: 0 4px;
-        font-size: 12px;
-        flex-shrink: 0;
-    }
-
-    .assign-bulk-breadcrumb .bc-item.active {
-        color: #76CF1C;
-        font-weight: 700;
-    }
-
-    .assign-bulk-breadcrumb a.bc-item:hover {
-        color: #e2e8f0;
-    }
-
-    .assign-bulk-page .assign-bulk-breadcrumb-wrap + .row {
-        margin-top: 2px;
-    }
-
-    .assign-bulk-page .c_panel {
-        margin-top: 0 !important;
-    }
-
-    @media (max-width: 576px) {
-        .assign-bulk-breadcrumb {
-            border-radius: 12px;
-            padding: 8px 10px 8px 6px;
-        }
-
-        .assign-bulk-breadcrumb .bc-item:not(.active) {
-            font-size: 12px;
-        }
-
-        .assign-bulk-breadcrumb .bc-item.active {
-            flex: 1 1 100%;
-            min-width: 0;
-            margin-top: 2px;
-            font-size: 13px;
-        }
-    }
-</style>
 <!--main content start-->
 <!-- <div class="modal" id="imeiPreviewModal" aria-hidden="true">
     <div class="modal-dialog modal-lg">

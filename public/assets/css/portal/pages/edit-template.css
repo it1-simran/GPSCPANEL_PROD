@@ -1,0 +1,10 @@
+/* portal: migrated from edit_template.blade.php */
+input[type="checkbox"] {
+
+        width: 25px;
+        /*Desired width*/
+
+        height: 25px;
+        /*Desired height*/
+
+    }

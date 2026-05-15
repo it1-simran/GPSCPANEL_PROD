@@ -1,4 +1,8 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/protocol-index.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/protocol-index.css')) }}">
+@endpush
 @section('content')
 <section id="main-content" class="protocol-page">
     <section class="wrapper">
@@ -135,119 +139,7 @@
     </section>
 </section>
 
-<style>
-    .protocol-page {
-        font-family: 'Inter', sans-serif;
-    }
 
-    #main-content.protocol-page .wrapper {
-        padding-top: 0 !important;
-    }
-
-    .protocol-breadcrumb-wrap {
-        margin-top: 0 !important;
-        padding: 0 0 14px 0 !important;
-    }
-
-    .protocol-breadcrumb {
-        display: inline-flex;
-        align-items: center;
-        background: #1e293b;
-        border-radius: 50px;
-        padding: 6px 18px 6px 8px;
-        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
-    }
-
-    .protocol-breadcrumb .bc-home {
-        width: 30px;
-        height: 30px;
-        background: #76CF1C;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 10px;
-        flex-shrink: 0;
-    }
-
-    .protocol-breadcrumb .bc-home i {
-        color: #1e293b;
-        font-size: 13px;
-    }
-
-    .protocol-breadcrumb .bc-item {
-        color: rgba(255, 255, 255, 0.65);
-        font-size: 13px;
-        font-weight: 500;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    .protocol-breadcrumb .bc-sep {
-        color: rgba(255, 255, 255, 0.35);
-        margin: 0 8px;
-        font-size: 12px;
-    }
-
-    .protocol-breadcrumb .bc-item.active {
-        color: #76CF1C;
-        font-weight: 700;
-    }
-
-    .protocol-breadcrumb--scroll {
-        max-width: 100%;
-        box-sizing: border-box;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-    }
-    .protocol-breadcrumb--scroll .bc-item {
-        flex-shrink: 0;
-    }
-
-    @media (max-width: 767px) {
-        #main-content.protocol-page > section.wrapper {
-            padding-left: 6px !important;
-            padding-right: 6px !important;
-        }
-        .protocol-breadcrumb-wrap {
-            padding: 0 0 10px 0 !important;
-        }
-        .protocol-breadcrumb.protocol-breadcrumb--scroll {
-            display: flex;
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            padding: 6px 12px 6px 6px;
-            border-radius: 12px;
-            justify-content: flex-start;
-        }
-        .protocol-page-title-row > [class*="col-"] {
-            text-align: left !important;
-            margin-bottom: 0 !important;
-        }
-        .protocol-page-title-row .protocol-page-actions-col {
-            text-align: left !important;
-        }
-    }
-</style>
-
-@include('protocol.partials.protocol_styles')
-<style>
-    /* Ensure packet count number is always visible */
-    #protocol_table td .protocol-field-badge {
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-    }
-
-    /* Improve serial number visibility */
-    #protocol_table tbody td:first-child {
-        color: #334155 !important;
-        font-weight: 700 !important;
-    }
-</style>
 
 <script>
     $(function () {

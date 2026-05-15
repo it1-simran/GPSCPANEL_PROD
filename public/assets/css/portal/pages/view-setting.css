@@ -1,0 +1,243 @@
+/* portal: migrated from view_setting.blade.php */
+.view-template-config-page .wrapper {
+        padding-top: 8px !important;
+    }
+
+    .view-template-config-page .protocol-breadcrumb-wrap {
+        padding: 4px 0 14px 0 !important;
+        margin: 0 !important;
+    }
+
+    .view-template-config-page .protocol-breadcrumb {
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: wrap;
+        row-gap: 6px;
+        background: #1e293b !important;
+        border-radius: 50px !important;
+        padding: 6px 18px 6px 8px !important;
+        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18) !important;
+    }
+
+    .view-template-config-page .protocol-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #76CF1C;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+
+    .view-template-config-page .protocol-breadcrumb .bc-home i {
+        color: #1e293b;
+        font-size: 13px;
+    }
+
+    .view-template-config-page .protocol-breadcrumb .bc-item {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .view-template-config-page .protocol-breadcrumb .bc-sep {
+        color: rgba(255, 255, 255, 0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+
+    .view-template-config-page .protocol-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    .view-template-config-page .protocol-breadcrumb a.bc-item:hover {
+        color: #e2e8f0;
+    }
+
+    .view-template-config-page .c_title h2::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .view-template-config-page .vtc-main-title {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 10px;
+        margin: 0 !important;
+        color: #ffffff !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .view-template-config-page .vtc-main-title > i {
+        color: #76CF1C;
+        font-size: 14px;
+    }
+
+    .view-template-config-page .vtc-info-body .edit-template-btn,
+    .view-template-config-page .vtc-config-body .edit-btn {
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        background: #2d353c !important;
+        border: none !important;
+        padding: 8px 18px !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+    }
+
+    .view-template-config-page .vtc-info-body .edit-template-btn:hover,
+    .view-template-config-page .vtc-config-body .edit-btn:hover {
+        background: #1e252b !important;
+        color: #fff !important;
+    }
+
+    .view-template-config-page .vtc-info-layout {
+        align-items: flex-start;
+    }
+
+    .view-template-config-page .vtc-meta-col {
+        padding-right: 16px;
+    }
+
+    .view-template-config-page .vtc-dl {
+        margin: 0;
+    }
+
+    .view-template-config-page .vtc-dl-row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 8px 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+        align-items: baseline;
+    }
+
+    .view-template-config-page .vtc-dl-row:last-child {
+        border-bottom: none;
+    }
+
+    .view-template-config-page .vtc-dl dt {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #94a3b8;
+    }
+
+    .view-template-config-page .vtc-dl dd {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .view-template-config-page .vtc-date {
+        font-weight: 600 !important;
+        color: #475569 !important;
+        font-size: 13px !important;
+    }
+
+    .view-template-config-page .vtc-badges-col {
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+    }
+
+    @media (max-width: 991px) {
+        .view-template-config-page .vtc-badges-col {
+            justify-content: flex-start;
+            margin-top: 16px;
+        }
+    }
+
+    .view-template-config-page .vtc-badge-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+        max-width: 320px;
+        width: 100%;
+    }
+
+    .view-template-config-page .vtc-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px 10px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+        border: none;
+        white-space: nowrap;
+    }
+
+    .view-template-config-page .vtc-pill-glyph {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.22);
+        flex-shrink: 0;
+        font-size: 12px;
+    }
+
+    .view-template-config-page .vtc-pill-default.is-yes {
+        background: linear-gradient(135deg, #4caf50 0%, #43a047 100%);
+    }
+
+    .view-template-config-page .vtc-pill-default.is-no {
+        background: linear-gradient(135deg, #e57373 0%, #d32f2f 100%);
+    }
+
+    .view-template-config-page .vtc-pill-ping.is-on {
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    }
+
+    .view-template-config-page .vtc-pill-ping:not(.is-on) {
+        background: #94a3b8;
+    }
+
+    .view-template-config-page .vtc-pill-edit.is-yes {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    }
+
+    .view-template-config-page .vtc-pill-edit.is-no {
+        background: linear-gradient(135deg, #e57373 0%, #c62828 100%);
+    }
+
+    .view-template-config-page .vtc-config-body #config .col-lg-9 p,
+    .view-template-config-page .vtc-config-body .configuration-item h6 {
+        margin-bottom: 10px;
+    }
+
+    .view-template-config-page .vtc-config-body #config .col-lg-9 p strong {
+        color: #64748b;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 700;
+        margin-right: 6px;
+    }
+
+    .view-template-config-page .vtc-config-panel .configuration-item h6 {
+        font-size: 14px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .view-template-config-page .c_panel + .c_panel {
+        margin-top: 22px !important;
+    }

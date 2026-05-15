@@ -5,6 +5,10 @@ use App\Helper\CommonHelper;
 $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/add-template.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/add-template.css')) }}">
+@endpush
 @section('content')
 <!--main content start-->
 <section id="main-content" class="add-settings-page">
@@ -179,95 +183,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         <!--======== Form Validation Content Start End ========-->
     </section>
 </section>
-<style>
-    .add-settings-page .wrapper {
-        padding-top: 8px !important;
-    }
 
-    .add-settings-page .protocol-breadcrumb-wrap {
-        padding: 4px 0 12px 0 !important;
-        margin: 0 !important;
-    }
-
-    .add-settings-page .protocol-breadcrumb {
-        display: inline-flex !important;
-        align-items: center !important;
-        flex-wrap: wrap;
-        row-gap: 6px;
-        background: #1e293b !important;
-        border-radius: 50px !important;
-        padding: 6px 18px 6px 8px !important;
-        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18) !important;
-    }
-
-    .add-settings-page .protocol-breadcrumb .bc-home {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: #76CF1C;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 10px;
-        flex-shrink: 0;
-    }
-
-    .add-settings-page .protocol-breadcrumb .bc-home i {
-        color: #1e293b;
-        font-size: 13px;
-    }
-
-    .add-settings-page .protocol-breadcrumb .bc-item {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 13px;
-        font-weight: 500;
-        text-decoration: none;
-    }
-
-    .add-settings-page .protocol-breadcrumb .bc-sep {
-        color: rgba(255, 255, 255, 0.35);
-        margin: 0 8px;
-        font-size: 12px;
-    }
-
-    .add-settings-page .protocol-breadcrumb .bc-item.active {
-        color: #76CF1C;
-        font-weight: 700;
-    }
-
-    .add-settings-page .protocol-breadcrumb a.bc-item:hover {
-        color: #e2e8f0;
-    }
-
-    .add-settings-page .c_title {
-        margin-top: 4px !important;
-    }
-
-    .add-settings-page .c_title h2::before {
-        content: none !important;
-        display: none !important;
-    }
-
-    .add-settings-page .add-settings-title {
-        display: inline-flex !important;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin: 0;
-        color: #ffffff !important;
-        font-size: 15px !important;
-        font-weight: 800 !important;
-        letter-spacing: 0.6px;
-        text-transform: uppercase;
-    }
-
-    .add-settings-page .add-settings-title > i {
-        color: #76CF1C;
-        font-size: 14px;
-        width: 22px;
-        text-align: center;
-    }
-</style>
 <div class="modal" id="canModal" aria-hidden="true">
     <div class="modal-dialog modal-md">
         <div class="modal-content">

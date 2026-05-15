@@ -1,0 +1,15 @@
+/**
+ * Portal design tokens — shared across pages/components.
+ * Page-specific :root blocks may extend these for local scope.
+ */
+:root {
+    --portal-brand: #76cf1c;
+    --portal-brand-rgb: 118, 207, 28;
+    --portal-surface-900: #0f172a;
+    --portal-surface-800: #1e293b;
+    --portal-text-muted: #64748b;
+    --portal-radius-sm: 8px;
+    --portal-radius-md: 12px;
+    --portal-radius-lg: 16px;
+    --portal-shadow-header: 0 4px 24px rgba(0, 0, 0, 0.35);
+}

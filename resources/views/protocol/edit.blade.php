@@ -1,4 +1,8 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/protocol-edit.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/protocol-edit.css')) }}">
+@endpush
 @section('content')
 @php
     $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
@@ -72,102 +76,5 @@
         </div>
     </section>
 </section>
-<style>
-    .protocol-edit-page .wrapper {
-        padding-top: 8px !important;
-    }
 
-    .protocol-edit-page .protocol-breadcrumb-wrap {
-        padding: 4px 0 12px 0 !important;
-        margin: 0 !important;
-    }
-
-    .protocol-edit-page .protocol-breadcrumb {
-        display: inline-flex !important;
-        align-items: center !important;
-        background: #1e293b !important;
-        border-radius: 50px !important;
-        padding: 6px 18px 6px 8px !important;
-        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18) !important;
-    }
-
-    .protocol-edit-page .protocol-breadcrumb .bc-home {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: #76CF1C;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 10px;
-    }
-
-    .protocol-edit-page .protocol-breadcrumb .bc-home i {
-        color: #1e293b;
-        font-size: 13px;
-    }
-
-    .protocol-edit-page .protocol-breadcrumb .bc-item {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 13px;
-        font-weight: 500;
-        text-decoration: none;
-    }
-
-    .protocol-edit-page .protocol-breadcrumb .bc-sep {
-        color: rgba(255, 255, 255, 0.35);
-        margin: 0 8px;
-        font-size: 12px;
-    }
-
-    .protocol-edit-page .protocol-breadcrumb .bc-item.active {
-        color: #76CF1C;
-        font-weight: 700;
-    }
-
-    .protocol-edit-page .c_title h2::before {
-        content: none !important;
-        display: none !important;
-    }
-
-    .protocol-edit-page .c_title {
-        margin-top: 4px !important;
-    }
-
-    .protocol-edit-page .edit-protocol-title {
-        display: inline-flex !important;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin: 0;
-        color: #ffffff !important;
-        font-size: 19px !important;
-        font-weight: 800 !important;
-        letter-spacing: 0.4px;
-        text-transform: uppercase;
-    }
-
-    .protocol-edit-page .edit-protocol-title > i {
-        color: #76CF1C;
-        font-size: 15px;
-        width: 22px;
-        text-align: center;
-    }
-
-    /* Same pill as Packet Types "HTTP" reference */
-    .protocol-edit-page .edit-protocol-name-pill {
-        display: inline-flex;
-        align-items: center;
-        margin-left: 4px;
-        padding: 4px 11px;
-        border-radius: 999px;
-        background: rgba(118, 207, 28, 0.16);
-        color: #cfff9f !important;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.7px;
-        border: 1px solid rgba(118, 207, 28, 0.36);
-    }
-</style>
 @endsection

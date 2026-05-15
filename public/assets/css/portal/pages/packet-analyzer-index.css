@@ -1,0 +1,97 @@
+/* portal: migrated from packet_analyzer/index.blade.php */
+.main-content-panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        border: 1px solid #e2e8f0;
+    }
+    .panel-header-custom {
+        background: #1e293b;
+        color: white;
+        padding: 20px 25px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .btn-green-premium {
+        background: #76CF1C;
+        color: white;
+        font-weight: 700;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(118, 207, 28, 0.2);
+    }
+    .btn-green-premium:hover {
+        background: #65b515;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 15px rgba(118, 207, 28, 0.3);
+    }
+    .packet-input-box {
+        width: 100%;
+        border: 2px solid #f1f5f9;
+        border-radius: 10px;
+        padding: 20px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 14px;
+        background: #f8fafc;
+        resize: vertical;
+        transition: all 0.2s;
+    }
+    .packet-input-box:focus {
+        outline: none;
+        border-color: #76CF1C;
+        background: #fff;
+    }
+    .analysis-result-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 25px;
+        overflow: hidden;
+    }
+    .card-status-bar {
+        height: 6px;
+        width: 100%;
+    }
+    .status-pass { background: #76CF1C; }
+    .status-fail { background: #ef4444; }
+    
+    .field-table-premium {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .field-table-premium th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 11px;
+        padding: 12px 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .field-table-premium td {
+        padding: 12px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 13px;
+        color: #1e293b;
+    }
+    .field-name-col { font-weight: 700; width: 30%; }
+    .field-value-col { font-family: monospace; color: #1e293b; background: #fdfdfd; }
+    
+    .raw-data-well {
+        background: #1e293b;
+        color: #94a3b8;
+        padding: 15px 20px;
+        font-family: monospace;
+        font-size: 13px;
+        border-radius: 6px;
+        margin: 20px;
+        word-break: break-all;
+    }

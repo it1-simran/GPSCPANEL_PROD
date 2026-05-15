@@ -7,41 +7,8 @@
     <title>Unauthorized Access</title>
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            text-align: center;
-            max-width: 600px;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #e74c3c;
-        }
-        p {
-            font-size: 18px;
-            line-height: 1.6;
-        }
-        a {
-            color: #3498db;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    
+    <link rel="stylesheet" href="{{ asset('assets/css/portal/pages/unauthorized-access.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/unauthorized-access.css')) }}" />
 </head>
 <body>
     <div class="container">

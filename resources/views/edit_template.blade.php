@@ -7,19 +7,13 @@ $getDeviceInput = CommonHelper::getDeviceConfigurationInputs($template_info->dev
 $configurations = json_decode($template_info->configurations);
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/edit-template.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/edit-template.css')) }}">
+@endpush
 @section('content')
 
-<style type="text/css">
-    input[type="checkbox"] {
 
-        width: 25px;
-        /*Desired width*/
-
-        height: 25px;
-        /*Desired height*/
-
-    }
-</style>
 <!--main content start-->
 <section id="main-content">
     <section class="wrapper">

@@ -5,114 +5,12 @@ use App\Helper\CommonHelper;
 $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/portal/pages/view-esim.css') }}?v={{ filemtime(public_path('assets/css/portal/pages/view-esim.css')) }}">
+@endpush
 @section('content')
-<style>
-  #main-content.view-esim-page .wrapper { padding-top: 8px !important; }
-  #main-content.view-esim-page .top-page-header { margin: 0 0 10px !important; padding: 0 !important; background: transparent !important; }
-  #main-content.view-esim-page .page-breadcrumb { padding: 0 !important; margin: 0 !important; }
-  .view-esim-page .ve-breadcrumb {
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    background: #13233d;
-    border-radius: 999px;
-    padding: 8px 18px 8px 8px;
-    box-shadow: 0 5px 14px rgba(15, 23, 42, 0.22);
-  }
-  .view-esim-page .ve-breadcrumb .bc-home {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: #76CF1C;
-    color: #0f172a;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    flex-shrink: 0;
-  }
-  .view-esim-page .ve-breadcrumb .bc-item {
-    color: rgba(255, 255, 255, 0.78);
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-  .view-esim-page .ve-breadcrumb .bc-sep { color: rgba(255,255,255,.35); font-size: 12px; }
-  .view-esim-page .ve-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
-  .view-esim-page .ve-breadcrumb .bc-item:hover { color: #ffffff; }
-  .view-esim-page .ve-title-actions {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .view-esim-page .ve-title-actions .btn {
-    min-height: 34px;
-    border-radius: 10px !important;
-    padding: 8px 14px !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    border: none !important;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .view-esim-page .ve-title-actions .btn-dl-excel {
-    background: #76CF1C !important;
-    color: #0f172a !important;
-    box-shadow: 0 4px 12px rgba(118, 207, 28, 0.35);
-  }
-  .view-esim-page .ve-title-actions .btn-dl-csv {
-    background: #ffffff !important;
-    color: #1e293b !important;
-    border: 1px solid #dbe4ef !important;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-  }
-  .view-esim-page .ve-title-actions .btn-add-esim {
-    background: #76CF1C !important;
-    color: #0f172a !important;
-    box-shadow: 0 4px 12px rgba(118, 207, 28, 0.35);
-  }
-  .view-esim-page .c_breadcrumbs { display: none !important; }
-  .view-esim-page .c_breadcrumbs ul {
-    margin: 0 !important;
-  }
-  .view-esim-page .ve-actions-inner {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-  .view-esim-page .ve-actions-inner form { margin: 0; display: inline; }
-  .view-esim-page .ve-icon-btn {
-    width: 34px;
-    height: 34px;
-    padding: 0 !important;
-    border: none !important;
-    border-radius: 8px !important;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 14px !important;
-    line-height: 1 !important;
-    vertical-align: middle;
-  }
-  .view-esim-page .ve-icon-btn-edit {
-    background: #1d283e !important;
-    color: #fff !important;
-  }
-  .view-esim-page .ve-icon-btn-edit:hover { filter: brightness(1.08); color: #fff !important; }
-  .view-esim-page .ve-icon-btn-delete {
-    background: #e25552 !important;
-    color: #fff !important;
-  }
-  .view-esim-page .ve-icon-btn-delete:hover { filter: brightness(1.06); color: #fff !important; }
-</style>
+
 <section id="main-content" class="view-esim-page">
   <section class="wrapper">
     <!--======== Page Title and Breadcrumbs Start ========-->

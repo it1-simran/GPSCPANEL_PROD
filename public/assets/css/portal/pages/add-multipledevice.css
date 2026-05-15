@@ -1,0 +1,164 @@
+/* portal: migrated from add_MultipleDevice.blade.php */
+#main-content .wrapper { padding-top: 10px !important; }
+
+    /* Breadcrumb (reference style) */
+    .amd-breadcrumb-wrap { padding: 14px 0 18px 0; }
+    .amd-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        background: #1e293b;
+        border-radius: 50px;
+        padding: 6px 18px 6px 8px;
+        box-shadow: 0 4px 16px rgba(30,41,59,0.18);
+        gap: 0;
+    }
+    .amd-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #76CF1C;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        color: #1e293b;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+    .amd-breadcrumb .bc-item {
+        color: rgba(255,255,255,0.65);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .amd-breadcrumb .bc-sep {
+        color: rgba(255,255,255,0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+    .amd-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    /* Panel and form polish */
+    #main-content .c_panel {
+        border: 0 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 6px 24px rgba(15,23,42,0.08) !important;
+        overflow: hidden;
+    }
+    #main-content .c_title {
+        background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
+        padding: 16px 22px !important;
+        border-bottom: 1px solid rgba(118,207,28,0.2) !important;
+    }
+    #main-content .c_title h2 {
+        margin: 0 !important;
+        color: #fff !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    #main-content .c_content { padding: 22px 20px !important; }
+    #main-content #commentForm .form-group { margin-bottom: 14px !important; }
+    #main-content #commentForm .control-label {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: #334155 !important;
+        padding-top: 10px !important;
+    }
+    #main-content #commentForm .form-control,
+    #main-content #commentForm select,
+    #main-content #commentForm .select2-selection--single,
+    #main-content #commentForm .select2-selection--multiple {
+        min-height: 40px !important;
+        border: 1px solid #d5deea !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        font-size: 13px !important;
+        color: #334155 !important;
+        background: #fff !important;
+        width: 100% !important;
+    }
+    #main-content #commentForm .select2-container { width: 100% !important; }
+
+    /* CAN Protocol modal — header padding, close alignment, vertical position */
+    #canModal .amd-can-modal-dialog {
+        margin: 8vh auto 30px;
+        max-width: 560px;
+    }
+    #canModal .amd-can-modal-content {
+        border: none;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+    }
+    #canModal .amd-can-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        gap: 12px;
+        padding: 16px 18px;
+        min-height: 56px;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-bottom: 1px solid rgba(118, 207, 28, 0.28);
+    }
+    #canModal .amd-can-modal-header .modal-title {
+        float: none;
+        margin: 0;
+        padding: 0;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #f8fafc;
+        line-height: 1.4;
+        flex: 1;
+        min-width: 0;
+    }
+    #canModal .amd-can-modal-header .close {
+        float: none;
+        position: static;
+        margin: 0;
+        padding: 8px 12px;
+        font-size: 22px;
+        font-weight: 300;
+        line-height: 1;
+        opacity: 0.9;
+        color: #e2e8f0;
+        text-shadow: none;
+        outline: none;
+    }
+    #canModal .amd-can-modal-header .close:hover,
+    #canModal .amd-can-modal-header .close:focus {
+        opacity: 1;
+        color: #76CF1C;
+    }
+    #canModal .amd-can-modal-body {
+        padding: 20px 22px 8px;
+        background: #f8fafc;
+    }
+    #canModal .amd-can-modal-footer {
+        padding: 14px 18px 18px;
+        margin-top: 0;
+        text-align: right;
+        background: #f1f5f9;
+        border-top: 1px solid #e2e8f0;
+    }
+    #canModal .amd-can-submit-btn {
+        min-width: 120px;
+        font-weight: 700;
+        border-radius: 8px;
+        padding: 10px 20px;
+    }
+    #canModal .amd-can-modal-body .form-control,
+    #canModal .amd-can-modal-body select {
+        border-radius: 8px;
+    }
+    #canModal .amd-can-modal-body .select2-container {
+        width: 100% !important;
+    }

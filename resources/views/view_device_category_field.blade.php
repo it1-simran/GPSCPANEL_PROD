@@ -1,5 +1,14 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-device-category-field') }}">
+@endpush
 @section('content')
+@php
+    $routePrefix = $url_type ?? 'admin';
+    $vdfIsAdmin = Auth::check() && strcasecmp(trim((string) Auth::user()->user_type), 'admin') === 0;
+@endphp
+
 @include('modals.userEditDelOptions')
 <form class="delUserResellerForm" data-action="/{{$url_type}}/delete-user/" action="" method="post">
   @csrf
@@ -7,12 +16,12 @@
   <div class="userAccCases">
   </div>
 </form>
-<div class="modal" id="addDeviceField" aria-hidden="true">
+<div class="modal vdf-data-field-modal" id="addDeviceField" aria-hidden="true">
   <div class="modal-dialog modal-md">
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
         <h4 class="modal-title data-field-title"><strong>ADD Data Field</strong></h4>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
       <form id="deviceFieldForm" onsubmit="return false;">
         @csrf
@@ -73,16 +82,10 @@
                 <div class="max-selected-values form-group" style="display:none;"></div>
 
                 <div class="append-maxValue-options border p-3 rounded bg-light mt-3" style="display:none;">
-                  <div class="form-group mb-0">
-                    <div class="form-row align-items-center">
-                      <div class="col-lg-4 padding-1">
-                        <label class="font-weight-bold">Max Length <span class="text-danger">*</span></label>
-                      </div>
-                      <div class="col-lg-6">
-                        <input type="number" class="form-control" placeholder="Enter maximum length"
-                          name="maxValueInput[0][]" />
-                      </div>
-                    </div>
+                  <div class="form-group mb-0 vdf-max-length-row">
+                    <label class="font-weight-bold">Max Length <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control vdf-max-length-input" placeholder="Enter maximum length"
+                      name="maxValueInput[0][]" />
                   </div>
                 </div>
 
@@ -132,20 +135,18 @@
 
               </div>
               <div class="margin-bottom-10 mb-3 show-on-select" style="display:none;">
-                <div class="show-on-select1">
-                  <label class="col-lg-4 col-form-label font-weight-bold">Common Field <span
-                      class="text-danger">*</span></label>
-                  <div class="col-lg-8"
-                    style="font-size: 16px !important;width: 50px;height: 13px;display: flex;justify-content: center;align-items: center;">
-                    <input type="checkbox" name="is_common" id="is_common" class="form-control is_common"
-                      placeholder="">
+                <div class="row vdf-modal-check-row">
+                  <div class="col-sm-6 col-xs-12 mb-2 mb-sm-0">
+                    <div class="vdf-check-wrap">
+                      <label class="vdf-check-label" for="is_common">Common Field <span class="text-danger">*</span></label>
+                      <input type="checkbox" name="is_common" id="is_common" class="vdf-check-input is_common" value="1">
+                    </div>
                   </div>
-                  <label class="col-lg-4 col-form-label font-weight-bold">Can Protocol Field <span
-                      class="text-danger">*</span></label>
-                  <div class="col-lg-8"
-                    style="font-size: 16px !important;width: 50px;height: 13px;display: flex;justify-content: center;align-items: center;">
-                    <input type="checkbox" name="is_can_protocol" id="is_can_protocol"
-                      class="form-control is_can_protocol" placeholder="">
+                  <div class="col-sm-6 col-xs-12">
+                    <div class="vdf-check-wrap">
+                      <label class="vdf-check-label" for="is_can_protocol">Can Protocol Field <span class="text-danger">*</span></label>
+                      <input type="checkbox" name="is_can_protocol" id="is_can_protocol" class="vdf-check-input is_can_protocol" value="1">
+                    </div>
                   </div>
                 </div>
               </div>
@@ -153,42 +154,38 @@
           </div>
 
         </div>
-        <div class="modal-footer row bgx-custom-modal-footer">
-          <button type="button" data-dismiss="modal" aria-hidden="true"
-            class="col btn btn-primary btn-flat">Back</button>
-          <button class="col btn btn-primary btn-flat submitDataErr" type="submit">Submit</button>
+        <div class="modal-footer vdf-modal-footer">
+          <button type="button" data-dismiss="modal" aria-hidden="true" class="btn vdf-modal-btn-back">Back</button>
+          <button class="btn vdf-modal-btn-submit submitDataErr" type="submit">Submit</button>
           <input type="hidden" name="dataFieldId" id="dataFieldId" value="" />
         </div>
       </form>
     </div>
   </div>
 </div>
-<section id="main-content">
+<section id="main-content" class="view-data-fields-page">
   <section class="wrapper">
-    <!--======== Page Title and Breadcrumbs Start ========-->
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-            <li><a href="#">Device Category</a></li>
-            <li class="active"><a href="#">View Data Fields</a></li>
-          </ul>
-        </nav>
-      </div>
+    <div class="vdf-breadcrumb-wrap">
+      <nav class="vdf-breadcrumb vdf-breadcrumb--scroll" aria-label="Breadcrumb">
+        <a href="{{ url($routePrefix) }}" class="bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+        <a href="{{ url($routePrefix) }}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <a href="{{ url($routePrefix . '/view-device-category') }}" class="bc-item">Device category</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">Data fields</span>
+      </nav>
     </div>
-    <!--======== Page Title and Breadcrumbs End ========-->
-    <!--======== Dynamic Datatable Content Start End ========-->
     <div class="row">
       <div class="col-md-12">
         <div class="c_panel">
           <div class="c_title">
-            <div class="row bgx-title-container">
-              <div class="col-lg-6">
-                <h2>Data Fields</h2>
+            <div class="row bgx-title-container vdf-page-title-row">
+              <div class="col-xs-12 col-lg-6 col-md-12">
+                <h2 class="vdf-panel-title"><i class="fa fa-list-alt"></i> Data fields</h2>
               </div>
-              @if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller')
-                <div class="col-lg-6 text-right">
-                  <p class="btn btn-success" onclick="openAddDeviceFieldModel()"> Add Data Fields </p>
+              @if ($vdfIsAdmin || (Auth::check() && strcasecmp(trim((string) Auth::user()->user_type), 'reseller') === 0))
+                <div class="col-xs-12 col-lg-6 col-md-12 text-right vdf-title-actions-wrap">
+                  <button type="button" class="btn btn-success" onclick="openAddDeviceFieldModel()"><i class="fa fa-plus"></i> Add data fields</button>
                 </div>
               @endif
             </div>
@@ -219,101 +216,80 @@
               <button class="tablinks" onclick="openTab(event, 'param')">Parameters</button>
             </div> -->
 
-            <div class="tabs">
-              <button class="tablinks active" onclick="reloadPage(this)" data-type="all">ALL</button>
-              <button class="tablinks" data-type="Configurations">Configurations</button>
-              <button class="tablinks" data-type="Parameters">Parameters</button>
+            <div class="tabs vdf-tabs">
+              <button type="button" class="tablinks active" onclick="reloadPage(this)" data-type="all">All</button>
+              <button type="button" class="tablinks" data-type="Configurations">Configurations</button>
+              <button type="button" class="tablinks" data-type="Parameters">Parameters</button>
             </div>
 
             <div id="all" class="tab-content active">
-              <div>
-                <!-- <table id="example"
-                  class="example view_user_table table table-bordered table-striped table-condensed cf"
-                  style="border-spacing:0px; width:100%; font-size:14px;"> -->
-                  <div class="table-responsive">
-                    <table id="example"
-                        class="example view_user_table table table-bordered table-striped nowrap"
+              <div class="vdf-table-wrap">
+                    <table id="dataFieldsTable"
+                        class="table table-striped vdf-datatable-table no-global-table-ui"
                         style="width:100%; font-size:14px;">
-
                   <thead>
                     <tr>
-                      <th>Sr. No.</th>
-                      <th>Field ID</th>
-                      <th>Field Type</th>
-                      <th>Field Name</th>
-                      <th>Input Type</th>
-                      <th>Validation Rule</th>
-                      <th>Common Field</th>
-                      <th>Can Protocol</th>
-                      @if(Auth::user()->user_type == 'Admin')
-                        <th>Edit</th>
-                      @endif
-                      <th>Delete</th>
+                      <th class="vdf-th-sr"><span class="vdf-th-label">Sr. No.</span></th>
+                      <th><span class="vdf-th-label">Field ID</span></th>
+                      <th><span class="vdf-th-label">Field Type</span></th>
+                      <th><span class="vdf-th-label">Field Name</span></th>
+                      <th><span class="vdf-th-label">Input Type</span></th>
+                      <th><span class="vdf-th-label">Validation Rule</span></th>
+                      <th><span class="vdf-th-label">Common Field</span></th>
+                      <th><span class="vdf-th-label">Can Protocol</span></th>
+                      <th class="text-center vdf-th-actions"><span class="vdf-th-label">Actions</span></th>
                     </tr>
                   </thead>
                   <tbody>
                     @foreach ($dataFields as $i => $dataField)
                       <tr>
-                        <td>{{$i + 1}}</td>
-                        <td>{{$dataField->id}}</td>
+                        <td data-order="{{ $i + 1 }}">{{ $i + 1 }}</td>
+                        <td data-order="{{ $dataField->id }}">{{ $dataField->id }}</td>
                         <!-- <td>{{$dataField->fieldType == 0 ? 'Configurations' : 'Parameters'}}</td> -->
                         <td class="field-type">{{$dataField->fieldType == 0 ? 'Configurations' : 'Parameters'}}</td>
                         <td>{{$dataField->fieldName}}</td>
                         <td>{{$dataField->inputType}}</td>
                         <td>{{$dataField->validationConfig}}</td>
-                        <td>
+                        <td data-order="{{ $dataField->is_common ? 1 : 0 }}">
                           @if ($dataField->is_common)
-                            <span class="badge bg-success padding-10">True</span>
+                            <span class="vdf-badge vdf-badge-true">True</span>
                           @else
-                            <span class="badge bg-danger padding-10">False</span>
+                            <span class="vdf-badge vdf-badge-false">False</span>
                           @endif
                         </td>
-                        <td>
+                        <td data-order="{{ $dataField->is_can_protocol ? 1 : 0 }}">
                           @if ($dataField->is_can_protocol)
-                            <span class="badge bg-success padding-10">True</span>
+                            <span class="vdf-badge vdf-badge-true">True</span>
                           @else
-                            <span class="badge bg-danger padding-10">False</span>
+                            <span class="vdf-badge vdf-badge-false">False</span>
                           @endif
                         </td>
-                        <td><button type="button" data-id="{{ $dataField->id }}"
-                            data-field-type="{{ $dataField->fieldType }}" data-field-name="{{ $dataField->fieldName }}"
-                            data-input-type="{{ $dataField->inputType }}" data-config="{{ $dataField->validationConfig }}"
-                            data-is_common="{{$dataField->is_common}}"
-                            data-is_can_protocol="{{$dataField->is_can_protocol}}" class="btn btn-primary"
-                            onclick="openEditModel(this)">Edit</button></td>
-                        <td>
-                          <form id="deleteForm-{{$dataField->id}}" action="" method="post">
-                            @csrf
-                            @method('DELETE')
-                            <button type="button" class="btn btn-danger btn-sm"
-                              onclick="showDeleteModal({{$dataField->id}})">Delete</button>
-                        </td>
-                        </form>
-                      </tr>
-                      <div class="modal" id="deleteModal{{$dataField->id}}" aria-hidden="true">
-                        <div class="modal-dialog">
-                          <div class="modal-content">
-                            <div class="modal-header d-flex" style="justify-content: space-between;">
-                              <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
+                        <td class="vdf-actions-cell text-center">
+                          <div class="vdf-actions-inner">
+                            @if($vdfIsAdmin)
+                              <button type="button" class="btn btn-primary btn-sm vdf-btn-edit" data-id="{{ $dataField->id }}"
+                                data-field-type="{{ $dataField->fieldType }}" data-field-name="{{ $dataField->fieldName }}"
+                                data-input-type="{{ $dataField->inputType }}" data-config='@json($dataField->validationConfig)'
+                                data-is_common="{{$dataField->is_common}}"
+                                data-is_can_protocol="{{$dataField->is_can_protocol}}"
+                                title="Edit" aria-label="Edit"
+                                onclick="openEditModel(this)"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+                            @endif
+                            <form action="{{ url($routePrefix . '/delete-category-fields/' . $dataField->id) }}" method="post" class="form-inline" style="display:inline;">
+                              @csrf
+                              @method('DELETE')
+                              <button type="submit" class="swal-confirm btn btn-danger btn-sm vdf-btn-delete"
+                                data-confirm-msg="Are you sure you want to delete this data field?"
+                                title="Delete" aria-label="Delete">
+                                <i class="fa fa-trash" aria-hidden="true"></i>
                               </button>
-                            </div>
-                            <div class="modal-body">
-                              Are you sure you want to delete this?
-                            </div>
-                            <div class="modal-footer">
-                              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                              <button type="button" class="btn btn-danger"
-                                onclick="confirmDelete({{$dataField->id}},true)">Yes</button>
-                            </div>
+                            </form>
                           </div>
-                        </div>
-                      </div>
+                        </td>
+                      </tr>
                     @endforeach
                   </tbody>
                 </table>
-                </div>
               </div>
             </div>
             <div id="cat" class="tab-content">
@@ -328,33 +304,16 @@
         </div><!--/.c_panels-->
       </div><!--/col-md-12-->
     </div><!--/row-->
-    </div><!--/row-->
     <!--======== Dynamic Datatable Content Start End ========-->
   </section>
 </section>
 
 
 
-
 <!--****** End Modal Responsive******-->
 @stop
-<style>
-  .tab-content {
-    display: none;
-  }
 
-  .tab-content.active {
-    display: block;
-  }
-
-  .tablinks.active {
-    background-color: #007bff;
-    color: white;
-  }
-</style>
-
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+@section('scripts')
 <script>
   // function openTab(evt, tabName) {
   //   console.log("tabName ===>", tabName);
@@ -369,9 +328,6 @@
   //   evt.currentTarget.classList.add("active");
   // }
 
-  function showDeleteModal(id) {
-    $('#deleteModal' + id).modal('show');
-  }
 
   function openEditModel(button) {
     $('#field_type').val("");
@@ -388,7 +344,12 @@
       is_common: $btn.data('is_common'),
       is_can_protocol: $btn.data('is_can_protocol'),
     };
-    console.log("fieldData.is_common -->", fieldData.is_common == 1);
+    if (typeof fieldData.config === 'string') {
+      try { fieldData.config = JSON.parse(fieldData.config); } catch (e) { fieldData.config = {}; }
+    }
+    if (!fieldData.config || typeof fieldData.config !== 'object') {
+      fieldData.config = {};
+    }
     const $form = $('#deviceFieldForm');
     $('.data-field-title').text("Edit Data Field");
     // Reset form and show modal
@@ -491,12 +452,6 @@
         $('.append-maxValue-options').show();
         break;
     }
-  }
-
-  function confirmDelete(id) {
-    const form = document.getElementById('deleteForm-' + id);
-    form.action = `/{{$url_type}}/delete-category-fields/${id}`;
-    form.submit();
   }
 
   $(document).ready(function () {
@@ -678,12 +633,15 @@
   function openAddDeviceFieldModel() {
     $('#addDeviceField').modal('show');
     $('.data-field-title').text("ADD Data Field");
-    $('#field_type').val("");
+    $('#field_type').val("0").trigger('change');
     $('#field_name').val("");
-    $('#input_type').val("").trigger('change');
+    $('#input_type').val("text").trigger('change');
+    $('#is_common').prop("checked", false);
+    $('#is_can_protocol').prop("checked", false);
     $('.append-maxValue-options').hide();
     $(".append-select-options").hide();
     $('.append-number-options').hide();
+    $('.max-selected-values').hide().empty();
   }
   document.querySelectorAll('.tab-btn').forEach(button => {
     button.addEventListener('click', () => {
@@ -758,94 +716,88 @@
   }
 
 
-  // Responsive Table
+  var vdfDataTable;
+
+  function vdfSyncTableHeaderStyles() {
+    var $dt = $('#dataFieldsTable');
+    if (!$dt.length) return;
+    $dt.find('thead th').each(function () {
+      var $th = $(this);
+      $th.css({ color: '#ffffff', backgroundColor: '#1e293b' });
+      $th.find('.vdf-th-label').css({ color: '#ffffff' });
+      if ($th.hasClass('vdf-th-actions')) {
+        $th.removeClass('sorting sorting_asc sorting_desc').addClass('sorting_disabled');
+      } else {
+        $th.removeClass('sorting_disabled');
+      }
+    });
+  }
+
   $(document).ready(function () {
-      var table = $('#example').DataTable({
-          destroy: true,
-          paging: true,
-          searching: true,
-          info: true,
-          ordering: true,
-          lengthChange: true,
-          responsive: true,     
-          autoWidth: false,   
-          scrollCollapse: true,
-          lengthMenu: [
-              [25, 50, 100, 500, -1],
-              [25, 50, 100, 500, "All"]
-          ],
-          pageLength: 10
-      });
-      setTimeout(function () {
-          if (table && table.columns && typeof table.columns.adjust === 'function') {
-              table.columns.adjust();
-          } else if (table && typeof table.columns === 'function') {
-              table.columns().adjust();
-          }
-      }, 300);
+    if (!window.jQuery || !$.fn.DataTable) return;
+    var $dt = $('#dataFieldsTable');
+    if (!$dt.length) return;
+    if ($.fn.dataTable.isDataTable($dt)) {
+      $dt.DataTable().destroy();
+    }
+    $.fn.dataTable.ext.errMode = 'none';
+    vdfDataTable = $dt.DataTable({
+      paging: true,
+      searching: true,
+      info: true,
+      ordering: true,
+      lengthChange: true,
+      scrollX: false,
+      autoWidth: false,
+      pageLength: 10,
+      stripeClasses: [],
+      order: [[0, 'asc']],
+      lengthMenu: [[10, 25, 50, 100, 500, -1], [10, 25, 50, 100, 500, 'All']],
+      columnDefs: [
+        { type: 'num', targets: [0, 1] },
+        { orderable: false, targets: 8 }
+      ],
+      dom: "<'row'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>",
+      initComplete: function () {
+        vdfSyncTableHeaderStyles();
+        try { this.api().columns.adjust(); } catch (e) { /* noop */ }
+      },
+      drawCallback: function () {
+        vdfSyncTableHeaderStyles();
+      }
+    });
+    $dt.on('order.dt', function () {
+      vdfSyncTableHeaderStyles();
+    });
+    setTimeout(function () {
+      $dt.closest('.dataTables_wrapper').find('.dataTables_filter input').attr('placeholder', 'Search data fields...');
+      vdfSyncTableHeaderStyles();
+      if (vdfDataTable) {
+        try { vdfDataTable.columns.adjust(); } catch (e) { /* noop */ }
+      }
+    }, 150);
   });
 
-  // Coding
-    // var table;
-    // $(document).ready(function () {
-    //   table = $('#example').DataTable();
-    // });
-    // function filterTable(type, el) {
-    //   document.querySelectorAll('.tablinks').forEach(btn => btn.classList.remove('active'));
-    //   if (el) el.classList.add('active');
-    //   if (type === 'all') {
-    //     table.column(2).search('').draw(); 
-    //   } else {
-    //     table.column(2).search('^' + type + '$', true, false).draw();
-    //   }
-    // }
-
-    var table;
-    $(document).ready(function () {
-      $.fn.dataTable.ext.errMode = 'none';
-      table = $('#example').DataTable({
-        destroy: true
-      });
-    });
-
-    function filterTable(type, el) {
-      $('.tablinks').removeClass('active');
-      $(el).addClass('active');
-      if (!table) return;
-      table.search('');
-      table.columns().every(function () {
-        this.search('');
-      });
-      if (type === 'all') {
-        table.draw();
-      } else {
-        table.column(2).search('^' + type + '$', true, false).draw();
-      }
+  $(document).on('click', '.vdf-tabs .tablinks', function () {
+    if ($(this).attr('onclick')) {
+      return;
     }
-
-    $(document).on('click', '.tablinks', function () {
-        var type = $(this).data('type');
-        $('.tablinks').removeClass('active');
-        $(this).addClass('active');
-        if (type === 'all') {
-          table.search('').draw();
-        } else {
-          table.column(2).search(type).draw();
-        }
-    });
-
-    function reloadPage(el) {
-        $('.tablinks').removeClass('active');
-        $(el).addClass('active');
-        location.reload();
+    var type = $(this).data('type');
+    $('.vdf-tabs .tablinks').removeClass('active');
+    $(this).addClass('active');
+    if (!vdfDataTable) return;
+    if (!type || type === 'all') {
+      vdfDataTable.column(2).search('').draw();
+    } else {
+      vdfDataTable.column(2).search('^' + type + '$', true, false).draw();
     }
-  // Coding End 
-</script>
-<style>
-  .show-on-select1 {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  });
+
+  function reloadPage(el) {
+    $('.vdf-tabs .tablinks').removeClass('active');
+    $(el).addClass('active');
+    location.reload();
   }
-</style>
+</script>
+@endsection
 

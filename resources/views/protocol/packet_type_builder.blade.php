@@ -1,4 +1,8 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('protocol-packet-type-builder') }}">
+@endpush
 @section('content')
 <!-- Google Fonts -->
 <link
@@ -6,28 +10,32 @@
   rel="stylesheet">
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<section id="main-content">
-  <section class="wrapper protocol-builder-page">
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-                        @php
-                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
-                        @endphp
-                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
-                        <li><a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}">Packet Types</a></li>
-                        <li class="active"><a href="#">{{ isset($packetType) ? 'Edit' : 'Create' }} Packet Configuration</a></li>
-          </ul>
-        </nav>
-      </div>
+
+<section id="main-content" class="protocol-page protocol-builder-page">
+  <section class="wrapper">
+    @php
+      $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+    @endphp
+    <div class="protocol-breadcrumb-wrap">
+      <nav class="protocol-breadcrumb">
+        <div class="bc-home"><i class="fa fa-home"></i></div>
+        <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+        <span class="bc-sep">›</span>
+        <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" class="bc-item">Packet Types</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">{{ isset($packetType) ? 'Edit Packet Configuration' : 'Create Packet Configuration' }}</span>
+      </nav>
     </div>
 
     <div class="row">
       <div class="col-md-12">
         <div class="c_panel">
-          <div class="c_title d-flex justify-content-between align-items-center mb-4">
-            <h2 class="m-0">Packet Configuration: <span class="text-primary">{{ $protocol->name }}</span></h2>
+          <div class="c_title pkt-config-heading d-flex justify-content-between align-items-center">
+            <h2 class="pkt-config-title m-0">
+              <i class="fa fa-cubes"></i>
+              Packet Configuration
+              <span class="pkt-config-protocol-pill">{{ strtoupper($protocol->name) }}</span>
+            </h2>
           </div>
 
           <div class="c_content">
@@ -118,60 +126,49 @@
 </section>
 
 <div class="modal premium-modal" id="analyzerModal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content overflow-hidden">
-      <div class="modal-header-premium">
-        <div class="d-flex align-items-center" style="gap: 10px;">
-          <div class="header-icon mr-3">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:680px;">
+    <div class="modal-content az-modal-content">
+      {{-- Top accent bar --}}
+      <div class="az-accent-bar"></div>
+      {{-- Close --}}
+      <button type="button" class="az-close" data-dismiss="modal">&times;</button>
+
+      <div class="az-body">
+        {{-- Icon + Title --}}
+        <div class="az-hero">
+          <div class="az-icon-ring">
             <i class="fa fa-magic"></i>
           </div>
-          <div>
-            <h4 class="m-0 font-weight-bold">Smart Packet Analyzer</h4>
-            <small class="text-muted opacity-75">Automatically extract parameters from a raw string</small>
-          </div>
+          <h3 class="az-title">Smart Packet Analyzer</h3>
+          <p class="az-subtitle">Paste a raw packet string and auto-extract all parameters in one click.</p>
         </div>
-        <button type="button" class="close-premium" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body p-4 bg-light-soft">
-        <div class="info-card mb-4" style="margin-bottom: 20px;">
-          <div class="d-flex align-items-start" style="align-items: flex-start; gap: 10px;">
-            <i class="fa fa-info-circle text-primary mt-1 mr-3 fa-lg"></i>
-            <p class="mb-0 text-muted" style="line-height: 1.5;">
-              Paste your raw packet string below. The analyzer will detect fields based on the delimiter and populate
-              the parameter list for you.
-              <strong class="text-danger">Note:</strong> This will replace all current rows.
-            </p>
+
+        {{-- Packet Input --}}
+        <div class="az-field-group">
+          <label class="az-label"><i class="fa fa-code"></i> Raw Packet String</label>
+          <textarea id="samplePacket" class="az-textarea" rows="4"
+            placeholder="$NMP,JSD,2.2.6,NR,1,L,860269069112647,0,1,29042026..."></textarea>
+        </div>
+
+        {{-- Delimiter --}}
+        <div class="az-delim-row">
+          <div class="az-field-group az-delim-field">
+            <label class="az-label"><i class="fa fa-cut"></i> Delimiter</label>
+            <input type="text" id="analyzerDelim" value="," class="az-delim-input" maxlength="1">
+          </div>
+          <div class="az-hint-box">
+            <i class="fa fa-info-circle"></i>
+            <span>This will <strong>replace</strong> all current rows with the detected fields.</span>
           </div>
         </div>
 
-        <div class="form-group mb-4">
-          <label class="premium-label-bold">Paste Sample Packet String</label>
-          <textarea id="samplePacket" class="form-control premium-textarea shadow-sm" rows="5"
-            placeholder="Example: $NMP,JSD,2.2.6,NR,1,L,860269069112647..."></textarea>
+        {{-- Actions --}}
+        <div class="az-actions">
+          <button type="button" class="btn az-btn-cancel" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn az-btn-go" onclick="runAnalysis()">
+            <i class="fa fa-bolt"></i> Analyze & Populate
+          </button>
         </div>
-
-        <div class="row">
-          <div class="col-md-5">
-            <div class="form-group mb-0">
-              <label class="premium-label-bold">Separator / Delimiter</label>
-              <div class="input-group">
-                <div class="input-group-prepend">
-                  <span class="input-group-text bg-white border-right-0"></span>
-                </div>
-                <input type="text" id="analyzerDelim" value=","
-                  class="form-control premium-input border-left-0 font-weight-bold text-primary" maxlength="1"
-                  style="font-size: 1.2rem; height: 50px;">
-              </div>
-              <small class="text-muted mt-1 d-block">Character used to split the packet</small>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer border-0 p-4 bg-white justify-content-between">
-        <button type="button" class="btn btn-glass-secondary px-4 py-2" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-premium-primary btn-lg px-5 shadow-lg" onclick="runAnalysis()">
-          <i class="fa fa-bolt"></i> Analyze & Populate Now
-        </button>
       </div>
     </div>
   </div>
@@ -585,617 +582,8 @@
       }
     });
   }</script>
-<style>
-  :root {
-    --premium-primary: #6366f1;
-    --premium-primary-hover: #4f46e5;
-    --premium-success: #10b981;
-    --premium-info: #0ea5e9;
-    --premium-dark: #0f172a;
-    --premium-bg: #f1f5f9;
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --card-shadow-hover: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  }
 
-  body {
-    background-color: var(--premium-bg);
-    font-family: 'Inter', sans-serif;
-    color: #1e293b;
-    line-height: 1.5;
-  }
-
-  /* Breadcrumb Styling */
-  .c_breadcrumbs ul {
-    background: transparent;
-    padding: 0;
-    margin-bottom: 20px;
-  }
-
-  .c_breadcrumbs ul li a {
-    color: #64748b;
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-
-  .c_breadcrumbs ul li a:hover {
-    color: var(--premium-primary);
-  }
-
-  .c_breadcrumbs ul li.active a {
-    color: var(--premium-dark);
-    font-weight: 700;
-  }
-
-  /* Main Panel Styling */
-  .c_panel {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  }
-
-  .c_title h2 {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 800;
-    font-size: 1.75rem;
-    color: var(--premium-dark);
-    letter-spacing: -0.02em;
-    margin-bottom: 25px;
-  }
-
-  .section-card {
-    background: white;
-    border-radius: 20px;
-    border: 1px solid #e2e8f0;
-    box-shadow: var(--card-shadow);
-    overflow: hidden;
-    margin-bottom: 30px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .section-card:hover {
-    box-shadow: var(--card-shadow-hover);
-    transform: translateY(-2px);
-  }
-
-  .section-header {
-    background: #ffffff;
-    padding: 20px 28px;
-    border-bottom: 1px solid #f1f5f9;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .section-header h4 {
-    color: var(--premium-dark);
-    font-weight: 700;
-    font-size: 1.1rem;
-    font-family: 'Outfit', sans-serif;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .section-header h4 i {
-    color: var(--premium-primary);
-    background: rgba(99, 102, 241, 0.1);
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-  }
-
-  .section-body {
-    padding: 28px;
-  }
-
-  .premium-label {
-    font-weight: 600;
-    font-size: 0.75rem;
-    color: #64748b;
-    margin-bottom: 8px;
-    display: block;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .premium-input,
-  .premium-select,
-  .premium-textarea {
-    border-radius: 12px;
-    border: 1.5px solid #e2e8f0;
-    padding: 10px 16px;
-    height: 46px;
-    transition: all 0.2s ease;
-    font-size: 0.95rem;
-    font-weight: 500;
-    background-color: #f8fafc;
-    color: #0f172a;
-    font-family: 'Inter', sans-serif;
-    width: 100%;
-    display: block;
-    box-sizing: border-box;
-  }
-
-  .premium-input:focus,
-  .premium-select:focus,
-  .premium-textarea:focus {
-    border-color: var(--premium-primary);
-    background-color: white;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-    outline: none;
-  }
-
-  .premium-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    background-size: 16px;
-    padding-right: 40px;
-    cursor: pointer;
-  }
-
-  .table-custom {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-  }
-
-  .table-custom thead th {
-    background: #f8fafc;
-    color: #475569;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    letter-spacing: 0.075em;
-    padding: 16px 24px;
-    border-bottom: 1px solid #e2e8f0;
-    font-family: 'Outfit', sans-serif;
-  }
-
-  .table-custom tbody tr {
-    transition: all 0.2s;
-  }
-
-  .table-custom tbody tr:hover {
-    background-color: #f8fafc;
-  }
-
-  .table-custom td {
-    vertical-align: middle;
-    padding: 12px 16px;
-    border-bottom: 1px solid #f1f5f9;
-  }
-
-  /* Button Styling */
-  .btn-glass-primary {
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--premium-primary);
-    border: 1.5px solid rgba(99, 102, 241, 0.2);
-    font-weight: 700;
-    font-size: 0.85rem;
-    padding: 8px 16px;
-    border-radius: 10px;
-    transition: all 0.2s;
-  }
-
-  .btn-glass-primary:hover {
-    background: var(--premium-primary);
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-  }
-
-  .btn-glass-info {
-    background: rgba(14, 165, 233, 0.1);
-    color: var(--premium-info);
-    border: 1.5px solid rgba(14, 165, 233, 0.2);
-    font-weight: 700;
-    font-size: 0.85rem;
-    padding: 8px 16px;
-    border-radius: 10px;
-  }
-
-  .btn-glass-info:hover {
-    background: var(--premium-info);
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
-  }
-
-  /* Modal Styling */
-  .modal-content {
-    border-radius: 24px;
-    border: none;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  }
-
-  .modal-header-premium {
-    padding: 24px 32px;
-    background: white;
-    border-bottom: 1px solid #f1f5f9;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .header-icon {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%);
-    color: var(--premium-primary);
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-  }
-
-  .close-premium {
-    background: #f1f5f9;
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: #64748b;
-    transition: all 0.2s;
-  }
-
-  .close-premium:hover {
-    background: #fee2e2;
-    color: #ef4444;
-  }
-
-  .info-card {
-    background: rgba(99, 102, 241, 0.05);
-    border: 1px solid rgba(99, 102, 241, 0.1);
-    border-radius: 16px;
-    padding: 16px 20px;
-  }
-
-  .premium-label-bold {
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: var(--premium-dark);
-    margin-bottom: 12px;
-    display: block;
-    font-family: 'Outfit', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-
-  .bg-light-soft {
-    background-color: #fafafa;
-  }
-
-  .btn-premium-success {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    border: none;
-    color: white;
-    font-weight: 700;
-    font-family: 'Outfit', sans-serif;
-    padding: 14px 32px;
-    border-radius: 14px;
-    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
-    transition: all 0.3s;
-  }
-
-  .btn-premium-success:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.4);
-    filter: brightness(1.1);
-  }
-
-  .btn-premium-primary {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-    border: none;
-    color: white;
-    font-weight: 700;
-    border-radius: 12px;
-    padding: 12px 24px;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-  }
-
-  /* Animations */
-  .animate-in {
-    animation: fadeInSlideUp 0.4s ease-out;
-  }
-
-  @keyframes fadeInSlideUp {
-    from {
-      opacity: 0;
-      transform: translateY(15px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .drag-handle {
-    cursor: grab;
-    color: #cbd5e1;
-    font-size: 1.1rem;
-    transition: color 0.2s;
-  }
-
-  .drag-handle:hover {
-    color: var(--premium-primary);
-  }
-
-  .drag-handle:active {
-    cursor: grabbing;
-  }
-
-  /* Modal Styling */
-  .premium-modal .modal-content {
-    border-radius: 24px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  }
-
-  .premium-modal .modal-header {
-    background: var(--premium-dark);
-    padding: 24px 32px;
-    border-bottom: none;
-  }
-
-  .premium-modal .modal-title {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-
-  /* Custom Checkbox */
-  .custom-checkbox input {
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    accent-color: var(--premium-primary);
-  }
-
-  .premium-scroll::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .premium-scroll::-webkit-scrollbar-track {
-    background: #f1f5f9;
-  }
-
-  .premium-scroll::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 10px;
-  }
-
-  .premium-scroll::-webkit-scrollbar-thumb:hover {
-    background: var(--premium-primary);
-  }
-
-  .d-none {
-    display: none !important;
-  }
-
-  /* Additional Premium Touches */
-  .badge-premium-primary {
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--premium-primary);
-    border: 1.5px solid rgba(99, 102, 241, 0.2);
-  }
-
-  .premium-form .section-card {
-    border-color: #f1f5f9;
-  }
-
-  /* Responsive refinements */
-  @media (max-width: 768px) {
-    .section-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 15px;
-    }
-
-    .header-actions {
-      width: 100%;
-      display: flex;
-      gap: 10px;
-    }
-
-    .header-actions button {
-      flex: 1;
-    }
-  }
-
-  /* Existing admin-theme alignment for packet field builder */
-  .protocol-builder-page .c_panel {
-    background: #fff;
-    border: 1px solid #e5e5e5;
-    border-radius: 6px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  }
-
-  .protocol-builder-page .c_title {
-    padding: 15px 20px;
-    border-bottom: 1px solid #eee;
-    background: #fff;
-  }
-
-  .protocol-builder-page .c_title h2 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: #222;
-    font-family: inherit;
-  }
-
-  .protocol-builder-page .c_content {
-    padding: 20px;
-  }
-
-  .protocol-builder-page .section-card {
-    border: 1px solid #e5e5e5;
-    border-radius: 6px;
-    box-shadow: none;
-    margin-bottom: 18px;
-    overflow: hidden;
-  }
-
-  .protocol-builder-page .section-card:hover {
-    box-shadow: none;
-    transform: none;
-  }
-
-  .protocol-builder-page .section-header {
-    padding: 13px 16px;
-    background: #f8f9fb;
-    border-bottom: 1px solid #e5e5e5;
-  }
-
-  .protocol-builder-page .section-header h4 {
-    font-size: 15px;
-    font-weight: 700;
-    color: #333;
-    font-family: inherit;
-  }
-
-  .protocol-builder-page .section-header h4 i {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    color: #3498db;
-    background: #eef7ff;
-  }
-
-  .protocol-builder-page .section-body {
-    padding: 16px;
-  }
-
-  .protocol-builder-page .premium-label,
-  .protocol-builder-page .premium-label-bold {
-    font-size: 12px;
-    color: #555;
-    font-weight: 700;
-    text-transform: none;
-    letter-spacing: 0;
-    margin-bottom: 6px;
-    font-family: inherit;
-  }
-
-  .protocol-builder-page .premium-input,
-  .protocol-builder-page .premium-select,
-  .protocol-builder-page .premium-textarea {
-    height: 34px;
-    min-height: 34px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    background: #fff;
-    padding: 6px 10px;
-    font-size: 13px;
-    font-weight: 400;
-    box-shadow: none;
-  }
-
-  .protocol-builder-page .premium-textarea {
-    height: auto;
-  }
-
-  .protocol-builder-page .premium-input:focus,
-  .protocol-builder-page .premium-select:focus,
-  .protocol-builder-page .premium-textarea:focus {
-    border-color: #66afe9;
-    box-shadow: 0 0 4px rgba(102, 175, 233, 0.35);
-  }
-
-  .protocol-builder-page .premium-scroll {
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  .protocol-builder-page .table-responsive {
-    overflow-x: visible;
-  }
-
-  .protocol-builder-page .table-custom {
-    width: 100% !important;
-    margin-bottom: 0;
-    border-collapse: collapse;
-    table-layout: auto;
-  }
-
-  .protocol-builder-page .table-custom thead th {
-    background: #f8f9fb;
-    color: #555;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-    padding: 10px 8px;
-    border: 1px solid #ddd;
-    vertical-align: middle;
-    font-family: inherit;
-  }
-
-  .protocol-builder-page .table-custom td {
-    padding: 8px;
-    border: 1px solid #e5e5e5;
-    vertical-align: top;
-  }
-
-  .protocol-builder-page .field-row.has-error {
-    background: #fff7f7;
-  }
-
-  .protocol-builder-page .is-invalid {
-    border-color: #dc3545 !important;
-    background: #fff5f5 !important;
-  }
-
-  .protocol-builder-page .builder-error-box {
-    border-left: 4px solid #dc3545;
-    margin-bottom: 15px;
-  }
-
-  .protocol-builder-page .builder-error-box ul {
-    margin: 8px 0 0 18px;
-    padding: 0;
-  }
-
-  .protocol-builder-page .btn-glass-info,
-  .protocol-builder-page .btn-glass-primary,
-  .protocol-builder-page .btn-glass-secondary,
-  .protocol-builder-page .btn-premium-success {
-    border-radius: 4px;
-    font-weight: 600;
-    box-shadow: none;
-    padding: 8px 14px;
-  }
-
-  .protocol-builder-page .btn-premium-success {
-    background: #2ecc71;
-    color: #fff;
-  }
-
-  .protocol-builder-page .btn-premium-success:hover {
-    background: #27ae60;
-    transform: none;
-    box-shadow: none;
-    color: #fff;
-  }
-
-  .protocol-builder-page .form-actions {
-    margin-top: 16px;
-  }
-</style>
 @stop
-
 
 
 

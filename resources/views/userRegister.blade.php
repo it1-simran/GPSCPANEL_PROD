@@ -16,220 +16,143 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Register - GPS Control Panel</title>
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <style>
-        body {
-            background: linear-gradient(135deg, #0bb2d4, #0992ad);
-            font-family: 'Raleway', sans-serif;
-        }
-
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.15);
-            padding: 30px;
-            background: #fff;
-        }
-
-        .card h2 {
-            font-weight: 700;
-            color: #0bb2d4;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .btn-custom {
-            background: #0bb2d4;
-            color: #fff;
-            font-weight: 600;
-            border-radius: 8px;
-        }
-
-        .btn-custom:hover {
-            background: #0992ad;
-        }
-
-        .form-footer {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .form-footer a {
-            color: #0bb2d4;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .form-footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Select2 Bootstrap 5 Styling Fix */
-        .select2-container .select2-selection--single {
-            height: 38px !important;
-            border: 1px solid #ced4da !important;
-            border-radius: 0.375rem !important;
-            padding: 0.375rem 0.75rem !important;
-            display: flex !important;
-            align-items: center !important;
-        }
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: normal !important;
-            padding-left: 0 !important;
-            color: #212529 !important;
-        }
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 36px !important;
-            top: 1px !important;
-            right: 10px !important;
-        }
-        .select2-dropdown {
-            border: 1px solid #ced4da !important;
-            border-radius: 0.375rem !important;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        }
-
-        .config-header-bg {
-            background-color: #f8f9fa;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border-left: 4px solid #0bb2d4;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #333;
-        }
-        .require {
-            color: red;
-            font-weight: bold;
-            margin-left: 3px;
-        }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('userregister') }}" />
 </head>
 
 <body>
-    <div class="d-flex justify-content-center align-items-center">
-        <div class="card  col-sm-7 mx-auto">
-            @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <strong>✅ Success!</strong> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            @endif
+    <div class="reg-wrapper">
+        <div class="card">
+            <div class="card-accent-bar"></div>
+            <div class="card-inner">
 
-            <div class="alert alert-danger alert-dismissible fade showErrorMSG show" role="alert" style="display:none;">
-                <p class="errorMsgText" style="margin-bottom: 0;"></p>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+                <div class="card-logo">
+                    <div class="logo-ring"><i class="fa fa-user-plus"></i></div>
+                </div>
 
-            @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <strong>⚠️ Please fix the following errors:</strong>
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            @endif
+                @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <strong>Success!</strong> {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                @endif
 
-            @if(isset($user) && in_array($user->status, ['RejectedBySupport', 'RejectedByAdmin']) && $user->description)
-            <div class="alert alert-warning border-start border-danger border-4 shadow-sm mb-4" role="alert">
-                <div class="d-flex align-items-center">
-                    <i class="fa fa-exclamation-circle text-danger me-3" style="font-size: 1.5rem;"></i>
-                    <div>
-                        <h6 class="fw-bold text-danger mb-1">Attention: Previous Request Rejected</h6>
-                        <p class="mb-0 text-muted small"><strong>Reason:</strong> "{{ $user->description }}"</p>
-                        <p class="mb-0 text-muted small mt-1">Please update the information below and resubmit.</p>
+                <div class="alert alert-danger alert-dismissible fade showErrorMSG show" role="alert" style="display:none;">
+                    <p class="errorMsgText" style="margin-bottom: 0;"></p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Please fix the following errors:</strong>
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                @endif
+
+                @if(isset($user) && in_array($user->status, ['RejectedBySupport', 'RejectedByAdmin']) && $user->description)
+                <div class="alert alert-warning border-start border-danger border-4 shadow-sm mb-4" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-exclamation-circle text-danger me-3" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <h6 class="fw-bold text-danger mb-1">Attention: Previous Request Rejected</h6>
+                            <p class="mb-0 text-muted small"><strong>Reason:</strong> "{{ $user->description }}"</p>
+                            <p class="mb-0 text-muted small mt-1">Please update the information below and resubmit.</p>
+                        </div>
                     </div>
                 </div>
+                @endif
+
+                <h2 class="text-center">Create Account</h2>
+                <p class="reg-subtitle">Fill in the details below to complete your registration</p>
+
+                <form method="POST" id="registerForm" action="{{ route('register.user.store') }}" class="row">
+                    @csrf
+
+                    <div class="mb-3 col-sm-6">
+                        <label for="name" class="form-label"><i class="fa fa-user" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Full Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="Enter your name" required value="{{ $name ?? '' }}" readonly>
+                    </div>
+
+                    <div class="mb-3 col-sm-6">
+                        <label for="email" class="form-label"><i class="fa fa-envelope" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="Enter your email" required value="{{ $email ?? '' }}" readonly>
+                    </div>
+                    <div class="mb-3 col-sm-6">
+                        <label for="phone" class="form-label"><i class="fa fa-phone" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Phone Number</label>
+                        <input type="text"
+                            name="phone"
+                            class="form-control"
+                            placeholder="Enter phone number"
+                            maxlength="10"
+                            pattern="\d{10}"
+                            title="Phone number must be exactly 10 digits"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            required>
+                    </div>
+
+                    <div class="mb-3 col-sm-6">
+                        <label for="timezone" class="form-label"><i class="fa fa-globe" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> TimeZones <span class="require">*</span></label>
+                        <select name="timezone" class="select2" id="timezone">
+                            <option value="">Please Select Time Zone</option>
+                            @foreach($timeZones as $timezone)
+                            @php
+                            $tzValue = $timezone->name . ' (' . $timezone->utc_offset . ')';
+                            @endphp
+                            <option value="{{ $timezone->name }}" {{ $timezone->name == 'Asia/Kolkata' ? 'selected' : '' }}>
+                                {{ $tzValue }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3 col-sm-6">
+                        <label for="user_type" class="form-label"><i class="fa fa-id-badge" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Account Type</label>
+                        <select class="form-select" disabled required>
+                            <option value="">Select Account Type</option>
+                            <option value="dealer" {{ (isset($user) && strtolower($user->userType) == 'dealer') ? 'selected' : '' }}>Dealer</option>
+                            <option value="manufacturer" {{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'selected' : '' }}>Manufacturer</option>
+                        </select>
+                        <input type="hidden" name="user_type" value="{{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'manufacturer' : 'dealer' }}">
+                    </div>
+                    <div class="mb-3 col-sm-6">
+                        <label for="device_category" class="form-label"><i class="fa fa-cubes" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Device Category</label>
+                        <select id="deviceCategorySelect" name="device_category" class="form-select" required>
+                            <option value="">Select Category</option>
+                            @foreach($deviceCategory as $category)
+                            <option value="{{$category->id}}">{{$category->device_category_name}}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div id="deviceConfigWrapper" style="display:none;">
+                        <h5 class="mt-4 config-header-bg"><i class="fa fa-cogs" style="margin-right:8px;color:#76CF1C;"></i> Default Configuration</h5>
+                        <div id="deviceConfigFields" class="row"></div>
+                    </div>
+                    <button type="button" id="registerBtn" class="btn btn-custom w-100 mt-2">
+                        <span class="btn-text"><i class="fa fa-check-circle" style="margin-right:6px;"></i> Register</span>
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
+
+                </form>
             </div>
-            @endif
-
-            <h2 class="text-center mb-4">Create Account</h2>
-
-            <form method="POST" id="registerForm" action="{{ route('register.user.store') }}" class="row">
-                @csrf
-
-                <div class="mb-3 col-sm-6">
-                    <label for="name" class="form-label">Full Name</label>
-                    <input type="text" name="name" class="form-control" placeholder="Enter your name" required value="{{ $name ?? '' }}" readonly>
-                </div>
-
-                <div class="mb-3 col-sm-6">
-                    <label for="email" class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-control" placeholder="Enter your email" required value="{{ $email ?? '' }}" readonly>
-                </div>
-                <div class="mb-3 col-sm-6">
-                    <label for="phone" class="form-label">Phone Number</label>
-                    <input type="text"
-                        name="phone"
-                        class="form-control"
-                        placeholder="Enter phone number"
-                        maxlength="10"
-                        pattern="\d{10}"
-                        title="Phone number must be exactly 10 digits"
-                        oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                        required>
-                </div>
-
-                <div class="mb-3 col-sm-6">
-                    <label for="timezone" class="form-label">TimeZones <span class="require">*</span></label>
-                    <select name="timezone" class="select2" id="timezone">
-                        <option value="">Please Select Time Zone</option>
-                        @foreach($timeZones as $timezone)
-                        @php
-                        $tzValue = $timezone->name . ' (' . $timezone->utc_offset . ')';
-                        @endphp
-                        <option value="{{ $timezone->name }}" {{ $timezone->name == 'Asia/Kolkata' ? 'selected' : '' }}>
-                            {{ $tzValue }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mb-3 col-sm-6">
-                    <label for="user_type" class="form-label">Account Type</label>
-                    <select class="form-select" disabled required>
-                        <option value="">Select Account Type</option>
-                        <option value="dealer" {{ (isset($user) && strtolower($user->userType) == 'dealer') ? 'selected' : '' }}>Dealer</option>
-                        <option value="manufacturer" {{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'selected' : '' }}>Manufacturer</option>
-                    </select>
-                    <input type="hidden" name="user_type" value="{{ (isset($user) && strtolower($user->userType) == 'manufacturer') ? 'manufacturer' : 'dealer' }}">
-                </div>
-                <div class="mb-3 col-sm-6">
-                    <label for="device_category" class="form-label">Device Category</label>
-                    <select id="deviceCategorySelect" name="device_category" class="form-select" required>
-                        <option value="">Select Category</option>
-                        @foreach($deviceCategory as $category)
-                        <option value="{{$category->id}}">{{$category->device_category_name}}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div id="deviceConfigWrapper" style="display:none;">
-                    <h5 class="mt-4 config-header-bg">Default Configuration</h5>
-                    <div id="deviceConfigFields" class="row"></div>
-                </div>
-                <button type="button" id="registerBtn" class="btn btn-custom w-100">
-                    <span class="btn-text">Register</span>
-                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                </button>
-
-            </form>
         </div>
     </div>
-    <div class="modal fade" id="otpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal" id="otpModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content shadow-lg rounded-4 border-0">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-dark">🔐 Email Verification</h5>
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa fa-lock" style="margin-right:8px;color:#76CF1C;"></i> Email Verification</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
@@ -265,23 +188,7 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
 </body>
 
 </html>
-<style>
-    .otp-input {
-        width: 50px;
-        height: 55px;
-        font-size: 1.5rem;
-        text-align: center;
-        border-radius: 10px;
-        border: 1px solid #ddd;
-        transition: 0.2s;
-    }
 
-    .otp-input:focus {
-        border-color: #198754;
-        box-shadow: 0 0 5px rgba(25, 135, 84, 0.4);
-        outline: none;
-    }
-</style>
 <!-- Bootstrap JS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 

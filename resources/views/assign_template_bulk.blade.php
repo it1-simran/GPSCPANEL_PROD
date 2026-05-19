@@ -5,8 +5,13 @@ use App\Helper\CommonHelper;
 $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
-@section('content');
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('assign-template-bulk') }}">
+@endpush
+@section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+
 <!--main content start-->
 <!-- <div class="modal" id="imeiPreviewModal" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -116,20 +121,18 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         </div>
     </div>
 </div> -->
-<section id="main-content">
+<section id="main-content" class="assign-bulk-page">
     <section class="wrapper">
-        <!--======== Page Title and Breadcrumbs Start ========-->
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Device Management</a></li>
-                        <li class="active"><a href="#">Add Setting Bulk</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="assign-bulk-breadcrumb-wrap">
+            <nav class="assign-bulk-breadcrumb" aria-label="Breadcrumb">
+                <a href="{{ url($url_type) }}" class="bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+                <a href="{{ url($url_type) }}" class="bc-item">Home</a>
+                <span class="bc-sep">›</span>
+                <a href="{{ url($url_type . '/view-template') }}" class="bc-item">Settings Management</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Assign Settings Bulk</span>
+            </nav>
         </div>
-        <!--======== Page Title and Breadcrumbs End ========-->
         <!--======== Form Validation Content Start End ========-->
         <div class="row">
             <div class="col-md-12">
@@ -170,7 +173,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             <div class="form-group ">
                                 <label for="cemail" class="control-label col-lg-3">Import Excel File <span class="require">*</span></label>
                                 <div class="col-lg-6">
-                                    <div class="d-flex" style="align-items: anchor-center;">
+                                    <div class="d-flex align-items-center flex-wrap">
                                         <input type="file" name="excel_file" id="excel_file" class="reqfield bordered-1 padding-4 reqfield rounded-md" />
                                         <a href="#" data-toggle="modal" data-target="#excelFormatModal" class="margin-left-4"> <i class="fa fa-info-circle"></i> </a>
                                     </div>

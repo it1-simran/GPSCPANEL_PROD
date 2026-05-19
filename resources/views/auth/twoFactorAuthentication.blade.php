@@ -12,7 +12,8 @@
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <link rel="shortcut icon" href="">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
     <title>GPS Control Panel</title>
 
     <!-- Start Global plugin css -->
@@ -30,9 +31,11 @@
     <!--Fonts-->
     <link href="../../../assets/fonts/Indie-Flower/indie-flower.css" rel="stylesheet" />
     <link href="../../../assets/fonts/Open-Sans/open-sans.css?family=Open+Sans:300,400,700" rel="stylesheet" />
+    <link href="{{ asset('assets/css/gps-notifications.css') }}" rel="stylesheet" />
 </head>
 
 <body id="default-scheme" class="form-background">
+    @include('partials.gps-flash-pull')
 
 
     <!--main content start-->
@@ -51,7 +54,7 @@
                 </div>
 
                 <div class="form-body bg-white padding-20">
-                    <form method="POST" action="{{ route('2fa.submit') }}">
+                    <form method="POST" action="{{ route('2fa.submit') }}" onsubmit="var b=this.querySelector('button[type=submit]'); if(b){ b.disabled=true; b.setAttribute('aria-busy','true'); } return true;">
                         @csrf
                         <input type="hidden" name="email" value="{{ session('email') }}">
 
@@ -102,6 +105,7 @@
     <!-- For Login and registration page Only -->
     <script src="../../../assets/vendors/backstretch/jquery.backstretch.min.js"></script>
     <script src="../../../assets/js/registration-login.js"></script>
+    @include('partials.gps-flash-scripts')
 </body>
 
 </html>

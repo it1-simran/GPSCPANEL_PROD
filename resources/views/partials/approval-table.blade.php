@@ -26,8 +26,8 @@
                     <td>{{ $request->phone }}</td>
                     <td>{{ ucfirst($request->userType) }}</td>
                     <td>{{ $request->deviceCategory }}</td>
-                    <td>{{ $request->deviceIp }}</td>
-                    <td>{{ $request->devicePort }}</td>
+                    <td>{{ \App\Helper\CommonHelper::emptyToNA($request->deviceIp ?? null) }}</td>
+                    <td>{{ \App\Helper\CommonHelper::emptyToNA($request->devicePort ?? null) }}</td>
                     <td>{{ $request->resend_count }}</td>
                     <td>
                         <span class="badge 

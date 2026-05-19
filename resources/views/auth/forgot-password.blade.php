@@ -6,237 +6,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>GPS CPANEL - Forgot Password</title>
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
+    @include('partials.gps-notifications-assets')
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: rgb(118, 207, 28);
-            --primary-glow: rgba(118, 207, 28, 0.3);
-            --bg: #ffffff;
-            --card-bg: #0f172a;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --glass-border: rgba(255, 255, 255, 0.1);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            background-image: 
-                radial-gradient(circle at 20% 30%, rgba(118, 207, 28, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 80% 70%, rgba(118, 207, 28, 0.05) 0%, transparent 40%);
-            position: relative;
-        }
-
-        /* Subtle grid pattern */
-        body::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image: linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 440px;
-            background: var(--card-bg);
-            padding: 48px;
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(12px);
-            animation: fadeIn 0.8s ease-out;
-            z-index: 10;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 800;
-            font-size: 1.25rem;
-            text-decoration: none;
-            color: var(--text-main);
-            letter-spacing: -0.02em;
-            transition: all 0.3s;
-        }
-
-        .brand:hover {
-            opacity: 0.8;
-        }
-
-        .brand-dot {
-            width: 10px;
-            height: 10px;
-            background: var(--primary);
-            border-radius: 2px;
-            box-shadow: 0 0 10px var(--primary-glow);
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .login-header h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-top: 10px;
-            margin-bottom: 4px;
-            letter-spacing: -0.03em;
-            background: linear-gradient(to bottom, #fff 40%, var(--text-muted));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px rgba(118, 207, 28, 0.2);
-            text-transform: uppercase;
-        }
-
-        .login-header p {
-            color: var(--text-muted);
-            font-size: 0.9375rem;
-            font-weight: 500;
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 14px 18px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 1rem;
-            color: white;
-            transition: all 0.3s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
-        }
-
-        .btn-action {
-            width: 100%;
-            padding: 16px;
-            background: var(--primary);
-            color: var(--bg);
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 20px var(--primary-glow);
-            margin-top: 10px;
-        }
-
-        .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px var(--primary-glow);
-            filter: brightness(1.1);
-        }
-
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 24px;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.875rem;
-            transition: color 0.3s;
-        }
-
-        .back-link:hover {
-            color: var(--primary);
-        }
-
-        .invalid-feedback {
-            color: #ff4d4d;
-            font-size: 0.75rem;
-            margin-top: 6px;
-            display: block;
-        }
-
-        /* OTP Input Styling */
-        .otp-input-fields {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 10px;
-        }
-
-        .otp__digit {
-            width: 45px;
-            height: 55px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            text-align: center;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: white;
-            transition: all 0.3s;
-        }
-
-        .otp__digit:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
-        }
-
-        .info-text {
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .info-text span {
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+    
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('auth-forgot-password') }}" />
 </head>
 
 <body>
+    @include('partials.gps-flash-pull')
     <div class="login-card">
         <div class="login-header">
             <a href="{{ url('/') }}" class="brand">
@@ -319,6 +98,7 @@
 
     <script src="{{ asset('assets/js/global-plugins.js') }}"></script>
     <script src="{{ asset('assets/js/theme.js') }}"></script>
+    @include('partials.gps-flash-scripts')
     <script type="text/javascript">
         $(document).ready(function() {  
             $('#forgotPassword').submit(function() {
@@ -341,7 +121,7 @@
                             var hiddenEmail = email.charAt(0) + "********" + email.slice(email.indexOf("@"));
                             $('#getSendMail').text(hiddenEmail);
                         } else {
-                            alert(result.message);
+                            showGpsToast('error', 'Error', result.message);
                             btn.prop('disabled', false).text('Get Verification Code');
                         }
                     },
@@ -352,7 +132,7 @@
                             let res = JSON.parse(xhr.responseText);
                             if (res.message) errorMsg = res.message;
                         } catch(e) {}
-                        alert(errorMsg);
+                        showGpsToast('error', 'Error', errorMsg);
                     }
                 });
             });
@@ -383,7 +163,7 @@
                                 $link.removeClass('disabled').css('opacity', '1');
                             }, 5000);
                         } else {
-                            alert(result.message);
+                            showGpsToast('error', 'Error', result.message);
                             $link.removeClass('disabled').css('opacity', '1');
                             $msg.fadeOut();
                         }
@@ -396,7 +176,7 @@
                             let res = JSON.parse(xhr.responseText);
                             if (res.message) errorMsg = res.message;
                         } catch(e) {}
-                        alert(errorMsg);
+                        showGpsToast('error', 'Error', errorMsg);
                     }
                 });
             });
@@ -418,7 +198,7 @@
                             $('#header-desc').text('Secure your account');
                             $('#userId').val(result.id);
                         } else {
-                            alert(result.message);
+                            showGpsToast('error', 'Error', result.message);
                             btn.prop('disabled', false).text('Verify Code');
                         }
                     },
@@ -429,7 +209,7 @@
                             let res = JSON.parse(xhr.responseText);
                             if (res.message) errorMsg = res.message;
                         } catch(e) {}
-                        alert(errorMsg);
+                        showGpsToast('error', 'Error', errorMsg);
                     }
                 });
             });
@@ -458,10 +238,12 @@
                     success: function(response) {
                         let result = JSON.parse(response);
                         if (result.status == 200) {
-                            alert("Password reset successful! Redirecting to login...");
-                            window.location.href = "{{ route('login') }}";
+                            showGpsToast('success', 'Password updated', 'Redirecting to sign in…', { durationMs: 2200 });
+                            setTimeout(function () {
+                                window.location.href = "{{ route('login') }}";
+                            }, 1600);
                         } else {
-                            alert(result.message);
+                            showGpsToast('error', 'Error', result.message);
                             btn.prop('disabled', false).text('Update Password');
                         }
                     },
@@ -472,7 +254,7 @@
                             let res = JSON.parse(xhr.responseText);
                             if (res.message) errorMsg = res.message;
                         } catch(e) {}
-                        alert(errorMsg);
+                        showGpsToast('error', 'Error', errorMsg);
                     }
                 });
             });

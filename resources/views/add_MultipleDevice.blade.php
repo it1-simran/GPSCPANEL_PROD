@@ -5,8 +5,13 @@ use App\Helper\CommonHelper;
 $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
-@section('content');
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('add-multipledevice') }}">
+@endpush
+@section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+
 <!--main content start-->
 <div class="modal" id="imeiPreviewModal" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -83,18 +88,18 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         </div>
     </div>
 </div>
-<section id="main-content">
+<section id="main-content" class="add-multiple-device-page">
     <section class="wrapper">
         <!--======== Page Title and Breadcrumbs Start ========-->
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Device Management</a></li>
-                        <li class="active"><a href="#">Add Device</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="amd-breadcrumb-wrap">
+            <nav class="amd-breadcrumb">
+                <a href="{{ url('admin') }}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
+                <a href="{{ url('admin') }}" class="bc-item">Home</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item">Device Management</span>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Add Multiple Device</span>
+            </nav>
         </div>
         <!--======== Page Title and Breadcrumbs End ========-->
         <!--======== Form Validation Content Start End ========-->
@@ -103,7 +108,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 <!--=========== START TAGS INPUT ===========-->
                 <div class="c_panel">
                     <div class="c_title">
-                        <h2>Add Device</h2>
+                        <h2 class="amd-panel-title"><i class="fa fa-upload"></i> Add Multiple Device</h2>
                         <div class="clearfix"></div>
                     </div><!--/.c_title-->
                     <div class="c_content">
@@ -124,11 +129,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             </div>
                             @endif
                         </div>
-                        <form class="validator form-horizontal " id="commentForm" method="post" action="{{url('/admin/submit-Multipledevice')}}" enctype="multipart/form-data">
+                        <form class="validator form-horizontal amd-form" id="commentForm" method="post" action="{{url('/admin/submit-Multipledevice')}}" enctype="multipart/form-data">
                             @csrf
-                            <div class="imeifields">
-                            </div>
-                            <div class="form-group ">
+                            <div class="imeifields"></div>
+                            <div class="amd-form-card amd-form-card--import">
+                                <h3 class="amd-section-title"><i class="fa fa-file-excel-o"></i> Import</h3>
+                            <div class="form-group amd-form-row">
                                 <label for="cname" class="control-label col-lg-3">Account (optional)</label>
                                 <div class="col-lg-6">
                                     <select class="" id="user_id" name="user_id">
@@ -143,12 +149,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group ">
+                            <div class="form-group amd-form-row">
                                 <label for="cemail" class="control-label col-lg-3">Import Excel File <span class="require">*</span></label>
                                 <div class="col-lg-6">
-                                    <div class="d-flex" style="align-items: anchor-center;">
-                                        <input type="file" name="excel_file" id="excel_file" class="reqfield bordered-1 padding-4 reqfield rounded-md" />
-                                        <a href="#" data-toggle="modal" data-target="#excelFormatModal" class="margin-left-4"> <i class="fa fa-info-circle"></i> </a>
+                                    <div class="amd-file-row">
+                                        <input type="file" name="excel_file" id="excel_file" class="reqfield amd-file-input" accept=".xlsx,.xls" />
+                                        <a href="#" data-toggle="modal" data-target="#excelFormatModal" class="amd-file-info" title="Excel format instructions" aria-label="Excel format instructions">
+                                            <i class="fa fa-info-circle"></i>
+                                        </a>
                                     </div>
                                     <span class="req_error text-danger display-block"></span>
 
@@ -200,8 +208,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     </div>
                                 </div>
                             </div>
+                            </div>
 
-                            <div class="form-group ">
+                            <div class="amd-form-card amd-form-card--device">
+                                <h3 class="amd-section-title"><i class="fa fa-microchip"></i> Device Configuration</h3>
+                            <div class="form-group amd-form-row">
                                 <label for="curl" class="control-label col-lg-3 ">Device Category <span class="require">*</span></label>
                                 <div class="col-lg-6">
                                     <select id="s2example-2" name="deviceCategory" onChange="getSelectedDeviceCategory()" required="required">
@@ -213,14 +224,16 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 </div>
                             </div>
 
-                            <div class="form-group isCanEnable" style="display:none;">
+                            <div class="form-group amd-form-row isCanEnable" style="display:none;">
                                 <label for="firmware" class="control-label col-lg-3 " required>Can Configuration <span class="require">*</span></label>
                                 <div class="col-lg-6">
-                                    <input type="text" class="form-control" name="canConfigurationArr" id="canConfigurationArr" value="" readonly="readonly" />
+                                    <div class="amd-can-inline">
+                                        <input type="text" class="form-control amd-can-readonly" name="canConfigurationArr" id="canConfigurationArr" value="" readonly="readonly" placeholder="Not configured" />
+                                        <button type="button" class="btn amd-btn-can" onclick="openCanModal()">
+                                            <i class="fa fa-cog"></i> Configure CAN Protocol
+                                        </button>
+                                    </div>
                                     <div class="col-sm-12 alert alert-danger canConfiguration_error" role="alert" style="display:none"></div>
-                                    <button type="button" class="btn btn-primary" onclick="openCanModal()">
-                                        Configure CAN Protocol
-                                    </button>
                                 </div>
                             </div>
                             <div class="form-group " id="templateInput" style='display:none;'>
@@ -254,37 +267,38 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 </div>
                             </div>
                             <div id='deviceCategoryInputFields' style='display:none;'></div>
-                            <div class="form-group ">
+                            </div>
+
+                            <div class="amd-form-card amd-form-card--settings">
+                                <h3 class="amd-section-title"><i class="fa fa-sliders"></i> Settings</h3>
+                            <div class="form-group amd-form-row">
                                 <label for="curl" class="control-label col-lg-3">Ping interval <span class="require">*</span></label>
                                 <div class="col-lg-6">
                                     <input class="form-control reqfield" placeholder="Enter Ping Interval" id="ping_interval" type="Number" name="configuration[ping_interval]" value="4" onkeypress="return blockSpecialCharTransmission(event)" />
                                     <span class="req_error text-danger"></span>
                                 </div>
                             </div>
-                            <div class="form-group ">
+                            <div class="form-group amd-form-row">
                                 <label for="curl" class="control-label col-lg-3">Device Edit Permission</label>
-                                <!-- <div class="col-lg-6">
-                                    <label>Enable</label>
-                                    <input type="radio" name="configuration[is_editable]" value="1" checked="checked" style="height:20px; width:20px; vertical-align: middle;">
-                                    <label>Disable</label>
-                                    <input type="radio" name="configuration[is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;">
-                                </div> -->
                                 <div class="col-lg-6">
-                                    <label class="radio-inline">
-                                        <input type="radio" name="configuration[is_editable]" value="1" checked="checked">
-                                        Enable
-                                    </label>
-                                    <label class="radio-inline" style="margin-left:15px;">
-                                        <input type="radio" name="configuration[is_editable]" value="0">
-                                        Disable
-                                    </label>
+                                    <div class="amd-radio-pills" role="radiogroup" aria-label="Device edit permission">
+                                        <label class="amd-radio-pill">
+                                            <input type="radio" name="configuration[is_editable]" value="1" checked="checked">
+                                            <span>Enable</span>
+                                        </label>
+                                        <label class="amd-radio-pill">
+                                            <input type="radio" name="configuration[is_editable]" value="0">
+                                            <span>Disable</span>
+                                        </label>
+                                    </div>
                                 </div>
-                                
                             </div>
-                            <div class="form-group">
-                                <div class="col-lg-offset-3 col-lg-6">
-                                    <button class="btn btn-primary btn-flat submitMultipleDevice btn-disable-after-submit" type="button">Save</button>
-                                </div>
+                            </div>
+
+                            <div class="amd-form-actions">
+                                <button class="btn amd-btn-save submitMultipleDevice btn-disable-after-submit" type="button">
+                                    <i class="fa fa-check"></i> Save
+                                </button>
                             </div>
                         </form>
                         <hr>
@@ -296,18 +310,19 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     </section>
 </section>
 
-<!-- Modal -->
-<div class="modal" id="canModal" aria-hidden="true">
-    <div class="modal-dialog modal-md">
-        <div class="modal-content">
+<!-- Modal: CAN Protocol (scoped styling #canModal) -->
+<div class="modal amd-can-modal-root" id="canModal" tabindex="-1" role="dialog" aria-labelledby="canModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-md amd-can-modal-dialog" role="document">
+        <div class="modal-content amd-can-modal-content">
 
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-                <h5 class="modal-title">CAN Protocol Configuration</h5>
-
+            <div class="modal-header amd-can-modal-header">
+                <h5 class="modal-title" id="canModalTitle">CAN Protocol Configuration</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body amd-can-modal-body">
                 <div class="row">
                     <div class="col-md-12">
                         <form id="canForm">
@@ -349,19 +364,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     </select>
                                 </div>
                                 <div id="dynamicCanFields"></div>
-                                <!-- Submit -->
-                                <!-- <button type="button" class="btn btn-success mt-4">Generate JSON</button> -->
                         </form>
                     </div>
-                    <div class="col-md-12 text-right">
-                        <button type="button" class="btn btn-success mt-4" onclick="generateJSON()">Submit</button>
-                    </div>
                 </div>
-                <!-- Output JSON -->
-                <!-- <div class="mt-4">
-                    <label class="form-label">Generated JSON:</label>
-                    <textarea class="form-control" id="outputJson" rows="10" readonly></textarea>
-                </div> -->
+            </div>
+            <div class="modal-footer amd-can-modal-footer">
+                <button type="button" class="btn btn-success amd-can-submit-btn" onclick="generateJSON()">Submit</button>
             </div>
 
         </div>

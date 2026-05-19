@@ -1,26 +1,31 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('protocol-create') }}">
+@endpush
 @section('content')
-<section id="main-content">
+@php
+    $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+@endphp
+<section id="main-content" class="protocol-page protocol-create-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        @php
-                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
-                        @endphp
-                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
-                        <li class="active"><a href="#">Add New Protocol</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="protocol-breadcrumb-wrap">
+            <nav class="protocol-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Add New Protocol</span>
+            </nav>
         </div>
 
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <h2>Create New Protocol</h2>
+                        <h2 class="create-protocol-title">
+                            <i class="fa fa-cubes"></i>
+                            Create New Protocol
+                        </h2>
                         <div class="clearfix"></div>
                     </div>
                     <div class="c_content">
@@ -36,11 +41,11 @@
 
                         <form class="form-horizontal" method="POST" action="{{ route($routePrefix . '.store') }}">
                             @csrf
-                            
+
                             <div class="form-group">
                                 <label class="control-label col-md-3 col-sm-12">Protocol Name <span class="text-danger">*</span></label>
                                 <div class="col-md-6 col-sm-12">
-                                    <input type="text" name="name" class="form-control" required 
+                                    <input type="text" name="name" class="form-control" required
                                         placeholder="e.g. HTTP, MQTT, Custom Binary" value="{{ old('name') }}">
                                 </div>
                             </div>
@@ -48,7 +53,7 @@
                             <div class="form-group">
                                 <label class="control-label col-md-3 col-sm-12">Description (Optional)</label>
                                 <div class="col-md-6 col-sm-12">
-                                    <textarea name="description" class="form-control" rows="4" 
+                                    <textarea name="description" class="form-control" rows="4"
                                         placeholder="Briefly describe the protocol's purpose...">{{ old('description') }}</textarea>
                                 </div>
                             </div>
@@ -69,4 +74,5 @@
         </div>
     </section>
 </section>
+
 @endsection

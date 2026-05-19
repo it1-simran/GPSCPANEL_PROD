@@ -1,4 +1,8 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-device') }}">
+@endpush
 @section('content')
 <?php
 
@@ -10,29 +14,32 @@ $idsArray = [1];
 $currentEmail = Auth::user()->email;
 ?>
 <meta name="csrf-token" content="{{ csrf_token() }}">
+
 <section id="main-content">
   <section class="wrapper">
     <!--======== Page Title and Breadcrumbs Start ========-->
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-          <li><a href="#">Device Management</a></li>
-            @if(Auth::user()->user_type=='Admin' and url('admin/view-device-assign')==url()->current())
-            <li class="active"><a href="#">View Assigned Devices</a></li>
-            @elseif(Auth::user()->user_type=='Admin' and url('admin/view-device-unassign')==url()->current())
-            <li class="active"><a href="#">View Unassigned Devices</a></li>
-            @endif
-          </ul>
-        </nav>           
-      </div>
+    <div class="vd-breadcrumb-wrap">
+      <nav class="vd-breadcrumb">
+        <a href="{{ url('admin') }}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
+        <a href="{{ url('admin') }}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item">Device Management</span>
+        <span class="bc-sep">›</span>
+        @if(Auth::user()->user_type=='Admin' and url('admin/view-device-assign')==url()->current())
+          <span class="bc-item active">View Assigned Devices</span>
+        @elseif(Auth::user()->user_type=='Admin' and url('admin/view-device-unassign')==url()->current())
+          <span class="bc-item active">View Unassigned Devices</span>
+        @else
+          <span class="bc-item active">View Devices</span>
+        @endif
+      </nav>
     </div>
     <div class="row">
       <div class="col-md-12">
         <div class="c_panel">
           <div class="c_title" style="margin-bottom: 10px;">
             <div class="row bgx-title-container">
-              <div class="col-lg-6">
+              <div class="{{ Auth::user()->user_type == 'Admin' ? 'col-lg-6' : 'col-lg-12' }}">
                 @if(Auth::user()->user_type=='Admin' and url('admin/view-device-assign')==url()->current())
                 <h2>Show Assigned Devices</h2>
                 @elseif(Auth::user()->user_type=='Admin' and url('admin/view-device-unassign')==url()->current())
@@ -125,12 +132,43 @@ $currentEmail = Auth::user()->email;
     </div>
   </div>
   </div>
-<style>
-  .example th, .example td {
-      white-space: nowrap !important;
-  }
-</style>
+
+<div class="gps-toast-container" id="gpsToastContainer"></div>
 <script>
+  function showToast(msg, type, title) {
+    type = type || 'warning';
+    if (typeof window.showGpsToast === 'function') {
+      var map = { warning: 'warning', success: 'success', error: 'error', danger: 'error', info: 'info' };
+      var t = map[type] || 'warning';
+      var titles = { warning: 'Warning', success: 'Success', error: 'Error', info: 'Information' };
+      var resolvedTitle = title || titles[type] || titles[t] || 'Notice';
+      window.showGpsToast(t, resolvedTitle, msg, { durationMs: 5000 });
+      return;
+    }
+    var icons = { warning: 'fa-exclamation-triangle', success: 'fa-check-circle', error: 'fa-times-circle' };
+    var titles = { warning: 'Warning', success: 'Success', error: 'Error' };
+    title = title || titles[type];
+    var container = document.getElementById('gpsToastContainer');
+    var toast = document.createElement('div');
+    toast.className = 'gps-toast toast-' + type;
+    toast.innerHTML =
+      '<div class="gps-toast-icon"><i class="fa ' + icons[type] + '"></i></div>' +
+      '<div class="gps-toast-body"><p class="gps-toast-title">' + title + '</p><p class="gps-toast-msg">' + msg + '</p></div>' +
+      '<button class="gps-toast-close">&times;</button>' +
+      '<div class="gps-toast-progress"></div>';
+    toast.querySelector('.gps-toast-close').addEventListener('click', function() {
+      toast.classList.add('removing');
+      setTimeout(function() { toast.remove(); }, 300);
+    });
+    container.appendChild(toast);
+    setTimeout(function() {
+      if (toast.parentNode) {
+        toast.classList.add('removing');
+        setTimeout(function() { toast.remove(); }, 300);
+      }
+    }, 3000);
+  }
+
   $(document).ready(function() {
     function initializeDataTables() {
       $('.example').each(function() {
@@ -179,7 +217,7 @@ $currentEmail = Auth::user()->email;
     // Initialize datatables AFTER making the active tab visible!
     // This allows DataTables to correctly calculate columns width for the visible tab.
     initializeDataTables();
-    
+
     // Explicitly adjust columns just in case
     setTimeout(function() {
         if ($.fn.DataTable) {
@@ -193,6 +231,13 @@ $currentEmail = Auth::user()->email;
     }, 100);
 
     $('.dataTables_filter input').attr("placeholder", "Zoeken...");
+    $('.dataTables_length select').each(function() {
+      if (!$(this).val()) {
+        $(this).val('25');
+      }
+      this.style.color = '#1e293b';
+      this.style.backgroundColor = '#fff';
+    });
     
     $('#certificatePreviewBtn').on('click', function() {
       var deviceId = $('#certificateForm').data('deviceId');
@@ -214,7 +259,7 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
         var categoryId = $(this).data('category-id');
         $("#user-responsive" + categoryId).modal('show');
@@ -228,7 +273,7 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
         var categoryId = $(this).data('category-id');
         $("#template-responsive" + categoryId).modal('show');
@@ -241,36 +286,48 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
-        var check = confirm("Are you sure want to delete these Device?");
-        if (check == true) {
-          var join_selected_values = allVals.join(",");
-          $.ajax({
-            url: $(this).data('url'),
-            type: 'DELETE',
-            headers: {
-              'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            data: 'ids=' + join_selected_values,
-            success: function(data) {
-              if (data['success']) {
-                $(".sub_chk:checked").each(function() {
-                  $(this).parents("tr").remove();
-                });
-                alert(data['success']);
-                location.reload();
-              } else if (data['error']) {
-                alert(data['error']);
-              } else {
-                // alert('Whoops Something went wrong!!');
-              }
-            },
-            error: function(data) {
-              alert(data.responseText);
+        Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure want to delete these ' + allVals.length + ' Devices?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'No',
+            background: '#1e293b',
+            color: '#f8fafc'
+        }).then((result) => {
+            if (result.isConfirmed) {
+              var join_selected_values = allVals.join(",");
+              $.ajax({
+                url: $(this).data('url'),
+                type: 'DELETE',
+                headers: {
+                  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: 'ids=' + join_selected_values,
+                success: function(data) {
+                  if (data['success']) {
+                    $(".sub_chk:checked").each(function() {
+                      $(this).parents("tr").remove();
+                    });
+                    showToast(data['success'], "success", "Success");
+                    setTimeout(function(){ location.reload(); }, 1500);
+                  } else if (data['error']) {
+                    showToast(data['error'], "error", "Error");
+                  } else {
+                    // alert('Whoops Something went wrong!!');
+                  }
+                },
+                error: function(data) {
+                  showToast(data.responseText, "error", "Error");
+                }
+              });
             }
-          });
-        }
+        });
       }
     });
     $('.user_assign_all').on('click', function(e) {
@@ -280,7 +337,7 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
         var join_selected_values = allVals.join(",");
         var id = $(this).data('attr');
@@ -331,7 +388,7 @@ $currentEmail = Auth::user()->email;
         allVals.push($(this).attr('data-id'));
       });
       if (allVals.length <= 0) {
-        alert("Please select Device.");
+        showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
         var join_selected_values = allVals.join(",");
         var temp_id = $(this).closest('.modal-body').find('.assignDeviceTemp').val();
@@ -422,7 +479,6 @@ $currentEmail = Auth::user()->email;
       return false;
   }
 </script>
-
 
 
 

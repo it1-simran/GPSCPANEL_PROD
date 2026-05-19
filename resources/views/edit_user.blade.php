@@ -1,4 +1,8 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('edit-user') }}">
+@endpush
 @section('content')
 <?php
 
@@ -29,21 +33,22 @@ $get_default_template = DB::table('templates')
   ->where('templates.default_template', '1')
   ->first();
 ?>
+
 <!--main content start-->
 <section id="main-content">
   <section class="wrapper">
     <!--======== Page Title and Breadcrumbs Start ========-->
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-            <li><a href="#">Account</a></li>
-
-            <li><a href="/{{$url_type}}/view-user">View Account</a></li>
-            <li class="active"><a href="#">Update Account</a></li>
-          </ul>
-        </nav>
-      </div>
+    <div class="eu-breadcrumb-wrap">
+      <nav class="eu-breadcrumb">
+        <a href="/{{$url_type}}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
+        <a href="/{{$url_type}}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item">Account</span>
+        <span class="bc-sep">›</span>
+        <a href="/{{$url_type}}/view-user" class="bc-item">View Account</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">Update Account</span>
+      </nav>
     </div>
     <!--======== Page Title and Breadcrumbs End ========-->
     <!--======== Form Validation Content Start End ========-->
@@ -384,87 +389,82 @@ $get_default_template = DB::table('templates')
                   <input type="hidden" name="configuration[{{ $category->id }}][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['ping_interval']['value'])  ? $configurationValue['ping_interval']['value'] : '' }}" />
                   <input type="hidden" name="configuration[{{ $category->id }}][is_editable]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['is_editable']['value'])  ? $configurationValue['is_editable']['value'] : '' }}" />
                   @endif
-                  <div class="row">
-                    @if( $category->is_can_protocol == 1 )
-                    <div class="isCanEnable{{$category->id}}" style="padding: 0px 25px;">
-                      <label for="canConfigurationArr" class="control-label">
-                        CAN Configuration <span class="require">*</span>
-                      </label>
-                      <div class="col-lg-12 padding-1">
+                  @if( $category->is_can_protocol == 1 )
+                  <div class="row" style="padding: 0 15px;">
+                    <div class="col-lg-12">
+                      <div class="can-config-box isCanEnable{{$category->id}}">
+                        <label class="can-config-label"><i class="fa fa-cogs"></i> CAN Configuration <span class="require">*</span></label>
                         @php
                         $value = isset($canConfigurations[$category->id] ) ?$canConfigurations[$category->id]: [];
                         $result = is_array($value) ? json_encode($value) : $value;
                         @endphp
-                        <input type="text" class="form-control" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value="{{$result}}" readonly />
-                        <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display: none;"></div>
-                        <button type="button" class="btn btn-primary" onclick="openCanModal('{{ $category->id }}')">
-                          Configure CAN Protocol
+                        <div class="can-config-input-wrap">
+                          <input type="text" class="form-control can-config-input" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value="{{$result}}" readonly />
+                          <button type="button" class="can-copy-btn" onclick="copyCanConfig('canConfigurationArr{{$category->id}}')" title="Copy to clipboard">
+                            <i class="fa fa-copy"></i>
+                          </button>
+                        </div>
+                        <div class="alert alert-danger modelName_error" role="alert" style="display: none;"></div>
+                        <button type="button" class="btn btn-primary can-config-btn" onclick="openCanModal('{{ $category->id }}')">
+                          <i class="fa fa-sliders" style="margin-right:6px;"></i> Configure CAN Protocol
                         </button>
                       </div>
                     </div>
-                    @endif
                   </div>
+                  @endif
                 </div>
-                <div class="modal" id="canModal{{$category->id}}">
-                  <div class="modal-dialog modal-md">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">
-                          <i class="fa fa-times"></i>
-                        </button>
-                        <h5 class="modal-title">CAN Protocol Configuration</h5>
-                      </div>
-                      <div class="modal-body">
-                        <div class="row">
-                          <div class="col-md-12" style="padding: 0px 25px;">
-                            <div id="canForm">
-                              <!-- Protocol Selection -->
-                              <div class="form-group isCanEnable">
-                                <div style="margin:10px 0px;">
-                                  <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                  <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]" class="form-control">
-                                    <option value="">-- Select CAN Channel --</option>
-                                    <option value="1">CAN 1</option>
-                                    <option value="2">CAN 2</option>
-                                    <option value="3">CAN 3</option>
-                                    <option value="4">CAN 4</option>
-                                  </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                  <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                  <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control">
-                                    <option value="">-- Select Baud Rate --</option>
-                                    <option value="500">500 kbps</option>
-                                    <option value="250">250 kbps</option>
-                                  </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                  <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                  <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control">
-                                    <option value="">-- Select Can ID --</option>
-                                    <option value="0">Standard</option>
-                                    <option value="1">Extended</option>
-                                  </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                  <label for="can_protocol" class="control-label padding-left-3">
-                                    CAN Protocol <span class="require">*</span>
-                                  </label>
-                                  <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control" onchange="selectedCanProtocol(
-                                    '{{$category->id}}')">
-                                    <option value="">Select Protocol</option>
-                                    <option value="1">J1979</option>
-                                    <option value="2">J1939</option>
-                                    <option value="3">Custom CAN</option>
-                                  </select>
-                                </div>
-                                <div id="dynamicCanFields{{$category->id}}"></div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="col-md-12 text-right">
-                            <button type="button" class="btn btn-success mt-4" onclick="generateJSON('{{$category->id}}')">Submit</button>
-                          </div>
+                <div class="modal can-modal" id="canModal{{$category->id}}">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content can-modal-content">
+                      <div class="can-accent-bar"></div>
+                      <button type="button" class="can-close" data-dismiss="modal">&times;</button>
+                      <div class="can-body">
+                        <div class="can-hero">
+                          <div class="can-icon-ring"><i class="fa fa-sliders"></i></div>
+                          <h3 class="can-title">CAN Protocol Configuration</h3>
+                          <p class="can-subtitle">Configure CAN bus parameters for {{ CommonHelper::getDeviceCategoryName($category->id) }}</p>
+                        </div>
+                        <div class="can-field-group">
+                          <label class="can-label"><i class="fa fa-plug"></i> CAN Channel <span class="require">*</span></label>
+                          <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]" class="form-control">
+                            <option value="">-- Select CAN Channel --</option>
+                            <option value="1">CAN 1</option>
+                            <option value="2">CAN 2</option>
+                            <option value="3">CAN 3</option>
+                            <option value="4">CAN 4</option>
+                          </select>
+                        </div>
+                        <div class="can-field-group">
+                          <label class="can-label"><i class="fa fa-tachometer"></i> CAN Baud Rate <span class="require">*</span></label>
+                          <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control">
+                            <option value="">-- Select Baud Rate --</option>
+                            <option value="500">500 kbps</option>
+                            <option value="250">250 kbps</option>
+                          </select>
+                        </div>
+                        <div class="can-field-group">
+                          <label class="can-label"><i class="fa fa-tag"></i> CAN ID Type <span class="require">*</span></label>
+                          <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control">
+                            <option value="">-- Select CAN ID --</option>
+                            <option value="0">Standard</option>
+                            <option value="1">Extended</option>
+                          </select>
+                        </div>
+                        <div class="can-field-group">
+                          <label class="can-label"><i class="fa fa-cogs"></i> CAN Protocol <span class="require">*</span></label>
+                          <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control" onchange="selectedCanProtocol('{{$category->id}}')">
+                            <option value="">-- Select Protocol --</option>
+                            <option value="1">J1979</option>
+                            <option value="2">J1939</option>
+                            <option value="3">Custom CAN</option>
+                          </select>
+                        </div>
+                        <div class="can-dynamic-fields" id="dynamicCanFields{{$category->id}}"></div>
+                        <div class="can-actions">
+                          <button type="button" class="btn can-btn-cancel" data-dismiss="modal">Cancel</button>
+                          <button type="button" class="btn can-btn-submit" onclick="generateJSON('{{$category->id}}')">
+                            <i class="fa fa-check"></i> Submit
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -496,6 +496,20 @@ $get_default_template = DB::table('templates')
 @stop
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script type="text/javascript">
+  function copyCanConfig(inputId) {
+    var input = document.getElementById(inputId);
+    var text = input.value;
+    navigator.clipboard.writeText(text).then(function() {
+      var btn = input.closest('.can-config-input-wrap').querySelector('.can-copy-btn');
+      btn.classList.add('copied');
+      btn.innerHTML = '<i class="fa fa-check"></i>';
+      setTimeout(function() {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<i class="fa fa-copy"></i>';
+      }, 1500);
+    });
+  }
+
   function openCanModal(index) {
     $('#canModal' + index).modal('show');
 
@@ -1394,78 +1408,76 @@ $get_default_template = DB::table('templates')
               htmlContent += '</div></div></div>';
               if (canEnable) {
                 htmlContent += `
-                <div class="isCanEnable` + deviceCategoryId + `" style="padding: 0px 25px;">
-                    <label for="canConfigurationArr" class="control-label" required>
-                        CAN Configuration <span class="require">*</span>
-                    </label>
-                    <div class="col-lg-12 padding-1">
-                        <input type="text" class="form-control" name="canConfigurationArr[${deviceCategoryId}]" id="canConfigurationArr${deviceCategoryId}" value="" readonly />
-                        <div class="col-sm-12 alert alert-danger modelName_error" role="alert" style="display: none;"></div>
-                        <button type="button" class="btn btn-primary" onclick="openCanModal1(` + deviceCategoryId + `)">
-                            Configure CAN Protocol
+                <div class="row" style="padding: 0 15px;">
+                  <div class="col-lg-12">
+                    <div class="can-config-box isCanEnable${deviceCategoryId}">
+                      <label class="can-config-label"><i class="fa fa-cogs"></i> CAN Configuration <span class="require">*</span></label>
+                      <div class="can-config-input-wrap">
+                        <input type="text" class="form-control can-config-input" name="canConfigurationArr[${deviceCategoryId}]" id="canConfigurationArr${deviceCategoryId}" value="" readonly />
+                        <button type="button" class="can-copy-btn" onclick="copyCanConfig('canConfigurationArr${deviceCategoryId}')" title="Copy to clipboard">
+                          <i class="fa fa-copy"></i>
                         </button>
+                      </div>
+                      <div class="alert alert-danger modelName_error" role="alert" style="display: none;"></div>
+                      <button type="button" class="btn btn-primary can-config-btn" onclick="openCanModal1(${deviceCategoryId})">
+                        <i class="fa fa-sliders" style="margin-right:6px;"></i> Configure CAN Protocol
+                      </button>
                     </div>
+                  </div>
                 </div>`;
                 htmlContent += `
-                    <div class="modal" id="canModal1` + deviceCategoryId + `" aria-hidden="true">
-                      <div class="modal-dialog modal-md">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-                              <i class="fa fa-times"></i>
-                            </button>
-                            <h5 class="modal-title">CAN Protocol Configuration</h5>
-                          </div>
-                          <div class="modal-body">
-                            <div class="row">
-                              <div class="col-md-12" style="padding: 0px 25px;">
-                                <div id="canForm">
-                                  <!-- Protocol Selection -->
-                                    <div class="form-group isCanEnable">
-                                      <div style="margin:10px 0px;">
-                                        <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                        <select class="form-control" id="can_channel${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_channel]" required>
-                                          <option value="">-- Select CAN Channel --</option>
-                                          <option value="1">CAN 1</option>
-                                          <option value="2">CAN 2</option>
-                                          <option value="3">CAN 3</option>
-                                          <option value="4">CAN 4</option>
-                                        </select>
-                                      </div>
-                                      <div style="margin:10px 0px;">
-                                        <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                        <select id="can_baud_rate${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_baud_rate]" class="form-control" required>
-                                          <option value="">-- Select Baud Rate --</option>
-                                          <option value="500">500 kbps</option>
-                                          <option value="250">250 kbps</option>
-                                        </select>
-                                      </div>
-                                      <div style="margin:10px 0px;">
-                                        <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                        <select id="can_id_type${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_id_type]" class="form-control" required>
-                                          <option value="">-- Select Can ID --</option>
-                                          <option value="0">Standard</option>
-                                          <option value="1">Extended</option>
-                                        </select>
-                                      </div>
-                                      <div style="margin:10px 0px;">
-                                        <label for="can_protocol" class="control-label padding-left-3">
-                                          CAN Protocol <span class="require">*</span>
-                                        </label>
-                                        <select id="can_protocol${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_protocol]" class="form-control" onchange="selectedCanProtocol1(${deviceCategoryId})">
-                                          <option value="">Select Protocol</option>
-                                          <option value="1">J1979</option>
-                                          <option value="2">J1939</option>
-                                          <option value="3">Custom CAN</option>
-                                        </select>
-                                      </div>
-                                    </div>
-                                  <div id="dynamicCanFields1${deviceCategoryId}"></div>
-                                </div>
-                              </div>
-                              <div class="col-md-12 text-right">
-                                <button type="button" class="btn btn-success mt-4" onclick="generateJSON1(${deviceCategoryId})">Submit</button>
-                              </div>
+                    <div class="modal can-modal" id="canModal1${deviceCategoryId}" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content can-modal-content">
+                          <div class="can-accent-bar"></div>
+                          <button type="button" class="can-close" data-dismiss="modal">&times;</button>
+                          <div class="can-body">
+                            <div class="can-hero">
+                              <div class="can-icon-ring"><i class="fa fa-sliders"></i></div>
+                              <h3 class="can-title">CAN Protocol Configuration</h3>
+                              <p class="can-subtitle">Configure CAN bus parameters for ${data.device_category_name}</p>
+                            </div>
+                            <div class="can-field-group">
+                              <label class="can-label"><i class="fa fa-plug"></i> CAN Channel <span class="require">*</span></label>
+                              <select class="form-control" id="can_channel${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_channel]" required>
+                                <option value="">-- Select CAN Channel --</option>
+                                <option value="1">CAN 1</option>
+                                <option value="2">CAN 2</option>
+                                <option value="3">CAN 3</option>
+                                <option value="4">CAN 4</option>
+                              </select>
+                            </div>
+                            <div class="can-field-group">
+                              <label class="can-label"><i class="fa fa-tachometer"></i> CAN Baud Rate <span class="require">*</span></label>
+                              <select id="can_baud_rate${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_baud_rate]" class="form-control" required>
+                                <option value="">-- Select Baud Rate --</option>
+                                <option value="500">500 kbps</option>
+                                <option value="250">250 kbps</option>
+                              </select>
+                            </div>
+                            <div class="can-field-group">
+                              <label class="can-label"><i class="fa fa-tag"></i> CAN ID Type <span class="require">*</span></label>
+                              <select id="can_id_type${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_id_type]" class="form-control" required>
+                                <option value="">-- Select CAN ID --</option>
+                                <option value="0">Standard</option>
+                                <option value="1">Extended</option>
+                              </select>
+                            </div>
+                            <div class="can-field-group">
+                              <label class="can-label"><i class="fa fa-cogs"></i> CAN Protocol <span class="require">*</span></label>
+                              <select id="can_protocol${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_protocol]" class="form-control" onchange="selectedCanProtocol1(${deviceCategoryId})">
+                                <option value="">-- Select Protocol --</option>
+                                <option value="1">J1979</option>
+                                <option value="2">J1939</option>
+                                <option value="3">Custom CAN</option>
+                              </select>
+                            </div>
+                            <div class="can-dynamic-fields" id="dynamicCanFields1${deviceCategoryId}"></div>
+                            <div class="can-actions">
+                              <button type="button" class="btn can-btn-cancel" data-dismiss="modal">Cancel</button>
+                              <button type="button" class="btn can-btn-submit" onclick="generateJSON1(${deviceCategoryId})">
+                                <i class="fa fa-check"></i> Submit
+                              </button>
                             </div>
                           </div>
                         </div>

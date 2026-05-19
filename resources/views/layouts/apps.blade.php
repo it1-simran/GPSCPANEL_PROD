@@ -7,6 +7,50 @@ $tickets = TicketModel::where('is_read', 0)->get();
 $latestVersion = versionModel::latest('created_at')->first();
 
 $ticketCount = $tickets->count();
+$userType = Auth::check() ? strtolower(trim((string) Auth::user()->user_type)) : '';
+
+$globalSearchItems = [];
+if ($userType === 'admin') {
+    $globalSearchItems = [
+        ['label' => 'Dashboard', 'url' => url('/admin'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'Raised Tickets', 'url' => url('/admin/tickets'), 'keywords' => ['ticket', 'raised', 'complaint', 'issue']],
+        ['label' => 'Version Management', 'url' => url('/admin/version-control'), 'keywords' => ['version', 'release', 'notes']],
+        ['label' => 'IMEI Management', 'url' => url('/admin/view-imeis'), 'keywords' => ['imei', 'imei list']],
+        ['label' => 'Live Tracker', 'url' => url('/admin/tracker'), 'keywords' => ['live', 'tracker', 'tracking', 'logs']],
+        ['label' => 'Manage Test Plans', 'url' => url('/admin/test-plans'), 'keywords' => ['test', 'plans', 'automation']],
+        ['label' => 'Test Validation', 'url' => url('/admin/test-validate'), 'keywords' => ['validate', 'execution', 'run test']],
+        ['label' => 'Protocol Management', 'url' => url('/admin/protocols'), 'keywords' => ['protocol', 'packet', 'alerts']],
+        ['label' => 'View Settings', 'url' => url('/admin/view-template'), 'keywords' => ['settings', 'template', 'config']],
+        ['label' => 'View Devices', 'url' => url('/admin/view-device-assign'), 'keywords' => ['device', 'assigned']],
+    ];
+} elseif ($userType === 'support') {
+    $globalSearchItems = [
+        ['label' => 'Dashboard', 'url' => url('/support'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'Ticket Management', 'url' => url('/support/view-ticket'), 'keywords' => ['ticket', 'raise ticket', 'issue', 'support ticket']],
+        ['label' => 'User Approval', 'url' => url('/support/view-user-approval-request'), 'keywords' => ['approval', 'user approval', 'account approval']],
+        ['label' => 'View Devices', 'url' => url('/support/view-device'), 'keywords' => ['device', 'devices', 'imei']],
+        ['label' => 'Assign Devices', 'url' => url('/support/assign-device'), 'keywords' => ['assign device', 'multiple device']],
+        ['label' => 'Manage Trackers', 'url' => url('/support/imei-devices'), 'keywords' => ['tracker', 'imei devices', 'manage tracker']],
+        ['label' => 'Live Track / Logs', 'url' => url('/support/tracker'), 'keywords' => ['live', 'tracking', 'logs', 'tracker logs']],
+        ['label' => 'Manage Test Plans', 'url' => url('/support/test-plans'), 'keywords' => ['test', 'plans', 'automation']],
+        ['label' => 'Test Validation', 'url' => url('/support/test-validate'), 'keywords' => ['validate', 'test validate', 'execution']],
+        ['label' => 'Protocol Management', 'url' => url('/support/protocols'), 'keywords' => ['protocol', 'packet', 'alerts']],
+        ['label' => 'View Settings', 'url' => url('/support/view-template'), 'keywords' => ['settings', 'template', 'config']],
+    ];
+} elseif ($userType === 'reseller') {
+    $globalSearchItems = [
+        ['label' => 'Dashboard', 'url' => url('/reseller'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'View Account', 'url' => url('/reseller/view-user'), 'keywords' => ['account', 'users']],
+        ['label' => 'Assigned Devices', 'url' => url('/reseller/view-device-assign'), 'keywords' => ['device', 'assigned devices']],
+        ['label' => 'View Settings', 'url' => url('/reseller/view-template'), 'keywords' => ['settings', 'template']],
+    ];
+} else {
+    $globalSearchItems = [
+        ['label' => 'Dashboard', 'url' => url('/user'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'View Device', 'url' => url('/user/view-device'), 'keywords' => ['device', 'devices']],
+        ['label' => 'View Settings', 'url' => url('/user/view-template'), 'keywords' => ['settings', 'template']],
+    ];
+}
 ?>
 
 <!DOCTYPE html>
@@ -21,7 +65,8 @@ $ticketCount = $tickets->count();
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <meta name="author" content="JSD Electronics">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <link rel="shortcut icon" href="">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
     <title>@yield('title', 'GPS Control Panel')</title>
 
     <!-- Start Global plugin css -->
@@ -43,33 +88,79 @@ $ticketCount = $tickets->count();
     <link href="{{ asset('assets/fonts/Open-Sans/open-sans.css?family=Open+Sans:300,400,700') }}" rel="stylesheet" />
     <link href="{{ asset('assets/vendors/jquery.multi-select/css/multi-select.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/vendors/select2/select2.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/css/custom.css?nocache=' . time()) }}" rel="stylesheet" />
+    <link href="{{ \App\Support\PortalAssets::publicUrl('assets/css/custom.css') }}" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::publicUrl('assets/css/portal/tokens.css') }}" />
+    <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @include('partials.gps-notifications-assets')
+
+    <!-- ===== Loader: Hide INSTANTLY in head if NOT a reload (before any paint) ===== -->
+    <script>
+        try {
+            var _entries = performance.getEntriesByType('navigation');
+            var _type = _entries.length
+                ? _entries[0].type
+                : (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
+            if (_type !== 'reload') {
+                document.documentElement.classList.add('no-loader');
+            }
+        } catch(e) { /* fail-safe: show loader */ }
+    </script>
+
+    <!-- Page loader + header / nav (assets/css/portal/layout-shell.css) -->
+    <link rel="stylesheet" href="{{ \App\Support\PortalAssets::publicUrl('assets/css/portal/layout-shell.css') }}">
+    {{-- Page-specific portal CSS is stacked after @yield('content') so it wins over theme/custom.css like former inline <style> in Blade. --}}
 </head>
 
-<body id="default-scheme">
+<body id="default-scheme" class="{{ $userType === 'reseller' ? 'user-reseller' : '' }}">
+    @include('partials.gps-flash-pull')
+
+    <!-- ===== Global Page Loader ===== -->
+    <div id="page-loader" role="status" aria-label="Loading page">
+        <div class="loader-icon">
+            <div class="loader-ring"></div>
+            <div class="loader-ring-2"></div>
+            <div class="loader-pin">
+                <!-- GPS Map Pin SVG -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                </svg>
+            </div>
+        </div>
+        <div class="loader-text">GPS Control Panel</div>
+        <div class="loader-dots" style="margin-top:10px;">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+    <!-- ===== End Page Loader ===== -->
+
     <section id="container">
         <!--header start-->
         <header class="header fixed-top clearfix">
             <!--logo start-->
             <div class="brand">
                 @if(Auth::user()->user_type == 'Admin')
-                    <a href="/admin" class="logo">
-                        Admin Area
+                    <a href="/admin" class="logo" style="margin-top: 1px; margin-left: 1px;">
+                        @include('partials.brand-gps-mark')
+                        <span class="brand-area-label">Admin Area</span>
                     </a>
                 @elseif(Auth::user()->user_type == 'Reseller')
-                    <a href="/reseller" class="logo">
-                        Manufacturer Area
+                    <a href="/reseller" class="logo" style="margin-top: 1px; margin-left: 1px;">
+                        @include('partials.brand-gps-mark')
+                        <span class="brand-area-label">Manufacturer Area</span>
                     </a>
                 @elseif(Auth::user()->user_type == 'Support')
-                    <a href="/user" class="logo">
-                        Support Area
+                    <a href="/support" class="logo" style="margin-top: 1px; margin-left: 1px;">
+                        @include('partials.brand-gps-mark')
+                        <span class="brand-area-label">Support Area</span>
                     </a>
-                @else(Auth::user()->user_type!=='User')
-                    <a href="/user" class="logo">
-                        Dealer Area
+                @else
+                    <a href="/user" class="logo" style="margin-top: 1px; margin-left: 1px;">
+                        @include('partials.brand-gps-mark')
+                        <span class="brand-area-label">Dealer Area</span>
                     </a>
                 @endif
-                <div class="sidebar-toggle-box">
+                <div class="sidebar-toggle-box" style="margin-top: 1px; margin-left: 1px;">
                     <div class="fa fa-bars"></div>
                 </div>
             </div>
@@ -86,75 +177,93 @@ $ticketCount = $tickets->count();
 
                     <!-- 🔔 Notification Dropdown -->
                     @if(Auth::user()->user_type == 'Admin')
-                        <li class="nav-item dropdown">
-                            <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-bell fa-lg"></i>
-                                @if($ticketCount > 0)
-                                    <span class="badge badge-danger rounded-circle position-absolute" id="notificationCount"
-                                        style="font-size: 0.7rem; top: 0px; right: 0px;">
-                                        {{ $ticketCount }}
+                        <li class="nav-item dropdown gps-notif-nav">
+                            <a class="nav-link gps-notif-trigger" href="#" id="notificationDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                aria-label="Notifications{{ $ticketCount > 0 ? ' (' . $ticketCount . ' unread)' : '' }}">
+                                <span class="gps-notif-chip{{ $ticketCount > 0 ? ' gps-notif-chip--has-count' : '' }}">
+                                    <span class="gps-notif-chip__bell" aria-hidden="true">
+                                        <i class="fa fa-bell"></i>
+                                        @if($ticketCount > 0)
+                                            <span class="gps-notif-chip__dot" aria-hidden="true"></span>
+                                        @endif
                                     </span>
-                                @endif
+                                    @if($ticketCount > 0)
+                                        <span class="gps-notif-chip__count" id="notificationCount" data-digits="{{ strlen((string) $ticketCount) }}">{{ $ticketCount }}</span>
+                                    @endif
+                                </span>
                             </a>
 
-                            <div class="dropdown-menu dropdown-menu-right shadow border-0"
-                                aria-labelledby="notificationDropdown"
-                                style="width: 340px; max-height: 420px; overflow-y: auto; border-radius: 12px;">
+                            <div class="dropdown-menu dropdown-menu-right notif-dropdown-menu"
+                                aria-labelledby="notificationDropdown">
 
-                                <!-- Header -->
-                                <div class="padding-5 d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light"
-                                    style="width: auto;align-items: center;justify-content: space-between">
-                                    <h6 class="mb-0 font-weight-bold text-dark">Notifications</h6>
-                                    <a href="#" class="small text-muted">Mark all as read</a>
+                                <!-- Notification Header -->
+                                <div class="notif-header">
+                                    <h6>Notifications
+                                        @if($ticketCount > 0)
+                                            <span style="background:rgba(118,207,28,0.2);color:#76CF1C;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;">
+                                                {{ $ticketCount }} new
+                                            </span>
+                                        @endif
+                                    </h6>
+                                    <a href="#" class="notif-mark-read">Mark all as read</a>
                                 </div>
 
-                                <!-- Notifications List -->
-                                <div id="notificationList" class="list-group list-group-flush">
+                                <!-- Notification List -->
+                                <div class="notif-list" id="notificationList">
                                     @forelse($tickets as $ticket)
-                                        <a class="list-group-item list-group-item-action d-flex align-items-start {{ $ticket->is_read ? '' : 'bg-light' }}"
+                                        <a class="notif-item {{ $ticket->is_read ? '' : 'unread' }}"
                                             href="/admin/tickets">
-                                            <div class="me-3">
+                                            <div class="notif-icon-chip {{ $ticket->type === 'error' ? 'error' : ($ticket->type === 'updation' ? 'update' : 'default') }}">
                                                 @if($ticket->type === 'error')
-                                                    <i class="fa fa-exclamation-circle padding-10 text-danger fa-lg"></i>
+                                                    <i class="fa fa-exclamation-circle"></i>
                                                 @elseif($ticket->type === 'updation')
-                                                    <i class="fa fa-refresh text-info padding-10 fa-lg"></i>
+                                                    <i class="fa fa-refresh"></i>
                                                 @else
-                                                    <i class="fa fa-bell text-secondary padding-10 fa-lg"></i>
+                                                    <i class="fa fa-bell"></i>
                                                 @endif
                                             </div>
-                                            <div>
-                                                <div class="fw-bold text-dark">
-                                                    {{ ucfirst($ticket->subject) }} - {{ ucfirst($ticket->type) }}
+                                            <div class="notif-body">
+                                                <div class="notif-title">{{ ucfirst($ticket->subject) }} &mdash; {{ ucfirst($ticket->type) }}</div>
+                                                <div class="notif-desc">{{ $ticket->description }}</div>
+                                                <div class="notif-time">
+                                                    <i class="fa fa-clock-o" style="font-size:10px;"></i>
+                                                    {{ \Carbon\Carbon::parse($ticket->created_at)->diffForHumans() }}
                                                 </div>
-                                                <small class="text-muted d-block">{{ $ticket->description }}</small>
-                                                <small
-                                                    class="text-muted">{{ \Carbon\Carbon::parse($ticket->created_at)->diffForHumans() }}</small>
                                             </div>
                                         </a>
                                     @empty
-                                        <div class="p-3 text-center text-muted">
-                                            No new notifications
+                                        <div class="notif-empty">
+                                            <i class="fa fa-bell-slash-o"></i>
+                                            <p>No new notifications</p>
                                         </div>
                                     @endforelse
                                 </div>
 
                                 <!-- Footer -->
-                                <a class="d-flex padding-right-5 padding-bottom-10 dropdown-item text-center text-primary fw-bold py-2"
-                                    href="/admin/tickets" style="width: auto;align-items: center;justify-content: end;">
-                                    View all notifications
+                                <a class="notif-footer" href="/admin/tickets">
+                                    <i class="fa fa-eye"></i> View all notifications
                                 </a>
+
                             </div>
                         </li>
 
                     @endif
                     <li class="search-box">
-                        <input type="text" class="form-control search" placeholder="Search">
+                        <input type="text" id="global-nav-search" class="form-control search" list="global-nav-search-options"
+                            placeholder="Search pages or table data">
+                        <datalist id="global-nav-search-options">
+                            @foreach($globalSearchItems as $item)
+                                <option value="{{ $item['label'] }}"></option>
+                            @endforeach
+                        </datalist>
                     </li>
                     <li class="dropdown">
                         <a href="javascript:void(0);" class="user-profile dropdown-toggle" data-toggle="dropdown"
                             aria-expanded="false">
-                            <img src="{{ asset('assets/images/profile.jpg') }}" alt="image">{{ Auth::user()->email }}
+                            {{-- Dummy Avatar: First letter of email --}}
+                            <span class="nav-user-avatar">{{ strtoupper(substr(Auth::user()->email, 0, 1)) }}</span>
+                            <span class="nav-email-text">{{ Auth::user()->email }}</span>
                             <span class="fa fa-angle-down"></span>
                         </a>
                         <ul class="dropdown-menu dropdown-usermenu animated fadeInUp pull-right">
@@ -347,9 +456,9 @@ $ticketCount = $tickets->count();
                             </li>
 
                             <li
-                                class='sub-menu {{ request()->is('admin/add-device-category', 'admin/View-device-category', 'admin/restore-device-category', 'admin/view-device-category-fields') ? 'active' : '' }}'>
+                                class='sub-menu {{ request()->is('admin/add-device-category', 'admin/view-device-category', 'admin/restore-device-category', 'admin/view-device-category-fields') ? 'active' : '' }}'>
                                 <a href="#"
-                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/add-device-category', 'admin/View-device-category', 'admin/restore-device-category', 'admin/view-device-category-fields') ? 'active' : '' }}">
+                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/add-device-category', 'admin/view-device-category', 'admin/restore-device-category', 'admin/view-device-category-fields') ? 'active' : '' }}">
                                     <span class='icon-sidebar pe-7s-safe fa-2x'></span><span>Device Category</span>
                                 </a>
                                 <ul class='sub'>
@@ -359,9 +468,9 @@ $ticketCount = $tickets->count();
                                             Add Device Category
                                         </a>
                                     </li>
-                                    <li class="{{ request()->is('admin/View-device-category') ? 'active' : '' }}">
-                                        <a href="{{ url('admin/View-device-category') }}"
-                                            class="{{ request()->is('admin/View-device-category') ? 'active' : '' }}">
+                                    <li class="{{ request()->is('admin/view-device-category') ? 'active' : '' }}">
+                                        <a href="{{ url('admin/view-device-category') }}"
+                                            class="{{ request()->is('admin/view-device-category') ? 'active' : '' }}">
                                             View Device Category
                                         </a>
                                     </li>
@@ -503,9 +612,9 @@ $ticketCount = $tickets->count();
                                 </ul>
                             </li>
 
-                            <li class="{{ request()->is('reseller/View-device-category') ? 'active' : '' }}">
-                                <a href="{{ url('reseller/View-device-category') }}"
-                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/View-device-category') ? 'active' : '' }}">
+                            <li class="{{ request()->is('reseller/view-device-category') ? 'active' : '' }}">
+                                <a href="{{ url('reseller/view-device-category') }}"
+                                    class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/view-device-category') ? 'active' : '' }}">
                                     <span class='icon-sidebar icon-home fa-2x'></span><span>View Device Category</span>
                                 </a>
                             </li>
@@ -734,6 +843,15 @@ $ticketCount = $tickets->count();
                             <!--    </ul>-->
                             <!--</li>-->
                         @endif
+
+                        {{-- Mobile logout button --}}
+                        <li class="sidebar-logout-mobile">
+                            <a href="{{ route('logout') }}"
+                               onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                               class="hvr-bounce-to-right-sidebar-parent">
+                                <span class="icon-sidebar fa fa-sign-out fa-2x"></span><span>Logout</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <!-- sidebar menu end-->
@@ -741,6 +859,7 @@ $ticketCount = $tickets->count();
         </aside>
         <!--sidebar end-->
         @yield('content')
+        @stack('styles')
     </section>
     <!--/.container-->
 
@@ -758,7 +877,385 @@ $ticketCount = $tickets->count();
     <script src="{{ asset('assets/js/form-plupload.js') }}"></script>
     <script src="{{ asset('assets/js/form-x-editable.js') }}"></script>
     <script src="{{ asset('assets/js/portal.js') }}"></script>
+    @stack('scripts')
+
+    <!-- ===== Page Loader Script ===== -->
+    <script>
+        (function () {
+            var loader = document.getElementById('page-loader');
+            if (!loader) return;
+
+            // If head script already marked as no-loader, nothing to do
+            if (document.documentElement.classList.contains('no-loader')) return;
+
+            // Fail-safe: default TRUE so loader shows if detection is uncertain
+            var isReload = true;
+            try {
+                var _e = performance.getEntriesByType('navigation');
+                if (_e && _e.length) {
+                    isReload = (_e[0].type === 'reload');
+                } else if (performance.navigation) {
+                    isReload = (performance.navigation.type === 1);
+                }
+            } catch(e) { /* keep true */ }
+
+            if (!isReload) {
+                loader.style.display = 'none';
+                return;
+            }
+
+            // ---- Reload confirmed: show for min 1.5s then fade out ----
+            var MIN_SHOW_MS = 1500;
+            var startTime = Date.now();
+
+            function hideLoader() {
+                var elapsed = Date.now() - startTime;
+                var remaining = Math.max(0, MIN_SHOW_MS - elapsed);
+                setTimeout(function () {
+                    loader.classList.add('loader-hidden');
+                    setTimeout(function () {
+                        if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                    }, 600);
+                }, remaining);
+            }
+
+            if (document.readyState === 'complete') {
+                hideLoader();
+            } else {
+                window.addEventListener('load', hideLoader);
+            }
+
+            // Hard fallback: 8s
+            setTimeout(function () {
+                if (loader && loader.parentNode) {
+                    loader.classList.add('loader-hidden');
+                    setTimeout(function () {
+                        if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                    }, 600);
+                }
+            }, 8000);
+        })();
+    </script>
+    <script>
+        (function () {
+            var searchInput = document.getElementById('global-nav-search');
+            if (!searchInput) return;
+
+            var quickLinks = @json($globalSearchItems);
+
+            function normalize(value) {
+                return String(value || '').toLowerCase().trim();
+            }
+
+            function tryFilterCurrentDataTable(query) {
+                if (!window.jQuery || !$.fn || !$.fn.dataTable) return false;
+
+                try {
+                    var tablesApi = $.fn.dataTable.tables({ visible: true, api: true });
+                    if (!tablesApi || tablesApi.count() === 0) return false;
+                    tablesApi.search(query).draw();
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            function pickBestRoute(query) {
+                var q = normalize(query);
+                if (!q) return null;
+
+                var best = null;
+                quickLinks.forEach(function (item) {
+                    var score = 0;
+                    var label = normalize(item.label);
+                    var keywords = Array.isArray(item.keywords) ? item.keywords.map(normalize) : [];
+
+                    if (label === q) score += 120;
+                    if (label.indexOf(q) !== -1) score += 70;
+
+                    keywords.forEach(function (keyword) {
+                        if (!keyword) return;
+                        if (keyword === q) score += 100;
+                        else if (keyword.indexOf(q) !== -1) score += 40;
+                        else if (q.indexOf(keyword) !== -1) score += 20;
+                    });
+
+                    if (!best || score > best.score) {
+                        best = { score: score, item: item };
+                    }
+                });
+
+                return best && best.score > 0 ? best.item : null;
+            }
+
+            function executeSearch() {
+                var query = normalize(searchInput.value);
+                if (!query) return;
+
+                // 1) If current page has DataTable, search there first.
+                if (tryFilterCurrentDataTable(query)) return;
+
+                // 2) Fallback to role-based page routing.
+                var bestRoute = pickBestRoute(query);
+                if (bestRoute && bestRoute.url) {
+                    window.location.href = bestRoute.url;
+                } else {
+                    alert('No matching result found for your role.');
+                }
+            }
+
+            searchInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    executeSearch();
+                }
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            var sidebarScroller = document.querySelector('.leftside-navigation');
+            if (!sidebarScroller) return;
+
+            var storageKey = 'gpscpanel-sidebar-scroll';
+
+            // Restore sidebar scroll position after navigation.
+            try {
+                var savedScroll = window.localStorage.getItem(storageKey);
+                if (savedScroll !== null) {
+                    sidebarScroller.scrollTop = parseInt(savedScroll, 10) || 0;
+                }
+            } catch (error) {
+                // Ignore storage access issues.
+            }
+
+            function persistSidebarScroll() {
+                try {
+                    window.localStorage.setItem(storageKey, String(sidebarScroller.scrollTop));
+                } catch (error) {
+                    // Ignore storage access issues.
+                }
+            }
+
+            sidebarScroller.addEventListener('scroll', persistSidebarScroll);
+            window.addEventListener('beforeunload', persistSidebarScroll);
+
+            // Prevent hash jump for expandable parent items.
+            document.addEventListener('click', function (event) {
+                var trigger = event.target.closest('#nav-accordion .sub-menu > a[href="#"]');
+                if (!trigger) return;
+                event.preventDefault();
+            });
+
+            // Save scroll before navigating through sidebar links.
+            document.addEventListener('click', function (event) {
+                var link = event.target.closest('#nav-accordion a[href]');
+                if (!link) return;
+                var href = link.getAttribute('href') || '';
+                if (href && href !== '#' && !href.startsWith('javascript:')) {
+                    persistSidebarScroll();
+                }
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            if (!window.jQuery) return;
+            var $sidebarScroll = $('.leftside-navigation-scroll');
+            if (!$sidebarScroll.length) return;
+
+            function disableSidebarNiceScroll() {
+                try {
+                    var ns = $sidebarScroll.getNiceScroll();
+                    if (ns && ns.length) {
+                        ns.hide();
+                        ns.remove();
+                    }
+                } catch (error) {
+                    // ignore plugin timing errors
+                }
+
+                // Safety: hide any leftover thin rails near left sidebar
+                $('.nicescroll-rails').each(function () {
+                    var left = parseInt(this.style.left || '-1', 10);
+                    if (left >= 0 && left < 120) {
+                        this.style.display = 'none';
+                        this.style.opacity = '0';
+                        this.style.visibility = 'hidden';
+                    }
+                });
+            }
+
+            $(window).on('load', disableSidebarNiceScroll);
+            setTimeout(disableSidebarNiceScroll, 250);
+            setTimeout(disableSidebarNiceScroll, 1000);
+        })();
+    </script>
+    <!-- ===== End Page Loader Script ===== -->
     @yield('scripts')
+
+    <!-- ===== Mobile Sidebar Toggle ===== -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <script>
+    (function() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        var mainContent = document.getElementById('main-content');
+        if (!sidebar || !overlay) return;
+
+        function isMobile() { return window.innerWidth <= 991; }
+
+        function isSidebarOpen() {
+            return sidebar.classList.contains('mobile-open') ||
+                   sidebar.classList.contains('show-left-bar-mobile');
+        }
+
+        function openSidebar() {
+            sidebar.classList.add('mobile-open');
+            sidebar.classList.remove('hide-left-bar');
+            overlay.classList.add('active');
+            if (mainContent) {
+                mainContent.classList.remove('merge-left');
+            }
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('mobile-open', 'show-left-bar-mobile');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('click', function(e) {
+            var toggleBtn = e.target.closest('.sidebar-toggle-box');
+            if (!toggleBtn || !isMobile()) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            if (isSidebarOpen()) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }, true);
+
+        var touchStartX = 0;
+        sidebar.addEventListener('touchstart', function(e) {
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+        sidebar.addEventListener('touchend', function(e) {
+            var diff = touchStartX - e.changedTouches[0].clientX;
+            if (diff > 60 && isMobile()) closeSidebar();
+        }, { passive: true });
+
+        // Also watch for theme.js toggling show-left-bar-mobile directly (fallback)
+        if (window.MutationObserver) {
+            var observer = new MutationObserver(function(mutations) {
+                if (!isMobile()) return;
+                mutations.forEach(function(m) {
+                    if (m.attributeName === 'class') {
+                        var hasOpen = sidebar.classList.contains('show-left-bar-mobile') ||
+                                      sidebar.classList.contains('mobile-open');
+                        if (hasOpen) {
+                            overlay.classList.add('active');
+                        } else {
+                            overlay.classList.remove('active');
+                        }
+                    }
+                });
+            });
+            observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        overlay.addEventListener('click', function() {
+            closeSidebar();
+        });
+
+        if (sidebar) {
+            sidebar.addEventListener('click', function(e) {
+                var link = e.target.closest('a[href]');
+                if (!link || !isMobile()) return;
+                var href = link.getAttribute('href') || '';
+                if (href && href !== '#' && !href.startsWith('javascript:')) {
+                    setTimeout(closeSidebar, 200);
+                }
+            });
+        }
+
+        window.addEventListener('resize', function() {
+            if (!isMobile()) {
+                overlay.classList.remove('active');
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    })();
+    </script>
+    <script>
+    $(document).ready(function() {
+        // Global handler for link/button clicks requiring SweetAlert
+        $(document).on('click', '.swal-confirm', function(e) {
+            // If it's a submit button inside a form, let the form submit handler catch it instead
+            if ($(this).attr('type') === 'submit') {
+                return;
+            }
+            e.preventDefault();
+            var $el = $(this);
+            var message = $el.data('confirm-msg') || "Are you sure you want to proceed?";
+            
+            Swal.fire({
+                title: 'Confirm Deletion',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No',
+                background: '#1e293b',
+                color: '#f8fafc'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var formId = $el.data('form-id');
+                    if (formId) {
+                        $('#' + formId).submit();
+                    } else if ($el.attr('href') && $el.attr('href') !== '#') {
+                        window.location.href = $el.attr('href');
+                    }
+                }
+            });
+        });
+
+        // Global handler for form submissions requiring SweetAlert
+        $(document).on('submit', 'form.swal-confirm, form:has(button.swal-confirm[type="submit"])', function(e) {
+            var $form = $(this);
+            var $btn = $form.find('button.swal-confirm[type="submit"]');
+            
+            if (!$form.data('swal-confirmed')) {
+                e.preventDefault();
+                var message = $form.data('confirm-msg') || ($btn.length ? $btn.data('confirm-msg') : "Are you sure you want to proceed?");
+                
+                Swal.fire({
+                    title: 'Confirm Deletion',
+                    text: message,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Yes',
+                    cancelButtonText: 'No',
+                    background: '#1e293b',
+                    color: '#f8fafc'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $form.data('swal-confirmed', true);
+                        $form.submit();
+                    }
+                });
+            }
+        });
+    });
+    </script>
+    @include('partials.gps-flash-scripts')
 </body>
 
 </html>

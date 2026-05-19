@@ -276,6 +276,7 @@ var App = function () {
 
                     if($("#sidebar").hasClass("show-left-bar-mobile")) {
                         $("#sidebar").removeClass("show-left-bar-mobile");
+                        $('body').removeClass('gps-mobile-nav-open');
                     }
 
                     if($("#sidebar").hasClass("hide-left-bar")) {
@@ -445,12 +446,15 @@ var App = function () {
             
             $('.sidebar-toggle-box .fa-bars').on('click', function(e) {
 
-                $(".leftside-navigation-scroll").niceScroll({
-                    cursorcolor: "#1FB5AD",
-                    cursorborder: "0px solid #fff",
-                    cursorborderradius: "0px",
-                    cursorwidth: "3px"
-                });
+                var $leftNavScroll = $(".leftside-navigation-scroll");
+                if ($leftNavScroll.length && $.fn.niceScroll) {
+                    $leftNavScroll.niceScroll({
+                        cursorcolor: "#1FB5AD",
+                        cursorborder: "0px solid #fff",
+                        cursorborderradius: "0px",
+                        cursorwidth: "3px"
+                    });
+                }
 
                 if(!$("#right-sidebar").hasClass("hide-right-bar-notifications")) {
                     $('#right-sidebar').addClass('hide-right-bar-notifications');
@@ -461,11 +465,16 @@ var App = function () {
 
 
                 $('#sidebar').toggleClass('hide-left-bar show-left-bar-mobile');
-                if ($('#sidebar').hasClass('hide-left-bar')) {
-                    $(".leftside-navigation-scroll").getNiceScroll().hide();
+                $('body').toggleClass('gps-mobile-nav-open', $('#sidebar').hasClass('show-left-bar-mobile'));
+                if ($leftNavScroll.length && $.fn.niceScroll) {
+                    var ns = $leftNavScroll.getNiceScroll();
+                    if (ns && ns.length) {
+                        if ($('#sidebar').hasClass('hide-left-bar')) {
+                            ns.hide();
+                        }
+                        ns.show();
+                    }
                 }
-
-                $(".leftside-navigation-scroll").getNiceScroll().show();
                 $('#main-content').toggleClass('merge-left');
 
                 e.stopPropagation();
@@ -639,21 +648,23 @@ var App = function () {
 
             /*==Nice Scroll ==*/
             if ($.fn.niceScroll) {
-
-
-                $(".leftside-navigation-scroll").niceScroll({
-                    cursorcolor:"rgba(76, 81, 86, .2)",
-                    cursorborder: "0px solid #fff",
-                    cursorborderradius: "0px",
-                    cursorwidth: "3px"
-                });
-
-                $(".leftside-navigation-scroll").getNiceScroll().resize();
-                if ($('#sidebar').hasClass('hide-left-bar')) {
-                    $(".leftside-navigation-scroll").getNiceScroll().hide();
+                var $leftNavScrollInit = $(".leftside-navigation-scroll");
+                if ($leftNavScrollInit.length) {
+                    $leftNavScrollInit.niceScroll({
+                        cursorcolor:"rgba(76, 81, 86, .2)",
+                        cursorborder: "0px solid #fff",
+                        cursorborderradius: "0px",
+                        cursorwidth: "3px"
+                    });
+                    var nsInit = $leftNavScrollInit.getNiceScroll();
+                    if (nsInit && nsInit.length) {
+                        nsInit.resize();
+                        if ($('#sidebar').hasClass('hide-left-bar')) {
+                            nsInit.hide();
+                        }
+                        nsInit.show();
+                    }
                 }
-                $(".leftside-navigation-scroll").getNiceScroll().show();
-
             }
         },
     

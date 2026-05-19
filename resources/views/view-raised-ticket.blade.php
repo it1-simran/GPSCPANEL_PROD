@@ -6,40 +6,45 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-raised-ticket') }}">
+@endpush
 @section('content')
-<section id="main-content">
+
+
+<section id="main-content" class="tv-page">
     <section class="wrapper">
-        <!--======== Page Title and Breadcrumbs Start ========-->
         <div class="top-page-header">
             <div class="page-breadcrumb">
                 <nav class="c_breadcrumbs">
                     <ul>
                         <li><a href="#">Support Management</a></li>
-                        <li class="active"><a href="#">Raise Ticket</a></li>
+                        <li class="active"><a href="#">View Ticket</a></li>
                     </ul>
                 </nav>
             </div>
         </div>
-        <!--======== Page Title and Breadcrumbs End ========-->
-        <!--======== Dynamic Datatable Content Start End ========-->
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <div class="row bgx-title-container">
-                            <div class="col-lg-6">
-                                <h2>View Ticket</h2>
+                        <div class="tv-title-row">
+                            <div>
+                                <h2>
+                                    <span style="display:inline-block;width:4px;height:20px;background:#76CF1C;border-radius:3px;margin-right:10px;"></span>
+                                    View Ticket
+                                </h2>
                             </div>
-                            <div class="col-lg-6 text-right">
-                                <button type="button" class="btn btn-primary" onclick="openModel()">
+                            <div>
+                                <button type="button" class="btn tv-btn-primary" onclick="openModel()">
                                     Add Ticket
                                 </button>
                             </div>
                         </div>
-
                         <div class="clearfix"></div>
                     </div><!--/.c_title-->
-                    <div class="c_content">
+                    <div class="c_content tv-ticket-table-wrap">
                         <div class="row" id="alert_msg">
                             @if ($message = Session::get('success'))
                             <div class="col-sm-12 alert alert-success" role="alert">
@@ -63,16 +68,16 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             <a href="{{ route('backend.csv') }}" class="btn btn-success">Download CSV</a>
                         </div>
                         @endif
-                        <table id="esim" class="example table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 14px;">
+                        <table id="esim" class="example table table-condensed cf" style="width: 100%; font-size: 14px;">
                             <thead>
                                 <tr>
                                     <th>Sr. No.</th>
                                     <th>Ticket Type</th>
                                     <th>Ticket Subject</th>
-                                    <th>Decription</th>
+                                    <th>Description</th>
                                     <th>Status</th>
                                     <th>Created at</th>
-                                    <th>Updated By</th>
+                                    <th>Updated at</th>
                                     <th>Delete</th>
                                 </tr>
                             </thead>
@@ -88,11 +93,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     <td>{{$list->description}}</td>
                                     <td>
                                         @if(strtolower($list->status) === 'open')
-                                        <span class="badge bg-warning text-dark">Open</span>
+                                        <span class="tv-badge-open">Open</span>
                                         @elseif(strtolower($list->status) === 'resolved')
-                                        <span class="badge bg-success text-white">Resolved</span>
+                                        <span class="tv-badge-resolved">Resolved</span>
                                         @else
-                                        <span class="badge bg-secondary text-white">{{ ucfirst($list->status) }}</span>
+                                        <span class="tv-badge-other">{{ ucfirst($list->status) }}</span>
                                         @endif
                                     </td>
 
@@ -102,7 +107,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         <form action="/{{$url_type}}/delete-backend/{{$list->id}}" method="post">
                                             @csrf
                                             @method('DELETE')
-                                            <button onClick="javascript:return confirm('Are you sure you want to delete this?');" class="btn btn-danger btn-sm margin-top-1" type="submit">Delete</button>
+                                            <button class="swal-confirm btn btn-sm btn-tv-delete" data-confirm-msg="Are you sure you want to delete this?"  type="submit">Delete</button>
 
                                         </form>
                                     </td>
@@ -121,7 +126,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         <!--======= Dynamic Datatable Content Start End ========-->
     </section>
 </section>
-<div class="modal" id="raiseTicketModal" tabindex="-1" aria-hidden="true">
+<div class="modal tv-modal" id="raiseTicketModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
 

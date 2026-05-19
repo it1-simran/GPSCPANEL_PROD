@@ -6,12 +6,25 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-backend') }}">
+@endpush
 @section('content')
-<section id="main-content">
+
+<section id="main-content" class="view-backend-page">
   <section class="wrapper">
     <!--======== Page Title and Breadcrumbs Start ========-->
     <div class="top-page-header">
       <div class="page-breadcrumb">
+        <nav class="vb-breadcrumb vb-breadcrumb--scroll" aria-label="Breadcrumb">
+          <a href="{{ url('admin') }}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
+          <a href="{{ url('admin') }}" class="bc-item">Home</a>
+          <span class="bc-sep">›</span>
+          <a href="#" class="bc-item">Firmware Management</a>
+          <span class="bc-sep">›</span>
+          <span class="bc-item active">View Backend</span>
+        </nav>
         <nav class="c_breadcrumbs">
           <ul>
             <li><a href="#">Firmware Management</a></li>
@@ -26,14 +39,20 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       <div class="col-md-12">
         <div class="c_panel">
           <div class="c_title">
-            <div class="row bgx-title-container">
-              <div class="col-lg-6">
+            <div class="row bgx-title-container vb-page-title-row">
+              <div class="col-xs-12 col-lg-6">
                 <h2>View Backend</h2>
               </div>
-              <div class="col-lg-6 text-right">
-                <button type="button" class="btn btn-primary" onclick="openModel()">
-                  Add Backend
-                </button>
+              <div class="col-xs-12 col-lg-6 text-right vb-title-actions-wrap">
+                <div class="vb-title-actions">
+                  @if(Auth::user()->user_type == "Admin")
+                  <a href="{{ route('backend.excel') }}" class="btn btn-dl-excel"><i class="fa fa-file-excel-o"></i>Download Excel</a>
+                  <a href="{{ route('backend.csv') }}" class="btn btn-dl-csv"><i class="fa fa-file-text-o"></i>Download CSV</a>
+                  @endif
+                  <button type="button" class="btn btn-add-backend" onclick="openModel()" style="margin-top: 1px;">
+                    <i class="fa fa-plus"></i>Add Backend
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -57,13 +76,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
               </div>
               @endif
             </div>
-            @if(Auth::user()->user_type == "Admin")
-              <div class="col-lg-12 text-right margin-bottom-10">
-                <a href="{{ route('backend.excel') }}" class="btn btn-success">Download Excel</a>
-                <a href="{{ route('backend.csv') }}" class="btn btn-success">Download CSV</a>
-              </div>
-              @endif
-            <table id="esim" class="example table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 14px;">
+            <div class="vb-table-wrap">
+            <table id="esim" class="example table table-bordered table-condensed cf vb-backend-table" style="border-spacing: 0; width: 100%; font-size: 14px;">
               <thead>
                 <tr>
                   <th>Sr. No.</th>
@@ -71,8 +85,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   <th>No of Firmware</th>
                   <th style="width: 12px;">Created at</th>
                   <th>Last Edit</th>
-                  <th>Edit</th>
-                  <th>Delete</th>
+                  <th style="min-width: 96px; text-align: center;">Actions</th>
                 </tr>
               </thead>
               <?php
@@ -86,15 +99,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   <td>{{$back->firmwares_count}}</td>
                   <td>{{CommonHelper::getDateAsTimeZone($back->created_at)}}</td>
                   <td>{{CommonHelper::getDateAsTimeZone($back->updated_at)}}</td>
-                  <td> <a class="btn btn-primary btn-raised rippler rippler-default" onclick='editBackend(@json($back))'>Edit
-                    </a></td>
-                  <td>
-                    <form action="/{{$url_type}}/delete-backend/{{$back  ->id}}" method="post">
-                      @csrf
-                      @method('DELETE')
-                      <button onClick="javascript:return confirm('Are you sure you want to delete this?');" class="btn btn-danger btn-sm margin-top-1" type="submit">Delete</button>
-
-                    </form>
+                  <td class="text-center">
+                    <div class="vb-actions-inner">
+                      <button type="button" class="btn vb-icon-btn vb-icon-btn-edit" onclick='editBackend(@json($back))' title="Edit" aria-label="Edit"><i class="fa fa-pencil"></i></button>
+                      <form action="/{{$url_type}}/delete-backend/{{ $back->id }}" method="post" style="display:inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn vb-icon-btn vb-icon-btn-delete swal-confirm" data-confirm-msg="Are you sure you want to delete this?" title="Delete" aria-label="Delete"><i class="fa fa-trash"></i></button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
                 <?php
@@ -103,6 +116,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 @endforeach
               </tbody>
             </table>
+            </div>
           </div><!--/.c_content-->
         </div><!--/.c_panels-->
       </div><!--/col-md-12-->
@@ -111,45 +125,41 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     <!--======= Dynamic Datatable Content Start End ========-->
   </section>
 </section>
-<div class="modal" id="addBackend" aria-hidden="true">
+<div class="modal gp-managed-modal" id="addBackend" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-        <h5 class="modal-title" id="addBackendLabel">Add Backend</h5>
-      </div>
       <form id="addBackendform" onsubmit="return false" method="post">
         @csrf
+        <div class="modal-header">
+          <h5 class="modal-title" id="addBackendLabel"><i class="fa fa-server gp-man-modal-title-icon" aria-hidden="true"></i><span id="addBackendModalTitleText">Add Backend</span></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
         <div class="modal-body">
           <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
-
-          <!-- Form to Add eSIM -->
           <div class="margin-bottom-10">
-            <label for="esimName" class="form-label">Backend Name </label>
+            <label for="name" class="form-label">Backend Name</label>
             <input type="text" class="form-control" id="name" name="name" required>
           </div>
+          <input type="hidden" name="backendId" id="backendId" value="" />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal" aria-hidden="true">Close</button>
-          <button type="submit" id="SubmitBackend" class="btn btn-primary" form="addESIMForm">Submit</button>
-          <input type="hidden" name="backendId" id="backendId" value="" />
+          <button type="button" class="btn gp-modal-btn-close" data-dismiss="modal">Close</button>
+          <button type="submit" id="SubmitBackend" class="btn gp-modal-btn-submit" form="addBackendform">Submit</button>
         </div>
       </form>
     </div>
   </div>
 </div>
-@stop
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
   function editBackend(backendData) {
-    $('#addBackendLabel').text("Edit Backend");
+    $('#addBackendModalTitleText').text('Edit Backend');
     $('#name').val(backendData.name);
     $('#backendId').val(backendData.id);
     $("#addBackend").modal();
   }
 
   function openModel() {
-    $('#addBackendLabel').text("ADD Backend");
+    $('#addBackendModalTitleText').text('Add Backend');
     $('#backendId').val('');
     $("#addBackend").modal();
   }
@@ -158,23 +168,42 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
       $('.example').each(function () {
         var elementId = $(this).attr('id');
-        $('#' + elementId).DataTable({
+        var $t = $('#' + elementId);
+        if ($.fn.DataTable.isDataTable('#' + elementId)) {
+          $t.DataTable().destroy();
+        }
+        var dt = $t.DataTable({
             paging: true,
             searching: true,
             info: true,
             ordering: true,
             lengthChange: true,
-            responsive: true,     
-            autoWidth: false,     
-            scrollX: true,        
-            scrollCollapse: true,
-
+            responsive: false,
+            autoWidth: false,
+            scrollX: true,
+            scrollCollapse: false,
             lengthMenu: [
                 [25, 50, 100, 500, -1],
                 [25, 50, 100, 500, "All"]
             ],
-            pageLength: 25
+            pageLength: 25,
+            dom: "<'row'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>",
+            initComplete: function () {
+              try { this.api().columns.adjust(); } catch (e) { /* noop */ }
+            },
+            drawCallback: function () {
+              try { this.api().columns.adjust(); } catch (e) { /* noop */ }
+            }
         });
+        try { dt.columns.adjust().draw(false); } catch (e) { /* noop */ }
+    });
+
+    $(window).on('resize orientationchange', function () {
+      $('.example').each(function () {
+        if ($.fn.DataTable.isDataTable(this)) {
+          try { $(this).DataTable().columns.adjust(); } catch (e) { /* noop */ }
+        }
+      });
     });
 
     // $('.example').each(function() {
@@ -229,9 +258,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           contentType: false,
           success: function(response) {
             let result = JSON.parse(response);
-            if (result.status = 200) {
+            if (result.status == 200) {
               alert(result.status_msg);
-              $('#addESIMModal').modal('hide');
+              $('#addBackend').modal('hide');
               window.location.reload();
             } else {
               alert('error Occured');
@@ -245,3 +274,4 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     });
   });
 </script>
+@stop

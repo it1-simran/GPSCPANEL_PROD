@@ -2,19 +2,28 @@
 use App\Helper\CommonHelper;
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('ticket-management') }}">
+@endpush
 @section('content')
+
+
 <section id="main-content">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Ticket Management</a></li>
-                        <li class="active"><a href="#">View Tickets</a></li>
-                    </ul>
-                </nav>
-            </div>
+
+        {{-- BREADCRUMB --}}
+        <div class="tk-breadcrumb-wrap">
+            <nav class="tk-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ url('admin') }}" class="bc-item">Home</a>
+                <span class="bc-sep">›</span>
+                <a href="#" class="bc-item">Ticket Management</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">View Tickets</span>
+            </nav>
         </div>
+
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
@@ -28,13 +37,12 @@ use App\Helper\CommonHelper;
                         @if(session('error'))
                         <div class="alert alert-danger">{{ session('error') }}</div>
                         @endif
-                        <table id="ticketTable" class="table table-bordered table-striped">
+                        <table id="ticketTable" class="table">
                             <thead>
                                 <tr>
-                                    <th>#</th>
+                                    <th>Sr.no</th>
                                     <th>Type</th>
                                     <th>Subject</th>
-                                    <th>Description</th>
                                     <th>Status</th>
                                     <th>Created At</th>
                                     <th>Resolved At</th>
@@ -44,19 +52,29 @@ use App\Helper\CommonHelper;
                             <tbody>
                                 @forelse($ticketList as $index => $ticket)
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ ucfirst($ticket->type) }}</td>
-                                    <td>{{ ucfirst($ticket->subject) }}</td>
-                                    <td>{{ $ticket->description }}</td>
+                                    <td class="tk-sr">{{ $index + 1 }}</td>
+                                    <td>
+                                        <div class="tk-name-cell">
+                                            <span class="tk-row-icon tk-icon-{{ strtolower($ticket->type) == 'error' ? 'red' : (strtolower($ticket->type) == 'updation' ? 'blue' : 'green') }}">
+                                                <i class="fa fa-{{ strtolower($ticket->type) == 'error' ? 'exclamation-circle' : (strtolower($ticket->type) == 'updation' ? 'refresh' : 'ticket') }}"></i>
+                                            </span>
+                                            <span>
+                                                <strong>{{ ucfirst($ticket->type) }}</strong>
+                                                <small>Support Ticket</small>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="tk-subject">{{ ucfirst($ticket->subject) }}</td>
+
                                     <td>
                                         @if($ticket->status === 'open')
-                                        <span class="badge badge-warning">Open</span>
+                                        <span class="tk-badge tk-badge-open">Open</span>
                                         @else
-                                        <span class="badge badge-success">Resolved</span>
+                                        <span class="tk-badge tk-badge-resolved">Resolved</span>
                                         @endif
                                     </td>
-                                    <td>{{ CommonHelper::getDateAsTimeZone($ticket->created_at)}}</td>
-                                    <td>{{ CommonHelper::getDateAsTimeZone($ticket->resolved_at) ?? '--'}}</td>
+                                    <td class="tk-date">{{ CommonHelper::getDateAsTimeZone($ticket->created_at)}}</td>
+                                    <td class="tk-date">{{ CommonHelper::getDateAsTimeZone($ticket->resolved_at) ?? '--'}}</td>
                                     <td>
                                         <button class="btn btn-info btn-sm viewTicketBtn"
                                             data-bs-toggle="modal"
@@ -72,67 +90,69 @@ use App\Helper\CommonHelper;
                                         </button>
                                         <div class="modal" id="viewTicketModal{{ $ticket->id }}" tabindex="-1" aria-hidden="true">
                                             <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                <div class="modal-content shadow-lg border-0 rounded-3">
-                                                    <div class="modal-header bg-primary text-white d-flex justify-content-between">
-                                                        <h5 class="modal-title">
-                                                            <i class="fa fa-ticket-alt me-2"></i> Ticket Details
-                                                        </h5>
+                                                <div class="modal-content tk-modal-content">
+                                                    <div class="tk-modal-header">
+                                                        <div class="tk-modal-title">
+                                                            <span class="tk-modal-icon"><i class="fa fa-ticket"></i></span>
+                                                            <div>
+                                                                <h5>Ticket Details</h5>
+                                                                <small>Support Request</small>
+                                                            </div>
+                                                        </div>
+                                                        <button type="button" class="tk-modal-close btn-close-modal" data-bs-dismiss="modal" data-id="{{ $ticket->id }}">
+                                                            <i class="fa fa-times"></i>
+                                                        </button>
                                                     </div>
-                                                    <div class="ticket-modal-body">
-                                                        <!-- Header -->
-                                                        <div class="ticket-header">
-                                                            <h4 id="ticketSubject{{ $ticket->id }}">{{ $ticket->subject }}</h4>
-                                                            <span id="ticketType{{ $ticket->id }}" class="ticket-type-badge">{{ $ticket->type }}</span>
+                                                    <div class="tk-modal-body">
+                                                        <!-- Subject + Type -->
+                                                        <div class="tk-modal-subject-row">
+                                                            <div class="tk-modal-subject">{{ $ticket->subject }}</div>
+                                                            <span class="tk-modal-type-pill">{{ ucfirst($ticket->type) }}</span>
                                                         </div>
 
                                                         <!-- Description -->
-                                                        <div class="ticket-description-section">
-                                                            <h6 class="ticket-description-title"><i class="fa fa-align-left me-1"></i> Description</h6>
-                                                            <div id="ticketDescription{{ $ticket->id }}" class="ticket-description">
-                                                                {{ $ticket->description }}
-                                                            </div>
+                                                        <div class="tk-modal-section">
+                                                            <div class="tk-modal-section-title"><i class="fa fa-align-left"></i> Description</div>
+                                                            <div class="tk-modal-desc">{{ $ticket->description }}</div>
                                                         </div>
 
-                                                        <!-- File Attachment -->
+                                                        <!-- File -->
                                                         @if(!empty($ticket->file))
-                                                        <div class="ticket-file-section">
-                                                            <h6><i class="fa fa-file-alt me-1"></i> Attached File</h6>
-                                                            <a href="{{ asset('storage/' . $ticket->file) }}" target="_blank">
-                                                                <i class="fa fa-eye me-1"></i> View File
-                                                            </a>
-                                                            <a href="{{ asset('storage/' . $ticket->file) }}" download>
-                                                                <i class="fa fa-download me-1"></i> Download
-                                                            </a>
+                                                        <div class="tk-modal-section">
+                                                            <div class="tk-modal-section-title"><i class="fa fa-paperclip"></i> Attached File</div>
+                                                            <div class="tk-file-btns">
+                                                                <a href="{{ asset('storage/' . $ticket->file) }}" target="_blank" class="tk-file-btn"><i class="fa fa-eye"></i> View File</a>
+                                                                <a href="{{ asset('storage/' . $ticket->file) }}" download class="tk-file-btn"><i class="fa fa-download"></i> Download</a>
+                                                            </div>
                                                         </div>
                                                         @endif
 
                                                         <!-- Info Cards -->
-                                                        <div class="ticket-info-row">
-                                                            <div class="ticket-info-card">
-                                                                <h6><i class="fa fa-info-circle me-2"></i> Status</h6>
-                                                                <span id="ticketStatus{{ $ticket->id }}" class="ticket-status-badge {{ $ticket->is_read ? 'ticket-status-resolved' : 'ticket-status-open' }}">
+                                                        <div class="tk-modal-info-grid">
+                                                            <div class="tk-modal-info-card">
+                                                                <div class="tk-info-label"><i class="fa fa-info-circle"></i> Status</div>
+                                                                <span class="tk-badge {{ $ticket->is_read ? 'tk-badge-resolved' : 'tk-badge-open' }}">
                                                                     {{ $ticket->is_read ? 'Resolved' : 'Pending' }}
                                                                 </span>
                                                             </div>
-
-                                                            <div class="ticket-info-card">
-                                                                <h6><i class="fa fa-calendar-plus me-2"></i> Created</h6>
-                                                                <span id="ticketCreated{{ $ticket->id }}">{{ CommonHelper::getDateAsTimeZone($ticket->created_at) }}</span>
+                                                            <div class="tk-modal-info-card">
+                                                                <div class="tk-info-label"><i class="fa fa-calendar"></i> Created</div>
+                                                                <div class="tk-info-val">{{ CommonHelper::getDateAsTimeZone($ticket->created_at) }}</div>
                                                             </div>
-
-                                                            <div class="ticket-info-card">
-                                                                <h6><i class="fa fa-calendar-check me-2"></i> Updated</h6>
-                                                                <span id="ticketUpdated{{ $ticket->id }}">{{ CommonHelper::getDateAsTimeZone($ticket->updated_at) }}</span>
+                                                            <div class="tk-modal-info-card">
+                                                                <div class="tk-info-label"><i class="fa fa-calendar-check-o"></i> Updated</div>
+                                                                <div class="tk-info-val">{{ CommonHelper::getDateAsTimeZone($ticket->updated_at) }}</div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="modal-footer border-0">
-                                                        <button type="button" class="btn btn-light btn-close-modal" data-bs-dismiss="modal" data-id="{{ $ticket->id }}">
-                                                            <i class="fa fa-times me-1"></i> Close
+
+                                                    <div class="tk-modal-footer">
+                                                        <button type="button" class="tk-btn-close btn-close-modal" data-bs-dismiss="modal" data-id="{{ $ticket->id }}">
+                                                            <i class="fa fa-times"></i> Close
                                                         </button>
                                                         @if(Auth::user()->user_type == "Admin" && $ticket->status == 'open')
-                                                        <button type="button" class="btn btn-success markResolvedBtn" data-id="{{ $ticket->id }}">
-                                                            <i class="fa fa-check-circle me-1"></i> Mark as Resolved
+                                                        <button type="button" class="tk-btn-resolve markResolvedBtn" data-id="{{ $ticket->id }}">
+                                                            <i class="fa fa-check-circle"></i> Mark as Resolved
                                                         </button>
                                                         @endif
                                                     </div>
@@ -154,7 +174,6 @@ use App\Helper\CommonHelper;
         </div>
     </section>
 </section>
-
 
 
 
@@ -226,8 +245,6 @@ use App\Helper\CommonHelper;
 
 
 
-
-
     // $(document).ready(function() {
     //     $("#ticketTable").DataTable({
     //         paging: true,
@@ -264,129 +281,4 @@ use App\Helper\CommonHelper;
         });
     });
 </script>
-<style>
-    /* Modal Body */
-    .ticket-modal-body {
-        padding: 20px;
-        font-family: Arial, sans-serif;
-    }
 
-    /* Header Section */
-    .ticket-header {
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #ddd;
-    }
-
-    .ticket-header h4 {
-        font-weight: 700;
-        color: #0d6efd;
-        font-size: 1.5rem;
-        /* Standard heading size */
-        margin-bottom: 8px;
-    }
-
-    .ticket-type-badge {
-        display: inline-block;
-        background-color: #0dcaf0;
-        color: #fff;
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 0.95rem;
-        /* slightly larger */
-    }
-
-    /* Description Section */
-    .ticket-description-title {
-        font-size: 1rem;
-        /* standard readable size */
-        color: #495057;
-        margin-bottom: 10px;
-        font-weight: 600;
-    }
-
-    .ticket-description {
-        background-color: #f8f9fa;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 12px;
-        color: #212529;
-        font-size: 0.95rem;
-        /* standard paragraph text */
-    }
-
-    /* File Section */
-    .ticket-file-section h6 {
-        font-size: 1rem;
-        /* standard heading */
-        color: #495057;
-        margin-bottom: 10px;
-        font-weight: 600;
-    }
-
-    .ticket-file-section a {
-        font-size: 0.9rem;
-        padding: 5px 10px;
-        margin-right: 5px;
-        text-decoration: none;
-        border: 1px solid #0d6efd;
-        border-radius: 4px;
-        color: #0d6efd;
-        transition: 0.2s;
-    }
-
-    .ticket-file-section a:hover {
-        background-color: #0d6efd;
-        color: #fff;
-    }
-
-    /* Info Cards */
-    .ticket-info-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-        margin-top: 20px;
-    }
-
-    .ticket-info-card {
-        flex: 1 1 30%;
-        padding: 15px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        background-color: #fff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .ticket-info-card h6 {
-        font-size: 1rem;
-        /* standard heading */
-        color: #495057;
-        margin-bottom: 8px;
-        font-weight: 600;
-    }
-
-    .ticket-info-card span {
-        font-weight: 600;
-        color: #212529;
-        font-size: 0.95rem;
-    }
-
-    /* Status Badge */
-    .ticket-status-badge {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 0.95rem;
-        font-weight: 600;
-    }
-
-    .ticket-status-open {
-        background-color: #ffc107;
-        color: #212529;
-    }
-
-    .ticket-status-resolved {
-        background-color: #198754;
-        color: #fff;
-    }
-</style>

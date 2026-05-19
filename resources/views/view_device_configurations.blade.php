@@ -63,6 +63,11 @@ $errors = json_decode($device['errors'], true);
 ?>
 @extends('layouts.apps')
 
+
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-device-configurations') }}">
+@endpush
 @section('content')
     <div class="modal" id="deviceUserPreviewModal" aria-hidden="true">
         <div class="modal-dialog">
@@ -90,15 +95,15 @@ $errors = json_decode($device['errors'], true);
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <section id="main-content">
         <section class="wrapper">
-            <div class="top-page-header">
-                <div class="page-breadcrumb">
-                    <nav class="c_breadcrumbs">
-                        <ul>
-                            <li><a href="#">Device </a></li>
-                            <li><a href="javascript:history.back()">View Devices</a></li>
-                            <li class="active"><a href="#">View Configurations</a></li>
-                        </ul>
-                    </nav>
+            <div class="vdc-shell">
+            <div class="vdc-breadcrumb-wrap">
+                <div class="vdc-breadcrumb">
+                    <a href="/{{ $url_type }}" class="bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+                    <span class="bc-item"><a href="/{{ $url_type }}">Home</a></span>
+                    <span class="bc-sep"><i class="fa fa-angle-right"></i></span>
+                    <span class="bc-item"><a href="javascript:history.back()">View Devices</a></span>
+                    <span class="bc-sep"><i class="fa fa-angle-right"></i></span>
+                    <span class="bc-item active">View Configurations</span>
                 </div>
             </div>
             <div class="row">
@@ -106,9 +111,12 @@ $errors = json_decode($device['errors'], true);
                     <div class="container bgx-custom-page">
                         <div class="row justify-content-center">
                             <div class="col-md-12">
-                                <div class="card">
-                                    <div class="card-header bg-primary text-white header-custom">
-                                        <h4>Device and Configurations</h4>
+                                <div class="card vdc-main-card">
+                                    <div class="card-header header-custom">
+                                        <h4>
+                                            <i class="fa fa-bars vdc-header-icon" aria-hidden="true"></i>
+                                            Device and Configurations
+                                        </h4>
                                     </div>
                                     <div class="card-body body-custom">
                                         @if($errors && count($errors) > 0)
@@ -119,10 +127,8 @@ $errors = json_decode($device['errors'], true);
                                             @endforeach
                                         @endif
                                         {{-- Display User Information --}}
-                                        <div class="user-info mb-4">
-                                            <div class='col-lg-9'>
-                                                <h4><b>Device Information</b></h4>
-                                            </div>
+                                        <div class="user-info no-accordion mb-4">
+                                            <div class="vc-section-title"><i class="fa fa-info-circle"></i> Device Information</div>
                                             <div class='row  bgx-configurations view-device-configuration'>
                                                 <div class='col-lg-5'>
                                                     <div class="bgx-table-container">
@@ -224,53 +230,47 @@ $errors = json_decode($device['errors'], true);
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div style="margin-top:20px;">
-                                                        @if(Auth::user()->user_type == "Admin")
-                                                            <div id="span2"
-                                                                class="btn {{ $device['is_editable'] == 1 ? 'btn-success active' : 'btn-danger' }}"
-                                                                style="margin: 3px 0px;">
-                                                                Editable -
-                                                                {{ isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 ? 'Yes' : 'No' }}
-                                                            </div>
-                                                            <div id="span1" class="btn btn-primary" style='margin:3px 0px;'>Ping
-                                                                Interval - {{$configurations['ping_interval']['value'] ?? 0}}
-                                                            </div>
-                                                        @endif
-                                                        <div id="span3" class="btn btn-info"
-                                                            style='margin:3px 0px;float:left;'>Total Pings -
-                                                            {{ $configurations['total_pings'] ?? 0}}</div>
-                                                    </div>
                                                 </div>
                                                 <div class='col-lg-7'>
                                                     <div class='row bgx-map-configurations'>
                                                         <div class='col-lg-12'>
-                                                            <div id="map" style='width:100%;height:250px;'></div>
+                                                            <div id="map"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="device-actions-compact vdc-actions-below-map">
+                                                        <div class="status-row">
+                                                            @if(Auth::user()->user_type == "Admin")
+                                                                <div id="span2"
+                                                                    class="btn {{ $device['is_editable'] == 1 ? 'btn-success active' : 'btn-danger' }}">
+                                                                    Editable -
+                                                                    {{ isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 ? 'Yes' : 'No' }}
+                                                                </div>
+                                                                <div id="span1" class="btn btn-primary">Ping
+                                                                    Interval - {{$configurations['ping_interval']['value'] ?? 0}}
+                                                                </div>
+                                                            @endif
+                                                            <div id="span3" class="btn btn-info">Total Pings -
+                                                                {{ $configurations['total_pings'] ?? 0}}</div>
+                                                        </div>
+                                                        <div class="edit-row">
+                                                            @if(Auth::user()->user_type != "Support")
+                                                                @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                                                    <button type="button" class="btn btn-primary edit-device-btn"
+                                                                        onclick="toggleEditDevice()">
+                                                                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                                    </button>
+                                                                @endif
+                                                            @else
+                                                                @if(Auth::user()->is_support_active)
+                                                                    <button type="button" class="btn btn-primary edit-btn"
+                                                                        onclick="toggleEditDevice('')">
+                                                                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                                    </button>
+                                                                @endif
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 </div>
-                                                @if(Auth::user()->user_type != "Support")
-                                                    @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
-                                                        <div class="row mt-3">
-                                                            <div class="col-lg-12 text-center">
-                                                                <button type="button" class="btn btn-primary edit-device-btn"
-                                                                    onclick="toggleEditDevice()">
-                                                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    @endif
-                                                @else
-                                                    @if(Auth::user()->is_support_active)
-                                                        <div class="row mt-3">
-                                                            <div class="col-lg-12 text-center">
-                                                                <button type="button" class="btn btn-primary edit-btn"
-                                                                    onclick="toggleEditDevice('')">
-                                                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    @endif
-                                                @endif
                                             </div>
                                             <div class='row  bgx-configurations edit-device-configuration'
                                                 style="display:none;">
@@ -446,7 +446,7 @@ $errors = json_decode($device['errors'], true);
                                             </div>
                                         </div>
                                         <div class="user-info">
-                                            <h4><b>Device Configurations</b></h4>
+                                            <div class="vc-section-title"><i class="fa fa-cogs"></i> Device Configurations</div>
                                             @empty($device['configurations'])
                                                 <p class="col-md-12">No configurations found.</p>
                                             @else
@@ -479,7 +479,7 @@ $errors = json_decode($device['errors'], true);
                                         @if(isset($configurations['can_interface']['value']) && $configurations['can_interface']['value'] == 1)
                                             @if($getCanEnableByDeviceCategory->is_can_protocol == 1)
                                                 <div class="user-info">
-                                                    <h4><b>CAN Protocol Configurations</b></h4>
+                                                    <div class="vc-section-title"><i class="fa fa-sitemap"></i> CAN Protocol Configurations</div>
                                                     @php $canConfigData = is_array($canConfigurations) ? $canConfigurations : json_decode($canConfigurations, true);
                                                     @endphp
                                                     @empty($device['can_configurations'])
@@ -539,7 +539,7 @@ $errors = json_decode($device['errors'], true);
                                         <div class="user-info">
 
 
-                                                                                    <h4><b>Device Parameters</b> <small>(<b>Last updated on:</b> {{ isset($device->api_updated_at) ? CommonHelper::getDateAsTimeZone($device->api_updated_at) : '' }})</small></h4>
+                                                                                    <div class="vc-section-title"><i class="fa fa-list-alt"></i> Device Parameters <small style="color:inherit; margin-left:6px;">(<b>Last updated on:</b> {{ isset($device->api_updated_at) ? CommonHelper::getDateAsTimeZone($device->api_updated_at) : '' }})</small></div>
                                             @empty($device['parameters'])
                                                 <div class="card padding-10 text-center">
                                                     <p>No configurations found.</p>
@@ -554,6 +554,7 @@ $errors = json_decode($device['errors'], true);
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
             </div>
         </section>
@@ -923,6 +924,16 @@ $('#vendorId').show().val(modal.vendorId);
                         .bindPopup('Device Location')
                         .openPopup();
                 });
+
+            // Recalculate Leaflet tiles after CSS/layout settling.
+            function refreshMapSize() {
+                try { map.invalidateSize(true); } catch (e) {}
+            }
+            setTimeout(refreshMapSize, 180);
+            setTimeout(refreshMapSize, 500);
+            setTimeout(refreshMapSize, 1100);
+            window.addEventListener('load', refreshMapSize);
+            window.addEventListener('resize', refreshMapSize);
         }
 
         function toDecimal(dm, dir) {
@@ -998,4 +1009,42 @@ $('#vendorId').show().val(modal.vendorId);
             longitude: Number(lon.toFixed(6))
         };
     }
+
+	$(document).ready(function() {
+		// Dynamic Accordion Conversion
+		$('.user-info:not(.no-accordion)').each(function(index) {
+			var $info = $(this);
+			var $title = $info.find('.vc-section-title').first();
+			
+			// Find the immediate wrapper of the title, if it's a col-lg-9 or col-lg-12
+			var $titleWrapper = $title.parent('[class*="col-lg-"]').length ? $title.parent() : $title;
+			
+			// Wrap everything else in an accordion content div
+			var $contents = $info.contents().filter(function() {
+				// Don't wrap the title wrapper, and don't wrap empty text nodes
+				if (this === $titleWrapper[0]) return false;
+				if (this.nodeType === 3 && $.trim(this.nodeValue) === '') return false;
+				return true;
+			});
+			$contents.wrapAll('<div class="acc-content" style="display: none;"></div>');
+			
+			// Style the title
+			$title.addClass('vc-acc-header');
+			
+			// Handle clicks
+			$title.css('cursor', 'pointer').on('click', function() {
+				var $myContent = $info.find('.acc-content');
+				if ($title.hasClass('acc-open')) {
+					$myContent.slideUp(250);
+					$title.removeClass('acc-open');
+				} else {
+					$('.acc-content').slideUp(250);
+					$('.vc-acc-header').removeClass('acc-open');
+					
+					$myContent.slideDown(250);
+					$title.addClass('acc-open');
+				}
+			});
+		});
+	});
 </script>

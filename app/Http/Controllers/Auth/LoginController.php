@@ -16,6 +16,8 @@ use App\Mail\TwoFactorTokenMail;
 use App\Models\User;
 use App\Writer;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 use Exception;
 
 class LoginController extends Controller
@@ -26,9 +28,8 @@ class LoginController extends Controller
 
     public function __construct()
     {
+        // RedirectIfAuthenticated checks all session guards when no guard is passed.
         $this->middleware('guest')->except('logout');
-        $this->middleware('guest:admin')->except('logout');
-        $this->middleware('guest:writer')->except('logout');
     }
 
     // ... the rest of your code
@@ -143,6 +144,15 @@ class LoginController extends Controller
             'email' => 'required|email',
         ]);
 
+        $throttleKey = '2fa-fail:' . sha1(strtolower((string) $request->email) . '|' . $request->ip());
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return back()->withErrors([
+                'two_factor_code' => 'Too many failed attempts. Try again in ' . $seconds . ' seconds.',
+            ])->withInput($request->only('email'));
+        }
+
         $user = Writer::where('email', $request->email)->first();
 
         if (!$user) {
@@ -150,12 +160,16 @@ class LoginController extends Controller
         }
 
         if ($user->twoFactorAuthToken != $request->two_factor_code) {
+            RateLimiter::hit($throttleKey, 300);
+
             return back()->withErrors(['two_factor_code' => 'Invalid OTP']);
         }
 
         if (Carbon::parse($user->two_factor_expires_at)->lt(now())) {
             return back()->withErrors(['two_factor_code' => 'OTP expired']);
         }
+
+        RateLimiter::clear($throttleKey);
 
         // Reset OTP
         $user->update([
@@ -174,71 +188,82 @@ class LoginController extends Controller
                 return redirect()->intended('/reseller');
             case 'support':
                 return redirect()->intended('/support');
+            case 'writer':
+                return redirect()->intended('/user');
             default:
                 return redirect()->intended('/login'); // fallback
         }
     }
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-            'remember' => 'required|in:on',
-        ], [
-            'remember.required' => 'Checkbox must be checked.',
-        ]);
-
-        $credentials = $request->only('email', 'password');
-
-        if (Auth::attempt($credentials, $request->filled('remember'))) {
-            $user = Auth::user();
-            // dd($user);
-            // ✅ TWO FACTOR AUTHENTICATION
-            if ($user->twoFactorAuthentication) {
-                // Generate and store 2FA token
-                $token = rand(1000, 9999);
-                DB::table('writers')
-                    ->where('id', '=', $user->id)
-                    ->update(['twoFactorAuthToken' => $token, 'two_factor_expires_at' => now()->addMinutes(10)]);
-
-                // Send token via email
-                Mail::to($user->email)->send(new TwoFactorTokenMail($token, $user));
-
-                // Logout temporarily
-                Auth::logout();
-
-                // Store 2FA session
-                Session::put('email', $user->email);
-                Session::put('2fa:remember', $request->filled('remember'));
-
-                return redirect()->route('2fa.form');
-            }
-
-            // ✅ Reset today_pings if outdated
-            if ($user->pings_date != Carbon::today()->toDateString()) {
-                DB::table('writers')
-                    ->where('pings_date', '!=', Carbon::today()->toDateString())
-                    ->update(['today_pings' => 0]);
-            }
-
-            // ✅ Redirect based on user_type
-            switch (strtolower($user->user_type)) {
-                case 'admin':
-                    return redirect()->intended('/admin');
-                case 'user':
-                    return redirect()->intended('/user');
-                case 'reseller':
-                    return redirect()->intended('/reseller');
-                case 'support':
-                    return redirect()->intended('/support');
-                default:
-                    return redirect()->intended('/login'); // fallback
-            }
+        if ($guard = $this->beginLoginSubmitGuard()) {
+            return $guard;
         }
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+                'remember' => 'required|in:on',
+            ], [
+                'remember.required' => 'Checkbox must be checked.',
+            ]);
 
-        return back()->withErrors([
-            'password' => 'The provided credentials do not match our records.',
-        ])->withInput($request->only('email', 'remember'));
+            $credentials = $request->only('email', 'password');
+
+            if (Auth::attempt($credentials, $request->filled('remember'))) {
+                $user = Auth::user();
+                // dd($user);
+                // ✅ TWO FACTOR AUTHENTICATION
+                if ($user->twoFactorAuthentication) {
+                    // Generate and store 2FA token
+                    $token = rand(1000, 9999);
+                    DB::table('writers')
+                        ->where('id', '=', $user->id)
+                        ->update(['twoFactorAuthToken' => $token, 'two_factor_expires_at' => now()->addMinutes(10)]);
+
+                    // Send token via email
+                    Mail::to($user->email)->send(new TwoFactorTokenMail($token, $user));
+
+                    // Logout temporarily
+                    Auth::logout();
+
+                    // Store 2FA session
+                    Session::put('email', $user->email);
+                    Session::put('2fa:remember', $request->filled('remember'));
+
+                    return redirect()->route('2fa.form');
+                }
+
+                // ✅ Reset today_pings if outdated
+                if ($user->pings_date != Carbon::today()->toDateString()) {
+                    DB::table('writers')
+                        ->where('pings_date', '!=', Carbon::today()->toDateString())
+                        ->update(['today_pings' => 0]);
+                }
+
+                // ✅ Redirect based on user_type
+                switch (strtolower($user->user_type)) {
+                    case 'admin':
+                        return redirect()->intended('/admin');
+                    case 'user':
+                        return redirect()->intended('/user');
+                    case 'reseller':
+                        return redirect()->intended('/reseller');
+                    case 'support':
+                        return redirect()->intended('/support');
+                    case 'writer':
+                        return redirect()->intended('/user');
+                    default:
+                        return redirect()->intended('/login'); // fallback
+                }
+            }
+
+            return back()->withErrors([
+                'password' => 'The provided credentials do not match our records.',
+            ])->withInput($request->only('email', 'remember'));
+        } finally {
+            $this->endLoginSubmitGuard();
+        }
     }
 
     // public function login(Request $request)
@@ -424,10 +449,14 @@ class LoginController extends Controller
     public function adminLogin(Request $request)
 
     {
+        if ($guard = $this->beginLoginSubmitGuard()) {
+            return $guard;
+        }
+        try {
         $validator  = $this->validate($request, [
             'email'   => 'required|email',
             'password' => 'required',
-            'remember' =>  'required:in:on',
+            'remember' =>  'required|in:on',
         ], [
             'remember.required' => 'checkbox must be checked.'
         ]);
@@ -448,6 +477,9 @@ class LoginController extends Controller
         return back()->withErrors([
             'password' => 'The provided credentials do not match our records.'
         ])->withInput($request->only('email', 'remember'));
+        } finally {
+            $this->endLoginSubmitGuard();
+        }
     }
 
 
@@ -469,12 +501,15 @@ class LoginController extends Controller
     public function writerLogin(Request $request)
 
     {
-
+        if ($guard = $this->beginLoginSubmitGuard()) {
+            return $guard;
+        }
+        try {
         $this->validate($request, [
 
             'email'   => 'required|email',
             'password' => 'required',
-            'remember' =>  'required:in:on',
+            'remember' =>  'required|in:on',
         ], [
             'remember.required' => 'checkbox must be checked.'
         ]);
@@ -517,18 +552,25 @@ class LoginController extends Controller
         return back()->withErrors([
             'password' => 'The provided credentials do not match our records.'
         ])->withInput($request->only('email', 'remember'));
+        } finally {
+            $this->endLoginSubmitGuard();
+        }
     }
 
     public function resellerLogin(Request $request)
 
     {
+        if ($guard = $this->beginLoginSubmitGuard()) {
+            return $guard;
+        }
+        try {
 
         $this->validate($request, [
 
             'email'   => 'required|email',
 
             'password' => 'required',
-            'remember' =>  'required:in:on',
+            'remember' =>  'required|in:on',
         ], [
             'remember.required' => 'checkbox must be checked.'
 
@@ -572,7 +614,31 @@ class LoginController extends Controller
         return back()->withErrors([
             'password' => 'The provided credentials do not match our records.'
         ])->withInput($request->only('email', 'remember'));
+        } finally {
+            $this->endLoginSubmitGuard();
+        }
     }
+
+    /**
+     * Prevent double-submit / duplicate POST on login forms (MF-01).
+     */
+    protected function beginLoginSubmitGuard(): ?\Illuminate\Http\RedirectResponse
+    {
+        $key = 'login-inflight:' . session()->getId();
+        if (!Cache::add($key, 1, 12)) {
+            return back()->withErrors([
+                'email' => 'Your sign-in is already being processed. Please wait a moment.',
+            ])->withInput();
+        }
+
+        return null;
+    }
+
+    protected function endLoginSubmitGuard(): void
+    {
+        Cache::forget('login-inflight:' . session()->getId());
+    }
+
     public function sendOtp(Request $request)
     {
         $email = $request->email;

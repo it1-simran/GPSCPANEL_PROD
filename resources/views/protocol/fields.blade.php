@@ -1,17 +1,23 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('protocol-fields') }}">
+@endpush
 @section('content')
-<section id="main-content">
+<section id="main-content" class="protocol-page protocol-fields-page">
   <section class="wrapper">
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-            <li><a href="{{ route('protocols.index') }}">Protocol Management</a></li>
-            <li><a href="{{ route('protocols.packet-types', $packetType->protocol_id) }}">Packet Types</a></li>
-            <li class="active"><a href="#">Interactive Builder ({{ $packetType->name }})</a></li>
-          </ul>
-        </nav>
-      </div>
+    @php
+      $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+    @endphp
+    <div class="protocol-breadcrumb-wrap">
+      <nav class="protocol-breadcrumb">
+        <div class="bc-home"><i class="fa fa-home"></i></div>
+        <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+        <span class="bc-sep">›</span>
+        <a href="{{ route($routePrefix . '.packet-types', $packetType->protocol_id) }}" class="bc-item">Packet Types</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">Fields Builder</span>
+      </nav>
     </div>
 
     <div class="row">
@@ -250,17 +256,5 @@
   }
 </script>
 
-<style>
-  .drag-handle {
-    cursor: move;
-  }
 
-  .bg-info-light {
-    background-color: #e3f2fd !important;
-  }
-
-  .field-row:hover {
-    background-color: #f8f9fa;
-  }
-</style>
 @stop

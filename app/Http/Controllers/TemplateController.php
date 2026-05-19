@@ -7,7 +7,6 @@ use App\Device;
 use App\Firmware;
 use DB;
 use App\Helper\CommonHelper;
-use App\Modal;
 use App\Writer;
 use App\DataFields;
 use Illuminate\Http\Request;
@@ -15,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 use Auth;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 
 class TemplateController extends Controller
 {
@@ -241,52 +241,95 @@ class TemplateController extends Controller
         // Get devices based on IDs from the request
         $devices = Device::whereIn('id', $request->input('devices'))->get();
 
+        $templateConfig = json_decode($template->configurations, true) ?? [];
+        $firmwareId = null;
+        if (isset($templateConfig['firmware_id']['value'])) {
+            $firmwareId = $templateConfig['firmware_id']['value'];
+        } elseif (isset($templateConfig['firmware_id'])) {
+            $raw = $templateConfig['firmware_id'];
+            $firmwareId = is_array($raw) ? ($raw['value'] ?? $raw['id'] ?? null) : $raw;
+        }
+
+        if ($firmwareId === null || $firmwareId === '') {
+            return redirect($url_type . '/view-template')->with([
+                'error' => "Firmware not Assigned to " . $template->template_name . " template .please assign firmware first.",
+            ]);
+        }
+
+        $firmware = Firmware::where('id', $firmwareId)->first();
+        if (!$firmware) {
+            return redirect($url_type . '/view-template')->with([
+                'error' => "Firmware with ID {$firmwareId} not found for template " . $template->template_name . ".",
+            ]);
+        }
+
+        $firmwareConfig = json_decode($firmware->configurations ?? '{}');
+        if (!$firmwareConfig) {
+            $firmwareConfig = (object) [];
+        }
+
         $errors = [];
         $successfulUpdates = [];
         $updatedConfigurations = [];
+        $modelNameFallbackImeis = [];
 
         foreach ($devices as $device) {
-            $deviceConfig = json_decode($device->configurations, true);
-            $templateConfig = json_decode($template->configurations, true);
-            if (isset($templateConfig['firmware_id'])) {
-                $firmware = Firmware::find($templateConfig['firmware_id']);
+            $deviceConfig = json_decode($device->configurations, true) ?? [];
+            $nestedDevice = isset($deviceConfig['firmware_id']) && is_array($deviceConfig['firmware_id'])
+                && array_key_exists('value', $deviceConfig['firmware_id']);
 
-                if (!$firmware) {
-                    $errors[] = "Device ID {$device->id}: Firmware with ID {$templateConfig['firmware_id']} not found.";
-                    continue;
-                }
-
-                $firmwareConfig = json_decode($firmware->configurations);
-                $deviceConfig['firmware_id'] = $firmware->id;
-                $deviceConfig['firmware_file'] = $firmwareConfig->filename;
-                $deviceConfig['firmware_version'] = $firmwareConfig->version;
-
-                if ($device->user_id === null) {
-                    $deviceConfig['modelName'] = CommonHelper::getDeviceCategoryName($device->device_category_id);
-                } else {
-                    $assign_to_ids = explode(",", $device->assign_to_ids);
-                    $models = Modal::where(['user_id' => $assign_to_ids[1], 'firmware_id' => $templateConfig['firmware_id']])->first();
-                    if ($models) {
-                        $deviceConfig['modelName'] = $models->name;
-                    } else {
-                        $errors[] = $device->imei;
-                        continue;
-                    }
-                }
-
-                // Merge template configuration
-                $mergedConfig = array_merge($deviceConfig, $templateConfig);
-                // Update device configurations in JSON format
-                $device->configurations = json_encode($mergedConfig);
-                $device->save();
-
-                $successfulUpdates[] = $device->imei;
-                $updatedConfigurations[$device->imei] = $mergedConfig; // Collect updated configurations
+            if ($nestedDevice) {
+                $deviceConfig['firmware_id']['value'] = $firmware->id;
+                $deviceConfig['firmware_file']['value'] = $firmwareConfig->filename ?? '';
+                $deviceConfig['firmware_version']['value'] = $firmwareConfig->version ?? '';
             } else {
-                return redirect($url_type . '/view-template')->with([
-                    'error' => "Firmware not Assigned to " . $template->template_name . " template .please assign firmware first.",
-                ]);
+                $deviceConfig['firmware_id'] = $firmware->id;
+                $deviceConfig['firmware_file'] = $firmwareConfig->filename ?? '';
+                $deviceConfig['firmware_version'] = $firmwareConfig->version ?? '';
             }
+
+            if ($device->user_id === null) {
+                $modelName = CommonHelper::getDeviceCategoryName($device->device_category_id);
+                if ($nestedDevice) {
+                    $deviceConfig['modelName']['value'] = $modelName;
+                } else {
+                    $deviceConfig['modelName'] = $modelName;
+                }
+            } else {
+                $models = CommonHelper::getModelByHierarchy($device, $firmware->id);
+                if ($models) {
+                    if ($nestedDevice) {
+                        $deviceConfig['modelName']['value'] = $models->name;
+                    } else {
+                        $deviceConfig['modelName'] = $models->name;
+                    }
+                } else {
+                    $categoryLabel = CommonHelper::getDeviceCategoryName($device->device_category_id);
+                    if ($nestedDevice) {
+                        if (!isset($deviceConfig['modelName']) || !is_array($deviceConfig['modelName'])) {
+                            $deviceConfig['modelName'] = ['value' => $categoryLabel];
+                        } else {
+                            $deviceConfig['modelName']['value'] = $categoryLabel;
+                        }
+                        if (!isset($deviceConfig['vendorId']) || !is_array($deviceConfig['vendorId'])) {
+                            $deviceConfig['vendorId'] = ['value' => 'JSD'];
+                        } else {
+                            $deviceConfig['vendorId']['value'] = $deviceConfig['vendorId']['value'] ?? 'JSD';
+                        }
+                    } else {
+                        $deviceConfig['modelName'] = $categoryLabel;
+                        $deviceConfig['vendorId'] = $deviceConfig['vendorId'] ?? 'JSD';
+                    }
+                    $modelNameFallbackImeis[] = $device->imei;
+                }
+            }
+
+            $mergedConfig = array_merge($deviceConfig, $templateConfig);
+            $device->configurations = json_encode($mergedConfig);
+            $device->save();
+
+            $successfulUpdates[] = $device->imei;
+            $updatedConfigurations[$device->imei] = $mergedConfig;
         }
 
 
@@ -296,17 +339,22 @@ class TemplateController extends Controller
         if (!empty($successfulUpdates)) {
             $successMessage .= 'Total Device Updated :' . count($successfulUpdates);
             $successMessage .= "Devices successfully updated for this imei: " . implode(', ', $successfulUpdates);
+            if (!empty($modelNameFallbackImeis)) {
+                $successMessage .= ' Note: no product model was registered for firmware '
+                    . CommonHelper::getFirmwareName($firmware->id)
+                    . ' for hierarchy on IMEI(s): ' . implode(', ', $modelNameFallbackImeis)
+                    . ' — device category name was used as model name.';
+            }
         }
 
         $errorMessage = '';
         if (!empty($errors)) {
-            $errorMessage .= "Total Device Failed" . count($errors) . '</br>';
-            $errorMessage .= "Errors occurred for devices:";
-            $errorMessage .= "Device ID ";
-            foreach ($errors as $error) {
-                $errorMessage .= "$error" . ",";
-            }
-            $errorMessage .= ": Model name is not assigned to this " . CommonHelper::getFirmwareName($templateConfig['firmware_id']) . " firmware. Please contact the administrator.";
+            $errorMessage .= 'Total Device Failed: ' . count($errors) . '<br>';
+            $errorMessage .= 'Errors occurred for device IMEI(s): ';
+            $errorMessage .= implode(', ', $errors) . '. ';
+            $errorMessage .= 'Model could not be resolved for firmware '
+                . CommonHelper::getFirmwareName($firmware->id)
+                . '. Please register a model for the dealer/reseller chain or contact the administrator.';
         }
 
         // Redirect with messages
@@ -417,15 +465,22 @@ class TemplateController extends Controller
      */
     public function destroy(Template $template, $id)
     {
-        $template_data = Template::find($id);
-        $template_data->is_deleted = '1';
-        $template_data->save();
-        if (Auth::user()->user_type == 'Admin') {
-            return redirect('admin/view-template')->with(['error' => $template_data->template_name . '-Settings deleted Successfully', 'device_category_id' => $template_data->device_category_id]);
-        } else if (Auth::user()->user_type == 'Reseller') {
-            return redirect('reseller/view-template')->with(['error' => $template_data->template_name . '-Settings deleted Successfully', 'device_category_id' => $template_data->device_category_id]);
-        } else {
-            return redirect('user/view-template')->with(['error' => $template_data->template_name . '-Settings deleted Successfully', 'device_category_id' => $template_data->device_category_id]);
+        try {
+            $template_data = Template::find($id);
+            if (!$template_data) {
+                return redirect()->back()->with('error', 'Settings not found.');
+            }
+            $template_data->is_deleted = '1';
+            $template_data->save();
+            if (Auth::user()->user_type == 'Admin') {
+                return redirect('admin/view-template')->with(['error' => $template_data->template_name . '-Settings deleted Successfully', 'device_category_id' => $template_data->device_category_id]);
+            } else if (Auth::user()->user_type == 'Reseller') {
+                return redirect('reseller/view-template')->with(['error' => $template_data->template_name . '-Settings deleted Successfully', 'device_category_id' => $template_data->device_category_id]);
+            } else {
+                return redirect('user/view-template')->with(['error' => $template_data->template_name . '-Settings deleted Successfully', 'device_category_id' => $template_data->device_category_id]);
+            }
+        } catch (QueryException $e) {
+            return redirect()->back()->with('error', 'This template cannot be deleted because devices or other data still reference it.');
         }
     }
     public function viewTemplateConifiguration($id)

@@ -1,102 +1,18 @@
 @extends('layouts.apps')
 
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('test-plans-edit') }}">
+@endpush
 @section('title', 'Edit Test Plan')
 
 @section('content')
-<style>
-    .input-group-addon {
-        display: table-cell;
-        vertical-align: middle;
-        min-width: 45px;
-        background: #f8fafc !important;
-        border-color: #e2e8f0 !important;
-    }
-    .input-group .form-control {
-        height: 45px !important;
-        border-color: #e2e8f0 !important;
-    }
-    .step-item .form-control {
-        height: 40px !important;
-        border-radius: 8px !important;
-    }
-    .step-item label {
-        margin-bottom: 5px !important;
-        font-size: 11px !important;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #718096;
-    }
-    .remove-step {
-        transition: all 0.2s;
-    }
-    .remove-step:hover {
-        background: #e53e3e !important;
-        transform: scale(1.1);
-    }
-    .rules-container {
-        background: #fdfdfd;
-        border: 1px solid #edf2f7;
-        border-radius: 10px;
-        padding: 15px;
-        margin-top: 15px;
-    }
-    .rule-row {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 12px;
-        align-items: center;
-        animation: fadeIn 0.3s ease;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-5px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .rule-row:last-child {
-        margin-bottom: 0;
-    }
-    .rule-row .form-control {
-        height: 38px !important;
-        font-size: 13px !important;
-    }
-    .remove-rule {
-        background: #fed7d7 !important;
-        color: #c53030 !important;
-        border: none !important;
-        width: 32px !important;
-        height: 32px !important;
-        border-radius: 8px !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-        flex-shrink: 0;
-    }
-    .remove-rule:hover {
-        background: #feb2b2 !important;
-        color: #9b2c2c !important;
-        transform: scale(1.05);
-    }
-    .add-rule-btn {
-        margin-top: 15px;
-        font-size: 11px;
-        font-weight: 800;
-        padding: 8px 16px;
-        border-radius: 8px;
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        color: #4a5568;
-        transition: all 0.2s;
-    }
-    .add-rule-btn:hover {
-        background: #edf2f7;
-        border-color: #cbd5e0;
-    }
-</style>
 
-<section id="main-content">
+
+<section id="main-content" class="test-plan-edit-page">
     <section class="wrapper">
         <div class="row">
-            <div class="col-md-10 col-md-offset-1">
+            <div class="col-xs-12 col-md-10 col-md-offset-1">
                 <section class="panel" style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: none;">
                     <header class="panel-heading" style="background: #0f172a !important; color: white !important; border-radius: 15px 15px 0 0; padding: 25px !important; border: none;">
                         <i class="fa fa-edit" style="margin-right: 10px; color: #96c93d;"></i> <strong style="font-size: 18px; letter-spacing: 0.5px;">Modify Test Plan: {{ $testPlan->name }}</strong>
@@ -110,8 +26,8 @@
                             @csrf
                             @method('PUT')
                             
-                            <div class="row">
-                                <div class="col-md-4">
+                            <div class="row top-plan-fields">
+                                <div class="col-xs-12 col-md-4">
                                     <div class="form-group" style="margin: 0 0 25px 0;">
                                         <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Plan Name</label>
                                         <div class="input-group">
@@ -120,7 +36,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-xs-12 col-md-4">
                                     <div class="form-group" style="margin: 0 0 25px 0;">
                                         <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Protocol</label>
                                         <div class="input-group">
@@ -134,7 +50,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-xs-12 col-md-4">
                                     <div class="form-group" style="margin: 0 0 25px 0;">
                                         <label class="control-label" style="font-weight: 700; color: #2d3748; margin-bottom: 10px; display: block; text-align: left;">Description</label>
                                         <div class="input-group">
@@ -145,7 +61,7 @@
                                 </div>
                             </div>
 
-                            <div style="margin: 40px 0 20px 0; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                            <div class="exec-seq-head" style="margin: 40px 0 20px 0; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
                                 <h4 style="margin: 0; font-weight: 800; color: #4a5568; text-transform: uppercase; font-size: 13px; letter-spacing: 1.5px;">Execution Sequence</h4>
                                 <span class="badge" id="step-count-badge" style="background: #ebf8ff; color: #2b6cb0; padding: 6px 12px; font-weight: 800; border: 1px solid #bee3f8;">{{ $testPlan->steps->count() }} STEPS</span>
                             </div>
@@ -165,7 +81,7 @@
                                         elseif($step->step_type == 'alert_evaluation') { $typeLabel = 'EVALUATE ALERTS'; }
                                     @endphp
                                     <div class="panel panel-default step-item" data-type="{{ $step->step_type }}" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid {{ $borderCol }}; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                                        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+                                        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
                                             <div style="display: flex; align-items: center;">
                                                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                                                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;">{{ $step->sequence }}</span> 
@@ -180,8 +96,8 @@
                                             <input type="hidden" name="steps[{{ $index }}][step_type]" value="{{ $step->step_type }}">
                                             
                                             @if($step->step_type == 'send_command')
-                                                <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-4">
+                                                <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                                                    <div class="col-xs-12 col-md-4">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Command Type</label>
                                                             <select name="steps[{{ $index }}][config][command_type]" class="form-control" required>
@@ -190,7 +106,7 @@
                                                             </select>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-8">
+                                                    <div class="col-xs-12 col-md-8">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Command String</label>
                                                             <input type="text" name="steps[{{ $index }}][config][command_text]" class="form-control" value="{{ $step->config['command_text'] ?? '' }}" required>
@@ -198,8 +114,8 @@
                                                     </div>
                                                 </div>
                                             @elseif($step->step_type == 'wait_for_response')
-                                                <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-4">
+                                                <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                                                    <div class="col-xs-12 col-md-4">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Timeout Duration</label>
                                                             <div class="input-group">
@@ -210,8 +126,8 @@
                                                     </div>
                                                 </div>
                                             @elseif($step->step_type == 'validate_response')
-                                                <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-12">
+                                                <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                                                    <div class="col-xs-12 col-md-12">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Packet Type</label>
                                                             <select name="steps[{{ $index }}][config][packet_type_id]" class="form-control packet-type-select" required data-initial-value="{{ $step->config['packet_type_id'] ?? '' }}">
@@ -246,8 +162,8 @@
                                                     </button>
                                                 </div>
                                             @elseif($step->step_type == 'alert_evaluation')
-                                                <div class="row" style="display: flex; align-items: flex-end;">
-                                                    <div class="col-md-12">
+                                                <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                                                    <div class="col-xs-12 col-md-12">
                                                         <div class="form-group" style="margin: 0;">
                                                             <label>Packet Type</label>
                                                             <select name="steps[{{ $index }}][config][packet_type_id]" class="form-control packet-type-select" required data-initial-value="{{ $step->config['packet_type_id'] ?? '' }}">
@@ -271,10 +187,10 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-xs-12 col-md-12">
                                     <div style="background: #fff; padding: 25px; border-radius: 15px; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
                                         <p style="font-weight: 800; color: #718096; margin-bottom: 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Add Action to Sequence</p>
-                                        <div class="btn-group">
+                                        <div class="btn-group add-step-actions" style="display: flex; flex-wrap: wrap; justify-content: center;">
                                             <button type="button" class="btn btn-info add-step" data-type="send_command" style="margin: 5px; background: #0f172a !important; color: white !important; border: none;">
                                                 <i class="fa fa-paper-plane" style="margin-right: 5px; color: #96c93d;"></i> Send Command
                                             </button>
@@ -292,7 +208,7 @@
                                 </div>
                             </div>
 
-                            <div style="margin-top: 50px; text-align: right; border-top: 2px solid #edf2f7; padding-top: 30px;">
+                            <div class="form-actions-footer" style="margin-top: 50px; text-align: right; border-top: 2px solid #edf2f7; padding-top: 30px;">
                                 <a href="{{ route($routePrefix . '.test-plans.index') }}" class="btn btn-default" style="margin-top:10px; padding: 12px 30px; margin-right: 15px; border-radius: 10px; font-weight: 700;">Cancel</a>
                                 <button type="submit" class="btn btn-primary" style="padding: 12px 45px; border-radius: 10px; font-weight: 700; background: #96c93d !important; color: white !important; border: none; box-shadow: 0 10px 20px rgba(150, 201, 61, 0.2);">
                                     <i class="fa fa-save" style="margin-right: 8px;"></i> Update Test Plan
@@ -309,7 +225,7 @@
 <!-- Step Templates -->
 <template id="step-template-send_command">
     <div class="panel panel-default step-item" data-type="send_command" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -322,8 +238,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="send_command">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-4">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-4">
                     <div class="form-group" style="margin: 0;">
                         <label>Command Type</label>
                         <select name="steps[INDEX][config][command_type]" class="form-control" required>
@@ -332,7 +248,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-xs-12 col-md-8">
                     <div class="form-group" style="margin: 0;">
                         <label>Command String</label>
                         <input type="text" name="steps[INDEX][config][command_text]" class="form-control" placeholder="e.g., ENG_STOP_CONFIRM" required>
@@ -345,7 +261,7 @@
 
 <template id="step-template-wait_for_response">
     <div class="panel panel-default step-item" data-type="wait_for_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -358,8 +274,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="wait_for_response">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-4">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-4">
                     <div class="form-group" style="margin: 0;">
                         <label>Timeout Duration</label>
                         <div class="input-group">
@@ -375,7 +291,7 @@
 
 <template id="step-template-validate_response">
     <div class="panel panel-default step-item" data-type="validate_response" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -388,8 +304,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="validate_response">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-12">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-12">
                     <div class="form-group" style="margin: 0;">
                         <label>Packet Type</label>
                         <select name="steps[INDEX][config][packet_type_id]" class="form-control packet-type-select" required disabled>
@@ -414,7 +330,7 @@
 
 <template id="step-template-alert_evaluation">
     <div class="panel panel-default step-item" data-type="alert_evaluation" style="margin-bottom: 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 6px solid #96c93d; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div class="panel-heading step-handle" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important; display: flex; justify-content: space-between; align-items: center;">
+        <div class="panel-heading step-handle step-item-heading" style="cursor: move; background: #fff !important; padding: 15px 25px !important; border-bottom: 1px solid #f0f4f8 !important;">
             <div style="display: flex; align-items: center;">
                 <i class="fa fa-arrows" style="margin-right: 15px; color: #cbd5e0; font-size: 16px;"></i>
                 <span class="step-index badge" style="background: #0f172a; color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-right: 15px; font-weight: 800;"></span> 
@@ -427,8 +343,8 @@
         </div>
         <div class="panel-body" style="padding: 25px;">
             <input type="hidden" name="steps[INDEX][step_type]" value="alert_evaluation">
-            <div class="row" style="display: flex; align-items: flex-end;">
-                <div class="col-md-12">
+            <div class="row step-form-row" style="display: flex; align-items: flex-end;">
+                <div class="col-xs-12 col-md-12">
                     <div class="form-group" style="margin: 0;">
                         <label>Packet Type</label>
                         <select name="steps[INDEX][config][packet_type_id]" class="form-control packet-type-select" required disabled>
@@ -596,12 +512,27 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.remove-step', function() {
-        if (!confirm('Are you sure you want to remove this step?')) return;
-        $(this).closest('.step-item').remove();
-        updateStepIndices();
-        if ($('.step-item').length === 0) {
-            $('#empty-steps-msg').show();
-        }
+        var $btn = $(this);
+        Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure you want to remove this step?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Remove',
+            cancelButtonText: 'Cancel',
+            background: '#1e293b',
+            color: '#f8fafc'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $btn.closest('.step-item').remove();
+                updateStepIndices();
+                if ($('.step-item').length === 0) {
+                    $('#empty-steps-msg').show();
+                }
+            }
+        });
     });
 
     $(document).on('change', '.packet-type-select', function() {
@@ -643,8 +574,23 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.remove-rule', function() {
-        if (!confirm('Are you sure you want to remove this rule?')) return;
-        $(this).closest('.rule-row').remove();
+        var $btn = $(this);
+        Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure you want to remove this rule?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Remove',
+            cancelButtonText: 'Cancel',
+            background: '#1e293b',
+            color: '#f8fafc'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $btn.closest('.rule-row').remove();
+            }
+        });
     });
 
     function addRuleRow(stepIdx, packetTypeId) {

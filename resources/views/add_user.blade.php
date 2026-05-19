@@ -18,22 +18,26 @@
 
   ?>
   @extends('layouts.apps')
-  @section('content')
+  
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('add-user') }}">
+@endpush
+@section('content')
   <!--main content start-->
+  
   <section id="main-content">
     <section class="wrapper">
-      <!--======== Page Title and Breadcrumbs Start ========-->
-      <div class="top-page-header">
-        <div class="page-breadcrumb">
-          <nav class="c_breadcrumbs">
-            <ul>
-              <li><a href="#">Account</a></li>
-              <li class="active"><a href="#">Add Account</a></li>
-            </ul>
-          </nav>
-        </div>
+      {{-- BREADCRUMB --}}
+      <div class="au-breadcrumb-wrap">
+        <nav class="au-breadcrumb">
+          <div class="bc-home"><i class="fa fa-home"></i></div>
+          <a href="{{ url('admin') }}" class="bc-item">Home</a>
+          <span class="bc-sep">›</span>
+          <a href="#" class="bc-item">Account Management</a>
+          <span class="bc-sep">›</span>
+          <span class="bc-item active">Add Account</span>
+        </nav>
       </div>
-      <!--======== Page Title and Breadcrumbs End ========-->
       <!--======== Form Validation Content Start End ========-->
       <div class="row">
         <div class="col-md-12">
@@ -106,7 +110,7 @@
                     <div class="col-md-6">
                       <div class="form-group" style="margin-bottom: 24px;">
                         <label for="timezone" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">TimeZones <span style="color: #ef4444;">*</span></label>
-                        <select name="timezone" class="form-control select2" id="timezone" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; width: 100%;">
+                        <select name="timezone" class="form-control" id="timezone" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; width: 100%; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px;">
                           <option value="">Please Select Time Zone</option>
                           @foreach($timeZones as $timezone)
                           @php
@@ -289,7 +293,7 @@
                               <select class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }} style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;">
                                 <!-- <option value="">Please Select</option> -->
                                 @foreach($validationConfig['selectOptions'] as $configkey => $option)
-                                <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
+                                <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value']) && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
                                 @endforeach
                               </select>
                             </div>
@@ -305,7 +309,7 @@
                                 @foreach($validationConfig['selectOptions'] as $configkey => $option)
                                 @php
                                 $inputKey = str_replace(' ', '_', strtolower($input['key']));
-                                $rawValue = $configurationValue[$inputKey]['value'] ?? [];
+                                $rawValue = isset($configurationValue[$inputKey]['value']) ? $configurationValue[$inputKey]['value'] : [];
                                 if (is_string($rawValue)) {
                                 $decoded = json_decode($rawValue, true);
                                 $selectedValues = is_array($decoded) ? $decoded : explode(',', $rawValue);
@@ -1210,6 +1214,44 @@
 
     });
 
+    function initCanMultiselect($select) {
+      if (!$select || !$select.length || typeof $.fn.select2 !== 'function') {
+        return;
+      }
+
+      if ($select.data('select2')) {
+        $select.select2('destroy');
+      }
+
+      $select.removeClass('form-control inputType');
+
+      var maxSel = parseInt($select.data('max-select'), 10) || 0;
+      var placeholder = $select.data('placeholder') || 'Select options';
+
+      $select.select2({
+        placeholder: placeholder,
+        width: '100%',
+        dropdownCssClass: 'au-can-select2-drop'
+      });
+
+      if (maxSel > 0) {
+        $select.off('change.auMaxSelect').on('change.auMaxSelect', function() {
+          var selected = $(this).select2('val') || [];
+          if (selected.length > maxSel) {
+            selected.splice(maxSel);
+            $(this).select2('val', selected);
+            alert('You can only select up to ' + maxSel + ' options.');
+          }
+        });
+      }
+    }
+
+    function initCanMultiselects(index) {
+      $('#dynamicCanFields' + index).find('select.can-multiselect').each(function() {
+        initCanMultiselect($(this));
+      });
+    }
+
     function selectedCanProtocol(index) {
       let canProtocolValue = $('#can_protocol' + index).val();
       if (!canProtocolValue) return;
@@ -1237,9 +1279,8 @@
             }
             let inputHtml = `<input type="hidden" name="idCanParameters[${index}][${fieldId}]" value="${field.id}" />`;
             inputHtml += `<input type="hidden" name="CanParametersType[${index}][${fieldId}]" value="${inputType}" />`;
-            let inputHeight = (inputType === 'text_array' || inputType === 'multiselect') ? '' : 'height: 44px;';
-            let appearanceCSS = (inputType === 'select') ? "appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px;" : "";
-            let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control" placeholder="Enter ${field.fieldName}" style="border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; font-size: 14px; color: #64748b; ${inputHeight} ${appearanceCSS}"`;
+            let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="can-field-input" placeholder="Enter ${field.fieldName}"`;
+            let selectAttr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="can-field-input can-field-select"`;
 
             if (inputType === 'number') {
               if (validation.numberInput) {
@@ -1247,7 +1288,7 @@
               }
               inputHtml += `<input type="number" ${attr} />`;
             } else if (inputType === 'select') {
-              inputHtml += `<select ${attr}>`;
+              inputHtml += `<select ${selectAttr}><option value="">-- Select ${field.fieldName} --</option>`;
               if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
                 validation.selectOptions.forEach(option => {
                   inputHtml += `<option value="${option}">${option}</option>`;
@@ -1261,41 +1302,25 @@
               }
               inputHtml += `</select>`;
             } else if (inputType == 'multiselect') {
-              inputHtml += `<select ${attr} multiple >`;
+              const maxSel = validation.maxSelectValue || 0;
+              const fieldLabel = String(field.fieldName).replace(/"/g, '&quot;');
+              inputHtml += `<div class="can-multiselect-wrap"><select id="${fieldId}" name="canConfiguration[${index}][${fieldId}][]" class="can-multiselect" multiple data-max-select="${maxSel}" data-placeholder="${fieldLabel}">`;
 
               if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
+                const vals = Array.isArray(validation.selectValues) ? validation.selectValues : [];
                 validation.selectOptions.forEach((option, key) => {
-                  inputHtml += `<option value="${validation.selectValues[key]}">${option}</option>`;
+                  const optVal = vals[key] !== undefined ? vals[key] : option;
+                  inputHtml += `<option value="${optVal}">${option}</option>`;
                 });
               } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
                 Object.entries(validation.selectOptions).forEach(([key, value]) => {
                   inputHtml += `<option value="${key}">${value}</option>`;
                 });
               } else {
-                inputHtml += `<option value="">-- Select --</option>`;
+                inputHtml += `<option value="">-- No options available --</option>`;
               }
 
-              inputHtml += `</select>`;
-
-              // Apply Select2
-              setTimeout(() => {
-                var $select = $('#' + fieldId);
-                if ($select.length) {
-                  $select.select2({
-                    placeholder: "Select up to 3 options",
-                    width: "100%",
-                    dropdownParent: $('#canModal' + index)
-                  });
-                  $select.on("change", function() {
-                    var selected = $(this).select2("val");
-                    if (selected && selected.length > validation.maxSelectValue) {
-                      selected.splice(validation.maxSelectValue);
-                      $(this).select2("val", selected);
-                      alert("You can only select up to " + validation.maxSelectValue + " options.");
-                    }
-                  });
-                }
-              }, 100);
+              inputHtml += `</select></div>`;
             } else if (inputType === 'text_array') {
               console.log(validation);
               let values = [""];
@@ -1375,7 +1400,7 @@
                 updateHiddenValue();
               }, 100);
             } else if (inputType === 'hex') {
-              let attr1 = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control text-array-space me-2"`;
+              let attr1 = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="can-field-input text-array-space me-2"`;
               let maxValue = validation.maxValueInput || 0;
               if (validation.maxValueInput) {
                 attr1 += `maxlength="${validation.maxValueInput}"`;
@@ -1390,7 +1415,8 @@
               inputHtml += `<input type="text" ${attr} />`;
             }
 
-            let gridCol = (inputType === 'text_array' || inputType === 'multiselect') ? 'col-md-12' : 'col-md-6';
+            // All dynamic fields rendered full width
+            let gridCol = 'col-md-12';
             
             html += `<div class="${gridCol}">
                       <div class="form-group" style="margin-bottom: 24px;">
@@ -1403,6 +1429,7 @@
           });
           html += '</div>';
           $('#dynamicCanFields' + index).html(html).show();
+          initCanMultiselects(index);
         },
         error: function(xhr) {
           console.error("Error fetching CAN protocol fields", xhr);

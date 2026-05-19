@@ -1,0 +1,965 @@
+/* portal: migrated from add_deviceCategory.blade.php */
+#main-content.add-device-category-page .wrapper {
+        padding-top: 8px !important;
+    }
+
+    .add-device-category-page .dc-breadcrumb-wrap {
+        padding: 4px 0 10px 0;
+        margin: 0;
+    }
+
+    .add-device-category-page .dc-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        row-gap: 6px;
+        background: #1e293b;
+        border-radius: 50px;
+        padding: 6px 18px 6px 8px;
+        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        background: #76CF1C;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        flex-shrink: 0;
+        color: #1e293b;
+        text-decoration: none;
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-home i {
+        font-size: 13px;
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-item {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-sep {
+        color: rgba(255, 255, 255, 0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+
+    .add-device-category-page .dc-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    .add-device-category-page .dc-breadcrumb a.bc-item:hover {
+        color: #e2e8f0;
+    }
+
+    .add-device-category-page .dc-breadcrumb.dc-breadcrumb--scroll {
+        max-width: 100%;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    .add-device-category-page .dc-breadcrumb.dc-breadcrumb--scroll .bc-home {
+        flex-shrink: 0;
+    }
+
+    .add-device-category-page .dc-breadcrumb-wrap + .row {
+        margin-top: 2px;
+    }
+
+    .add-device-category-page .c_panel {
+        margin-top: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    .add-device-category-page .c_title {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+        border-bottom: 3px solid #76CF1C !important;
+        padding: 16px 22px !important;
+        border-radius: 14px 14px 0 0 !important;
+    }
+
+    .add-device-category-page .c_content {
+        padding: 20px 22px 24px !important;
+        background: #f1f5f9 !important;
+    }
+
+    .add-device-category-page .c_title h2::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .add-device-category-page .dc-panel-title {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        color: #ffffff !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .add-device-category-page .dc-panel-title > i {
+        color: #76CF1C;
+        font-size: 14px;
+    }
+
+    .select-container {
+        max-width: 500px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* legacy select2 block superseded by scoped rules above */
+
+    /* Scoped — avoid affecting modal / Select2 dropdown markup */
+    .add-device-category-page .c_content label,
+    .add-device-category-page #addDeviceCategory label {
+        font-weight: 600;
+    }
+
+    .add-device-category-page #addDeviceCategory .control-label {
+        margin-bottom: 6px;
+    }
+
+    /* BS3 horizontal forms default to right-aligned labels — looks broken vs full-width checkbox rows */
+    .add-device-category-page #addDeviceCategory.form-horizontal .control-label {
+        text-align: left !important;
+    }
+
+    /* Full-width step layout — prevent floated cols squeezing form to the right */
+    .add-device-category-page #addDeviceCategory,
+    .add-device-category-page #addDeviceCategory .form-step,
+    .add-device-category-page #addDeviceCategory .adc-form-card,
+    .add-device-category-page #addDeviceCategory .adc-step1-device-config,
+    .add-device-category-page #addDeviceCategory .adc-fields-stack,
+    .add-device-category-page #addDeviceCategory #selectedDeviceInput {
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+        clear: both;
+        box-sizing: border-box;
+    }
+
+    .add-device-category-page #addDeviceCategory .form-step::after,
+    .add-device-category-page #addDeviceCategory .adc-form-card::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    /* Step 2 still uses BS3 horizontal rows */
+    .add-device-category-page #addDeviceCategory .form-step > .form-group::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    .add-device-category-page #addDeviceCategory .adc-step1-device-config > .form-group::after,
+    .add-device-category-page #addDeviceCategory #certificationFields .form-group::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    .select2-container {
+        padding: 0px !important;
+    }
+
+    /* Dynamic selected data-fields — card layout */
+    .add-device-category-page .adc-dynamic-field {
+        margin: 0 !important;
+    }
+
+    .add-device-category-page .adc-dynamic-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+    }
+
+    .add-device-category-page .adc-dynamic-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #f8fafc;
+    }
+
+    .add-device-category-page .adc-dynamic-card-title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        min-width: 0;
+    }
+
+    .add-device-category-page .adc-dynamic-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: #76cf1c;
+        color: #0f172a;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+
+    .add-device-category-page .adc-dynamic-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #f8fafc;
+    }
+
+    .add-device-category-page .adc-dynamic-id {
+        font-size: 12px;
+        font-weight: 500;
+        color: #94a3b8;
+    }
+
+    .add-device-category-page .adc-dynamic-remove {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 1px solid rgba(248, 250, 252, 0.2);
+        border-radius: 10px;
+        background: rgba(248, 250, 252, 0.08);
+        color: #fca5a5;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .add-device-category-page .adc-dynamic-remove:hover,
+    .add-device-category-page .adc-dynamic-remove:focus {
+        background: #dc2626;
+        border-color: #dc2626;
+        color: #fff;
+        outline: none;
+    }
+
+    .add-device-category-page .adc-dynamic-card-body {
+        display: grid;
+        grid-template-columns: minmax(140px, 1fr) minmax(200px, 1.35fr);
+        gap: 16px 20px;
+        padding: 16px 18px 14px;
+        background: #fff;
+    }
+
+    .add-device-category-page .adc-dynamic-col {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .add-device-category-page .adc-dynamic-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .add-device-category-page .adc-dynamic-col .adc-input.form-control,
+    .add-device-category-page .adc-dynamic-value-input .form-control {
+        min-height: 42px !important;
+        height: auto !important;
+        padding: 8px 12px !important;
+        border: 1.5px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+        box-shadow: none !important;
+        background: #f8fafc !important;
+    }
+
+    .add-device-category-page .adc-dynamic-col .adc-input.form-control:disabled {
+        background: #e2e8f0 !important;
+        border-color: #cbd5e1 !important;
+        color: #334155 !important;
+        font-weight: 700;
+        opacity: 1;
+    }
+
+    .add-device-category-page .adc-dynamic-value-input .form-control:focus {
+        border-color: #76cf1c !important;
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12) !important;
+        background: #fff !important;
+    }
+
+    .add-device-category-page .adc-dynamic-value-input .select2-container {
+        width: 100% !important;
+    }
+
+    .add-device-category-page .adc-dynamic-value-input .select2-container .select2-selection--multiple {
+        min-height: 42px !important;
+        border: 1.5px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+    }
+
+    .add-device-category-page .adc-dynamic-card-foot {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px 16px;
+        padding: 12px 18px 14px;
+        border-top: 1px solid #e7edf5;
+        background: #f8fafc;
+    }
+
+    .add-device-category-page .adc-dynamic-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .add-device-category-page .adc-meta-chip,
+    .add-device-category-page .adc-dynamic-meta p {
+        margin: 0 !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        font-size: 11px;
+        color: #475569;
+        line-height: 1.3;
+        white-space: nowrap;
+    }
+
+    .add-device-category-page .adc-meta-chip b,
+    .add-device-category-page .adc-dynamic-meta p b {
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .add-device-category-page .adc-dynamic-required {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 7px 14px;
+        border-radius: 999px;
+        background: #fff;
+        border: 1.5px solid #e2e8f0;
+        font-size: 12px;
+        font-weight: 700;
+        color: #334155;
+        cursor: pointer;
+        user-select: none;
+        transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .add-device-category-page .adc-dynamic-required:has(.adc-required-check:checked) {
+        border-color: #76cf1c;
+        background: rgba(118, 207, 28, 0.08);
+    }
+
+    .add-device-category-page .adc-dynamic-required .adc-required-check {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: #76cf1c;
+    }
+
+    @media (max-width: 767px) {
+        .add-device-category-page .adc-dynamic-card-body {
+            grid-template-columns: 1fr;
+        }
+
+        .add-device-category-page .adc-dynamic-card-foot {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    /* Form card shell */
+    .add-device-category-page .adc-form-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 22px 24px 20px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+
+    .add-device-category-page .adc-section-title {
+        margin: 0 0 20px 0;
+        padding: 0 0 14px 0;
+        border-bottom: 1px solid #e2e8f0;
+        color: #0f172a;
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .add-device-category-page .adc-section-title i {
+        color: #76CF1C;
+        font-size: 16px;
+    }
+
+    /* Step 1 — option cards row + stacked fields */
+    .add-device-category-page .adc-step1-device-config {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .add-device-category-page .adc-options-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .add-device-category-page .adc-option-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 52px;
+        margin: 0;
+        padding: 14px 16px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    .add-device-category-page .adc-option-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    }
+
+    .add-device-category-page .adc-option-card:has(.adc-checkbox-input:checked) {
+        border-color: #76CF1C;
+        background: rgba(118, 207, 28, 0.1);
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12);
+    }
+
+    .add-device-category-page .adc-option-card .adc-checkbox-input {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        flex-shrink: 0;
+        accent-color: #76CF1C;
+        cursor: pointer;
+    }
+
+    .add-device-category-page .adc-option-text {
+        font-weight: 700;
+        font-size: 13px;
+        color: #334155;
+        line-height: 1.35;
+    }
+
+    .add-device-category-page #certificationFields.adc-cert-panel {
+        padding: 16px 18px;
+        border: 1px dashed #cbd5e1;
+        border-left: 4px solid #76CF1C;
+        border-radius: 12px;
+        background: #f8fafc;
+    }
+
+    .add-device-category-page .adc-cert-panel-title {
+        margin: 0 0 14px 0;
+        font-size: 13px;
+        font-weight: 800;
+        color: #0f172a;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .add-device-category-page .adc-cert-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .add-device-category-page .adc-field-block--full {
+        grid-column: 1 / -1;
+    }
+
+    .add-device-category-page .adc-fields-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .add-device-category-page .adc-field-label {
+        display: block;
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .add-device-category-page .adc-field-label .require {
+        color: #ef4444;
+    }
+
+    .add-device-category-page .adc-field-hint {
+        margin: 8px 0 0 0;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .add-device-category-page .adc-input,
+    .add-device-category-page .adc-step1-device-config .form-control {
+        width: 100%;
+        min-height: 44px;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 10px !important;
+        font-size: 14px !important;
+        color: #334155 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .add-device-category-page .adc-input:focus,
+    .add-device-category-page .adc-step1-device-config .form-control:focus {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.15) !important;
+        outline: none !important;
+    }
+
+    .add-device-category-page .adc-input::placeholder,
+    .add-device-category-page .adc-step1-device-config .form-control::placeholder {
+        color: #94a3b8;
+    }
+
+  /* Select2 v4 — data fields multiselect */
+    .add-device-category-page #user-select + .select2-container,
+    .add-device-category-page .adc-multiselect + .select2-container {
+        width: 100% !important;
+    }
+
+    .add-device-category-page .select2-container--default .select2-selection--multiple {
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 10px !important;
+        min-height: 48px !important;
+        padding: 6px 10px !important;
+        background: #fff !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+    }
+
+    .add-device-category-page .select2-container--default.select2-container--focus .select2-selection--multiple,
+    .add-device-category-page .select2-container--default.select2-container--open .select2-selection--multiple {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.15) !important;
+    }
+
+    .add-device-category-page .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background: #1e293b !important;
+        border: none !important;
+        border-radius: 6px !important;
+        color: #fff !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        padding: 4px 8px 4px 22px !important;
+    }
+
+    .add-device-category-page .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    .add-device-category-page .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #ef4444 !important;
+    }
+
+    .add-device-category-page .select2-container--default .select2-search--inline .select2-search__field {
+        font-size: 13px !important;
+        color: #475569 !important;
+        margin-top: 4px !important;
+    }
+
+    .add-device-category-page .select2-dropdown {
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 10px !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+    }
+
+    .add-device-category-page .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+        background: rgba(118, 207, 28, 0.18) !important;
+        color: #0f172a !important;
+    }
+
+    .add-device-category-page .adc-form-actions {
+        margin: 20px 0 0 0 !important;
+        padding: 16px 0 0 0;
+        border-top: 1px solid #e2e8f0;
+        text-align: right;
+    }
+
+    .add-device-category-page .adc-form-actions .col-xs-12 {
+        padding: 0 !important;
+    }
+
+    .add-device-category-page .adc-next-btn,
+    .add-device-category-page .adc-step-nav-btn {
+        min-height: 44px;
+        padding: 0 22px;
+        border-radius: 10px !important;
+        font-weight: 800 !important;
+        font-size: 14px !important;
+        border: none !important;
+        transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+    }
+
+    .add-device-category-page .adc-next-btn {
+        background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+        color: #0f172a !important;
+        box-shadow: 0 4px 14px rgba(118, 207, 28, 0.35) !important;
+    }
+
+    .add-device-category-page .adc-next-btn:not(:disabled):hover {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(118, 207, 28, 0.4) !important;
+    }
+
+    .add-device-category-page .adc-next-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none !important;
+    }
+
+    .add-device-category-page .adc-next-btn i {
+        margin-right: 6px;
+    }
+
+    .add-device-category-page #selectedDeviceInput {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 16px;
+    }
+
+    .add-device-category-page .adc-step2-prev-wrap,
+    .add-device-category-page .adc-step2-submit-wrap {
+        float: none !important;
+    }
+
+    @media (max-width: 991px) {
+        .add-device-category-page .dc-breadcrumb-wrap {
+            padding: 2px 0 6px 0;
+        }
+
+        .add-device-category-page .dc-breadcrumb {
+            border-radius: 999px;
+            padding: 5px 14px 5px 6px;
+        }
+
+        .add-device-category-page .c_content {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+            padding-top: 14px !important;
+            padding-bottom: 18px !important;
+        }
+
+        .add-device-category-page .adc-form-card {
+            padding: 16px 14px;
+        }
+
+        .add-device-category-page .adc-options-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .add-device-category-page .adc-cert-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .add-device-category-page .adc-next-btn {
+            width: 100%;
+        }
+
+        .add-device-category-page .adc-form-actions > div {
+            text-align: center !important;
+        }
+
+        .add-device-category-page .adc-step1-device-config .form-horizontal .control-label,
+        .add-device-category-page .form-step .form-horizontal .control-label {
+            text-align: left !important;
+            padding-top: 0 !important;
+        }
+
+        .add-device-category-page .adc-next-btn {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .add-device-category-page .adc-form-actions > div {
+            text-align: center !important;
+        }
+
+        .add-device-category-page .adc-step2-actions .adc-step-nav-btn {
+            width: 100%;
+        }
+
+        .add-device-category-page .adc-step2-prev-wrap {
+            margin-bottom: 10px;
+        }
+
+        .add-device-category-page .adc-step2-prev-wrap,
+        .add-device-category-page .adc-step2-submit-wrap {
+            flex: 1 1 100%;
+            width: 100% !important;
+            max-width: 100% !important;
+            text-align: center !important;
+        }
+
+        .add-device-category-page #user-select + .select2-container {
+            width: 100% !important;
+        }
+
+        .add-device-category-page .c_content input.form-control {
+            min-height: 42px;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .add-device-category-page .adc-step2-actions .adc-step2-prev-wrap {
+            text-align: left;
+        }
+
+        .add-device-category-page .adc-step2-actions .adc-step2-submit-wrap {
+            text-align: right;
+        }
+    }
+
+    /* ---- Tabular Data Fields Design ---- */
+    .adc-table-container {
+        margin-top: 20px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05), 0 4px 10px rgba(15, 23, 42, 0.03);
+    }
+
+    .adc-data-field-table {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: collapse;
+    }
+
+    .adc-data-field-table thead th {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        font-size: 11px !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 14px 16px !important;
+        border: none !important;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .adc-data-field-table tbody tr {
+        border-bottom: 1px solid #e2e8f0;
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .adc-data-field-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .adc-data-field-table tbody tr:hover {
+        background: rgba(118, 207, 28, 0.03);
+    }
+
+    .adc-data-field-table tbody td {
+        padding: 12px 16px !important;
+        vertical-align: middle;
+        border: none !important;
+    }
+
+    .adc-col-count {
+        width: 40px;
+        padding-left: 20px !important;
+    }
+
+    .adc-count-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        background: rgba(118, 207, 28, 0.15);
+        color: #5fa816;
+        font-size: 12px;
+        font-weight: 800;
+        border-radius: 6px;
+    }
+
+    /* Inputs in table */
+    .adc-data-field-table .adc-input.form-control,
+    .adc-data-field-table .select2-selection--multiple {
+        min-height: 38px !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 6px !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        font-size: 13px !important;
+        color: #334155 !important;
+    }
+
+    .adc-data-field-table .adc-input.form-control:focus {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 2px rgba(118, 207, 28, 0.15) !important;
+    }
+
+    .adc-data-field-table .adc-input.form-control:disabled {
+        background: #f8fafc !important;
+        color: #64748b !important;
+        font-weight: 600;
+        border-color: #e2e8f0 !important;
+    }
+
+    /* Readonly type text */
+    .adc-readonly-text {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        background: #f8fafc;
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        display: inline-block;
+        width: 100%;
+    }
+
+    /* Validation Badges */
+    .adc-val-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .adc-val-badges .adc-meta-chip {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        color: #475569;
+    }
+
+    .adc-val-badges .adc-meta-chip b {
+        color: #0f172a;
+        margin-right: 4px;
+    }
+
+    /* Custom Checkbox */
+    .adc-custom-checkbox {
+        position: relative;
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .adc-custom-checkbox input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .adc-custom-checkbox .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 20px;
+        width: 20px;
+        background-color: #fff;
+        border: 2px solid #cbd5e1;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .adc-custom-checkbox input:checked ~ .checkmark {
+        background-color: #6366f1; /* Purple/Blue to match reference image */
+        border-color: #6366f1;
+    }
+
+    .adc-custom-checkbox .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+        left: 5px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    .adc-custom-checkbox input:checked ~ .checkmark:after {
+        display: block;
+    }
+
+    /* Delete Button */
+    .adc-btn-delete {
+        background: transparent !important;
+        border: none !important;
+        padding: 6px !important;
+        box-shadow: none !important;
+        transition: transform 0.2s;
+    }
+    
+    .adc-btn-delete:hover {
+        transform: scale(1.1);
+    }
+
+    /* Override previous card styles that are no longer used for dynamic fields */
+    .add-device-category-page #selectedDeviceInput {
+        display: table-row-group !important;
+        gap: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    @media (max-width: 991px) {
+        .adc-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .adc-data-field-table {
+            min-width: 800px;
+        }
+    }

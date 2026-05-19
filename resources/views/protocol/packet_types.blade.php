@@ -1,19 +1,21 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('protocol-packet-types') }}">
+@endpush
 @section('content')
-<section id="main-content">
-    <section class="wrapper protocol-page">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        @php
-                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
-                        @endphp
-                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
-                        <li class="active"><a href="#">Packet Types</a></li>
-                    </ul>
-                </nav>
-            </div>
+<section id="main-content" class="protocol-page packet-types-page">
+    <section class="wrapper">
+        @php
+            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+        @endphp
+        <div class="protocol-breadcrumb-wrap">
+            <nav class="protocol-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Packet Types</span>
+            </nav>
         </div>
 
         <div class="row">
@@ -22,7 +24,11 @@
                     <div class="c_title" style="margin-bottom: 10px;">
                         <div class="row bgx-title-container">
                             <div class="col-lg-6 col-md-6 col-sm-6">
-                                <h2>Packet Types: <span>{{ $protocol->name }}</span></h2>
+                                <h2 class="pkt-title">
+                                    <i class="fa fa-cubes"></i>
+                                    Packet Types
+                                    <span class="pkt-title-protocol">{{ $protocol->name }}</span>
+                                </h2>
                             </div>
                             <div class="col-lg-6 col-md-6 col-sm-6 text-right">
                                 <a href="{{ route($routePrefix . '.packet-types.create', $protocol->id) }}" class="btn btn-success protocol-add-btn">
@@ -109,7 +115,7 @@
                                                     <a href="{{ route($routePrefix . '.fields', $type->id) }}" class="btn btn-primary btn-sm protocol-manage-btn">
                                                         <i class="fa fa-cogs"></i> Manage Parameters
                                                     </a>
-                                                    <form action="{{ route($routePrefix . '.packet-types.destroy', $type->id) }}" method="POST" style="display:inline-flex; margin: 0; padding: 0;" onsubmit="return confirm('Are you sure you want to delete this packet type? This will also delete all its associated parameters.');">
+                                                    <form action="{{ route($routePrefix . '.packet-types.destroy', $type->id) }}" method="POST" style="display:inline-flex; margin: 0; padding: 0;" class="swal-confirm" data-confirm-msg="Are you sure you want to delete this packet type? This will also delete all its associated parameters.">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger protocol-delete-btn" style="margin-top: -2px;">
@@ -142,8 +148,6 @@
         </div>
     </section>
 </section>
-
-@include('protocol.partials.protocol_styles')
 
 <script>
     $(function () {

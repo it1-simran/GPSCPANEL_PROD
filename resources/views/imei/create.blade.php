@@ -1,15 +1,24 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('imei-create') }}">
+@endpush
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<section id="main-content">
+
+
+
+<section id="main-content" class="imei-create-page">
     <section class="wrapper">
         <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Live Tracking</a></li>
-                        <li class="active"><a href="#">Add IMEI Recording</a></li>
-                    </ul>
+            <div class="imei-breadcrumb-wrap">
+                <nav class="imei-breadcrumb">
+                    <div class="bc-home"><i class="fa fa-home"></i></div>
+                    <a href="{{ url('admin') }}" class="bc-item">Home</a>
+                    <span class="bc-sep">›</span>
+                    <a href="{{ route((auth()->check() && strtolower(auth()->user()->user_type) === 'support') ? 'support.imei-devices.index' : 'imei-devices.index') }}" class="bc-item">Manage Trackers</a>
+                    <span class="bc-sep">›</span>
+                    <span class="bc-item active">Add IMEI Recording</span>
                 </nav>
             </div>
         </div>
@@ -56,11 +65,11 @@
                             </div> -->
                             <div class="form-group">
                                 <div class="col-lg-offset-3 col-lg-9">
-                                    <button type="submit" class="btn btn-success">Save</button>
+                                    <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> Save</button>
                                     <button type="button" 
                                             onclick="window.location='{{ route($routePrefix . 'imei-devices.index') }}'" 
                                             class="btn btn-default">
-                                        Cancel
+                                        <i class="fa fa-times"></i> Cancel
                                     </button>
                                 </div>
                             </div>

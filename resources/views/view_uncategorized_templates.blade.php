@@ -143,7 +143,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             @csrf
                                              @method('DELETE')
                                             @if($template->default_template=='0')
-                                            <button onClick="javascript:return confirm('Are you sure you want to delete this?');" class="btn btn-danger btn-sm" type="submit">Delete</button>
+                                            <button class="swal-confirm btn btn-danger btn-sm" data-confirm-msg="Are you sure you want to delete this?"  type="submit">Delete</button>
                                             @else($template->default_template=='1')
                                             @endif
                                         </form>

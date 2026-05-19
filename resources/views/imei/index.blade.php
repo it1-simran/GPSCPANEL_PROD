@@ -1,14 +1,21 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('imei-index') }}">
+@endpush
 @section('content')
-<section id="main-content">
+
+
+
+<section id="main-content" class="imei-page">
     <section class="wrapper">
         <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Live Tracking</a></li>
-                        <li class="active"><a href="#">Manage Trackers</a></li>
-                    </ul>
+            <div class="imei-breadcrumb-wrap">
+                <nav class="imei-breadcrumb">
+                    <div class="bc-home"><i class="fa fa-home"></i></div>
+                    <a href="{{ url('admin') }}" class="bc-item">Home</a>
+                    <span class="bc-sep">›</span>
+                    <span class="bc-item active">Manage Trackers</span>
                 </nav>
             </div>
         </div>
@@ -40,38 +47,36 @@
                             $inactiveCount = $devices->where('status', \App\Models\ImeiDevice::STATUS_OFF)->count();
                         @endphp
 
-                        <div class="row" style="margin-bottom: 20px;">
-                            <div class="col-lg-3 col-md-4 col-sm-6">
-                                <div class="widget-content bg-white" style="padding: 15px; border-radius: 6px; border: 1px solid #eee;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <div>
-                                            <h3 class="font-bold" style="margin: 0 0 4px 0; font-size: 26px; color: #333;">{{ $activeCount }}</h3>
-                                            <p style="margin: 0; font-size: 13px; color: #777; font-weight: 600;">Active (ON)</p>
-                                        </div>
-                                        <div>
-                                            <i class="fa fa-toggle-on" style="color: #2ecc71; font-size: 36px;"></i>
-                                        </div>
+                        <div class="row imei-stats-row">
+                            <div class="col-lg-4 col-md-6 col-sm-6">
+                                <div class="imei-stat-card">
+                                    <div>
+                                        <p class="imei-stat-title">Active Devices</p>
+                                        <p class="imei-stat-value">{{ $activeCount }}</p>
+                                        <p class="imei-stat-sub">Status: ON</p>
+                                    </div>
+                                    <div class="imei-stat-icon">
+                                        <i class="fa fa-toggle-on"></i>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="col-lg-3 col-md-4 col-sm-6">
-                                <div class="widget-content bg-white" style="padding: 15px; border-radius: 6px; border: 1px solid #eee;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <div>
-                                            <h3 class="font-bold" style="margin: 0 0 4px 0; font-size: 26px; color: #333;">{{ $inactiveCount }}</h3>
-                                            <p style="margin: 0; font-size: 13px; color: #777; font-weight: 600;">Inactive (OFF)</p>
-                                        </div>
-                                        <div>
-                                            <i class="fa fa-toggle-off" style="color: #f1c40f; font-size: 36px;"></i>
-                                        </div>
+                            <div class="col-lg-4 col-md-6 col-sm-6">
+                                <div class="imei-stat-card is-inactive">
+                                    <div>
+                                        <p class="imei-stat-title">Inactive Devices</p>
+                                        <p class="imei-stat-value">{{ $inactiveCount }}</p>
+                                        <p class="imei-stat-sub">Status: OFF</p>
+                                    </div>
+                                    <div class="imei-stat-icon">
+                                        <i class="fa fa-toggle-off"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="table-responsive">
-                            <table id="imeiTable" class="table table-bordered table-striped">
+                        <div class="table-responsive imei-table-wrap">
+                            <table id="imeiTable" class="table">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
@@ -86,40 +91,39 @@
                                 <tbody>
                                     @foreach($devices as $device)
                                         <tr>
-                                            <td>{{ $device->id }}</td>
+                                            <td><span class="imei-id-pill">{{ $device->id }}</span></td>
                                             <td><span style="font-weight: 600; font-size: 14px; color: #333;">{{ $device->imei }}</span></td>
                                             <td>
                                                 @if($device->status === \App\Models\ImeiDevice::STATUS_ON)
-                                                    <span class="label label-success" style="padding: 5px 10px; font-size: 12px;"><i class="fa fa-check-circle"></i> ON</span>
+                                                    <span class="imei-status-pill on"><i class="fa fa-check-circle"></i> ON</span>
                                                 @elseif($device->status === \App\Models\ImeiDevice::STATUS_OFF)
-                                                    <span class="label label-warning" style="padding: 5px 10px; font-size: 12px;"><i class="fa fa-power-off"></i> OFF</span>
+                                                    <span class="imei-status-pill off"><i class="fa fa-power-off"></i> OFF</span>
                                                 @else
-                                                    <span class="label label-danger" style="padding: 5px 10px; font-size: 12px;"><i class="fa fa-times-circle"></i> CLOSE</span>
+                                                    <span class="imei-status-pill close"><i class="fa fa-times-circle"></i> CLOSE</span>
                                                 @endif
                                             </td>
                                             <td>{{ $device->effective_start_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_start_at, 'd-M-Y H:i:s') : 'N/A' }}</td>
                                             <td>{{ $device->effective_end_at ? \App\Helper\CommonHelper::getDateAsTimeZone($device->effective_end_at, 'd-M-Y H:i:s') : 'N/A' }}</td>
-                                            <td><span class="badge" style="background-color: #3498db; padding: 5px 10px; font-size: 12px;">{{ $device->pending_commands_count ?? 0 }}</span></td>
-                                            <td style="min-width:340px;">
-                                                <div style="white-space:nowrap;">
-                                                    <a href="{{ route($routePrefix . 'imei-devices.edit', $device->id) }}" class="btn btn-info btn-sm" style="margin-right: 4px;">
-                                                        <i class="fa fa-pencil"></i> Edit
+                                            <td><span class="imei-pending-pill">{{ $device->pending_commands_count ?? 0 }}</span></td>
+                                            <td>
+                                                <div class="imei-actions">
+                                                    <a href="{{ route($routePrefix . 'imei-devices.edit', $device->id) }}" class="btn imei-action-btn btn-edit" title="Edit">
+                                                        <i class="fa fa-pencil"></i>
                                                     </a>
                                                     
-                                                    <a href="#" onclick="event.preventDefault(); document.getElementById('toggle-form-{{ $device->id }}').submit();" class="btn btn-warning btn-sm" style="margin-right: 4px;">
-                                                        <i class="fa {{ $device->status === \App\Models\ImeiDevice::STATUS_ON ? 'fa-power-off' : 'fa-plug' }}"></i> 
-                                                        {{ $device->status === \App\Models\ImeiDevice::STATUS_ON ? 'Turn OFF' : 'Turn ON' }}
+                                                    <a href="#" onclick="event.preventDefault(); document.getElementById('toggle-form-{{ $device->id }}').submit();" class="btn imei-action-btn btn-toggle" title="{{ $device->status === \App\Models\ImeiDevice::STATUS_ON ? 'Turn OFF' : 'Turn ON' }}">
+                                                        <i class="fa {{ $device->status === \App\Models\ImeiDevice::STATUS_ON ? 'fa-power-off' : 'fa-plug' }}"></i>
                                                     </a>
                                                     <form id="toggle-form-{{ $device->id }}" action="{{ route($routePrefix . 'imei-devices.toggle-status', $device->id) }}" method="POST" style="display: none;">
                                                         @csrf @method('PATCH')
                                                     </form>
 
-                                                    <a href="{{ route(auth()->check() && strtolower(auth()->user()->user_type) === 'support' ? 'support.tracker.index' : 'admin.tracker.index', ['imei' => $device->imei]) }}" class="btn btn-primary btn-sm" style="margin-right: 4px;">
-                                                        <i class="fa fa-list-alt"></i> Logs View
+                                                    <a href="{{ route(auth()->check() && strtolower(auth()->user()->user_type) === 'support' ? 'support.tracker.index' : 'admin.tracker.index', ['imei' => $device->imei]) }}" class="btn imei-action-btn btn-log" title="Logs View">
+                                                        <i class="fa fa-list-alt"></i>
                                                     </a>
 
-                                                    <a href="#" onclick="event.preventDefault(); if(confirm('Are you sure you want to delete this IMEI recording?')) document.getElementById('delete-form-{{ $device->id }}').submit();" class="btn btn-danger btn-sm">
-                                                        <i class="fa fa-trash"></i> Delete
+                                                    <a href="#" class="btn imei-action-btn btn-delete swal-confirm" title="Delete" data-form-id="delete-form-{{ $device->id }}" data-confirm-msg="Are you sure you want to delete this IMEI recording?">
+                                                        <i class="fa fa-trash"></i>
                                                     </a>
                                                     <form id="delete-form-{{ $device->id }}" action="{{ route($routePrefix . 'imei-devices.destroy', $device->id) }}" method="POST" style="display: none;">
                                                         @csrf @method('DELETE')
@@ -135,6 +139,7 @@
                 </div>
             </div>
         </div>
+
     </section>
 </section>
 <script>

@@ -6,32 +6,43 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-firmware') }}">
+@endpush
 @section('content')
-<section id="main-content">
+@php
+  $routePrefix = $url_type ?? 'admin';
+@endphp
+
+<section id="main-content" class="view-firmware-page">
   <section class="wrapper">
-    <!--======== Page Title and Breadcrumbs Start ========-->
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-            <li><a href="#">Firmware Management</a></li>
-            <li class="active"><a href="#">View FirmWare</a></li>
-          </ul>
-        </nav>
-      </div>
+    <div class="fw-breadcrumb-wrap">
+      <nav class="fw-breadcrumb fw-breadcrumb--scroll" aria-label="Breadcrumb">
+        <a href="{{ url($routePrefix) }}" class="bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+        <a href="{{ url($routePrefix) }}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item">Firmware Management</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">View Firmware</span>
+      </nav>
     </div>
-    <!--======== Page Title and Breadcrumbs End ========-->
-    <!--======== Dynamic Datatable Content Start End ========-->
     <div class="row">
       <div class="col-md-12">
         <div class="c_panel">
           <div class="c_title">
-            <div class="row bgx-title-container">
-              <div class="col-lg-6">
-                <h2>View Firmware</h2>
+            <div class="row bgx-title-container fw-page-title-row">
+              <div class="col-xs-12 col-lg-6">
+                <h2 class="fw-panel-title"><i class="fa fa-list-alt"></i> View Firmware</h2>
               </div>
-              <div class="col-lg-6 text-right">
-                <a href="/{{$url_type}}/add-firmware" class="btn btn-success"> Add FirmWare </a>
+              <div class="col-xs-12 col-lg-6 text-right fw-title-actions-wrap">
+                <div class="fw-title-actions">
+                  @if(Auth::user()->user_type == "Admin")
+                  <a href="{{ route('firmware.excel') }}" class="btn btn-dl-excel"><i class="fa fa-file-excel-o"></i>Download Excel</a>
+                  <a href="{{ route('firmware.csv') }}" class="btn btn-dl-csv"><i class="fa fa-file-text-o"></i>Download CSV</a>
+                  @endif
+                  <a href="/{{$url_type}}/add-firmware" class="btn btn-add-firmware"><i class="fa fa-plus"></i>Add FirmWare</a>
+                </div>
               </div>
             </div>
 
@@ -55,7 +66,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
               </div>
               @endif
             </div>
-            <div class="tabs">
+            <div class="tabs fw-tabs">
               @foreach ($getDeviceCategory as $key => $category)
               @if( Session::get('device_category_id'))
               <button class="tablinks {{Session::get('device_category_id') == $category->id ? 'active' : '' }}" type="button" onclick="return openDeviceTab(this, 'tab{{ $category->id }}')">
@@ -82,13 +93,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
               ?>
             <div id="tab{{ $category->id }}" class="tabcontent">
-              @if(Auth::user()->user_type == "Admin")
-              <div class="col-lg-12 text-right margin-bottom-10">
-                <a href="{{ route('firmware.excel') }}" class="btn btn-success">Download Excel</a>
-                <a href="{{ route('firmware.csv') }}" class="btn btn-success">Download CSV</a>
-              </div>
-              @endif
-              <table id="firmware{{ $category->id }}" class="firmwareData table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 13px;">
+              <div class="fw-table-wrap">
+              <table id="firmware{{ $category->id }}" class="firmwareData table cf firmware-datatable" style="border-spacing: 0; width: 100%; font-size: 13px;">
                 <thead>
                   <tr>
                     <th style="min-width: 60px;">Sr. No.</th>
@@ -106,8 +112,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     <th style="min-width: 100px;">No of Models</th>
                     <th style="min-width: 150px;">Created at</th>
                     <th style="min-width: 150px;">Last Edit</th>
-                    <th style="min-width: 80px;">Edit </th>
-                    <th style="min-width: 80px;">Delete</th>
+                    <th style="min-width: 160px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -116,8 +121,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   @php $config = json_decode($firmware->configurations); @endphp
                   <tr>
                     <td><?php echo $i; ?></td>
-                    <td>{{$firmware->id}}</td>
-                    <td>{{$firmware->name}}</td>
+                    <td><span class="fw-id-pill">{{$firmware->id}}</span></td>
+                    <td><span class="fw-name-cell">{{$firmware->name}}</span></td>
                     <?php /* <td>{{CommonHelper::getCountryName($config->country)}}</td> <?php */ ?>
                     <td>{{ isset($config->country) ? CommonHelper::getCountryName($config->country) : '-' }}</td>
                     <?php /* <td>{{CommonHelper::getStateName($config->state)}} </td> <?php */ ?>
@@ -138,58 +143,41 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     <td>{{$config->fileSize?? 0}}</td>
                     <td>{{$config->version}}</td>  */ ?>
 
-                    <td>{{ $config->filename ?? '-' }}</td>
-                    <td>{{ $config->fileSize ?? '-' }}</td>
-                    <td>{{ $config->version ?? '-' }}</td>
+                    <td><span class="fw-chip fw-file-chip">{{ $config->filename ?? '-' }}</span></td>
+                    <td><span class="fw-chip">{{ $config->fileSize ?? '-' }}</span></td>
+                    <td><span class="fw-chip">{{ $config->version ?? '-' }}</span></td>
 
                     <td>
-                       <a href="/admin/view-firmware-models/{{$firmware->id}}"  class="btn btn-primary" >View Modal</a>
+                       <a href="/admin/view-firmware-models/{{$firmware->id}}" class="btn fw-action-btn fw-btn-model"><i class="fa fa-eye"></i>View Model</a>
                     </td>
                     <td class="text-center">
-                      <?php echo $firmware->is_default == 1 ? '<button type="button" class="btn btn-warning">Yes</button>' : ''; ?>
+                      @if($firmware->is_default == 1)
+                        <span class="fw-default-pill">Yes</span>
+                      @endif
                     </td>
                     <td class="text-center">
-                        {{$firmware->model_count}}
+                        <span class="fw-model-count">{{$firmware->model_count}}</span>
                     </td>
-                    <td>{{CommonHelper::getDateAsTimeZone($firmware->created_at)}}</td>
-                    <td>{{CommonHelper::getDateAsTimeZone($firmware->updated_at)}}</td>
+                    <td><span class="fw-date-cell">{{CommonHelper::getDateAsTimeZone($firmware->created_at)}}</span></td>
+                    <td><span class="fw-date-cell">{{CommonHelper::getDateAsTimeZone($firmware->updated_at)}}</span></td>
                     <td class="text-center">
-                      <button type="button" class="btn btn-primary" onclick="openEditModel({{$firmware->id}})">Edit</button>
-                    </td>
-                    <td class="text-center">
+                      <div class="fw-actions-cluster">
+                        <button type="button" class="btn fw-action-btn fw-btn-edit" onclick="openEditModel({{$firmware->id}})"><i class="fa fa-pencil"></i>Edit</button>
                         <form id="deleteForm-{{$firmware->id}}" action="" method="post">
-                        @csrf
-                        @method('DELETE')
-                        <button type="button" class="btn btn-danger btn-sm" onclick="showDeleteModal({{$firmware->id}})">
-                          Delete
-                        </button>
-                      </form>
+                          @csrf
+                          @method('DELETE')
+                          <button type="button" class="btn fw-action-btn fw-btn-delete" onclick="showDeleteModal({{$firmware->id}})">
+                            <i class="fa fa-trash"></i>Delete
+                          </button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
-                  <div class="modal" id="deleteFirmwareModal{{$firmware->id}}" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                          </button>
-                        </div>
-                        <div class="modal-body">
-                          Are you sure you want to delete this firmware from All Devices ?
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                          <button type="button" class="btn btn-warning" onclick="confirmDelete({{$firmware->id}},false)">No</button>
-                          <button type="button" class="btn btn-danger" onclick="confirmDelete({{$firmware->id}},true)">Yes</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+
                   <div class="modal" id="addModel{{$firmware->id}}" aria-hidden="true">
                     <div class="modal-dialog">
                       <div class="modal-content">
-                        <div class="modal-header">
+                        <div class="modal-header fw-panel-modal-header">
                           <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
                           <h5 class="modal-title" id="addModellLabel">Add Model</h5>
                         </div>
@@ -208,7 +196,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             </div>
                             <div class="margin-bottom-10">
                               <label for="userAssign" class="form-label col-12">Assign Account</label>
-                              <select id="userAssign" name="userAssign" class="form-control" class="userAssign" onChange="getModelById({{$firmware->id}})">
+                              <select id="userAssign" name="userAssign" class="form-control userAssign" onChange="getModelById({{$firmware->id}})">
                                   <option value="">Please Select</option>
                                 @foreach($users as $user)
                                 <option value="{{$user->id}}">{{$user->name}}</option>
@@ -217,7 +205,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             </div>
                           </div>
                           <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal" aria-hidden="true">Close</button>
+                            <button type="button" class="btn btn-secondary close" data-dismiss="modal" aria-hidden="true">Close</button>
                             <button type="submit" class="btn btn-primary addModalFormBtn">Submit</button>
                             <input type="hidden" name="modalId" id="modalId" value =""/>
                             <input type="hidden" name="firmwareId" id="firmwareId{{$firmware->id}}" value="" />
@@ -226,44 +214,37 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       </div>
                     </div>
                   </div>
-                  <div class="modal" id="editFirmware{{$firmware->id}}" aria-hidden="true">
-                    <div class="modal-dialog">
+                  <div class="modal fw-firmware-modal fw-firmware-modal--edit" id="editFirmware{{$firmware->id}}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
                       <div class="modal-content">
-                        <div class="modal-header">
-                          <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-                          <h5 class="modal-title" id="addModellLabel">Edit Firmware</h5>
+                        <div class="modal-header fw-panel-modal-header">
+                          <h5 class="modal-title" id="editFirmwareModalLabel">Edit Firmware</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                         </div>
-                        <form id="editFirmwareForm" onsubmit="return false" method="post">
+                        <form id="editFirmwareForm" class="fw-firmware-modal__form" onsubmit="return false" method="post" enctype="multipart/form-data">
                           @csrf
                           <div class="modal-body">
                             <!-- Form to Add eSIM -->
-                            <div class="col-sm-12 alert alert-danger error_msg_firmware" role="alert" style="display:none"></div>
-                            <div class="margin-bottom-10">
-                              <label for="modalname" class="form-label col-12">Firmware File</label>
+                            <div class="fw-modal-alert alert alert-danger error_msg_firmware" role="alert" style="display:none"></div>
+                            <div class="fw-modal-field">
+                              <label class="fw-modal-label">Firmware File</label>
                               @if(isset($config->filename))
-                              <!-- Display the existing file -->
-                              <div>
-                                <p>Current file: <a href="{{ asset('fw/' . $config->filename) }}" target="_blank">{{ basename($config->filename) }}</a></p>
-                              </div>
+                              <p class="fw-current-file">Current file: <a href="{{ asset('fw/' . $config->filename) }}" target="_blank" rel="noopener">{{ basename($config->filename) }}</a></p>
                               @endif
-                              <input type="file" name="firmwareFile" id="firmwareFile" accept=".bin" class="reqfield" required/>
+                              <input type="file" name="firmwareFile" id="firmwareFile" accept=".bin" class="form-control fw-file-input reqfield" />
                             </div>
-                            <div class="margin-bottom-10">
-                              <label for="userAssign" class="form-label col-12">Firmware Version</label>
-                              <input class="form-control " type="text" placeholder="Firmware version" name="firmware_version" value="{{ $config->version ?? '-' }}" required />
+                            <div class="fw-modal-field">
+                              <label class="fw-modal-label">Firmware Version</label>
+                              <input class="form-control" type="text" placeholder="Firmware version" name="firmware_version" value="{{ $config->version ?? '' }}" required />
                             </div>
-                            <div class="margin-bottom-10">
-                                 <label for="releasingNotes" class="form-label">Releasing Notes</label>
-                                 <div>
-                                    <textarea class="form-control " id="releasingNotes" name="releasingNotes" rows="6" cols="63">
-                                      {{isset($config->releasingNotes)? $config->releasingNotes :''}}
-                                    </textarea>
-                                 </div>
-                             </div>
+                            <div class="fw-modal-field">
+                              <label for="releasingNotes" class="fw-modal-label">Releasing Notes</label>
+                              <textarea class="form-control" id="releasingNotes" name="releasingNotes" rows="5" placeholder="Enter release notes…">{{ isset($config->releasingNotes) ? trim($config->releasingNotes) : '' }}</textarea>
+                            </div>
                           </div>
                           <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal" aria-hidden="true">Close</button>
-                            <button type="submit" class="btn btn-primary editFirmwareFormBtn">Update</button>
+                            <button type="button" class="btn fw-modal-btn-close" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn fw-modal-btn-submit editFirmwareFormBtn">Update</button>
                             <input type="hidden" name="firmwareIdEdit" id="firmwareIdEdit{{$firmware->id}}" value="" />
                           </div>
                         </form>
@@ -276,6 +257,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                  
                 </tbody>
               </table>
+              </div>
             </div>
             @endforeach
 
@@ -290,10 +272,30 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
   </section>
 </section>
 @stop
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@section('scripts')
 <script>
   function showDeleteModal(id) {
-    $('#deleteFirmwareModal' + id).modal('show');
+    Swal.fire({
+      title: 'Confirm Deletion',
+      text: 'Are you sure you want to delete this firmware from All Devices?',
+      icon: 'warning',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonColor: '#3085d6',
+      denyButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes',
+      denyButtonText: 'No',
+      cancelButtonText: 'Cancel',
+      background: '#1e293b',
+      color: '#f8fafc'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        confirmDelete(id, true);
+      } else if (result.isDenied) {
+        confirmDelete(id, false);
+      }
+    });
   }
   function confirmDelete(id,response) {
       
@@ -302,39 +304,108 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     form.submit();
   }
 
-  $(document).ready(function (){
-       
-    // $('.tablinks').on('click', function() {
-    //   $('#loading').show();
-    //   initializeDataTables();
-    // });
-    
-    // Default tab logic handled below
+  function getFirmwareDataTableOptions() {
+    return {
+      paging: true,
+      searching: true,
+      info: true,
+      ordering: true,
+      lengthChange: true,
+      autoWidth: false,
+      responsive: false,
+      pageLength: 25,
+      scrollX: true,
+      scrollCollapse: false,
+      "aLengthMenu": [
+        [25, 50, 100, 500, -1],
+        [25, 50, 100, 500, "All"]
+      ],
+      "iDisplayLength": 25,
+      columnDefs: [
+        { targets: 0, searchable: false }
+      ],
+      dom: "<'row'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>",
+      initComplete: function () {
+        try { this.api().columns.adjust(); } catch (e) { /* noop */ }
+      },
+      drawCallback: function () {
+        try { this.api().columns.adjust(); } catch (e) { /* noop */ }
+      }
+    };
+  }
 
-      function initializeDataTables() {
-      $('.firmwareData').each(function() {
-        var elementId = $(this).attr('id');
-        if ($.fn.DataTable.isDataTable("#" + elementId)) {
-          $("#" + elementId).DataTable().destroy();
-        }
-        $("#" + elementId).DataTable({
-          paging: true,
-          searching: true,
-          ordering: true,
-          lengthChange: true,
-          pageLength: 10,
-          scrollX: true,
-          scrollY: '500px',
-          "aLengthMenu": [
-            [25, 50, 100, 500, -1],
-            [25, 50, 100, 500, "All"]
-          ],
-          "iDisplayLength": 25
-        });
-      });
-      $('#loading').hide();
+  /**
+   * Lazy-init DataTables only when a category tab is visible. Initializing scrollX while the panel
+   * is display:none collapses the scroll body — rows stay invisible until tab switch (filter bug).
+   */
+  function ensureFirmwareDataTable($table) {
+    if (!$table || !$table.length || !$.fn.DataTable) {
+      return null;
     }
-    initializeDataTables();
+    var elementId = $table.attr('id');
+    if (!elementId) {
+      return null;
+    }
+
+    $table.find('tbody > .modal').each(function () {
+      $('body').append(this);
+    });
+
+    if ($.fn.DataTable.isDataTable('#' + elementId)) {
+      var dtExisting = $table.DataTable();
+      try { dtExisting.columns.adjust(); } catch (e) { /* noop */ }
+      try { dtExisting.draw(false); } catch (e) { /* noop */ }
+      return dtExisting;
+    }
+
+    var dt = $table.DataTable(getFirmwareDataTableOptions());
+    try { dt.columns.adjust().draw(false); } catch (e) { /* noop */ }
+    return dt;
+  }
+
+  $(document).ready(function () {
+    var $page = $('#main-content.view-firmware-page');
+
+    $page.find('.tabcontent').hide();
+
+    var $activeBtn = $page.find('.tablinks.active').first();
+    if (!$activeBtn.length) {
+      $activeBtn = $page.find('.tablinks').first();
+    }
+    $page.find('.tablinks').removeClass('active');
+    if ($activeBtn.length) {
+      $activeBtn.addClass('active');
+    }
+
+    var tabId = null;
+    if ($activeBtn.length) {
+      var oc = $activeBtn.attr('onclick') || '';
+      var tm = oc.match(/,\s*'([^']+)'\s*\)/);
+      if (tm) {
+        tabId = tm[1];
+      }
+    }
+
+    if (tabId && $('#' + tabId).length) {
+      $('#' + tabId).show();
+      ensureFirmwareDataTable($('#' + tabId).find('table.firmwareData'));
+    } else {
+      $page.find('.tabcontent:first').show();
+      ensureFirmwareDataTable($page.find('.tabcontent:visible').find('table.firmwareData'));
+    }
+
+    $('#loading').hide();
+
+    function adjustFirmwareDataTables() {
+      $page.find('.firmwareData').each(function () {
+        if ($.fn.DataTable.isDataTable(this)) {
+          try { $(this).DataTable().columns.adjust(); } catch (e) { /* noop */ }
+        }
+      });
+    }
+    $(window).on('resize orientationchange', function () {
+      adjustFirmwareDataTables();
+    });
   });
 
 
@@ -405,28 +476,6 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
   
   });
 
-  $(document).ready(function() {
-    $('.example').each(function() {
-      var elementId = $(this).attr('id');
-      $("#" + elementId).dataTable({
-        paging: true,
-        searching: true,
-        info: true,
-        ordering: true,
-        lengthChange: true,
-        pageLength: 10,
-        scrollX: true,
-        scrollY: '500px',
-        scrollCollapse: true,
-        "aLengthMenu": [
-          [25, 50, 100, 500, -1],
-          [25, 50, 100, 500, "All"]
-        ],
-        "iDisplayLength": 25
-      });
-    });
-  });
-
   function open_model(id, key) {
     $("#test_id").val(id);
     $("#modal-responsive-" + id).modal();
@@ -442,33 +491,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     });
   })
 
-
-  // default load pe first tab show karo
-  $(document).ready(function () {
-      $('.tabcontent').hide();
-      
-      let firstTab = $('.tablinks').first();
-      if(firstTab.length){
-          firstTab.addClass('active');
-          let onclick = firstTab.attr('onclick');
-          if(onclick) {
-              let tabMatch = onclick.match(/'([^']+)'/);
-              if(tabMatch) {
-                  $('#' + tabMatch[1]).show();
-              }
-          }
-      } else {
-        $('.tabcontent:first').show();
-      }
-  });
-  
   function openDeviceTab(evt, tabName) {
       if (evt && typeof evt.preventDefault === 'function') {
           evt.preventDefault();
       }
 
-      $('.tabcontent').hide();
-      $('.tablinks').removeClass('active');
+      var $page = $('#main-content.view-firmware-page');
+      $page.find('.tabcontent').hide();
+      $page.find('.tablinks').removeClass('active');
       $('#' + tabName).show();
 
       var currentBtn = null;
@@ -477,32 +507,25 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       } else if (evt && evt.nodeType === 1) {
           currentBtn = $(evt);
       } else {
-          currentBtn = $('.tablinks[onclick*="' + tabName + '"]').first();
+          currentBtn = $page.find('.tablinks[onclick*="' + tabName + '"]').first();
       }
       if (currentBtn && currentBtn.length) {
           currentBtn.addClass('active');
       }
 
-      if ($.fn.DataTable) {
-          var dtTables = $.fn.dataTable.tables({ visible: true, api: true });
-          if (dtTables && dtTables.columns && typeof dtTables.columns.adjust === 'function') {
-              dtTables.columns.adjust();
-          } else if (dtTables && typeof dtTables.columns === 'function') {
-              dtTables.columns().adjust();
-          }
-      }
+      setTimeout(function () {
+          var $tbl = $('#' + tabName).find('table.firmwareData');
+          $tbl.each(function () {
+              ensureFirmwareDataTable($(this));
+          });
+      }, 50);
 
       return false;
   }
 </script>
+@endsection
 
 <!-- nav-collapse md-box-shadowed hide-left-bar show-left-bar-mobile -->
-
-
-
-
-
-
 
 
 

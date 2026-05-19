@@ -1,187 +1,28 @@
 @extends('layouts.apps')
 
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('test-plans-validate') }}">
+@endpush
 @section('title', 'Test Automation Console')
 
 @section('content')
-    <style>
-        .panel-heading {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-            color: white !important;
-            padding: 20px 25px !important;
-            border-radius: 12px 12px 0 0 !important;
-            border: none !important;
-        }
+    
 
-        .panel {
-            border-radius: 12px !important;
-            border: none !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
-        }
-
-        .control-card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 25px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .form-group label {
-            font-weight: 700;
-            color: #475569;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .form-control {
-            height: 42px !important;
-            border-radius: 8px !important;
-            border-color: #e2e8f0 !important;
-        }
-
-        .btn-start {
-            background: #96c93d !important;
-            color: white !important;
-            border: none;
-            height: 45px;
-            border-radius: 8px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 15px;
-            transition: all 0.3s;
-        }
-
-        .btn-start:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(150, 201, 61, 0.2);
-            color: white !important;
-        }
-
-        .status-section {
-            margin-top: 30px;
-            padding: 20px;
-            border-radius: 12px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-        }
-
-        .console-panel {
-            background: #1e1e1e;
-            border-radius: 12px;
-            height: 600px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .console-header {
-            background: #252526;
-            padding: 12px 20px;
-            border-bottom: 1px solid #333;
-            color: #888;
-            font-family: 'Consolas', monospace;
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .console-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            color: #d4d4d4;
-        }
-
-        .log-entry {
-            margin-bottom: 12px;
-            padding-left: 15px;
-            border-left: 2px solid #444;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .log-time {
-            color: #6a9955;
-            margin-right: 10px;
-        }
-
-        .log-step {
-            color: #569cd6;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
-        .log-type {
-            color: #ce9178;
-            text-transform: uppercase;
-        }
-
-        .log-status-pass {
-            color: #4ec9b0;
-            font-weight: bold;
-        }
-
-        .log-status-fail {
-            color: #f44747;
-            font-weight: bold;
-        }
-
-        .log-status-info {
-            color: #569cd6;
-            font-weight: normal;
-            font-style: italic;
-        }
-
-        /* Scrollbar */
-        .console-body::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .console-body::-webkit-scrollbar-track {
-            background: #1e1e1e;
-        }
-
-        .console-body::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 4px;
-        }
-
-        .console-body::-webkit-scrollbar-thumb:hover {
-            background: #444;
-        }
-    </style>
-
-    <section id="main-content">
+    <section id="main-content" class="test-validate-page">
         <section class="wrapper">
             <div class="row">
                 <div class="col-lg-12">
                     <section class="panel">
                         <header class="panel-heading">
-                            <div style="display: flex; align-items: center;">
-                                <i class="fa fa-terminal" style="margin-right: 12px; font-size: 20px; color: #76CF1C;"></i>
-                                <strong style="font-size: 16px; letter-spacing: 0.5px;">TEST AUTOMATION CONSOLE</strong>
+                            <div class="test-validate-panel-title">
+                                <i class="fa fa-terminal" style="margin-right: 12px; font-size: 20px; color: #76CF1C; flex-shrink: 0;"></i>
+                                <strong>TEST AUTOMATION CONSOLE</strong>
                             </div>
                         </header>
                         <div class="panel-body" style="padding: 30px;">
-                            <div class="row">
-                                <div class="col-md-4">
+                            <div class="row test-validate-layout">
+                                <div class="col-xs-12 col-md-4 test-validate-controls">
                                     <div class="control-card">
                                         <form id="execution-form">
                                             @csrf
@@ -214,7 +55,7 @@
                                         </form>
 
                                         <div id="execution-status" class="status-section" style="display:none;">
-                                            <div
+                                            <div class="exec-status-row"
                                                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                                 <span
                                                     style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">Status</span>
@@ -233,7 +74,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-8">
+                                <div class="col-xs-12 col-md-8 test-validate-console-wrap">
                                     <div class="console-panel">
                                         <div class="console-header">
                                             <span><i class="fa fa-angle-right"></i> EXECUTION_CONSOLE</span>
@@ -241,7 +82,7 @@
                                         </div>
                                         <div class="console-body" id="logs-container">
                                             <div id="logs-list">
-                                                <div style="text-align: center; color: #444; margin-top: 100px;">
+                                                <div class="test-validate-empty-hint" style="text-align: center; color: #444; margin-top: 100px;">
                                                     <i class="fa fa-plug fa-4x"
                                                         style="display: block; margin-bottom: 20px; opacity: 0.1;"></i>
                                                     <p style="letter-spacing: 2px; font-size: 14px; color: #555;">INITIALIZE

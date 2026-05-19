@@ -28,7 +28,9 @@ class GuestUserController extends Controller
     {
         // 1️⃣ Check if the signed link is still valid
         if (!$request->hasValidSignature()) {
-            abort(403, 'This link has expired or is invalid.');
+            return response()->view('errors.link_expired', [
+                'message' => 'This registration link has expired or is invalid. Please request a new invitation from your administrator.',
+            ], 403);
         }
 
         $email = $request->query('email');

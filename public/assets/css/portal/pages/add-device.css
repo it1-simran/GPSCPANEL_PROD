@@ -1,0 +1,238 @@
+/* portal: migrated from add_device.blade.php */
+#main-content .wrapper { padding-top: 10px !important; }
+
+    /* Breadcrumb (reference style) */
+    .ad-breadcrumb-wrap { padding: 14px 0 18px 0; }
+    .ad-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+        background: #1e293b;
+        border-radius: 50px;
+        padding: 6px 18px 6px 8px;
+        box-shadow: 0 4px 16px rgba(30,41,59,0.18);
+        gap: 0;
+    }
+    .ad-breadcrumb .bc-home {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #76CF1C;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        color: #1e293b;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+    .ad-breadcrumb .bc-item {
+        color: rgba(255,255,255,0.65);
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .ad-breadcrumb .bc-sep {
+        color: rgba(255,255,255,0.35);
+        margin: 0 8px;
+        font-size: 12px;
+    }
+    .ad-breadcrumb .bc-item.active {
+        color: #76CF1C;
+        font-weight: 700;
+    }
+
+    /* Panel and form polish */
+    #main-content .c_panel {
+        border: 0 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 6px 24px rgba(15,23,42,0.08) !important;
+        overflow: hidden;
+    }
+    #main-content .c_title {
+        background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
+        padding: 16px 22px !important;
+        border-bottom: 1px solid rgba(118,207,28,0.2) !important;
+    }
+    #main-content .c_title h2 {
+        margin: 0 !important;
+        color: #fff !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    #main-content .c_content {
+        padding: 22px 20px !important;
+    }
+
+    #main-content #commentForm .form-group {
+        margin-bottom: 14px !important;
+    }
+    #main-content #commentForm .control-label {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: #334155 !important;
+        padding-top: 10px !important;
+    }
+    #main-content #commentForm .form-control,
+    #main-content #commentForm select,
+    #main-content #commentForm .select2-selection--single,
+    #main-content #commentForm .select2-selection--multiple {
+        min-height: 40px !important;
+        border: 1px solid #d5deea !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        font-size: 13px !important;
+        color: #334155 !important;
+        background: #fff !important;
+        width: 100% !important;
+    }
+    #main-content #commentForm .form-control:focus,
+    #main-content #commentForm select:focus {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118,207,28,0.12) !important;
+        outline: none !important;
+    }
+    #main-content #commentForm .select2-container {
+        width: 100% !important;
+    }
+    #main-content #commentForm .btn.btn-primary.btn-flat {
+        background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+        border: 0 !important;
+        color: #0f172a !important;
+        font-weight: 800 !important;
+        border-radius: 8px !important;
+        padding: 9px 20px !important;
+        box-shadow: 0 4px 12px rgba(118,207,28,0.3) !important;
+    }
+
+    /* CAN Protocol modal (Add Device page — #canModal) */
+    #canModal.ad-can-modal-root .ad-can-modal-dialog {
+        margin: 8vh auto 30px;
+        max-width: 560px;
+    }
+    #canModal .ad-can-modal-content {
+        border: none;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+    }
+    #canModal .ad-can-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        gap: 12px;
+        padding: 16px 18px;
+        min-height: 56px;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-bottom: 1px solid rgba(118, 207, 28, 0.28);
+    }
+    #canModal .ad-can-modal-header .modal-title {
+        float: none;
+        margin: 0;
+        padding: 0;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #f8fafc;
+        line-height: 1.4;
+        flex: 1;
+        min-width: 0;
+    }
+    #canModal .ad-can-modal-header .close {
+        float: none;
+        position: static;
+        margin: 0;
+        padding: 8px 12px;
+        font-size: 22px;
+        font-weight: 300;
+        line-height: 1;
+        opacity: 0.9;
+        color: #e2e8f0;
+        text-shadow: none;
+        outline: none;
+    }
+    #canModal .ad-can-modal-header .close:hover,
+    #canModal .ad-can-modal-header .close:focus {
+        opacity: 1;
+        color: #76CF1C;
+    }
+    #canModal .ad-can-modal-body {
+        padding: 20px 22px 16px;
+        background: #f8fafc;
+    }
+    #canModal .ad-can-modal-footer {
+        padding: 14px 18px 18px;
+        margin-top: 0;
+        text-align: right;
+        background: #f1f5f9;
+        border-top: 1px solid #e2e8f0;
+    }
+    #canModal .ad-can-submit-btn {
+        min-width: 120px;
+        font-weight: 700;
+        border-radius: 8px;
+        padding: 10px 22px;
+        border: none;
+        background: linear-gradient(135deg, #76CF1C 0%, #5fb015 100%);
+        color: #0f172a;
+        box-shadow: 0 4px 12px rgba(118, 207, 28, 0.35);
+    }
+    #canModal .ad-can-submit-btn:hover,
+    #canModal .ad-can-submit-btn:focus {
+        color: #0f172a;
+        filter: brightness(1.05);
+    }
+
+    #canModal .ad-can-field {
+        margin-bottom: 16px;
+    }
+    #canModal .ad-can-field:last-of-type {
+        margin-bottom: 0;
+    }
+    #canModal .ad-can-field > .control-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 8px;
+        padding: 0;
+    }
+    #canModal .ad-can-field .require {
+        color: #dc2626;
+    }
+    #canModal .ad-can-control .form-control,
+    #canModal .ad-can-control select {
+        width: 100%;
+        min-height: 40px;
+        border: 1px solid #d5deea;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #334155;
+        background: #fff;
+        box-shadow: none;
+    }
+    #canModal .ad-can-control .form-control:focus,
+    #canModal .ad-can-control select:focus {
+        border-color: #76CF1C;
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12);
+        outline: none;
+    }
+    #canModal .ad-can-modal-body .select2-container {
+        width: 100% !important;
+    }
+    #canModal .ad-can-modal-body .select2-selection--single,
+    #canModal .ad-can-modal-body .select2-selection--multiple {
+        min-height: 40px !important;
+        border: 1px solid #d5deea !important;
+        border-radius: 8px !important;
+        background: #fff !important;
+    }
+    #canModal .ad-can-modal-body .select2-selection__rendered {
+        line-height: 38px !important;
+        padding-left: 12px !important;
+        color: #334155 !important;
+    }

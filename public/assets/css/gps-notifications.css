@@ -1,0 +1,243 @@
+/* ==========================================================
+   GPS site-wide notifications
+   — Dark toasts (top-right), pale inline alerts in content
+   (Class prefix gps-site-toast avoids clash with legacy .gps-toast in views.)
+   ========================================================== */
+
+/* ---- Toast stack (fixed, reference: dark card + icon) ---- */
+.gps-site-toast-stack {
+    position: fixed;
+    top: 72px;
+    right: 16px;
+    left: auto;
+    z-index: 10060;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    max-width: min(400px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+.gps-site-toast-stack .gps-site-toast {
+    pointer-events: auto;
+}
+
+.gps-site-toast {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #1a2235 0%, #121826 100%);
+    color: #f1f5f9;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    font-family: "Open Sans", system-ui, -apple-system, sans-serif;
+    animation: gps-site-toast-in 0.28s ease-out;
+}
+
+.gps-site-toast__main {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px 14px 14px;
+}
+
+/* Auto-dismiss timeline (shrinks left → right so user sees remaining time) */
+.gps-site-toast__track {
+    height: 3px;
+    flex-shrink: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.gps-site-toast__progress {
+    height: 100%;
+    width: 100%;
+    transform-origin: left center;
+    transform: scaleX(1);
+    animation-name: gps-site-toast-progress;
+    animation-duration: var(--gps-toast-duration, 6500ms);
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+@keyframes gps-site-toast-progress {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+.gps-site-toast--success .gps-site-toast__progress {
+    background: linear-gradient(90deg, #76cf1c, #9fe871);
+}
+
+.gps-site-toast--error .gps-site-toast__progress {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.gps-site-toast--warning .gps-site-toast__progress {
+    background: linear-gradient(90deg, #f59e0b, #fcd34d);
+}
+
+.gps-site-toast--info .gps-site-toast__progress {
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+}
+
+@keyframes gps-site-toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.gps-site-toast.gps-site-toast--out {
+    opacity: 0;
+    transform: translateX(16px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.gps-site-toast.gps-site-toast--out .gps-site-toast__progress {
+    animation-play-state: paused;
+}
+
+.gps-site-toast__icon-wrap {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.gps-site-toast--success .gps-site-toast__icon-wrap {
+    background: rgba(118, 207, 28, 0.18);
+    color: #9fe871;
+}
+
+.gps-site-toast--error .gps-site-toast__icon-wrap {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.gps-site-toast--warning .gps-site-toast__icon-wrap {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.gps-site-toast--info .gps-site-toast__icon-wrap {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+}
+
+.gps-site-toast__body {
+    flex: 1;
+    min-width: 0;
+    padding-right: 8px;
+}
+
+.gps-site-toast__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.35;
+    margin: 0 0 4px 0;
+}
+
+.gps-site-toast__msg {
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(226, 232, 240, 0.72);
+    line-height: 1.45;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.gps-site-toast__close {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin: -4px -4px 0 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
+}
+
+.gps-site-toast__close:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- Inline alerts (pale banner style in main content) ---- */
+#main-content .alert.alert-success,
+#container .c_content .alert.alert-success {
+    background-color: #dff0d8 !important;
+    border: 1px solid #c9e8ba !important;
+    color: #3c763d !important;
+    border-radius: 6px !important;
+    padding: 16px 20px !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+}
+
+#main-content .alert.alert-danger,
+#container .c_content .alert.alert-danger {
+    background-color: #f2dede !important;
+    border: 1px solid #e8c4c4 !important;
+    color: #a94442 !important;
+    border-radius: 6px !important;
+    padding: 16px 20px !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+}
+
+#main-content .alert.alert-warning,
+#container .c_content .alert.alert-warning {
+    background-color: #fcf8e3 !important;
+    border: 1px solid #f5e79e !important;
+    color: #8a6d3b !important;
+    border-radius: 6px !important;
+    padding: 16px 20px !important;
+}
+
+#main-content .alert.alert-info,
+#container .c_content .alert.alert-info {
+    background-color: #d9edf7 !important;
+    border: 1px solid #bcdff1 !important;
+    color: #31708f !important;
+    border-radius: 6px !important;
+    padding: 16px 20px !important;
+}
+
+@media (max-width: 576px) {
+    .gps-site-toast-stack {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        align-items: stretch;
+    }
+
+    .gps-site-toast {
+        max-width: none;
+    }
+}

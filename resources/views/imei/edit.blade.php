@@ -1,69 +1,39 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('imei-edit') }}">
+@endpush
 @section('content')
+@php
+    $routePrefix = auth()->check() && auth()->user()->user_type === 'Support' ? 'support.' : '';
+@endphp
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<style>
-    .btn-premium {
-        padding: 8px 30px;
-        border-radius: 8px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        text-transform: uppercase;
-        font-size: 13px;
-        border: none;
-    }
-    
-    .btn-premium-success {
-        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(46, 204, 113, 0.2);
-    }
-    
-    .btn-premium-success:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.3);
-        filter: brightness(1.1);
-    }
-    
-    .btn-premium-cancel {
-        background: #f8f9fa;
-        color: #636e72 !important;
-        border: 1px solid #dfe6e9;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        margin-left: 10px;
-        text-decoration: none !important;
-        display: inline-block;
-    }
-    
-    .btn-premium-cancel:hover {
-        background: #ebedef;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-    }
-</style>
-<section id="main-content">
+
+<section id="main-content" class="imei-page imei-edit-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Live Tracking</a></li>
-                        <li class="active"><a href="#">Edit IMEI Recording</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="imei-breadcrumb-wrap">
+            <nav class="imei-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ route($routePrefix . 'imei-devices.index') }}" class="bc-item">Manage Trackers</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Edit IMEI Recording</span>
+            </nav>
         </div>
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
-                    <div class="c_title"><h2>Edit IMEI Recording</h2><div class="clearfix"></div></div>
+                    <div class="c_title imei-edit-c-title">
+                        <h2 class="imei-edit-title">
+                            <i class="fa fa-list"></i>
+                            Edit IMEI Recording
+                            <span class="imei-edit-pill">{{ $imei_device->imei }}</span>
+                        </h2>
+                        <div class="clearfix"></div>
+                    </div>
                     <div class="c_content">
                         @if ($errors->any())
                             <div class="alert alert-danger"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
                         @endif
-                        @php
-                            $routePrefix = auth()->check() && auth()->user()->user_type === 'Support' ? 'support.' : '';
-                        @endphp
                         <form class="form-horizontal" method="POST" action="{{ route($routePrefix . 'imei-devices.update', $imei_device->id) }}">
                             @csrf
                             @method('PUT')
@@ -92,7 +62,7 @@
                             <div class="form-group">
                                 <div class="col-lg-offset-3 col-lg-9">
                                     <button type="submit" class="btn btn-premium btn-premium-success">Update</button>
-                                    <a href="{{ route($routePrefix . 'imei-devices.index') }}" class="btn btn-premium btn-premium-cancel">Cancel</a>
+                                    <a href="{{ route($routePrefix . 'imei-devices.index') }}" style="margin-top: 10px;" class="btn btn-premium btn-premium-cancel">Cancel</a>
                                 </div>
                             </div>
                         </form>

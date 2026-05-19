@@ -1,26 +1,32 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('protocol-edit') }}">
+@endpush
 @section('content')
-<section id="main-content">
+@php
+    $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+@endphp
+<section id="main-content" class="protocol-page protocol-edit-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        @php
-                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
-                        @endphp
-                        <li><a href="{{ route($routePrefix . '.index') }}">Protocol Management</a></li>
-                        <li class="active"><a href="#">Edit Protocol</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="protocol-breadcrumb-wrap">
+            <nav class="protocol-breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ route($routePrefix . '.index') }}" class="bc-item">Protocol Management</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Edit Protocol</span>
+            </nav>
         </div>
 
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <h2>Edit Protocol: <span>{{ $protocol->name }}</span></h2>
+                        <h2 class="edit-protocol-title">
+                            <i class="fa fa-cubes"></i>
+                            Edit Protocol
+                            <span class="edit-protocol-name-pill">{{ strtoupper($protocol->name) }}</span>
+                        </h2>
                         <div class="clearfix"></div>
                     </div>
                     <div class="c_content">
@@ -70,4 +76,5 @@
         </div>
     </section>
 </section>
+
 @endsection

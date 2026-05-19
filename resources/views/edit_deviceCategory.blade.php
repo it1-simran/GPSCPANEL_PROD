@@ -1,57 +1,34 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('edit-devicecategory') }}">
+@endpush
 @section('content')
-<style>
-    body {
-        padding: 40px;
-        background-color: #f8f9fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
+@php
+    $routePrefix = $url_type ?? 'admin';
+@endphp
 
-    .select-container {
-        max-width: 500px;
-        margin: auto;
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .select2-container--default .select2-selection--multiple {
-        border: 1px solid #ced4da;
-        border-radius: 5px;
-        padding: 5px;
-        min-height: 40px;
-    }
-
-    label {
-        font-weight: 600;
-        margin-bottom: 10px;
-    }
-
-    .select2-container {
-        padding: 0px !important;
-    }
-</style>
-<section id="main-content">
+<section id="main-content" class="edit-device-category-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Device Category</a></li>
-                        <li><a href="/{{$url_type}}/View-device-category">View
-                                Device Categories</a></li>
-                        <li class="active"><a href="#">Edit Device
-                                Category</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="edc-breadcrumb-wrap">
+            <nav class="edc-breadcrumb" aria-label="Breadcrumb">
+                <a href="{{ url($routePrefix) }}" class="bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+                <a href="{{ url($routePrefix) }}" class="bc-item">Home</a>
+                <span class="bc-sep">›</span>
+                <a href="{{ url($routePrefix . '/view-device-category') }}" class="bc-item">Device category</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Edit device category</span>
+            </nav>
         </div>
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <h2>Edit Device Category</h2>
+                        <div class="row bgx-title-container">
+                            <div class="col-xs-12">
+                                <h2 class="edc-panel-title"><i class="fa fa-pencil-square-o"></i> Edit device category</h2>
+                            </div>
+                        </div>
                         <div class="clearfix"></div>
                     </div><!--/.c_title-->
                     <div class="c_content">
@@ -75,14 +52,14 @@
                             </div>
                             @endif
                         </div>
-                        <div class="card bordered-1 ">
+                        <div class="edc-form-card">
                             <form class="validator form-horizontal"
                                 id="editDeviceCategory"
                                 name="editDeviceCategory" method="post"
-                                action="/{{$url_type}}/update-device-category">
+                                action="{{ url($routePrefix . '/update-device-category') }}">
                                 @csrf
-                                <div class='col-lg-12'>
-                                    <h5><b>Device Configurations</b></h5>
+                                <div class="col-lg-12">
+                                    <h5 class="edc-section-title">Device configurations</h5>
                                 </div>
                                 <div class="form-group ">
                                     <label for="curl"
@@ -148,9 +125,9 @@
                                 <div class="form-group">
                                     <label for="deviceName"
                                         class="control-label col-lg-3">Select
-                                        Data Fields <span
+                                        data fields <span
                                             class="require">*</span></label>
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-8">
                                         <select id="user-select"
                                             name="user_select[]"
                                             class="form-control"
@@ -165,12 +142,10 @@
                                         value="{{$device_category->id}}" />
                                 </div>
 
-                                <hr>
-
-                                <div class="form-group ">
-                                    <div class="col-lg-offset-3 col-lg-6">
-                                        <button class="btn btn-primary btn-flat"
-                                            type="submit">Save</button>
+                                <div class="form-group edc-save-row">
+                                    <div class="col-xs-12 edc-save-actions">
+                                        <button class="btn btn-success btn-flat" type="submit"><i class="fa fa-save"></i> Save</button>
+                                        <a href="{{ url($routePrefix . '/view-device-category') }}" class="btn btn-default btn-flat" style="margin-top: 10px;" >Cancel</a>
                                     </div>
                                 </div>
                             </form>
@@ -181,7 +156,10 @@
         </div>
     </section>
 </section>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+@stop
+
+@section('scripts')
 <script>
     let selectedOptions = <?php echo json_encode($device_category->inputs);  ?>;
     var selectedIds = selectedOptions.map(item => item?.id);
@@ -189,7 +167,7 @@
     let selectedOrder = [];
     $(document).ready(function() {
         $('#user-select').select2({
-            placeholder: 'Select devices',
+            placeholder: 'Select data fields',
             allowClear: true
         });
 
@@ -235,7 +213,7 @@
                 let validationRule = '';
                 switch (item.inputType) {
                     case 'select':
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p>`;
+                        validationRule = `<div class="edc-validation-meta"><div><strong>Type</strong> · ${item.inputType}</div></div>`;
                         defaultInput = `
                         <select class="form-control" name="default[]" id="defaultValue${item.id}">
                             ${selectOptions.map((opt, i) => `
@@ -247,10 +225,10 @@
                         break;
 
                     case 'multiselect':
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p>`;
+                        validationRule = `<div class="edc-validation-meta"><div><strong>Type</strong> · ${item.inputType}</div></div>`;
 
                         const selectId = `defaultValue${item.id}`;
-                        const selectedValues = validationConfig.selectValues || [];;
+                        const selectedValues = validationConfig.selectValues || [];
                         console.log("validationConfig ==>", validationConfig);
                         defaultInput = `
                         <select class="form-control select2-multiselect" name="default[${index}][]" id="${selectId}" multiple style="width: 100%; height: auto;">
@@ -274,58 +252,55 @@
                             });
                         }, 0);
                         break;
-                    case 'number':
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p><p><b>min:</b> ${validationConfig.numberInput?.min ?? ''} <br><b>max:</b> ${validationConfig.numberInput?.max ?? ''}</p>`;
-                        defaultInput = `<input type="number" class="form-control no-space-allowed"
-                         name="default[]" id="defaultValue${item.id}"
-                         placeholder="Enter Number"
-                         value ="${selectedOptions[index]?.default ? selectedOptions[index]?.default : ''}";
-                         min="${validationConfig.numberInput?.min ?? ''}"
-                         max="${validationConfig.numberInput?.max ?? ''}" />`;
+                    case 'number': {
+                        const nMin = validationConfig.numberInput?.min ?? '';
+                        const nMax = validationConfig.numberInput?.max ?? '';
+                        const rangeTxt = (nMin !== '' || nMax !== '') ? `${nMin} – ${nMax}` : '—';
+                        validationRule = `<div class="edc-validation-meta"><div><strong>Type</strong> · number</div><div><strong>Range</strong> · ${rangeTxt}</div></div>`;
+                        const numDef = selectedOptions[index]?.default != null && selectedOptions[index]?.default !== ''
+                            ? String(selectedOptions[index].default).replace(/"/g, '&quot;')
+                            : '';
+                        defaultInput = `<input type="number" class="form-control no-space-allowed" name="default[]" id="defaultValue${item.id}" placeholder="Enter number" value="${numDef}" min="${nMin}" max="${nMax}" />`;
                         break;
+                    }
 
                     case 'text':
                     case 'IP/URL':
                     case 'text_array':
-                    default:
+                    default: {
                         let addClassTextArray = item.inputType === 'text_array' ? 'text-array-space' : '';
                         let addClassIpUrl = item.inputType === 'IP/URL' ? 'ip-url-space' : '';
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p><p><b>maxlength:</b> ${validationConfig.maxValueInput ?? ''}</p>`;
-                        defaultInput = `<input type="text" class="form-control no-space-allowed ${addClassTextArray} ${addClassIpUrl}"
-                         name="default[]" id="defaultValue${item.id}"
-                         placeholder="Enter Value"
-                         value ="${selectedOptions[index]?.default ? selectedOptions[index]?.default : ''}";
-                         maxlength="${validationConfig.maxValueInput ?? ''}" />`;
+                        const maxL = validationConfig.maxValueInput ?? '';
+                        validationRule = `<div class="edc-validation-meta"><div><strong>Type</strong> · ${item.inputType}</div><div><strong>Max length</strong> · ${maxL !== '' ? maxL : '—'}</div></div>`;
+                        const textDef = selectedOptions[index]?.default != null && selectedOptions[index]?.default !== ''
+                            ? String(selectedOptions[index].default).replace(/"/g, '&quot;')
+                            : '';
+                        defaultInput = `<input type="text" class="form-control no-space-allowed ${addClassTextArray} ${addClassIpUrl}" name="default[]" id="defaultValue${item.id}" placeholder="Enter value" value="${textDef}" maxlength="${maxL}" />`;
                         break;
+                    }
                 }
 
                 const html = `
-              <div class="form-group" id="device-input-${item.id}">
-                <label class="control-label col-lg-3">Field ${index + 1} <span class="require">*</span><p>ID : ${item.id}</p></label>
-                <div class="row d-flex">
-                  <div class="col-lg-3">
-                    <input class="form-control" placeholder="Enter Input Name" type="text" disabled name="name[${item.id}]" value="${item.fieldName}" style="width: fit-content;" required />
-                    <input type="hidden" name="nameParameters[]" id="nameParameters${item.id}" value="${item.fieldName}" />
+              <div class="form-group edc-dynamic-field" id="device-input-${item.id}">
+                <div class="edc-dynamic-field-inner">
+                  <div class="edc-field-label">
+                    <strong>Field ${index + 1}</strong> <span class="require">*</span>
+                    <div class="edc-field-id">ID · ${item.id}</div>
+                  </div>
+                  <div class="edc-field-name">
+                    <input class="form-control" type="text" disabled name="name[${item.id}]" value="${String(item.fieldName).replace(/"/g, '&quot;')}" required />
+                    <input type="hidden" name="nameParameters[]" id="nameParameters${item.id}" value="${String(item.fieldName).replace(/"/g, '&quot;')}" />
                     <input type="hidden" name="idParameters[]" id="idParameters${item.id}" value="${item.id}" />
-                
                   </div>
-                  <div class="col-lg-2">
-                    <label class="control-label">Default Value <span class="require">*</span></label>
-                  </div>
-                  <div class="col-lg-3">
-                    ${defaultInput}
-                  </div>
-                  <div class="col-lg-3">
-                    ${validationRule}
-                  </div>
-                  <div class="col-lg-1 d-flex bgx-checkbox-custom">
+                  <div class="edc-field-default-label">Default value <span class="require">*</span></div>
+                  <div class="edc-field-default-input">${defaultInput}</div>
+                  <div class="edc-field-meta">${validationRule}</div>
+                  <div class="edc-field-required">
                     <input type="hidden" name="inputFieldRequired[${index}]" value="off">
-                    <input type="checkbox" name="inputFieldRequired[${index}]" value="on" ${selectedOptions[index]?.requiredFieldInput ? 'checked' : ''}/>
-                </div>
-                  <div class="col-lg-1 bgx-del-button-container">
-                    <button type="button" class="btn btn-danger btn-sm remove-input" data-id="${item.id}">
-                      <img src="/assets/icons/cross.svg" />
-                    </button>
+                    <label class="edc-check"><input type="checkbox" name="inputFieldRequired[${index}]" value="on" ${selectedOptions[index]?.requiredFieldInput ? 'checked' : ''}/> Required</label>
+                  </div>
+                  <div class="edc-field-actions">
+                    <button type="button" class="btn btn-danger btn-sm remove-input" data-id="${item.id}" title="Remove field" style="margin-top: 1px;"><i class="fa fa-trash"></i></button>
                     <input type="hidden" name="inputType[]" value="${item.inputType}" required />
                   </div>
                 </div>
@@ -404,7 +379,7 @@
                 '<input class="form-control onlynumberdecimal col-lg-3" placeholder="Enter Value" type="text" name="selectValues[' + inputCount + '][]" required/>' +
                 '</div>' +
                 '<div class="col-lg-2 bgx-del-button-container">' +
-                '<button type="button" class="btn btn-danger btn-sm remove-option"><img src="/assets/icons/cross.svg" /></button>' +
+                '<button type="button" class="btn btn-danger btn-sm remove-option"><i class="fa fa-times"></i></button>' +
                 '</div>' +
                 '</div>';
             $(this).closest(".form-group").find(".select-options-container").append(optionsHtml);
@@ -560,5 +535,4 @@
         });
     });
 </script>
-
-@stop
+@endsection

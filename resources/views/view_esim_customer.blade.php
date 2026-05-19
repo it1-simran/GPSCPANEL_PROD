@@ -6,34 +6,45 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-esim-customer') }}">
+@endpush
 @section('content')
-<section id="main-content">
+@php
+  $routePrefix = $url_type ?? 'admin';
+@endphp
+
+<section id="main-content" class="view-esim-customers-page">
   <section class="wrapper">
-    <!--======== Page Title and Breadcrumbs Start ========-->
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-            <li><a href="#">Firmware Management</a></li>
-            <li class="active"><a href="#">View ESIM Masters</a></li>
-          </ul>
-        </nav>
-      </div>
+    <div class="dc-breadcrumb-wrap">
+      <nav class="dc-breadcrumb dc-breadcrumb--scroll" aria-label="Breadcrumb">
+        <a href="{{ url($routePrefix) }}" class="bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+        <a href="{{ url($routePrefix) }}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item">Firmware Management</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">View ESIM Masters</span>
+      </nav>
     </div>
-    <!--======== Page Title and Breadcrumbs End ========-->
-    <!--======== Dynamic Datatable Content Start End ========-->
     <div class="row">
       <div class="col-md-12">
         <div class="c_panel">
           <div class="c_title">
-            <div class="row bgx-title-container">
-              <div class="col-lg-6">
-                <h2>View ESIM Masters</h2>
+            <div class="row bgx-title-container dc-esim-title-row">
+              <div class="col-xs-12 col-lg-6 col-md-12">
+                <h2 class="dc-panel-title"><i class="fa fa-list-alt"></i> View ESIM Masters</h2>
               </div>
-              <div class="col-lg-6 text-right">
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#uploadModal">
-                  Upload ESIM Masters
+              <div class="col-xs-12 col-lg-6 col-md-12 text-right dc-esim-actions-wrap">
+                <div class="dc-title-actions">
+                <button type="button" class="btn btn-upload" data-toggle="modal" data-target="#uploadModal" style="margin-top:1px">
+                  <i class="fa fa-upload"></i> Upload ESIM Masters
                 </button>
+                @if(Auth::user()->user_type == "Admin")
+                  <a href="{{ route('esimMasters.excel') }}" class="btn btn-dl"><i class="fa fa-file-excel-o"></i> Download Excel</a>
+                  <a href="{{ route('esimMasters.csv') }}" class="btn btn-dl btn-dl-csv"><i class="fa fa-file-text-o"></i> Download CSV</a>
+                @endif
+                </div>
               </div>
             </div>
             <div class="clearfix"></div>
@@ -56,20 +67,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
               </div>
               @endif
             </div>
-            @if(Auth::user()->user_type == "Admin")
-              <div class="col-lg-12 text-right margin-bottom-10">
-                <a href="{{ route('esimMasters.excel') }}" class="btn btn-success">Download Excel</a>
-                <a href="{{ route('esimMasters.csv') }}" class="btn btn-success">Download CSV</a>
-              </div>
-              @endif
-            <table id="esim" class="example table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 14px;">
+            <div class="dc-table-wrap">
+            <table id="esim" class="table table-bordered table-striped esim-datatable-table" style="width: 100%; font-size: 14px;">
               <thead>
                 <tr>
                   <th>Sr. No.</th>
                   <th>CCID</th>
                   <th>Customer Name</th>
                   <th>ESIM Make</th>
-                  <th style="width: 12px;">Created at</th>
+                  <th>Created at</th>
                   <th>Last Edit</th>
                   <th>Delete</th>
                 </tr>
@@ -90,7 +96,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     <form action="/{{$url_type}}/delete-esim-customer/{{$customer->id}}" method="post">
                       @csrf
                       @method('DELETE')
-                      <button onClick="javascript:return confirm('Are you sure you want to delete this?');" class="btn btn-danger btn-sm margin-top-1" type="submit">Delete</button>
+                      <button class="swal-confirm btn btn-danger btn-sm btn-esim-delete" data-confirm-msg="Are you sure you want to delete this?"  type="submit">Delete</button>
 
                     </form>
                   </td>
@@ -101,6 +107,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 @endforeach
               </tbody>
             </table>
+            </div>
           </div><!--/.c_content-->
         </div><!--/.c_panels-->
       </div><!--/col-md-12-->
@@ -121,17 +128,16 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 <label for="csv_file">Choose CSV file:</label>
                 <input type="file" class="form-control-file" name="csv_file" id="csv_file" accept=".csv">
               </div>
-              <button type="submit" class="btn btn-primary">Upload CSV</button>
+              <button type="submit" class="btn btn-upload-csv">Upload CSV</button>
             </form>
           </div>
         </div>
       </div>
     </div>
-    <!--======= Dynamic Datatable Content Start End ========-->
   </section>
 </section>
 @stop
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@section('scripts')
 <script>
   // $(document).ready(function() {
   //   $("#esim").dataTable({
@@ -153,23 +159,39 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
   // });
 
   $(document).ready(function () {
-      $('#esim').DataTable({
+      var $tbl = $('#esim');
+      if (!$tbl.length || !$.fn.DataTable) return;
+
+      var dt = $tbl.DataTable({
           paging: true,
           searching: true,
           info: true,
           ordering: true,
           lengthChange: true,
-
-          responsive: true,     
-          autoWidth: false,     
-          scrollX: true,    
-          scrollCollapse: true,
+          responsive: false,
+          autoWidth: false,
+          scrollX: true,
+          scrollCollapse: false,
 
           lengthMenu: [
               [25, 50, 100, 500, -1],
               [25, 50, 100, 500, "All"]
           ],
-          pageLength: 25
+          pageLength: 25,
+          dom: "<'row'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>",
+          initComplete: function () {
+            try { this.api().columns.adjust(); } catch (e) {}
+          },
+          drawCallback: function () {
+            try { this.api().columns.adjust(); } catch (e) {}
+          }
+      });
+
+      $tbl.closest('.dataTables_wrapper').find('.dataTables_filter input').attr('placeholder', 'Search ESIM masters...');
+
+      $(window).on('resize orientationchange', function () {
+        try { dt.columns.adjust(); } catch (e) {}
       });
   });
 </script>
+@endsection

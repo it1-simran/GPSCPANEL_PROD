@@ -1,0 +1,252 @@
+/* portal: migrated from test_plans/validate.blade.php */
+.panel-heading {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+            color: white !important;
+            padding: 20px 25px !important;
+            border-radius: 12px 12px 0 0 !important;
+            border: none !important;
+        }
+
+        .panel {
+            border-radius: 12px !important;
+            border: none !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .control-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .form-group label {
+            font-weight: 700;
+            color: #475569;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            height: 42px !important;
+            border-radius: 8px !important;
+            border-color: #e2e8f0 !important;
+        }
+
+        .btn-start {
+            background: #96c93d !important;
+            color: white !important;
+            border: none;
+            height: 45px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(150, 201, 61, 0.2);
+            color: white !important;
+        }
+
+        .status-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .console-panel {
+            background: #1e1e1e;
+            border-radius: 12px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .console-header {
+            background: #252526;
+            padding: 12px 20px;
+            border-bottom: 1px solid #333;
+            color: #888;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .console-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #d4d4d4;
+        }
+
+        .log-entry {
+            margin-bottom: 12px;
+            padding-left: 15px;
+            border-left: 2px solid #444;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-time {
+            color: #6a9955;
+            margin-right: 10px;
+        }
+
+        .log-step {
+            color: #569cd6;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .log-type {
+            color: #ce9178;
+            text-transform: uppercase;
+        }
+
+        .log-status-pass {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+
+        .log-status-fail {
+            color: #f44747;
+            font-weight: bold;
+        }
+
+        .log-status-info {
+            color: #569cd6;
+            font-weight: normal;
+            font-style: italic;
+        }
+
+        /* Scrollbar */
+        .console-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .console-body::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        .console-body::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        .console-body::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        /* —— Test validate page: responsive —— */
+        .test-validate-page .test-validate-panel-title {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-width: 0;
+        }
+        .test-validate-page .test-validate-panel-title strong {
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            line-height: 1.25;
+            word-break: break-word;
+        }
+        .test-validate-page .test-validate-layout > [class*="col-"] {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 767px) {
+            #main-content.test-validate-page > section.wrapper {
+                padding-left: 6px !important;
+                padding-right: 6px !important;
+            }
+            .test-validate-page .panel-body {
+                padding: 12px 8px !important;
+            }
+            .test-validate-page .panel-heading {
+                padding: 12px 14px !important;
+            }
+            .test-validate-page .test-validate-panel-title strong {
+                font-size: 13px;
+                letter-spacing: 0.35px;
+            }
+            .test-validate-page .control-card {
+                padding: 14px 12px;
+                border-radius: 10px;
+                margin-bottom: 14px;
+            }
+            .test-validate-page .test-validate-console-wrap {
+                margin-top: 0;
+            }
+            .test-validate-page .console-panel {
+                height: 52vh;
+                min-height: 260px;
+                max-height: 520px;
+            }
+            .test-validate-page .console-header {
+                padding: 10px 12px;
+                font-size: 11px;
+                flex-wrap: wrap;
+                gap: 6px;
+                row-gap: 4px;
+            }
+            .test-validate-page .console-body {
+                padding: 12px 10px;
+                font-size: 12px;
+                line-height: 1.55;
+            }
+            .test-validate-page .status-section {
+                margin-top: 16px;
+                padding: 14px 12px;
+            }
+            .test-validate-page .btn-start {
+                height: auto;
+                min-height: 44px;
+                padding-top: 12px;
+                padding-bottom: 12px;
+            }
+            .test-validate-page .exec-status-row {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .test-validate-page > section.wrapper > .row > .col-lg-12 {
+                padding-left: 4px !important;
+                padding-right: 4px !important;
+            }
+            .test-validate-page .log-entry {
+                padding-left: 10px;
+                word-break: break-word;
+            }
+            .test-validate-page .test-validate-empty-hint {
+                margin-top: 36px !important;
+            }
+            .test-validate-page .test-validate-empty-hint p {
+                font-size: 12px !important;
+                letter-spacing: 1px !important;
+                padding: 0 8px;
+            }

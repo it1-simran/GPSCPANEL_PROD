@@ -3,8 +3,10 @@
 use App\Helper\CommonHelper;
 use App\DeviceCategory;
 
-$configurations = json_decode($template_info['configurations'], true);
-$getCanEnableByDeviceCategory = DeviceCategory::select('is_can_protocol')->where('id', $template_info['device_category_id'])->first();
+$configurations = json_decode($template_info['configurations'], true) ?: [];
+$getCanEnableByDeviceCategory = !empty($template_info['device_category_id'])
+    ? DeviceCategory::select('is_can_protocol')->where('id', $template_info['device_category_id'])->first()
+    : null;
 // dd($configurations);
 $canConfigurations = json_decode($template_info['can_configurations'], true);
 // dd($configurations);
@@ -13,68 +15,80 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
 
 @extends('layouts.apps')
 
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-setting') }}">
+@endpush
 @section('content')
-<section id="main-content">
+<section id="main-content" class="view-template-config-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Setting</a></li>
-                        <li><a href="/{{$url_type}}/view-template">View Settings</a></li>
-                        <li class="active"><a href="#">View Configurations</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="protocol-breadcrumb-wrap">
+            <nav class="protocol-breadcrumb" aria-label="Breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ url($url_type . '/view-template') }}" class="bc-item">Settings</a>
+                <span class="bc-sep">›</span>
+                <a href="{{ url($url_type . '/view-template') }}" class="bc-item">View Settings</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">View Configurations</span>
+            </nav>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <div class="container bgx-custom-page">
-                    <div class="row justify-content-center">
-                        <div class="col-md-12">
-                            <div class="card">
-                                <div class="card-header bg-primary text-white header-custom">
-                                    <h4>Template Information and Configurations</h4>
-                                </div>
-                                <div class="card-body body-custom">
-                                    {{-- Display User Information --}}
-                                    <div class="user-info mb-4">
-                                        <div class='col-lg-9'>
-                                            <h5><b>Template Information:</b></h5>
-                                        </div>
-                                        <div class='row  bgx-configurations'>
-                                            <div class="view-template-configuration">
-                                                <div class='col-lg-5'>
-                                                    <div class="bgx-table-container">
-                                                        <div class="bgx-table-row">
-                                                            <div class="bgx-table-cell"><strong>Name:</strong> {{ $template_info['template_name'] }}</div>
-                                                            <div class="bgx-table-cell"><strong>Device Category:</strong> {{ CommonHelper::getDeviceCategoryName($template_info['device_category_id']) }}</div>
+                <div class="card vtc-main-card">
+                    <div class="card-header header-custom">
+                        <h4>
+                            <i class="fa fa-bars" aria-hidden="true"></i>
+                            Template and Configurations
+                        </h4>
+                    </div>
+                    <div class="card-body body-custom">
+                <div class="user-info no-accordion mb-4">
+                    <div class="vc-section-title"><i class="fa fa-file-text-o"></i> Template Information</div>
+                                        <div class='row bgx-configurations vtc-info-layout'>
+                                            <div class="view-template-configuration vtc-view-block row">
+                                                <div class='col-lg-6 col-md-12 vtc-meta-col'>
+                                                    <dl class="vtc-dl">
+                                                        <div class="vtc-dl-row">
+                                                            <dt>Name</dt>
+                                                            <dd>{{ $template_info['template_name'] }}</dd>
                                                         </div>
-                                                        <div class="bgx-table-row">
-                                                            <div class="bgx-table-cell"><strong>Created at:</strong> {{ CommonHelper::getDateAsTimeZone($template_info['created_at']) ?? 'N/A' }}</div>
-                                                            <div class="bgx-table-cell"><strong>Last Edit:</strong> {{ CommonHelper::getDateAsTimeZone($template_info['updated_at']) ?? 'N/A'  }}</div>
+                                                        <div class="vtc-dl-row">
+                                                            <dt>Device Category</dt>
+                                                            <dd>{{ CommonHelper::getDeviceCategoryName($template_info['device_category_id']) }}</dd>
                                                         </div>
-                                                    </div>
+                                                        <div class="vtc-dl-row">
+                                                            <dt>Created at</dt>
+                                                            <dd class="vtc-date">{{ CommonHelper::getDateAsTimeZone($template_info['created_at']) ?? 'N/A' }}</dd>
+                                                        </div>
+                                                        <div class="vtc-dl-row">
+                                                            <dt>Last Edit</dt>
+                                                            <dd class="vtc-date">{{ CommonHelper::getDateAsTimeZone($template_info['updated_at']) ?? 'N/A' }}</dd>
+                                                        </div>
+                                                    </dl>
                                                 </div>
-                                                <div class='col-lg-7' style='display: grid;justify-content: center;'>
-                                                    <div id="span2" class="btn {{ $template_info['default_template'] == 1 ? 'btn-success active' : 'btn-danger' }}" style="margin: 3px 0px;">
-                                                        Default Template - {{ $template_info['default_template'] == 1 ? 'Yes' : 'No' }}
-                                                    </div>
+                                                <div class='col-lg-6 col-md-12 vtc-badges-col'>
+                                                    <div class="vtc-badge-stack">
+                                                    <span class="vtc-pill vtc-pill-default {{ $template_info['default_template'] == 1 ? 'is-yes' : 'is-no' }}">
+                                                        <span class="vtc-pill-glyph"><i class="fa {{ $template_info['default_template'] == 1 ? 'fa-check' : 'fa-times' }}"></i></span>
+                                                        Default Template — {{ $template_info['default_template'] == 1 ? 'Yes' : 'No' }}
+                                                    </span>
 
                                                     @if(Auth::user()->user_type == "Admin")
-                                                    <div id="span2" class="btn {{isset($configurations['ping_interval']['value']) ? 'btn-warning active' : 'btn-danger' }}" style="margin: 3px 0px;">
-                                                        Ping interval - {{ isset($configurations['ping_interval']) ? $configurations['ping_interval']['value'] : '0' }}
-                                                    </div>
+                                                    <span class="vtc-pill vtc-pill-ping {{ isset($configurations['ping_interval']['value']) ? 'is-on' : '' }}">
+                                                        <span class="vtc-pill-glyph"><i class="fa fa-wifi"></i></span>
+                                                        Ping interval — {{ isset($configurations['ping_interval']) ? $configurations['ping_interval']['value'] : '0' }}
+                                                    </span>
 
-                                                    <div id="span2" class="btn {{ isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 ? 'btn-info active' : 'btn-danger' }}" style="margin: 3px 0px;">
-                                                        Editable- {{ isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 ? 'Yes' : 'No' }}
-                                                    </div>
+                                                    <span class="vtc-pill vtc-pill-edit {{ isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 ? 'is-yes' : 'is-no' }}">
+                                                        <span class="vtc-pill-glyph"><i class="fa fa-pencil"></i></span>
+                                                        Editable — {{ isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 ? 'Yes' : 'No' }}
+                                                    </span>
                                                     @endif
-
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="form-template-configuration" style="display:none;">
-                                                <form class="validator form-horizontal " id="updateDeviceInfoConfiguration" method="post" action="/{{$url_type}}/update-template-info-configurations/{{$template_info['id']}}">
+                                                <form class="validator form-horizontal " id="updateDeviceInfoConfiguration" method="post" action="{{ url($url_type . '/update-template-info-configurations/' . $template_info['id']) }}">
                                                     @method('PATCH')
                                                     @csrf
                                                     <div class="form-group "></div>
@@ -153,22 +167,26 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                             @endif
                                             @endif
                                         </div>
-                                    </div>
-                                    <div class="user-info ">
-                                        <h5><b>Template Configurations:</b></h5>
+                </div>
+
+                <div class="user-info mb-4">
+                    <div class="vc-section-title"><i class="fa fa-sliders"></i> Template Configurations</div>
                                         @empty($template_info['configurations'])
                                         <p class="col-md-12">No configurations found.</p>
                                         @else
                                         @php
-                                        $categoryIds = explode(',',$template_info['device_category_id']);
-
-                                        $deviceCategories= DeviceCategory::select('*')->whereIn('id', $categoryIds)->first();
-                                        $input = json_decode($deviceCategories->inputs,true);
-
+                                        $categoryIds = explode(',', $template_info['device_category_id']);
+                                        $deviceCategories = DeviceCategory::select('*')->whereIn('id', $categoryIds)->first();
+                                        $input = ($deviceCategories && $deviceCategories->inputs)
+                                            ? json_decode($deviceCategories->inputs, true)
+                                            : [];
+                                        if (!is_array($input)) {
+                                            $input = [];
+                                        }
                                         @endphp
                                         <div class="row d-flex">
                                             <div class="col-lg-12 mb-4">
-                                                <div class="configuration-item">
+                                                <div class="configuration-item vtc-config-list-box">
                                                     <h6><b>{{ CommonHelper::getDeviceCategoryName($template_info['device_category_id']) }}</b></h6>
                                                     <div class="bgx-configurations">
                                                         <div id="config">
@@ -179,7 +197,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                                             ? CommonHelper::getFirmwareName($configurations['firmware_id']['value']) 
                                                                             : 'No firmware available' }}
                                                                     </p>
-                                                                    @foreach ($input as $field => $value)
+                                                                    @foreach ($input ?? [] as $field => $value)
                                                                     <p>
                                                                         <strong>{{ $value['key'] }}:</strong>
                                                                         @php
@@ -222,7 +240,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                         </div>
                                                         <!--{{$url_type}}-->
                                                         <div id="form" style="display: none;">
-                                                            <form action="/{{$url_type}}/update-template-configurations/{{$template_info['id']}}" method="POST">
+                                                            <form action="{{ url($url_type . '/update-template-configurations/' . $template_info['id']) }}" method="POST">
                                                                 @csrf
                                                                 <div class='row'>
                                                                     <div class='col-sm-12 bgx-form-fields'>
@@ -242,9 +260,9 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                         </div>
                                         @endempty
                                     </div>
-                                    @if($getCanEnableByDeviceCategory->is_can_protocol == 1)
-                                    <div class="user-info">
-                                        <h4><b>CAN Protocol Configurations</b></h4>
+                                    @if($getCanEnableByDeviceCategory && $getCanEnableByDeviceCategory->is_can_protocol == 1)
+                <div class="user-info mb-4">
+                    <div class="vc-section-title"><i class="fa fa-microchip"></i> CAN Protocol Configurations</div>
                                         @empty($template_info['can_configurations'])
 
                                         @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
@@ -280,19 +298,15 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                         @endif
                                         @endif
                                         @endempty
-                                    </div>
+                </div>
                                     @endif
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        </div>
     </section>
 </section>
-@endsection
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     function toggleEditTemplate() {
@@ -343,5 +357,42 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
             $('#config').show();
             $('#form').hide();
         });
+
+		// Dynamic Accordion Conversion
+		$('.user-info:not(.no-accordion)').each(function(index) {
+			var $info = $(this);
+			var $title = $info.find('.vc-section-title').first();
+			
+			// Find the immediate wrapper of the title, if it's a col-lg-9 or col-lg-12
+			var $titleWrapper = $title.parent('[class*="col-lg-"]').length ? $title.parent() : $title;
+			
+			// Wrap everything else in an accordion content div
+			var $contents = $info.contents().filter(function() {
+				// Don't wrap the title wrapper, and don't wrap empty text nodes
+				if (this === $titleWrapper[0]) return false;
+				if (this.nodeType === 3 && $.trim(this.nodeValue) === '') return false;
+				return true;
+			});
+			$contents.wrapAll('<div class="acc-content" style="display: none;"></div>');
+			
+			// Style the title
+			$title.addClass('vc-acc-header');
+			
+			// Handle clicks
+			$title.css('cursor', 'pointer').on('click', function() {
+				var $myContent = $info.find('.acc-content');
+				if ($title.hasClass('acc-open')) {
+					$myContent.slideUp(250);
+					$title.removeClass('acc-open');
+				} else {
+					$('.acc-content').slideUp(250);
+					$('.vc-acc-header').removeClass('acc-open');
+					
+					$myContent.slideDown(250);
+					$title.addClass('acc-open');
+				}
+			});
+		});
     });
 </script>
+@endsection

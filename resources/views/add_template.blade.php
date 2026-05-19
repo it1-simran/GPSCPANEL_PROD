@@ -5,29 +5,32 @@ use App\Helper\CommonHelper;
 $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('add-template') }}">
+@endpush
 @section('content')
 <!--main content start-->
-<section id="main-content">
+<section id="main-content" class="add-settings-page">
     <section class="wrapper">
-        <!--======== Page Title and Breadcrumbs Start ========-->
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Settings</a></li>
-                        <li class="active"><a href="#">Add Settings</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="protocol-breadcrumb-wrap">
+            <nav class="protocol-breadcrumb" aria-label="Breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ url($url_type . '/view-template') }}" class="bc-item">Settings</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Add Settings</span>
+            </nav>
         </div>
-        <!--======== Page Title and Breadcrumbs End ========-->
         <!--======== Form Validation Content Start End ========-->
         <div class="row">
             <div class="col-md-12">
                 <!--=========== START TAGS INPUT ===========-->
                 <div class="c_panel">
                     <div class="c_title">
-                        <h2>Add Settings</h2>
+                        <h2 class="add-settings-title">
+                            <i class="fa fa-sliders"></i>
+                            Add Settings
+                        </h2>
                         <div class="clearfix"></div>
                     </div>
                     <!--/.c_title-->
@@ -180,6 +183,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         <!--======== Form Validation Content Start End ========-->
     </section>
 </section>
+
 <div class="modal" id="canModal" aria-hidden="true">
     <div class="modal-dialog modal-md">
         <div class="modal-content">

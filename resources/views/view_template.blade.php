@@ -6,38 +6,39 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-template') }}">
+@endpush
 @section('content')
-<section id="main-content">
+<section id="main-content" class="view-settings-page vt-modern-page">
   <section class="wrapper">
-    <!--======== Page Title and Breadcrumbs Start ========-->
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-            <li><a href="#">Settings</a></li>
-            <li class="active"><a href="#">View Settings</a></li>
-          </ul>
-        </nav>
-      </div>
+    <div class="vt-breadcrumb-bar">
+      <ul class="vt-breadcrumb">
+        <li>
+          <a href="{{ url($url_type . '/dashboard') }}" class="home-icon">
+            <i class="fa fa-home"></i>
+          </a>
+        </li>
+        <li><span class="sep">›</span></li>
+        <li><a href="{{ url($url_type . '/view-template') }}">Settings</a></li>
+        <li><span class="sep">›</span></li>
+        <li class="active"><span>View Settings</span></li>
+      </ul>
     </div>
-    <!--======== Page Title and Breadcrumbs End ========-->
-    <!--======== Dynamic Datatable Content Start End ========-->
-    <div class="row">
+    
+    <div class="row vt-content-row">
       <div class="col-md-12">
-        <div class="c_panel">
-          <div class="c_title">
-            <div class="row bgx-title-container">
-              <div class="col-lg-6">
-                <h2>Show Settings</h2>
-              </div>
-              <div class="col-lg-6 text-right">
-                <a href="/{{$url_type}}/add-template" class="btn btn-success"> Add Setting </a>
-              </div>
+        <div class="vt-card">
+          <div class="vt-card-header">
+            <h4><i class="fa fa-table"></i> Show Settings</h4>
+            <div class="vt-card-header-actions">
+                <a href="{{ url($url_type . '/add-template') }}" class="btn vt-btn-add">
+                  <i class="fa fa-plus"></i> Add Setting
+                </a>
             </div>
-           
-            <div class="clearfix"></div>
-          </div><!--/.c_title-->
-          <div class="c_content">
+          </div>
+          <div class="vt-card-body">
             <div class="row" id="alert_msg">
               @if ($message = Session::get('success'))
               <div class="col-sm-12 alert alert-success" role="alert">
@@ -55,48 +56,49 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
               </div>
               @endif
             </div>
-            <div class="tabs">
+            <div class="vt-view-toolbar">
+              <div class="vt-category-tabs" role="tablist">
               @foreach ($getDeviceCategory as $key => $category)
               @if( Session::get('device_category_id'))
-              <button class="tablinks {{Session::get('device_category_id') == $category->id ? 'active' : '' }}" type="button" onclick="return openDeviceTab(this, 'tab{{ $category->id }}')">
+              <button class="vt-tab-btn {{Session::get('device_category_id') == $category->id ? 'active' : '' }}" type="button" onclick="return openDeviceTab(this, 'tab{{ $category->id }}')" role="tab">
                 {{ $category->device_category_name }}
               </button>
               @else
-                <button class="tablinks {{ $key==0 ? 'active' : '' }}" type="button" onclick="return openDeviceTab(this, 'tab{{ $category->id }}')">
+                <button class="vt-tab-btn {{ $key==0 ? 'active' : '' }}" type="button" onclick="return openDeviceTab(this, 'tab{{ $category->id }}')" role="tab">
                 {{ $category->device_category_name }}
               </button>
               @endif
               @endforeach
-
-              
+              </div>
+              @if(Auth::user()->user_type == "Admin")
+              <div class="vt-export-actions">
+                <a href="{{ route('export.excel') }}" class="btn vt-btn-export vt-btn-excel"><i class="fa fa-file-excel-o"></i> Excel</a>
+                <a href="{{ route('export.csv') }}" class="btn vt-btn-export vt-btn-csv"><i class="fa fa-file-text-o"></i> CSV</a>
+              </div>
+              @endif
             </div>
             @foreach ($getDeviceCategory as $category)
             @php
             $templateInfo = CommonHelper::getTemplatesInfo($category->id);
             @endphp
 
-            <div id="tab{{ $category->id }}" class="tabcontent">
+            <div id="tab{{ $category->id }}" class="tabcontent vt-tab-panel">
               <?php $i = 1; ?>
-              @if(Auth::user()->user_type == "Admin")
-              <div class="col-lg-12 text-right margin-bottom-10">
-                <a href="{{ route('export.excel') }}" class="btn btn-success">Download Excel</a>
-                <a href="{{ route('export.csv') }}" class="btn btn-success">Download CSV</a>
-              </div>
-              @endif
-              <table id="datable{{ $category->id }}"  class="example table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 13px;">
+              <div class="vt-table-wrap">
+              <table id="datable{{ $category->id }}" class="example table table-striped vt-table" cellspacing="0" style="border-spacing: 0; font-size: 13px;">
                 <thead>
                   <tr>
-                    <th style="min-width: 60px;">Sr. No.</th>
-                    <th style="min-width: 180px;">Template Name</th>
-                    <th style="min-width: 150px;">Device Category</th>
-                    <th style="min-width: 150px;">Created at</th>
-                    <th style="min-width: 150px;">Last Edit</th>
-                    <th style="min-width: 120px;">Default Template</th>
-                    <th style="min-width: 120px;">View</th>
+                    <th>Sr. No.</th>
+                    <th>Template Name</th>
+                    <th>Device Category</th>
+                    <th>Created at</th>
+                    <th>Last Edit</th>
+                    <th>Default Template</th>
+                    <th>View</th>
                     @if(Auth::user()->user_type == "Admin")
-                    <th style="min-width: 120px;">Apply Setting</th>
+                    <th>Apply Setting</th>
                     @endif
-                    <th style="min-width: 80px;">Delete</th>
+                    <th>Delete</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -113,53 +115,50 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     <td>{{CommonHelper::getDateAsTimeZone($contactValue->updated_at) ?? 'N/A'}} </td>
 
                     <td><?php if ($contactValue->default_template == '1') { ?>
-                        <button class="bt btn-warning">Yes</button>
+                        <span class="vt-badge default-yes"><i class="fa fa-star"></i> Yes</span>
+                      <?php } else { ?>
+                        <span class="vt-badge default-no">—</span>
                       <?php } ?>
                     </td>
                     <td>
-                      <a href="/{{$url_type}}/view-template-configurations/{{$contactValue->id}}" class="btn btn-info btn-raised rippler rippler-default">View Settings
-                      </a>
+                      <a href="{{ url($url_type . '/view-template-configurations/' . $contactValue->id) }}" class="btn vt-btn-view"><i class="fa fa-eye"></i> View</a>
                     </td>
                      @if(Auth::user()->user_type == "Admin")
                     <td>
-                      <button class="btn btn-green btn-raised rippler rippler-default margin-top-1" onclick="open_model(<?php echo $contactValue->id; ?>)">Apply
-                      </button>
+                      <button type="button" class="btn vt-btn-apply" onclick="open_model(<?php echo $contactValue->id; ?>)"><i class="fa fa-check"></i> Apply</button>
                       @if(isset($contactValue))
-                      <div class="modal" id="modal-responsive-{{$contactValue->id}}" aria-hidden="true">
-                        <div class="modal-dialog modal-md">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-                              <h4 class="modal-title"><strong>Assign Template</strong></h4>
+                      <div class="modal vt-assign-modal" id="modal-responsive-{{$contactValue->id}}" tabindex="-1" role="dialog" aria-labelledby="assign-template-title-{{ $contactValue->id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-md" role="document">
+                          <div class="modal-content vt-modal-content">
+                            <div class="modal-header vt-modal-header">
+                              <button type="button" class="close vt-modal-close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                              <h4 class="modal-title vt-modal-title" id="assign-template-title-{{ $contactValue->id }}"><i class="fa fa-link"></i> Assign template</h4>
                             </div>
-                            <div class="modal-body">
+                            <div class="modal-body vt-modal-body">
                               <div class="row">
                                 <div class="col-md-12">
                                   <form action="/{{$url_type}}/assign-template/{{$contactValue->id}}" method="post">
                                     @csrf
-                                    <div class="form-group">
-                                      <input type="hidden" name="test_id" id="test_id" value="">
-                                      <label class="form-label">Single/Multiple Select Device</label>
-
-                                      <select class="selectDevice" id="devices-{{ $contactValue->id}}" name="devices[]" multiple>
+                                    <div class="form-group vt-modal-field">
+                                      <input type="hidden" name="test_id" id="test_id_{{ $contactValue->id }}" value="">
+                                      <label class="control-label vt-modal-label" for="devices-{{ $contactValue->id }}">Single / multiple select device</label>
+                                      <select class="selectDevice vt-device-select" id="devices-{{ $contactValue->id}}" name="devices[]" multiple>
                                         <option></option>
-
-                                        <optgroup label="Assigned/Unassigned Devices">
-
+                                        <optgroup label="Assigned / unassigned devices">
                                           <?php echo CommonHelper::unassignDevices($contactValue->device_category_id); ?>
                                         </optgroup>
                                       </select>
+                                      <p class="help-block vt-modal-hint">Choose one or more devices to apply this setting template.</p>
                                     </div>
-                                    <div class="modal-footer text-center">
-                                      <button type="submit" class="btn btn-primary btn-raised rippler rippler-default"><i class="fa fa-check"></i> Assign
-                                      </button>
+                                    <div class="vt-modal-footer">
+                                      <button type="submit" class="btn vt-btn-modal-assign"><i class="fa fa-check"></i> Assign</button>
                                     </div>
                                   </form>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div><!--/row-->
+                        </div>
                       </div>
                       @endif
                     </td>
@@ -172,12 +171,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       @endif
                     </td> -->
                     <td>
-                      <form action="/{{$url_type}}/delete-template/{{$contactValue->id}}" method="post">
+                      <form id="delete-form-{{$contactValue->id}}" action="/{{$url_type}}/delete-template/{{$contactValue->id}}" method="post">
                         @csrf
                         @method('DELETE')
                         @if($contactValue->default_template=='0')
-                        <button onClick="javascript:return confirm('Are you sure you want to delete this?');" class="btn btn-danger btn-sm margin-top-1" type="submit">Delete</button>
-                        @else($contactValue->default_template=='1')
+                        <button class="btn vt-btn-delete swal-confirm" type="button" data-form-id="delete-form-{{$contactValue->id}}" data-confirm-msg="Are you sure you want to delete this template?"><i class="fa fa-trash"></i> Delete</button>
                         @endif
                       </form>
                     </td>
@@ -188,65 +186,86 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   @endforeach
                 </tbody>
               </table>
+              </div>
             </div>
             @endforeach
 
           </div>
-
-        </div><!--/.c_content-->
-      </div><!--/.c_panels-->
-    </div><!--/col-md-12-->
+        </div><!--/.vt-card-->
+      </div><!--/col-md-12-->
     </div><!--/row-->
 
-    <!--======= Dynamic Datatable Content Start End ========-->
+    {{-- Modals moved here via JS: outside table overflow + avoids document.body focus/ARIA edge cases --}}
+    <div id="view-settings-modal-root" class="view-settings-modal-root"></div>
+
   </section>
 </section>
-@stop
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
-   $(document).ready(function() {
-    $('.selectDevice').each(function() {
-      // Get the ID of each element
-      var id = $(this).attr('id');
-      $('#' + id).select2();
-    });
+  function viewSettingsDataTableOpts() {
+    return {
+      paging: true,
+      searching: true,
+      info: true,
+      ordering: true,
+      lengthChange: true,
+      responsive: true,
+      autoWidth: false,
+      scrollX: false,
+      scrollCollapse: false,
+      lengthMenu: [[25, 50, 100, 500, -1], [25, 50, 100, 500, 'All']],
+      pageLength: 25,
+      deferRender: true
+    };
+  }
 
-    $('.example').each(function() {
-        var elementId = $(this).attr('id');
-
-        $("#" + elementId).DataTable({
-            paging: true,
-            searching: true,
-            info: true,
-            ordering: true,
-            lengthChange: true,
-
-            responsive: true,
-            autoWidth: false,
-            scrollX: true,
-            scrollCollapse: true,
-
-            lengthMenu: [
-                [25, 50, 100, 500, -1],
-                [25, 50, 100, 500, "All"]
-            ],
-            pageLength: 25
-        });
-    });
-
-    // Initialize tabs: hide all, show first
-    $('.tabcontent').hide();
-    let firstTab = $('.tablinks').first();
-    if(firstTab.length){
-        firstTab.addClass('active');
-        let onclick = firstTab.attr('onclick');
-        if(onclick) {
-            let tabMatch = onclick.match(/'([^']+)'/);
-            if(tabMatch) {
-                $('#' + tabMatch[1]).show();
-            }
-        }
+  function initViewSettingsDataTable($table) {
+    if (!$table.length || typeof $.fn.DataTable === 'undefined') {
+      return;
     }
+    var el = $table.get(0);
+    if ($.fn.DataTable.isDataTable(el)) {
+      $table.DataTable().columns.adjust();
+      return;
+    }
+    $table.DataTable(viewSettingsDataTableOpts());
+  }
+
+   $(document).ready(function() {
+
+    $('.vt-modern-page .tabcontent').hide();
+    var activeTabBtn = $('.vt-modern-page .vt-tab-btn.active').first();
+    var tabBtn = activeTabBtn.length ? activeTabBtn : $('.vt-modern-page .vt-tab-btn').first();
+    if (tabBtn.length) {
+      tabBtn.addClass('active');
+      var onclickInit = tabBtn.attr('onclick');
+      if (onclickInit) {
+        var tabMatchInit = onclickInit.match(/'([^']+)'/);
+        if (tabMatchInit) {
+          $('#' + tabMatchInit[1]).show();
+        }
+      }
+    }
+
+    $('.vt-modern-page .vt-tab-panel:visible').find('table.example').each(function() {
+      initViewSettingsDataTable($(this));
+    });
+
+    $(window).on('resize', function() {
+      $('.vt-modern-page table.example').each(function() {
+        if ($.fn.DataTable.isDataTable(this)) {
+          $(this).DataTable().columns.adjust();
+        }
+      });
+    });
+
+    /* Chrome: avoid "Blocked aria-hidden" when closing while focus is still inside the modal */
+    $(document).on('hide.bs.modal', '.vt-assign-modal', function() {
+      var ae = document.activeElement;
+      if (ae && this.contains(ae)) {
+        try { ae.blur(); } catch (err) {}
+      }
+    });
   });
 
   function openDeviceTab(evt, tabName) {
@@ -254,8 +273,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           evt.preventDefault();
       }
 
-      $('.tabcontent').hide();
-      $('.tablinks').removeClass('active');
+      $('.vt-modern-page .tabcontent').hide();
+      $('.vt-modern-page .vt-tab-btn').removeClass('active');
       $('#' + tabName).show();
 
       var currentBtn = null;
@@ -264,35 +283,47 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       } else if (evt && evt.nodeType === 1) {
           currentBtn = $(evt);
       } else {
-          currentBtn = $('.tablinks[onclick*="' + tabName + '"]').first();
+          currentBtn = $('.vt-modern-page .vt-tab-btn[onclick*="' + tabName + '"]').first();
       }
       if (currentBtn && currentBtn.length) {
           currentBtn.addClass('active');
       }
 
-      if ($.fn.DataTable) {
-          var dtTables = $.fn.dataTable.tables({ visible: true, api: true });
-          if (dtTables && dtTables.columns && typeof dtTables.columns.adjust === 'function') {
-              dtTables.columns.adjust();
-          } else if (dtTables && typeof dtTables.columns === 'function') {
-              dtTables.columns().adjust();
-          }
-      }
+      var $tbl = $('#' + tabName).find('table.example');
+      initViewSettingsDataTable($tbl);
+      setTimeout(function() {
+        if ($tbl.length && $.fn.DataTable.isDataTable($tbl.get(0))) {
+          $tbl.DataTable().columns.adjust();
+        }
+      }, 0);
 
       return false;
   }
 
   function open_model(id, key) {
-    $("#test_id").val(id);
-    $("#modal-responsive-" + id).modal();
-  };
+    var $modal = $('#modal-responsive-' + id);
+    if (!$modal.length) return;
+    $modal.find('input[name="test_id"]').val(id);
+    var $host = $('#view-settings-modal-root');
+    if (!$host.length) {
+      $host = $('body');
+    }
+    if (!$modal.parent().is($host)) {
+      $modal.appendTo($host);
+    }
+    $modal.off('shown.bs.modal.vsSelect2').one('shown.bs.modal.vsSelect2', function() {
+      var $sel = $(this).find('.selectDevice');
+      if (!$sel.length || $sel.data('select2')) return;
+      try {
+        $sel.select2({ width: 'resolve', placeholder: 'Search and select devices' });
+      } catch (e) {
+        try { $sel.select2(); } catch (e2) { /* ignore */ }
+      }
+    });
+    $modal.modal('show');
+  }
 </script>
-
-
-
-
-
-
+@stop
 
 
 

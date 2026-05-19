@@ -54,6 +54,23 @@ class CommonHelper
         $userTimezone = Auth::check() && !empty(Auth::user()->timezone) ? Auth::user()->timezone : 'UTC';
         return \Illuminate\Support\Carbon::parse($date, $userTimezone)->timezone('UTC');
     }
+
+    /**
+     * Empty / null / whitespace-only → "N/A" (same style as reference tables).
+     * Use $escapeHtml when concatenating into HTML strings (not Blade {{ }}).
+     */
+    public static function emptyToNA($value, bool $escapeHtml = false): string
+    {
+        if ($value === null) {
+            return 'N/A';
+        }
+        $s = trim((string) $value);
+        if ($s === '') {
+            return 'N/A';
+        }
+        return $escapeHtml ? htmlspecialchars($s, ENT_QUOTES, 'UTF-8') : $s;
+    }
+
     public static function getDeviceCategoryTabs($device, $show_acc_wise, $urlType, $deviceCategoryId)
     {
         $currentUser = Auth::user();
@@ -104,25 +121,28 @@ class CommonHelper
             // Execute the query and get the result
             $getTemplates = $query->get();
             $html .= '<div id="tab' . $category->id . '" class="tabcontent">';
-            $html .= '<div style="margin-bottom:15px;">';
+            $html .= '<div class="vdc-tab-toolbar" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;">';
+            $html .= '<div class="vdc-tab-toolbar-left" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">';
             if (Auth::user()->user_type == 'Admin') {
                 $html .= '<button class="btn btn-danger btn-sm delete_all" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/deleteAll">Delete All Selected</button>';
             }
             if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller') {
-                $html .= '<button style="margin-left: 15px;" class="btn btn-primary btn-sm user-responsive" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/assignuserAll" >Assign Account</button>';
+                $html .= '<button class="btn btn-primary btn-sm user-responsive" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/assignuserAll" >Assign Account</button>';
             }
-            $html .= '<button style="margin-left: 21px;" class="btn btn-info btn-sm template-responsive"  data-category-id="' . $category->id . '" data-url="/' . $urlType . '/assigtemplateAll">Assign Setting Template</button>';
+            $html .= '<button class="btn btn-info btn-sm template-responsive" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/assigtemplateAll">Assign Setting Template</button>';
+            $html .= '</div>';
             if ((Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller') && $show_acc_wise) {
-                $html .= '<div style="float: right;" class="Row">
-                    <form method="get" action="/' . $urlType . '/view-device-assign">';
-                $html .= '<div class="form-group d-flex"><select class="btn-sm" id="searchUser" name="username" style="height: 33px;margin-top: 7px;">';
+                $filterAction = '/' . $urlType . '/view-device-unassign';
+                $html .= '<div class="vdc-tab-toolbar-right" style="display:flex;align-items:center;flex-shrink:0;margin-left:auto;">';
+                $html .= '<form method="get" action="' . $filterAction . '" class="vdc-filter-form" style="display:flex;align-items:center;gap:8px;margin:0;flex-wrap:nowrap;">';
+                $html .= '<select class="form-control input-sm btn-sm" id="searchUser' . $category->id . '" name="username" style="height:33px;min-width:160px;max-width:280px;width:auto;margin:0;flex:0 1 auto;">';
                 if (count($getUser) > 0) {
                     $html .= '<option value="0">Account Wise list</option>';
                     foreach ($getUser as $user) {
-                        $html .= '<option value="' . $user->id . '" >' . $user->name . '</option>';
+                        $html .= '<option value="' . $user->id . '" >' . htmlspecialchars($user->name, ENT_QUOTES, 'UTF-8') . '</option>';
                     }
                 }
-                $html .= '</select><button type="submit" class="btn btn-success btn-sm">Filter</button></div></form></div>';
+                $html .= '</select><button type="submit" class="btn btn-success btn-sm" style="margin-top: 1px;">Filter</button></form></div>';
             }
             $html .= '</div>';
             if (Auth::user()->user_type == "Admin") {
@@ -174,7 +194,7 @@ class CommonHelper
                         $html .= '<td><input type="checkbox" class="sub_chk' . $category->id . '" data-category="' . $category->id . '" data-id="' . $contact->id . '"></td>';
                         $html .= '<td>' . $i . '</td>';
                         $html .= '<td>' . (!empty($contact->username) ? $contact->username : 'Unassigned') . '</td>';
-                        $html .= '<td>' . $contact->name . '</td>';
+                        $html .= '<td>' . self::emptyToNA($contact->name ?? null, true) . '</td>';
                         $html .= '<td>' . $contact->imei . '</td>';
                         $html .= '<td>' . (isset($config['total_pings']) ? $config['total_pings'] : 0) . '</td>';
                         if (Auth::user()->user_type == 'Admin') {
@@ -186,17 +206,17 @@ class CommonHelper
                         if (Auth::user()->user_type == 'Admin') {
                             $html .= '<td>';
                             if (isset($config['is_editable']) && $config['is_editable']['value'] == '1') {
-                                $html .= '<button class="btn btn-success btn-sm">Yes</button>';
+                                $html .= '<button class="btn btn-success btn-sm"><i class="fa fa-check"></i> Yes</button>';
                             } else {
-                                $html .= '<button class="btn btn-danger btn-sm">No</button>';
+                                $html .= '<button class="btn btn-danger btn-sm"><i class="fa fa-times"></i> No</button>';
                             }
                             $html .= '</td>';
-                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/admin/view-device-logs/' . $contact->id . '" style="color:#fff;">Logs</a></button></td>';
+                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/admin/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
                         }
                         if (Auth::user()->user_type == 'Support') {
-                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;">Logs</a></button></td>';
+                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
                         }
-                        $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info">View Configuration</a></td>';
+                        $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info"><i class="fa fa-cog"></i> View Configuration</a></td>';
                         if (Auth::user()->user_type == 'User' && (int)$category->is_certification_enable === 1) {
                             $html .= '<td><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/device/' . $contact->id . '/certificate') . '" class="btn btn-success btn-sm" data-device-id="' . $contact->id . '" data-category-id="' . $category->id . '">Certificate</a></td>';
                         }
@@ -205,7 +225,7 @@ class CommonHelper
                             $html .= '<form action="' . route('device.delete', $contact->id) . '" method="post">';
                             $html .= csrf_field();
                             $html .= method_field('DELETE');
-                            $html .= '<button onClick="javascript:return confirm(\'Are you sure you want to delete this?\');" class="btn btn-danger btn-sm" type="submit">Delete</button>';
+                            $html .= '<button class="btn btn-danger btn-sm swal-confirm" data-confirm-msg="Are you sure you want to delete this device?" type="submit"><i class="fa fa-trash"></i> Delete</button>';
                             $html .= '</form>';
                             $html .= '</td>';
                         }

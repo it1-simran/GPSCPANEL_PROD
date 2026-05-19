@@ -1,61 +1,31 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('add-devicecategory') }}">
+@endpush
 @section('content')
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<!-- Select2 JS -->
+<!-- Select2 JS (page uses Select2 v4 API; layout already loads jQuery) -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<!--<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />-->
-<style>
-    body {
-        padding: 40px;
-        background-color: #f8f9fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
 
-    .select-container {
-        max-width: 500px;
-        margin: auto;
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .select2-container--default .select2-selection--multiple {
-        border: 1px solid #ced4da;
-        border-radius: 5px;
-        padding: 5px;
-        min-height: 40px;
-    }
-
-    label {
-        font-weight: 600;
-        margin-bottom: 10px;
-    }
-
-    .select2-container {
-        padding: 0px !important;
-    }
-</style>
-<section id="main-content">
+<section id="main-content" class="add-device-category-page">
     <section class="wrapper">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Device Category</a></li>
-                        <li class="active"><a href="#">Add Device Category</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="dc-breadcrumb-wrap">
+            <nav class="dc-breadcrumb dc-breadcrumb--scroll" aria-label="Breadcrumb">
+                <a href="{{ url($url_type) }}" class="bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+                <a href="{{ url($url_type) }}" class="bc-item">Home</a>
+                <span class="bc-sep">›</span>
+                <a href="{{ url($url_type . '/view-device-category') }}" class="bc-item">Device category</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Add device category</span>
+            </nav>
         </div>
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <h2>Add Device Category</h2>
+                        <h2 class="dc-panel-title"><i class="fa fa-plus-circle"></i> Add device category</h2>
                         <div class="clearfix"></div>
                     </div><!--/.c_title-->
                     <div class="c_content">
@@ -79,84 +49,87 @@
                         <form class="validator form-horizontal" id="addDeviceCategory" name="addDeviceCategory" method="post" action="#" onsubmit="return false;">
                             @csrf
                             <div class="form-step form-step-active">
-                                <div class='col-lg-12'>
-                                    <h5><b>Device Configurations</b></54>
-                                </div>
-                                <div class="form-group ">
-                                    <label for="curl" class="control-label col-lg-3"><b>Is ESIM </b></label>
-                                    <div class="col-lg-6">
-                                        <input type="checkbox" class='default_template_checkbnox' name="is_esim" id="is_esim">
-                                    </div>
-                                </div>
-                                 <div class="form-group ">
-                                    <label for="curl" class="control-label col-lg-3"><b>Is Certification Enable </b></label>
-                                    <div class="col-lg-6">
-                                        <input type="checkbox" class='default_template_checkbnox' name="is_certification_enable" id="is_certification_enable">
-                                    </div>
-                                </div>
-                                <div id="certificationFields" style="display: none;">
-                                    <div class="form-group">
-                                        <label for="arai_tac_no" class="control-label col-lg-3">ARAI/ TAC NO</label>
-                                        <div class="col-lg-6">
-                                            <input class="form-control" id="arai_tac_no" type="text" name="arai_tac_no" />
+                                <div class="adc-form-card">
+                                    <h5 class="adc-section-title"><i class="fa fa-cog"></i> Device Configurations</h5>
+                                    <div class="adc-step1-device-config">
+                                        <div class="adc-options-grid">
+                                            <label class="adc-option-card" for="is_esim">
+                                                <input type="checkbox" class="default_template_checkbnox adc-checkbox-input" name="is_esim" id="is_esim">
+                                                <span class="adc-option-text">Is ESIM</span>
+                                            </label>
+                                            <label class="adc-option-card" for="is_certification_enable">
+                                                <input type="checkbox" class="default_template_checkbnox adc-checkbox-input" name="is_certification_enable" id="is_certification_enable">
+                                                <span class="adc-option-text">Is Certification Enable</span>
+                                            </label>
+                                            <label class="adc-option-card" for="is_can_enable">
+                                                <input type="checkbox" class="default_template_checkbnox adc-checkbox-input" name="is_can_enable" id="is_can_enable">
+                                                <span class="adc-option-text">Is Can Enable</span>
+                                            </label>
+                                        </div>
+                                        <div id="certificationFields" class="adc-cert-panel" style="display: none;">
+                                            <p class="adc-cert-panel-title">Certification details</p>
+                                            <div class="adc-cert-grid">
+                                                <div class="adc-field-block">
+                                                    <label for="arai_tac_no" class="adc-field-label">ARAI / TAC NO</label>
+                                                    <input class="adc-input form-control" id="arai_tac_no" type="text" name="arai_tac_no" />
+                                                </div>
+                                                <div class="adc-field-block">
+                                                    <label for="arai_date" class="adc-field-label">Date</label>
+                                                    <input class="adc-input form-control" id="arai_date" type="date" name="arai_date" />
+                                                </div>
+                                                <div class="adc-field-block adc-field-block--full">
+                                                    <label for="certification_model_name" class="adc-field-label">Model Name</label>
+                                                    <input class="adc-input form-control" id="certification_model_name" type="text" name="certification_model_name" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="adc-fields-stack">
+                                            <div class="adc-field-block adc-field-block--full">
+                                                <label for="deviceName" class="adc-field-label">Device Name <span class="require">*</span></label>
+                                                <input class="adc-input form-control" id="deviceName" type="text" placeholder="Enter Device Name" name="deviceName" required />
+                                            </div>
+                                            <div class="adc-field-block adc-field-block--full">
+                                                <label for="user-select" class="adc-field-label">Select Data Fields <span class="require">*</span></label>
+                                                <select id="user-select" name="user_select[]" class="adc-multiselect" multiple></select>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="arai_date" class="control-label col-lg-3">Date</label>
-                                        <div class="col-lg-6">
-                                            <input class="form-control" id="arai_date" type="date" name="arai_date" />
-                                        </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="certification_model_name" class="control-label col-lg-3">Model Name</label>
-                                        <div class="col-lg-6">
-                                            <input class="form-control" id="certification_model_name" type="text" name="certification_model_name" />
-                                        </div>
+                                    <div class="adc-table-container" style="display: none;" id="selectedDeviceTableContainer">
+                                        <table class="table adc-data-field-table">
+                                            <thead>
+                                                <tr>
+                                                    <th width="5%">Sr.No</th>
+                                                    <th width="20%">FIELD NAME</th>
+                                                    <th width="25%">DEFAULT VALUE <span class="require">*</span></th>
+                                                    <th width="15%">TYPE</th>
+                                                    <th width="20%">VALIDATION</th>
+                                                    <th width="10%">REQUIRED?</th>
+                                                    <th width="5%"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="selectedDeviceInput"></tbody>
+                                        </table>
                                     </div>
-                                </div>
-                                <div class="form-group ">
-                                    <label for="curl" class="control-label col-lg-3"><b>Is Can Enable </b></label>
-                                    <div class="col-lg-6">
-                                        <input type="checkbox" class='default_template_checkbnox' name="is_can_enable" id="is_can_enable">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="deviceName" class="control-label col-lg-3">Device Name <span class="require">*</span></label>
-                                    <div class="col-lg-6">
-                                        <input class="form-control" id="deviceName" type="text" placeholder="Enter Device Name" name="deviceName" required />
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="deviceName" class="control-label col-lg-3">Select Data Fields <span class="require">*</span></label>
-                                    <div class="col-lg-6">
-                                        <select id="user-select" name="user_select[]" class="form-control" style="width: 100%;height:auto;" multiple></select>
-                                    </div>
-                                </div>
-                                <div id="selectedDeviceInput"></div>
-                                <!--<div id="dynamicInput"></div>-->
-                                <!--<div class="col-sm-12 text-right">-->
-                                <!--    <button type="button" class="btn btn-info btn-sm" id="addInput">Add More</button>-->
-                                <!--</div>-->
-                                <div class="form-group">
-                                    <div class="col-lg-12 text-right">
-                                        <button type="button" class="btn btn-primary next-btn margin-top-10" disabled="true">Next</button>
+                                    <div class="adc-form-actions">
+                                        <button type="button" class="btn btn-primary next-btn adc-next-btn margin-top-10" disabled="true">Next</button>
                                     </div>
                                 </div>
                             </div>
                             <div class="form-step">
                                 <div class="form-group">
-                                    <label for="template_name" class="control-label col-lg-3">Template Name <span class="require">*</span></label>
-                                    <div class="col-lg-6">
-                                        <input class="form-control" type="text" placeholder="Enter Template Name" name="template_name" required />
+                                    <label for="template_name" class="control-label col-xs-12 col-lg-3">Template Name <span class="require">*</span></label>
+                                    <div class="col-xs-12 col-lg-6">
+                                        <input class="form-control" id="template_name" type="text" placeholder="Enter Template Name" name="template_name" required />
                                     </div>
                                 </div>
                                 <div id="inputSecondStep"></div>
-                                <div class="form-group row margin-top-10">
-                                    <div class="col-lg-6">
-                                        <button type="button" class="btn btn-primary btn-flat prev-btn">Previous</button>
+                                <div class="form-group adc-step2-actions row margin-top-10">
+                                    <div class="col-xs-12 col-lg-6 adc-step2-prev-wrap">
+                                        <button type="button" class="btn btn-primary btn-flat prev-btn adc-step-nav-btn">Previous</button>
                                     </div>
-                                    <div class="col-lg-6 text-right">
-                                        <button class="btn btn-primary btn-flat submit-btn-action" type="submit">Save</button>
+                                    <div class="col-xs-12 col-lg-6 text-right adc-step2-submit-wrap">
+                                        <button class="btn btn-primary btn-flat submit-btn-action adc-step-nav-btn" type="submit">Save</button>
                                     </div>
                                 </div>
                             </div>
@@ -392,6 +365,11 @@
             console.log("selectedItems ===>", selectedItems);
             // Clear previous inputs
             $('#selectedDeviceInput').empty();
+            if (selectedItems.length > 0) {
+                $('#selectedDeviceTableContainer').show();
+            } else {
+                $('#selectedDeviceTableContainer').hide();
+            }
             console.log("selectedItems ==>", selectedItems);
             // Generate and append new inputs in order
             selectedItems.forEach((item, index) => {
@@ -403,9 +381,9 @@
 
                 switch (item.inputType) {
                     case 'select':
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p>`;
+                        validationRule = `<span class="adc-meta-chip"><b>Type</b> ${item.inputType}</span>`;
                         defaultInput = `
-                        <select class="form-control" name="default[]" id="defaultValue${item.id}">
+                        <select class="adc-input form-control" name="default[]" id="defaultValue${item.id}">
                             <option value="">Please Select</option>
                             ${selectOptions.map((opt, i) => `
                             <option value="${selectValues[i] || opt}">${opt}</option>
@@ -415,11 +393,11 @@
                         `;
                         break;
                     case 'multiselect':
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p>`;
+                        validationRule = `<span class="adc-meta-chip"><b>Type</b> ${item.inputType}</span>`;
                         const selectId = `defaultValue${item.id}`;
                         const selectedValues = validationConfig.selectValues || [];
                         defaultInput = `
-                        <select class=" select2-multiselect" name="default[${index}][]" id="${selectId}" multiple style="width: 100%; height: auto;">
+                        <select class="adc-input form-control select2-multiselect" name="default[${index}][]" id="${selectId}" multiple style="width: 100%;">
                               ${validationConfig.selectOptions.map((opt, i) => {
                                 const val = validationConfig.selectValues[i];
                                 return `<option value="${val}" >${opt}</option>`;
@@ -441,9 +419,9 @@
                         }, 0);
                         break;
                     case 'number':
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p><p><b>min:</b> ${validationConfig.numberInput?.min ?? ''} <br><b>max:</b> ${validationConfig.numberInput?.max ?? ''}</p>`;
+                        validationRule = `<span class="adc-meta-chip"><b>Type</b> ${item.inputType}</span><span class="adc-meta-chip"><b>Min</b> ${validationConfig.numberInput?.min ?? '—'}</span><span class="adc-meta-chip"><b>Max</b> ${validationConfig.numberInput?.max ?? '—'}</span>`;
                         defaultInput = `
-                        <input type="number" class="form-control no-space-allowed"
+                        <input type="number" class="adc-input form-control no-space-allowed"
                                 name="default[]" id="defaultValue${item.id}"
                                 placeholder="Enter Number"
                                 min="${validationConfig.numberInput?.min ?? ''}"
@@ -454,11 +432,11 @@
                     case 'IP/URL':
                     case 'text_array':
                     default:
-                        validationRule = `<p><b>Input Type :</b> ${item.inputType}</p><p><b>maxlength:</b> ${validationConfig.maxValueInput ?? ''}</p>`;
+                        validationRule = `<span class="adc-meta-chip"><b>Type</b> ${item.inputType}</span><span class="adc-meta-chip"><b>Max length</b> ${validationConfig.maxValueInput ?? '—'}</span>`;
                         let addClassTextArray = item.inputType === 'text_array' ? 'text-array-space' : '';
                         let addClassIpUrl = item.inputType === 'IP/URL' ? 'ip-url-space' : '';
                         defaultInput = `
-                        <input type="text" class="form-control no-space-allowed ${addClassTextArray} ${addClassIpUrl}"
+                        <input type="text" class="adc-input form-control no-space-allowed ${addClassTextArray} ${addClassIpUrl}"
                                 name="default[]" id="defaultValue${item.id}"
                                 placeholder="Enter Value"
                                 maxlength="${validationConfig.maxValueInput ?? ''}" />
@@ -466,37 +444,39 @@
                         break;
                 }
 
-                const html = `
-              <div class="form-group" id="device-input-${item.id}">
-                <label class="control-label col-lg-3">Field ${index + 1} <span class="require">*</span><p>ID : ${item.id}</p></label>
-                <div class="row d-flex">
-                  <div class="col-lg-3">
-                    <input class="form-control" placeholder="Enter Input Name" type="text" disabled name="name[${item.id}]" style="width: fit-content;" value="${item.fieldName}" required />
-                    <input type="hidden" name="nameParameters[]" id="nameParameters${item.id}" value="${item.fieldName}" />
-                    <input type="hidden" name="idParameters[]" id="idParameters${item.id}" value="${item.id}" />
-                
-                  </div>
-                  <div class="col-lg-2">
-                    <label class="control-label">Default Value <span class="require">*</span></label>
-                  </div>
-                  <div class="col-lg-3">
-                    ${defaultInput}
-                  </div>
-                  <div class="col-lg-3">
-                    ${validationRule}
-                  </div>
-                  <div class="col-lg-1 d-flex bgx-checkbox-custom">
+            const html = ` 
+              <tr class="adc-dynamic-row" id="device-input-${item.id}">
+                <td class="adc-col-count text-center">
+                  <span class="adc-count-badge">${index + 1}</span>
+                </td>
+                <td class="adc-col-name">
+                  <input class="adc-input form-control" type="text" disabled name="name[${item.id}]" value="${item.fieldName}" required />
+                  <input type="hidden" name="nameParameters[]" id="nameParameters${item.id}" value="${item.fieldName}" />
+                  <input type="hidden" name="idParameters[]" id="idParameters${item.id}" value="${item.id}" />
+                  <input type="hidden" name="inputType[]" value="${item.inputType}" required />
+                </td>
+                <td class="adc-col-value">
+                  ${defaultInput}
+                </td>
+                <td class="adc-col-type">
+                  <span class="adc-readonly-text">${item.inputType}</span>
+                </td>
+                <td class="adc-col-val">
+                  <div class="adc-val-badges">${validationRule}</div>
+                </td>
+                <td class="adc-col-req text-center">
+                  <label class="adc-custom-checkbox">
                     <input type="hidden" name="inputFieldRequired[]" value="false">
                     <input type="checkbox" checked name="inputFieldRequired[]" value="true"/>
-                </div>
-                  <div class="col-lg-1 bgx-del-button-container">
-                    <button type="button" class="btn btn-danger btn-sm remove-input" data-id="${item.id}">
-                      <img src="/assets/icons/cross.svg" />
-                    </button>
-                    <input type="hidden" name="inputType[]" value="${item.inputType}" required />
-                  </div>
-                </div>
-              </div>
+                    <span class="checkmark"></span>
+                  </label>
+                </td>
+                <td class="adc-col-action text-center">
+                  <button type="button" class="btn adc-btn-delete remove-input" data-id="${item.id}" title="Remove field">
+                    <i class="fa fa-trash-o" style="color: #ef4444; font-size: 16px;"></i>
+                  </button>
+                </td>
+              </tr>
             `;
 
                 $('#selectedDeviceInput').append(html);
@@ -791,8 +771,8 @@
                             <input type="hidden" name="inputFieldRequired[${inputCount}]" value="false">
                             <input type="checkbox" checked name="inputFieldRequired[${inputCount}]" value="true"/>
                         </div>
-                        <div class="col-lg-1 bgx-del-button-container">
-                            <button type="button" class="btn btn-danger btn-sm remove-input margin-top-1"><img src="/assets/icons/cross.svg" /></button>
+                        <div class="col-lg-1 bgx-del-button-container adc-remove-cell">
+                            <button type="button" class="btn btn-danger btn-sm remove-input margin-top-1" title="Remove field"><i class="fa fa-trash"></i></button>
                         </div>
                     </div>
                     <div class="append-number-options mt-2" style="display:none;">
@@ -1016,7 +996,7 @@
                 data: formData,
                 success: function(response) {
                     $("#alert_msg").html('<div class="col-sm-12 alert alert-success" role="alert">Successfully added device category.</div>');
-                    // window.location.href = '/admin/View-device-category';
+                    // window.location.href = '/admin/view-device-category';
                 },
                 error: function(xhr, status, error) {
                     console.error("AJAX request failed");
@@ -1049,7 +1029,4 @@
         toggleCertificationFields();
     });
 </script>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!--<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>-->
 @stop

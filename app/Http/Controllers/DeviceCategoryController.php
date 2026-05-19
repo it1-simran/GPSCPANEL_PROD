@@ -211,6 +211,7 @@ class DeviceCategoryController extends Controller
     public function show()
     {
         $user = Auth::user();
+        $deviceCategories = collect();
         if ($user->user_type == 'Admin') {
             $deviceCategories = DB::table('device_categories')
                 ->select(
@@ -337,7 +338,12 @@ class DeviceCategoryController extends Controller
             // ->get();
 
         }
-        return view('view_deviceCategory', ['device_categories' => $deviceCategories]);
+        $url_type = self::getURLType();
+
+        return view('view_deviceCategory', [
+            'device_categories' => $deviceCategories,
+            'url_type' => $url_type,
+        ]);
     }
 
     public function restore()
@@ -345,7 +351,12 @@ class DeviceCategoryController extends Controller
         $device_categories = DB::table('device_categories')
             ->where('is_deleted', '1')
             ->get();
-        return view('restore_DeviceCategory', ['device_categories' => $device_categories]);
+        $url_type = self::getURLType();
+
+        return view('restore_DeviceCategory', [
+            'device_categories' => $device_categories,
+            'url_type' => $url_type,
+        ]);
     }
     public function restoreDeviceCategory($id)
     {

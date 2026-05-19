@@ -1,126 +1,140 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('protocol-index') }}">
+@endpush
+
 @section('content')
-<section id="main-content">
-    <section class="wrapper protocol-page">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Protocol Management</a></li>
-                        <li class="active"><a href="#">Protocols</a></li>
-                    </ul>
-                </nav>
-            </div>
+@php
+    $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
+    $adminBase = Auth::user()->user_type == 'Support' ? url('support') : url('admin');
+    $totalProtocols = $protocols->count();
+    $activeProtocols = $protocols->where('is_active', true)->count();
+    $packetCount = $protocols->sum('packet_types_count');
+@endphp
+
+<section id="main-content" class="protocol-index-page">
+    <section class="wrapper">
+        <div class="pi-breadcrumb-wrap">
+            <nav class="pi-breadcrumb pi-breadcrumb--scroll" aria-label="Breadcrumb">
+                <a href="{{ $adminBase }}" class="pi-bc-home" title="Dashboard"><i class="fa fa-home"></i></a>
+                <a href="{{ $adminBase }}" class="pi-bc-item">Home</a>
+                <span class="pi-bc-sep">›</span>
+                <span class="pi-bc-item">Testing Tools</span>
+                <span class="pi-bc-sep">›</span>
+                <span class="pi-bc-item pi-bc-active">Protocol Management</span>
+            </nav>
         </div>
 
         <div class="row">
             <div class="col-md-12">
-                <div class="c_panel protocol-panel">
-                        @php
-                            $routePrefix = Auth::user()->user_type == 'Support' ? 'support.protocols' : 'protocols';
-                        @endphp
-                        <div class="row bgx-title-container">
-                            <div class="col-lg-6 col-md-6 col-sm-6">
-                                <h2>Protocol Management</h2>
+                <div class="c_panel pi-panel">
+                    <div class="c_title pi-panel-head">
+                        <div class="row bgx-title-container pi-title-row">
+                            <div class="col-xs-12 col-lg-6 pi-title-col">
+                                <h2 class="pi-panel-title"><i class="fa fa-sitemap"></i> Protocol Management</h2>
                             </div>
-                            <div class="col-lg-6 col-md-6 col-sm-6 text-right">
-                                <a href="{{ route($routePrefix . '.create') }}" class="btn btn-success protocol-add-btn">
-                                    <i class="fa fa-plus-circle"></i> Add New Protocol
+                            <div class="col-xs-12 col-lg-6 text-right pi-actions-col">
+                                <a href="{{ route($routePrefix . '.create') }}" class="btn pi-btn-add">
+                                    <i class="fa fa-plus"></i> Add New Protocol
                                 </a>
                             </div>
                         </div>
                         <div class="clearfix"></div>
                     </div>
 
-                    <div class="c_content" style="padding-left: 0; padding-right: 0;">
+                    <div class="c_content pi-panel-body">
                         @if(session('success'))
-                            <div class="alert alert-success">{{ session('success') }}</div>
+                            <div class="alert alert-success pi-alert-success" role="alert">
+                                <i class="fa fa-check-circle"></i> {{ session('success') }}
+                            </div>
                         @endif
 
-                        @php
-                            $totalProtocols = $protocols->count();
-                            $activeProtocols = $protocols->where('is_active', true)->count();
-                            $packetCount = $protocols->sum('packet_types_count');
-                        @endphp
-
-                        <div class="row protocol-stats-row">
-                            <div class="col-lg-3 col-md-4 col-sm-6">
-                                <div class="protocol-stat-card">
-                                    <div>
-                                        <h3>{{ $totalProtocols }}</h3>
-                                        <p>Total Protocols</p>
+                        <div class="row pi-stats-row">
+                            <div class="col-xs-12 col-sm-4">
+                                <article class="pi-stat-card pi-stat-card--total">
+                                    <div class="pi-stat-card__icon"><i class="fa fa-code-fork"></i></div>
+                                    <div class="pi-stat-card__body">
+                                        <span class="pi-stat-card__value">{{ $totalProtocols }}</span>
+                                        <span class="pi-stat-card__label">Total Protocols</span>
                                     </div>
-                                    <span class="protocol-stat-icon protocol-stat-blue"><i class="fa fa-code-fork"></i></span>
-                                </div>
+                                </article>
                             </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6">
-                                <div class="protocol-stat-card">
-                                    <div>
-                                        <h3>{{ $activeProtocols }}</h3>
-                                        <p>Active Protocols</p>
+                            <div class="col-xs-12 col-sm-4">
+                                <article class="pi-stat-card pi-stat-card--active">
+                                    <div class="pi-stat-card__icon"><i class="fa fa-check-circle"></i></div>
+                                    <div class="pi-stat-card__body">
+                                        <span class="pi-stat-card__value">{{ $activeProtocols }}</span>
+                                        <span class="pi-stat-card__label">Active Protocols</span>
                                     </div>
-                                    <span class="protocol-stat-icon protocol-stat-green"><i class="fa fa-check-circle"></i></span>
-                                </div>
+                                </article>
                             </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6">
-                                <div class="protocol-stat-card">
-                                    <div>
-                                        <h3>{{ $packetCount }}</h3>
-                                        <p>Packet Types</p>
+                            <div class="col-xs-12 col-sm-4">
+                                <article class="pi-stat-card pi-stat-card--packets">
+                                    <div class="pi-stat-card__icon"><i class="fa fa-list-ul"></i></div>
+                                    <div class="pi-stat-card__body">
+                                        <span class="pi-stat-card__value">{{ $packetCount }}</span>
+                                        <span class="pi-stat-card__label">Total Packet Types</span>
                                     </div>
-                                    <span class="protocol-stat-icon protocol-stat-cyan"><i class="fa fa-list-ul"></i></span>
-                                </div>
+                                </article>
                             </div>
                         </div>
 
-                        <div class="protocol-table-wrap">
-                            <table id="protocol_table" class="table table-bordered table-striped protocol-table">
+                        <div class="pi-table-shell">
+                            <table id="protocol_table" class="table table-striped cf pi-datatable-table no-global-table-ui" style="width:100%">
+                                <colgroup>
+                                    <col class="pi-col-sr" />
+                                    <col class="pi-col-name" />
+                                    <col class="pi-col-packets" />
+                                    <col class="pi-col-status" />
+                                    <col class="pi-col-actions" />
+                                </colgroup>
                                 <thead>
                                     <tr>
-                                        <th style="width:80px;" class="text-center">Sr. No.</th>
-                                        <th>Protocol Name</th>
-                                        <th style="width:220px;" class="text-center">Packet Types</th>
-                                        <th style="width:130px;" class="text-center">Status</th>
-                                        <th style="width:140px;" class="text-center">Actions</th>
+                                        <th class="pi-th-sr"><span class="pi-th-label">Sr. No.</span></th>
+                                        <th class="pi-th-no-sort"><span class="pi-th-label">Protocol Name</span></th>
+                                        <th class="pi-th-no-sort text-center"><span class="pi-th-label">Packet Types</span></th>
+                                        <th class="pi-th-no-sort text-center"><span class="pi-th-label">Status</span></th>
+                                        <th class="pi-th-actions text-center"><span class="pi-th-label">Actions</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($protocols as $index => $protocol)
                                         <tr>
-                                            <td class="text-center text-muted">{{ $index + 1 }}</td>
-                                            <td>
-                                                <div class="protocol-name-cell">
-                                                    <span class="protocol-row-icon"><i class="fa fa-code-fork"></i></span>
-                                                    <span>
-                                                        <strong>{{ $protocol->name }}</strong>
-                                                        <small>Created: {{ $protocol->created_at ? $protocol->created_at->format('M d, Y') : 'N/A' }}</small>
-                                                    </span>
+                                            <td class="pi-td-sr">{{ $index + 1 }}</td>
+                                            <td class="pi-td-name">
+                                                <div class="pi-protocol-cell">
+                                                    <span class="pi-protocol-avatar" aria-hidden="true"><i class="fa fa-code-fork"></i></span>
+                                                    <div class="pi-protocol-meta">
+                                                        <span class="pi-protocol-name">{{ $protocol->name }}</span>
+                                                        <span class="pi-protocol-date">Created {{ $protocol->created_at ? $protocol->created_at->format('M d, Y') : 'N/A' }}</span>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td class="text-center">
-                                                <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" class="btn btn-info btn-sm protocol-packet-btn">
+                                            <td class="pi-td-packets text-center">
+                                                <a href="{{ route($routePrefix . '.packet-types', $protocol->id) }}" class="btn pi-btn-packets">
                                                     <i class="fa fa-list-ul"></i>
                                                     <span>View Packets</span>
-                                                    <span class="badge protocol-count-badge">{{ $protocol->packet_types_count }}</span>
+                                                    <em class="pi-packet-count">{{ $protocol->packet_types_count }}</em>
                                                 </a>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="pi-td-status text-center">
                                                 @if($protocol->is_active)
-                                                    <span class="label label-success protocol-status"><i class="fa fa-check-circle"></i> Active</span>
+                                                    <span class="pi-status pi-status--on"><i class="fa fa-check-circle"></i> Active</span>
                                                 @else
-                                                    <span class="label label-danger protocol-status"><i class="fa fa-times-circle"></i> Inactive</span>
+                                                    <span class="pi-status pi-status--off"><i class="fa fa-times-circle"></i> Inactive</span>
                                                 @endif
                                             </td>
-                                            <td class="text-center">
-                                                <div class="protocol-actions">
-                                                    <a href="{{ route($routePrefix . '.edit', $protocol->id) }}" class="btn btn-warning btn-sm protocol-icon-btn" title="Edit">
-                                                        <i class="fa fa-pencil"></i>
+                                            <td class="pi-td-actions text-center">
+                                                <div class="pi-row-actions">
+                                                    <a href="{{ route($routePrefix . '.edit', $protocol->id) }}" class="btn pi-btn-edit" title="Edit protocol">
+                                                        <i class="fa fa-pencil"></i><span>Edit</span>
                                                     </a>
-                                                    <form action="{{ route($routePrefix . '.destroy', $protocol->id) }}" method="post">
+                                                    <form action="{{ route($routePrefix . '.destroy', $protocol->id) }}" method="POST" class="pi-delete-form swal-confirm" data-confirm-msg="Are you sure you want to delete this protocol?">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button onclick="return confirm('Are you sure you want to delete this protocol?');" class="btn btn-danger btn-sm protocol-icon-btn" type="submit" title="Delete">
-                                                            <i class="fa fa-trash"></i>
+                                                        <button style="margin-top:1px;" type="submit" class="btn pi-btn-delete" title="Delete protocol">
+                                                            <i class="fa fa-trash"></i><span>Delete</span>
                                                         </button>
                                                     </form>
                                                 </div>
@@ -136,251 +150,37 @@
         </div>
     </section>
 </section>
+@endsection
 
-<style>
-    .protocol-page .protocol-panel {
-        border-radius: 6px;
-        overflow: hidden;
-    }
-
-    .protocol-page .bgx-title-container {
-        padding: 15px 20px;
-        margin-left: 0;
-        margin-right: 0;
-        border-bottom: 1px solid #eee;
-    }
-
-    .protocol-page .bgx-title-container h2 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 700;
-        color: #222;
-        line-height: 34px;
-    }
-
-    .protocol-add-btn {
-        font-weight: 600;
-        border-radius: 4px;
-        padding: 8px 14px;
-    }
-
-    .protocol-add-btn i,
-    .protocol-packet-btn i,
-    .protocol-status i {
-        margin-right: 5px;
-    }
-
-    .protocol-stats-row {
-        margin-bottom: 18px;
-    }
-
-    .protocol-stat-card {
-        background: #fff;
-        border: 1px solid #eee;
-        border-radius: 6px;
-        padding: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: 82px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
-        margin-bottom: 15px;
-    }
-
-    .protocol-stat-card h3 {
-        margin: 0 0 4px 0;
-        font-size: 26px;
-        font-weight: 700;
-        color: #333;
-    }
-
-    .protocol-stat-card p {
-        margin: 0;
-        font-size: 13px;
-        color: #777;
-        font-weight: 600;
-    }
-
-    .protocol-stat-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-    }
-
-    .protocol-stat-blue { color: #3498db; background: rgba(52, 152, 219, 0.12); }
-    .protocol-stat-green { color: #2ecc71; background: rgba(46, 204, 113, 0.12); }
-    .protocol-stat-cyan { color: #00a9c7; background: rgba(0, 169, 199, 0.12); }
-
-    .protocol-table-wrap {
-        border: 1px solid #e5e5e5;
-        border-radius: 6px;
-        background: #fff;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    .protocol-table {
-        margin-bottom: 0 !important;
-        width: 100% !important;
-        table-layout: auto;
-    }
-
-    .protocol-table thead th {
-        background: #f8f9fb;
-        color: #555;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .03em;
-        vertical-align: middle !important;
-        padding: 12px 14px !important;
-        border-bottom: 1px solid #ddd !important;
-    }
-
-    .protocol-table tbody td {
-        vertical-align: middle !important;
-        padding: 12px 14px !important;
-    }
-
-    .protocol-name-cell {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .protocol-row-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 8px;
-        background: #f0f7ff;
-        color: #3498db;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 38px;
-    }
-
-    .protocol-name-cell strong {
-        display: block;
-        color: #333;
-        font-size: 14px;
-        line-height: 1.2;
-    }
-
-    .protocol-name-cell small {
-        display: block;
-        color: #888;
-        font-size: 11px;
-        margin-top: 3px;
-    }
-
-    .protocol-packet-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        border-radius: 4px;
-        font-weight: 600;
-        min-width: 132px;
-            white-space: nowrap;
-    }
-
-    .protocol-count-badge {
-        background: rgba(255, 255, 255, 0.25);
-        color: #fff;
-        min-width: 20px;
-        padding: 3px 6px;
-    }
-
-    .protocol-status {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 6px 10px;
-        min-width: 78px;
-        font-size: 12px;
-    }
-
-    .protocol-actions {
-        /* display: flex; */
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .protocol-actions form {
-        margin: 0;
-        display: inline-flex;
-    }
-
-    .protocol-icon-btn {
-        width: 32px;
-        height: 32px;
-        padding: 0 !important;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-        }
-
-    .protocol-page .dataTables_wrapper {
-        width: 100% !important;
-        padding: 15px;
-    }
-
-    .protocol-page .dataTables_wrapper .dataTables_length,
-    .protocol-page .dataTables_wrapper .dataTables_filter {
-        margin: 0 0 12px 0;
-    }
-
-    .protocol-page .dataTables_wrapper .dataTables_filter input,
-    .protocol-page .dataTables_wrapper .dataTables_length select {
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        height: 34px;
-        padding: 6px 10px;
-        margin-left: 6px;
-    }
-
-    .protocol-page .dataTables_wrapper .dataTables_info {
-        padding-top: 12px;
-        color: #777;
-    }
-
-    .protocol-page .dataTables_wrapper .dataTables_paginate {
-        padding-top: 10px;
-    }
-
-    @media (max-width: 767px) {
-        .protocol-page .text-right {
-            text-align: left !important;
-            margin-top: 10px;
-        }
-
-        .protocol-table-wrap {
-            border-radius: 4px;
-        }
-    }
-</style>
-
+@section('scripts')
 <script>
 $(function () {
-    var table = $('#protocol_table').DataTable({
-        pageLength: 10,
+    var $tbl = $('#protocol_table');
+    if (!$tbl.length || !$.fn.DataTable) {
+        return;
+    }
+    if ($.fn.dataTable.isDataTable($tbl)) {
+        $tbl.DataTable().destroy();
+    }
+    $tbl.DataTable({
+        paging: true,
+        lengthChange: true,
+        searching: true,
+        ordering: true,
+        info: true,
         autoWidth: false,
+        pageLength: 10,
         order: [[0, 'asc']],
         columnDefs: [
-            { orderable: false, targets: [4] }
-        ]
+            { orderable: true, targets: 0 },
+            { orderable: false, targets: [1, 2, 3, 4] }
+        ],
+        stripeClasses: [],
+        dom: "<'row'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>"
     });
-    
-    // Wrap table in a responsive div to enable simple horizontal scrolling without breaking headers
-    $('#protocol_table').wrap('<div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;"></div>');
+    setTimeout(function () {
+        $tbl.closest('.dataTables_wrapper').find('.dataTables_filter input').attr('placeholder', 'Search protocols…');
+    }, 100);
 });
 </script>
 @endsection
-
-

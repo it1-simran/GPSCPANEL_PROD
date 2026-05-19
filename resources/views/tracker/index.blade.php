@@ -3,585 +3,41 @@ use App\Helper\CommonHelper;
 @endphp
 
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('tracker-index') }}">
+@endpush
 @section('title', $device ? $device->imei . ' (Live Logs)' : 'Tracker Logs')
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<style>
-/* ===== FULL PAGE WIDTH FIX ===== */
-#main-content .tracker-page {
-    width: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-}
 
-/* Remove side gaps */
-#main-content .tracker-page .row {
-    margin-left: -5px;
-    margin-right: -5px;
-}
-
-#main-content .tracker-page [class*="col-"] {
-    padding-left: 5px;
-    padding-right: 5px;
-}
-
-/* Panels */
-#main-content .tracker-page .c_panel,
-#main-content .tracker-page .panel {
-    width: 100%;
-    border-radius: 8px;
-    border: 1px solid #eaeaea;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    background: #fff;
-    overflow: hidden;
-}
-
-#main-content .tracker-page .c_panel {
-    border-top: 3px solid #0d6efd;
-}
-
-.tracker-page .c_title {
-    padding: 15px 20px;
-    border-bottom: 1px solid #eaeaea;
-    background: #fdfdfd;
-}
-.tracker-page .c_title h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
-}
-
-/* Form Elements */
-#main-content .tracker-page label {
-    font-weight: 600;
-    color: #444;
-    margin-bottom: 6px;
-    display: inline-block;
-    font-size: 13px;
-}
-
-#main-content .tracker-page .form-control {
-    border-radius: 5px;
-    border: 1px solid #d1d5db;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
-    height: 38px;
-    padding: 6px 12px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-#main-content .tracker-page .form-control:focus {
-    border-color: #8bb4f6;
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
-    outline: none;
-}
-
-/* Enhancing Buttons */
-#main-content .tracker-page .btn {
-    border-radius: 5px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 500;
-    font-size: 14px;
-    padding: 0 16px;
-    transition: all 0.2s ease;
-    border: none;
-}
-
-#main-content .tracker-page .btn-info { background-color: #0dcaf0; color: #fff; box-shadow: 0 2px 4px rgba(13, 202, 240, 0.25); }
-#main-content .tracker-page .btn-info:hover { background-color: #0bacce; box-shadow: 0 4px 6px rgba(13, 202, 240, 0.35); transform: translateY(-1px); }
-#main-content .tracker-page .btn-primary { background-color: #0d6efd; color: #fff; box-shadow: 0 2px 4px rgba(13, 110, 253, 0.25); }
-#main-content .tracker-page .btn-primary:hover { background-color: #0b5ed7; box-shadow: 0 4px 6px rgba(13, 110, 253, 0.35); transform: translateY(-1px); }
-#main-content .tracker-page .btn-success { background-color: #198754; color: #fff; box-shadow: 0 2px 4px rgba(25, 135, 84, 0.25); }
-#main-content .tracker-page .btn-success:hover { background-color: #157347; box-shadow: 0 4px 6px rgba(25, 135, 84, 0.35); transform: translateY(-1px); }
-#main-content .tracker-page .btn-warning { background-color: #ffc107; color: #000; box-shadow: 0 2px 4px rgba(255, 193, 7, 0.25); }
-#main-content .tracker-page .btn-warning:hover { background-color: #ffca2c; box-shadow: 0 4px 6px rgba(255, 193, 7, 0.35); transform: translateY(-1px); }
-#main-content .tracker-page .btn-danger { background-color: #dc3545; color: #fff; box-shadow: 0 2px 4px rgba(220, 53, 69, 0.25); }
-#main-content .tracker-page .btn-danger:hover { background-color: #bb2d3b; box-shadow: 0 4px 6px rgba(220, 53, 69, 0.35); transform: translateY(-1px); }
-
-/* Action Container Module */
-.action-container {
-    background: #fbfbfc;
-    border: 1px solid #eef0f2;
-    border-radius: 8px;
-    padding: 15px 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-}
-
-/* Filter Box Module */
-.tracker-filter-form {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    margin-bottom: 20px;
-}
-.filter-container {
-    background: #fff;
-    border: 1px solid #eaeaea;
-    border-radius: 12px;
-    padding: 18px 20px;
-    margin-bottom: 0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-.filter-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px 20px;
-    align-items: flex-end;
-    width: 100%;
-}
-.filter-divider {
-    width: 100%;
-    height: 1px;
-    background: #f1f5f9;
-}
-.filter-container .form-group { margin-bottom: 0; flex: 1; min-width: 180px; }
-.filter-container .form-group:has(.flatpickr-datetime) { flex: 1.5; min-width: 220px; }
-.filter-container .form-group.action-group { 
-    flex: 1; 
-    display: flex; 
-    gap: 12px; 
-    justify-content: flex-end;
-}
-.protocol-settings-panel {
-    background: linear-gradient(180deg, #fbfdff 0%, #f7fbff 100%);
-    border: 1px solid #dbeafe;
-    border-radius: 12px;
-    padding: 16px 20px;
-    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.05);
-}
-.protocol-settings-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-.protocol-settings-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #1d4ed8;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-.protocol-settings-subtitle {
-    font-size: 12px;
-    color: #64748b;
-    margin: 0;
-}
-.protocol-settings-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    align-items: flex-start;
-}
-.protocol-settings-grid .form-group {
-    margin-bottom: 0;
-    flex: 1;
-    min-width: 220px;
-}
-.protocol-settings-panel .form-control {
-    border: 1px solid #d1d5db;
-    transition: all 0.2s ease;
-}
-.protocol-settings-panel .form-control:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-}
-
-
-/* Status Alerts */
-.tracker-page .alert {
-    border-radius: 6px;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-    padding: 12px 15px;
-    font-size: 14px;
-}
-
-/* ===== TABLE RESPONSIVE ===== */
-#main-content .tracker-page .panel-body { overflow-x: auto; }
-#main-content .tracker-page table { width: 100%; min-width: 600px; margin-bottom: 0; }
-#main-content .tracker-page th { background-color: #f8f9fa; border-bottom: 2px solid #dee2e6; color: #555; }
-#main-content .tracker-page table td { vertical-align: middle; }
-
-/* ===== MOBILE FIX ===== */
-@media (max-width: 768px) {
-    #main-content .tracker-page { padding: 5px; }
-    #main-content .tracker-page [class*="col-"] { width: 100% !important; max-width: 100%; flex: 100%; margin-bottom: 10px; }
-    
-    .filter-container,
-    .filter-row,
-    .protocol-settings-grid {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .action-container, 
-    .action-container > form, 
-    .action-container > div:not([style*="width:1px"]) {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 15px !important;
-    }
-
-    .action-container > div[style*="width:1px"] {
-        display: none !important;
-    }
-    
-    #main-content .tracker-page .btn { width: 100%; }
-    
-    #main-content .tracker-page input,
-    #main-content .tracker-page select,
-    #main-content .tracker-page .form-group {
-        width: 100% !important;
-        min-width: 100% !important;
-        flex: 1 1 100% !important;
-    }
-
-    .action-container select {
-        flex: 1 1 auto !important;
-        width: auto !important;
-        min-width: 0 !important;
-    }
-
-    #main-content .tracker-page #logContainer { max-height: 350px; }
-}
-
-/* Logs Wrapping Fix */
-.log-entry { overflow-wrap: break-word; }
-#logContainer {
-    overflow-x: hidden !important;
-    border-radius: 0 0 8px 8px;
-    padding: 10px;
-}
-.log-entry:last-child { border-bottom: none !important; }
-
-.validation-pass { color:#22c55e !important; border-left:4px solid #22c55e !important; padding-left:8px !important; }
-.validation-fail { color:#f87171 !important; border-left:4px solid #ef4444 !important; padding-left:8px !important; }
-.validation-neutral { border-left:4px solid #6b7280 !important; padding-left:8px !important; }
-.validation-badge { display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:2px 8px; font-size:11px; font-weight:800; margin-left:8px; }
-.validation-badge-pass { background:#dcfce7; color:#15803d; }
-.validation-badge-fail { background:#fee2e2; color:#b91c1c; }
-.validation-badge-none { background:#e5e7eb; color:#374151; }
-.log-entry { cursor:pointer; }
-.validation-modal-table th { width:34%; background:#f8fafc; }
-.validation-error-list { 
-    margin: 0; 
-    padding: 0; 
-    color: #b91c1c; 
-    display: grid; 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 8px 20px; 
-    list-style: none;
-}
-.validation-error-list li {
-    font-size: 12px;
-    position: relative;
-    padding-left: 15px;
-}
-.validation-error-list li::before {
-    content: "•";
-    position: absolute;
-    left: 0;
-    color: #ef4444;
-    font-weight: bold;
-}
-@media (max-width: 768px) {
-    .validation-error-list {
-        grid-template-columns: 1fr;
-    }
-}
-.protocol-fields-hint { color:#64748b; font-size:11px; margin-top:4px; min-height:14px; }
-.protocol-validation-group.is-hidden { display:none !important; }
-.protocol-validation-toggle-wrap { min-width: 160px; }
-
-/* Modern Modal Styles */
-.packet-details-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-.packet-stats-bar {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    background: #f8fafc;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-}
-.stat-item {
-    flex: 1;
-    min-width: 120px;
-    display: flex;
-    flex-direction: column;
-}
-.stat-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    color: #64748b;
-    font-weight: 700;
-    margin-bottom: 2px;
-}
-.stat-value {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1e293b;
-}
-.raw-packet-wrapper {
-    position: relative;
-}
-.raw-packet-box {
-    max-height: 85px;
-    overflow-y: auto;
-    background: #0f172a;
-    color: #38bdf8;
-    padding: 12px;
-    border-radius: 8px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 12px;
-    border: 1px solid #1e293b;
-    white-space: pre-wrap;
-    word-break: break-all;
-    line-height: 1.5;
-}
-.raw-packet-box::-webkit-scrollbar {
-    width: 6px;
-}
-.raw-packet-box::-webkit-scrollbar-track {
-    background: #0f172a;
-}
-.raw-packet-box::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 10px;
-}
-.raw-packet-box::-webkit-scrollbar-thumb:hover {
-    background: #475569;
-}
-.field-summary-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-}
-.field-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-.field-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-color: #cbd5e1;
-    transform: translateY(-2px);
-}
-.field-card.is-invalid {
-    border-left: 4px solid #ef4444;
-    background: #fffafa;
-}
-.field-card.is-valid {
-    border-left: 4px solid #10b981;
-}
-.field-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-}
-.field-name {
-    font-size: 12px;
-    font-weight: 700;
-    color: #475569;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.field-value-box {
-    margin: 4px 0;
-}
-.field-value {
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 13px;
-    color: #0f172a;
-    background: #f1f5f9;
-    padding: 3px 8px;
-    border-radius: 6px;
-    word-break: break-all;
-    display: inline-block;
-    min-width: 40px;
-}
-.field-meta {
-    font-size: 10px;
-    color: #94a3b8;
-    margin-top: auto;
-    padding-top: 6px;
-    display: flex;
-    justify-content: space-between;
-}
-.error-text {
-    font-size: 11px;
-    color: #dc2626;
-    margin-top: 6px;
-    font-weight: 600;
-    background: #fef2f2;
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-#packetValidationModal .modal-lg {
-    max-width: 90% !important;
-}
-#packetValidationModalBody {
-    max-height: 80vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 20px;
-    background: #fdfdfd;
-}
-/* Premium Scrollbar for Modal Body */
-#packetValidationModalBody::-webkit-scrollbar {
-    width: 8px;
-}
-#packetValidationModalBody::-webkit-scrollbar-track {
-    background: #f8fafc;
-    border-radius: 10px;
-}
-#packetValidationModalBody::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 10px;
-    border: 2px solid #f8fafc;
-}
-#packetValidationModalBody::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-/* Premium Scrollbar for Modal Body */
-#packetValidationModalBody::-webkit-scrollbar {
-    width: 8px;
-}
-#packetValidationModalBody::-webkit-scrollbar-track {
-    background: #f8fafc;
-    border-radius: 10px;
-}
-#packetValidationModalBody::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 10px;
-    border: 2px solid #f8fafc;
-}
-#packetValidationModalBody::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-.field-status-icon {
-    font-size: 12px;
-}
-.status-pass { color: #10b981; }
-.status-fail { color: #ef4444; }
-
-/* Alert Validation Specific Styles */
-.alert-report-container {
-    width: 100%;
-}
-.alert-report-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 15px;
-}
-.alert-report-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: #1e293b;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.alert-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-.alert-card.triggered {
-    border-left: 5px solid #ef4444;
-    background: #fffafb;
-}
-.alert-card.cleared {
-    border-left: 5px solid #10b981;
-    background: #f0fdf4;
-}
-.alert-name {
-    font-size: 14px;
-    font-weight: 700;
-    color: #334155;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-}
-.alert-condition-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    padding: 6px 0;
-    border-bottom: 1px dashed #e2e8f0;
-}
-.alert-condition-row:last-child { border-bottom: none; }
-.cond-field { font-weight: 700; color: #475569; width: 120px; }
-.cond-op { color: #94a3b8; font-family: monospace; width: 30px; text-align: center; }
-.cond-exp { color: #64748b; width: 80px; font-weight: 600; }
-.cond-arrow { color: #cbd5e1; }
-.cond-act { font-weight: 800; padding: 2px 8px; border-radius: 4px; }
-.cond-act.match { background: #dcfce7; color: #15803d; }
-.cond-act.mismatch { background: #fee2e2; color: #b91c1c; }
-
-.alert-badge-tracker {
-    font-size: 10px;
-    font-weight: 800;
-    padding: 1px 6px;
-    border-radius: 4px;
-    text-transform: uppercase;
-}
-.alert-badge-triggered { background: #ef4444; color: #fff; }
-.alert-badge-cleared { background: #10b981; color: #fff; }
-
-@media (max-width: 768px) {
-    .field-summary-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-</style>
 
 <section id="main-content">
     <section class="wrapper">
         <div class="tracker-page">
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Live Tracking</a></li>
-                        <li class="active"><a href="#">Logs View</a></li>
-                    </ul>
-                </nav>
-            </div>
+        @php
+            $trackerImeiIndexRoute = ($route_prefix ?? 'admin') === 'admin' ? 'imei-devices.index' : 'support.imei-devices.index';
+        @endphp
+        <div class="tracker-breadcrumb-wrap">
+            <nav class="tracker-breadcrumb" aria-label="Breadcrumb">
+                <div class="bc-home"><i class="fa fa-home"></i></div>
+                <a href="{{ route($trackerImeiIndexRoute) }}" class="bc-item">Manage Trackers</a>
+                <span class="bc-sep">›</span>
+                <span class="bc-item active">Logs View</span>
+            </nav>
         </div>
 
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
-                    <div class="c_title">
-                        <h2>Tracker Logs Console</h2>
+                    <div class="c_title tracker-console-c-title">
+                        <h2 class="tracker-console-title">
+                            <i class="fa fa-list"></i>
+                            Tracker Logs Console
+                            @if($device)
+                                <span class="tracker-console-imei-pill">{{ $device->imei }}</span>
+                            @endif
+                        </h2>
                         <div class="clearfix"></div>
                     </div>
                     <div class="c_content">
@@ -647,80 +103,73 @@ use App\Helper\CommonHelper;
                         </form>
 
                         @if($device)
-                            <div class="row" style="margin-bottom:15px;">
-                                <div class="col-md-3"><div class="alert alert-info"><strong>IMEI:</strong> {{ $device->imei }}</div></div>
-                                <div class="col-md-3"><div id="deviceStatusAlert" class="alert {{ $status === 'active' ? 'alert-success' : ($status === 'inactive' ? 'alert-warning' : 'alert-danger') }}"><strong>Status:</strong> <span id="deviceStatusLabel">{{ $device->status_label }}</span></div></div>
-
-
-                                <div class="col-md-3">
-                                    <div class="alert alert-default">
-                                        <strong>Start:</strong> 
-                                        {{ isset($filters['start_at']) ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'd-M-Y H:i:s') : 'N/A' }}
-                                    </div>
+                            {{-- Status Info Strip --}}
+                            <div class="tracker-status-strip" id="deviceStatusStrip">
+                                <div class="tracker-stat-card">
+                                    <span class="tracker-stat-label">IMEI</span>
+                                    <span class="tracker-stat-value imei-val">{{ $device->imei }}</span>
                                 </div>
-
-                                <div class="col-md-3">
-                                    <div class="alert alert-default">
-                                        <strong>End:</strong> 
-                                        {{ $device->effective_end_at ? CommonHelper::getDateAsTimeZone($device->effective_end_at, 'd-M-Y H:i:s') : 'N/A' }}
-                                    </div>
+                                <div class="tracker-stat-card">
+                                    <span class="tracker-stat-label">Status</span>
+                                    <span class="tracker-stat-value" id="deviceStatusAlert">
+                                        <span class="status-dot {{ $status === 'active' ? 'active' : ($status === 'inactive' ? 'inactive' : 'closed') }}"></span>
+                                        <span id="deviceStatusLabel">{{ $device->status_label }}</span>
+                                    </span>
                                 </div>
-
+                                <div class="tracker-stat-card">
+                                    <span class="tracker-stat-label">Start</span>
+                                    <span class="tracker-stat-value">{{ isset($filters['start_at']) ? CommonHelper::getDateAsTimeZone($filters['start_at'], 'd-M-Y H:i:s') : 'N/A' }}</span>
+                                </div>
+                                <div class="tracker-stat-card">
+                                    <span class="tracker-stat-label">End</span>
+                                    <span class="tracker-stat-value">{{ $device->effective_end_at ? CommonHelper::getDateAsTimeZone($device->effective_end_at, 'd-M-Y H:i:s') : 'N/A' }}</span>
+                                </div>
                             </div>
 
-                            <div class="row" style="margin-bottom:20px;">
-                                <div class="col-md-12">
-                                    <div class="action-container" style="background:#fff; border:1px solid #eaeaea; border-radius:12px; padding:15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap;">
-                                        
-                                        <!-- Command Section -->
-                                        <form method="POST" action="{{ route($route_prefix . '.tracker.commands.store', $device->id) }}" style="display:flex; flex-grow:2; gap:10px; align-items:flex-end; margin:0;">
-                                            @csrf
-                                            <div style="flex-grow:1; min-width:200px;">
-                                                <label style="display:block; font-size:12px; font-weight:700; color:#4a5568; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Send Command</label>
-                                                <input type="text" name="command" class="form-control" style="width:100%; border-radius:8px; border:1px solid #cbd5e0;" placeholder="Enter command to queue">
-                                            </div>
-                                            <button type="submit" class="btn btn-warning" style="height:38px; border-radius:8px; font-weight:600; padding:0 15px; background:#f6ad55; border:none; color:#fff;">
-                                                <i class="fa fa-paper-plane" style="margin-right:6px;"></i> Queue
-                                            </button>
-                                            <button type="button" class="btn btn-danger" id="clearLogsBtn" style="height:38px; border-radius:8px; font-weight:600; padding:0 15px; background:transparent; border:1px solid #feb2b2; color:#c53030;">
-                                                Clear
-                                            </button>
-                                        </form>
-                                         <div style="width:1px; height:40px; background:#edf2f7; margin:0 5px;"></div>
-
-                                         <!-- Controls Section -->
-                                         <div style="display:flex; gap:20px; align-items:flex-end; flex-grow:1; justify-content:flex-end;">
-                                             <div style="display:flex; flex-direction:column; gap:6px;">
-                                                 <label style="font-size:12px; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:0.5px;">Tracking</label>
-                                                 <div style="display:flex; align-items:center; gap:10px;">
-                                                     <select id="streamToggle" class="form-control" style="width:140px; border-radius:8px; border:1px solid #cbd5e0; font-weight:600;">
-                                                         <option value="ON" selected>LIVE STREAM</option>
-                                                         <option value="OFF">OFF</option>
-                                                     </select>
-                                                     <span id="streamStatus" style="font-size:11px; font-weight:800; color:#718096; width:45px; text-align:center;">(INIT)</span>
-                                                 </div>
-                                             </div>
-
-                                             <div id="autoReloadGroup" style="display:flex; flex-direction:column; gap:6px;">
-                                                 <label style="font-size:12px; font-weight:700; color:#4a5568; text-transform:uppercase; letter-spacing:0.5px;">Interval</label>
-                                                 <div style="display:flex; align-items:center; gap:8px;">
-                                                     <select id="autoReloadSeconds" class="form-control" style="width:90px; border-radius:8px; border:1px solid #cbd5e0;">
-                                                         <option value="OFF" selected>OFF</option>
-                                                         <option value="10">10s</option>
-                                                         <option value="20">20s</option>
-                                                         <option value="30">30s</option>
-                                                         <option value="60">60s</option>
-                                                     </select>
-                                                     <span id="reloadCountdown" style="font-size:11px; font-weight:800; color:#e53e3e; min-width:30px;"></span>
-                                                 </div>
-                                             </div>
-
-                                             <button type="button" class="btn btn-info" id="refreshNowBtn" style="height:38px; border-radius:8px; font-weight:700; padding:0 20px; background:#4fd1c5; border:none; color:#fff; box-shadow:0 4px 10px rgba(79,209,197,0.3);">
-                                                 <i class="fa fa-refresh" style="margin-right:6px;"></i> REFRESH
-                                             </button>
-                                        </div>
-
+                            {{-- Command + Controls Bar --}}
+                            <div class="tracker-command-bar">
+                                <form method="POST" action="{{ route($route_prefix . '.tracker.commands.store', $device->id) }}" class="cmd-section" style="margin:0;">
+                                    @csrf
+                                    <div class="cmd-input-wrap">
+                                        <label>Send Command</label>
+                                        <input type="text" name="command" class="form-control" placeholder="Enter command to queue">
                                     </div>
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fa fa-paper-plane" style="margin-right:6px;"></i> Queue
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="clearLogsBtn">
+                                        Clear
+                                    </button>
+                                </form>
+                                <div class="cmd-divider"></div>
+                                <div class="ctrl-section">
+                                    <div class="ctrl-group">
+                                        <label>Tracking</label>
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <select id="streamToggle" class="form-control" style="width:140px;">
+                                                <option value="ON" selected>LIVE STREAM</option>
+                                                <option value="OFF">OFF</option>
+                                            </select>
+                                            <span id="streamStatus" style="font-size:11px; font-weight:800; color:#76CF1C; width:45px; text-align:center;">(INIT)</span>
+                                            <div id="sseReconnectBanner" class="gps-sse-banner" role="status" aria-live="polite" style="display:none;">Connection interrupted — reconnecting…</div>
+                                        </div>
+                                    </div>
+                                    <div class="ctrl-group" id="autoReloadGroup">
+                                        <label>Interval</label>
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <select id="autoReloadSeconds" class="form-control" style="width:90px;">
+                                                <option value="OFF" selected>OFF</option>
+                                                <option value="10">10s</option>
+                                                <option value="20">20s</option>
+                                                <option value="30">30s</option>
+                                                <option value="60">60s</option>
+                                            </select>
+                                            <span id="reloadCountdown" style="font-size:11px; font-weight:800; color:#e53e3e; min-width:30px;"></span>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-info" id="refreshNowBtn">
+                                        <i class="fa fa-refresh" style="margin-right:6px;"></i> Refresh
+                                    </button>
                                 </div>
                             </div>
 
@@ -729,7 +178,7 @@ use App\Helper\CommonHelper;
                             <div class="row" style="margin-top: 20px;">
                                 <div class="col-md-12">
                                     <div class="panel panel-default">
-                                        <div class="panel-heading"><strong>History + Live Logs</strong></div>
+                                        <div class="panel-heading panel-heading-green"><strong><i class="fa fa-list-ul" style="margin-right:8px;"></i>History + Live Logs</strong></div>
                                         <div class="panel-body" id="logContainer" style="max-height:520px; overflow-y:auto; overflow-x:hidden; background:#111; color:#66ff66; font-family:monospace;">
                                             @php 
                                                 $srNo = $totalLogsCount > 0 ? ($totalLogsCount - $initialLogs->count() + 1) : 1;
@@ -1112,6 +561,7 @@ $(document).ready(function() {
 
         $('#autoReloadGroup').css('opacity', '0.5').find('select').attr('disabled', true);
         $('#streamStatus').text('(LIVE)').css('color', '#198754');
+        $('#sseReconnectBanner').hide();
 
         let streamUrl = `{{ route($route_prefix . '.tracker.stream') }}?imei=${imei}&last_id=${lastLogId}&last_command_ts=${encodeURIComponent(lastCommandTs)}&alert_validation=${alertValidationEnabled ? '1' : '0'}`;
         if (validationEnabled) {
@@ -1146,10 +596,12 @@ $(document).ready(function() {
 
             if ($('#streamToggle').val() !== 'ON') {
                 $('#streamStatus').text('(OFF)').css('color', '#6c757d');
+                $('#sseReconnectBanner').hide();
                 return;
             }
 
             $('#streamStatus').text('(RETRY)').css('color', '#d97706');
+            $('#sseReconnectBanner').show();
             clearReconnect();
             reconnectHandle = setTimeout(function() {
                 if ($('#streamToggle').val() === 'ON') {
@@ -1168,6 +620,7 @@ $(document).ready(function() {
 
         sseSource = null;
         $('#streamStatus').text('(OFF)').css('color', '#718096');
+        $('#sseReconnectBanner').hide();
         $('#autoReloadGroup').css('opacity', '1').find('select').attr('disabled', false);
     }
 
@@ -1227,27 +680,24 @@ $(document).ready(function() {
             return;
         }
 
-        const $statusAlert = $('#deviceStatusAlert');
-        $statusAlert.removeClass('alert-success alert-warning alert-danger');
+        const $dot = $('#deviceStatusAlert .status-dot');
+        $dot.removeClass('active inactive closed');
+        $dot.addClass(status === 'active' ? 'active' : (status === 'inactive' ? 'inactive' : 'closed'));
 
         const isInactive = (status === 'inactive' || status === 'closed');
         
-        // Disable/Enable command and stream controls
         const $controls = $('input[name="command"], button[type="submit"], #streamToggle, #autoReloadSeconds, #refreshNowBtn');
         $controls.prop('disabled', isInactive);
         
-        // Visual feedback for disabled state
-        $('.action-container').css('opacity', isInactive ? '0.6' : '1');
-        $('.action-container').css('pointer-events', isInactive ? 'none' : 'auto');
+        $('.tracker-command-bar').css('opacity', isInactive ? '0.6' : '1');
+        $('.tracker-command-bar').css('pointer-events', isInactive ? 'none' : 'auto');
 
         if (status === 'active') {
-            $statusAlert.addClass('alert-success');
+            // active
         } else if (status === 'inactive') {
-            $statusAlert.addClass('alert-warning');
             stopSSE();
             stopAutoReload();
         } else {
-            $statusAlert.addClass('alert-danger');
             stopSSE();
             stopAutoReload();
         }
@@ -1680,13 +1130,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
-
-
-
-
-
-
-
 
 
 

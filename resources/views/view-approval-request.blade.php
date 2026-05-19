@@ -1,42 +1,41 @@
 <?php
-
 use App\Helper\CommonHelper;
-
 $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-approval-request') }}">
+@endpush
 @section('content')
+
 <section id="main-content">
-    <section class="wrapper">
-        <!--======== Page Title and Breadcrumbs Start ========-->
-        <div class="top-page-header">
-            <div class="page-breadcrumb">
-                <nav class="c_breadcrumbs">
-                    <ul>
-                        <li><a href="#">Account Management</a></li>
-                        <li class="active"><a href="#">View User Approval Request</a></li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
-        <!--======== Page Title and Breadcrumbs End ========-->
-        <!--======== Dynamic Datatable Content Start End ========-->
+  <section class="wrapper">
+    {{-- BREADCRUMB --}}
+    <div class="var-breadcrumb-wrap">
+      <nav class="var-breadcrumb">
+        <div class="bc-home"><i class="fa fa-home"></i></div>
+        <a href="{{ url('admin') }}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <a href="#" class="bc-item">Account Management</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item active">View User Approval Request</span>
+      </nav>
+    </div>
+    {{-- CONTENT --}}
         <div class="row">
             <div class="col-md-12">
                 <div class="c_panel">
                     <div class="c_title">
-                        <div class="row bgx-title-container">
-                            <div class="col-lg-6">
-                                <h2>View User Approval Request</h2>
-                            </div>
-                            <div class="col-lg-6 text-right">
-                                <!-- Button to trigger modal -->
-                                <button type="button" class="btn btn-primary" onclick="requestModel()">
-                                    Send Account Request
-                                </button>
-                            </div>
+                        <div class="var-title-row">
+                          <h2>
+                            <span style="display:inline-block;width:4px;height:20px;background:#76CF1C;border-radius:3px;margin-right:10px;vertical-align:middle;"></span>
+                            View User Approval Request
+                          </h2>
+                          <button type="button" class="var-btn-primary" onclick="requestModel()">
+                            <i class="fa fa-paper-plane"></i> Send Account Request
+                          </button>
                         </div>
-                        <div class="clearfix"></div>
                         <!-- Modal -->
                         <div class="modal" id="accountRequestModal" tabindex="-1" aria-labelledby="accountRequestModalLabel" aria-hidden="true">
                             <div class="modal-dialog">
@@ -45,6 +44,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         @csrf
                                         <div class="modal-header">
                                             <h5 class="modal-title" id="accountRequestModalLabel">Send Account Request</h5>
+                                            <button type="button" class="arm-close" onclick="closeRequestModal()" aria-label="Close">
+                                                <i class="fa fa-times"></i>
+                                            </button>
                                         </div>
 
                                         <div class="modal-body">
@@ -68,7 +70,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" onclick="closeRequestModal()">Close</button>
-                                            <button type="submit" class="btn btn-primary">Send Request</button>
+                                            <button type="submit" class="btn btn-primary request-submit-btn">Send Request</button>
                                         </div>
                                     </form>
                                 </div>
@@ -123,7 +125,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
                             {{-- ✅ Table --}}
                             <div class="table-responsive margin-top-25">
-                                <table id="approvalRequests" class="table table-bordered table-striped table-hover align-middle" style="font-size: 14px;">
+                                <table id="approvalRequests" class="table">
                                     <thead class="table-primary">
                                         <tr>
                                             <th>Sr. No.</th>
@@ -147,56 +149,48 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             <td>{{ $i + 1 }}</td>
                                             <td>{{ $request->name }}</td>
                                             <td>{{ $request->email }}</td>
-                                            <td>{{ $request->phone }}</td>
-                                            <td>{{ ucfirst($request->userType) }}</td>
-                                            <td>{{ $request->deviceCategory }}</td>
+                                            <td>{{ $request->phone ?: 'N/A' }}</td>
+                                            <td>{{ $request->userType ? ucfirst($request->userType) : 'N/A' }}</td>
+                                            <td>{{ $request->deviceCategory ?: 'N/A' }}</td>
                                             @php
-                                                $configurations = json_decode($request->configurations, true);
-                                                $deviceIp = $configurations['ip_test']['value'] ?? 'N/A';
-                                                $devicePort = $configurations['port']['value'] ?? 'N/A';
+                                                $configurations = json_decode($request->configurations, true) ?: [];
+                                                $deviceIp = \App\Helper\CommonHelper::emptyToNA($configurations['ip_test']['value'] ?? null);
+                                                $devicePort = \App\Helper\CommonHelper::emptyToNA($configurations['port']['value'] ?? null);
                                             @endphp
                                             <td>{{ $deviceIp }}</td>
                                             <td>{{ $devicePort }}</td>
                                             <td>{{ $request->resend_count }}</td>
                                             <td>
-                                                <span class="badge 
-                                                @if($request->status === 'approved') bg-success 
-                                                @elseif($request->status === 'supportApproved') bg-info 
-                                                @elseif($request->status === 'pendingApproval') bg-warning text-dark
-                                                @elseif($request->status === 'rejected') bg-danger 
-                                                @else bg-secondary @endif">
-                                                    {{ ucfirst($request->status) }}
-                                                </span>
+                                                @php
+                                                    $s = $request->status;
+                                                    $badgeClass = str_contains(strtolower($s),'approved') ? 'approved' : (str_contains(strtolower($s),'reject') ? 'rejected' : (str_contains(strtolower($s),'pending') ? 'pending' : 'secondary'));
+                                                @endphp
+                                                <span class="var-badge {{ $badgeClass }}">{{ ucfirst($s) }}</span>
                                             </td>
                                             <td>{{ $request->created_at->format('d M Y H:i') }}</td>
-                                            <td class="text-center">
-                                                <button class="btn btn-primary btn-sm btn-view-details" data-request="{{ json_encode($request) }}" onclick="viewDetails(this)" title="View Details">
-                                                    <i class="fa fa-eye text-white"></i>
+                                            <td>
+                                                <button class="var-btn-view btn-view-details" data-request="{{ json_encode($request) }}" onclick="viewDetails(this)" title="View Details">
+                                                    <i class="fa fa-eye"></i> View
                                                 </button>
                                             </td>
                                             <td>
                                                 {{-- Action Buttons --}}
                                                 @if(in_array($request->status, ['AdminApprovalPending']))
                                                 @if($url_type == 'admin')
-                                                <button class="btn btn-success btn-sm"
-                                                    onclick="showApprovalModal({{ $request->id }}, 'Approved')">
-                                                    Approve
+                                                <button class="var-btn-approve" onclick="showApprovalModal({{ $request->id }}, 'Approved')">
+                                                    <i class="fa fa-check"></i> Approve
                                                 </button>
                                                 @else
-                                                <button class="btn btn-success btn-sm"
-                                                    onclick="showApprovalModal({{ $request->id }}, 'Approved')">
-                                                    Approve
+                                                <button class="var-btn-approve" onclick="showApprovalModal({{ $request->id }}, 'Approved')">
+                                                    <i class="fa fa-check"></i> Approve
                                                 </button>
                                                 @endif
-
-                                                <button class="btn btn-danger btn-sm"
-                                                    onclick="showRejectModal({{ $request->id }})">
-                                                    Reject
+                                                <button class="var-btn-reject" onclick="showRejectModal({{ $request->id }})">
+                                                    <i class="fa fa-times"></i> Reject
                                                 </button>
                                                 @elseif(in_array($request->status, ['RejectedByAdmin', 'RejectedBySupport', 'RequestMailSent']))
-                                                <button type="button" class="btn btn-sm btn-info"
-                                                    onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}')">
-                                                    Resend Request
+                                                <button type="button" class="var-btn-resend" onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}')">
+                                                    <i class="fa fa-repeat"></i> Resend
                                                 </button>
                                                 @endif
                                                 <div class="custom-modal modal" id="approvalModal{{ $request->id }}" tabindex="-1" aria-hidden="true">
@@ -296,13 +290,13 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         <td>{{ $i }}</td>
                                         <td>{{ $request->name }}</td>
                                         <td>{{ $request->email }}</td>
-                                        <td>{{ $request->phone }}</td>
-                                        <td>{{ ucfirst($request->userType) }}</td>
-                                        <td>{{ $request->deviceCategory }}</td>
+                                        <td>{{ $request->phone ?: 'N/A' }}</td>
+                                        <td>{{ $request->userType ? ucfirst($request->userType) : 'N/A' }}</td>
+                                        <td>{{ $request->deviceCategory ?: 'N/A' }}</td>
                                         @php
-                                            $configurations = json_decode($request->configurations, true);
-                                            $deviceIp = $configurations['ip_test']['value'] ?? 'N/A';
-                                            $devicePort = $configurations['port']['value'] ?? 'N/A';
+                                            $configurations = json_decode($request->configurations, true) ?: [];
+                                            $deviceIp = \App\Helper\CommonHelper::emptyToNA($configurations['ip_test']['value'] ?? null);
+                                            $devicePort = \App\Helper\CommonHelper::emptyToNA($configurations['port']['value'] ?? null);
                                         @endphp
                                         <td>{{ $deviceIp }}</td>
                                         <td>{{ $devicePort }}</td>
@@ -372,7 +366,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             <div class="custom-modal modal" id="rejectModal{{ $request->id }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
                                                     <div class="modal-content custom-modal-content">
-                                                        <div class="modal-header custom-modal-header   d-flex justify-content-between">
+                                                        <div class="modal-header custom-modal-header d-flex justify-content-between">
                                                             <h5 class="modal-title">Reject Request</h5>
                                                             <!-- <button type="button" class="bg-calendar-content btn-close margin-top-1" data-bs-dismiss="modal" aria-label="Close"
                                                                 onclick="cancelRejectModel({{ $request->id }})" style="border:none;">X</button> -->
@@ -418,7 +412,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 <div class="modal" id="viewDetailsModal" tabindex="-1" aria-labelledby="viewDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content info-modal-content">
-            <div class="modal-header portal-modal-header d-flex justify-content-between bg-primary">
+            <div class="modal-header portal-modal-header">
                 <h5 class="modal-title" id="viewDetailsModalLabel">
                     <i class="fa fa-info-circle"></i> USER REQUEST DETAILS
                 </h5>
@@ -432,7 +426,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 {{-- Quick Summary Header --}}
                 <div class="user-summary-card mb-4">
                     <div class="summary-avatar">
-                        <i class="fa fa-user-circle"></i>
+                        <i class="fa fa-user" style="font-size:22px; color:#76CF1C;"></i>
                     </div>
                     <div class="summary-details">
                         <h4 id="view_name_summary"></h4>
@@ -474,12 +468,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                 </div>
 
                 {{-- Rejection Reason - Hidden by default --}}
-                <div id="rejection_reason_container" style="display:none;" class="mt-3">
-                    <div class="alert alert-danger border-0 shadow-sm d-flex align-items-start">
-                        <i class="fa fa-exclamation-triangle mt-1 me-2" style="font-size: 1.2rem;"></i>
-                        <div>
-                            <h6 class="fw-bold mb-1">Rejection Reason</h6>
-                            <p id="view_rejection_reason" class="mb-0 small"></p>
+                <div id="rejection_reason_container" style="display:none;" class="mt-3 mb-2">
+                    <div class="var-rejection-box">
+                        <div class="var-rejection-icon">
+                            <i class="fa fa-ban"></i>
+                        </div>
+                        <div class="var-rejection-body">
+                            <span class="var-rejection-label">Rejection Reason</span>
+                            <p id="view_rejection_reason" class="var-rejection-text"></p>
                         </div>
                     </div>
                 </div>
@@ -512,234 +508,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         </div>
     </div>
 </div>
-<style>
-    /* Portal Integrated Theme Styles */
-    :root {
-        --portal-blue: #004a99;
-        --portal-dark: #1a2732;
-        --portal-gray: #f4f7f6;
-        --border-light: #e0e4e8;
-    }
 
-    .info-modal-content {
-        border-radius: 8px; /* Sharper, cleaner corners */
-        border: 1px solid var(--border-light);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        background: #ffffff;
-    }
-
-    .portal-modal-header {
-        /* background: var(--portal-blue); */
-        padding: 12px 20px;
-        border-bottom: none;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-radius: 8px 8px 0 0;
-    }
-
-    .portal-modal-header .modal-title {
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        color: white !important;
-        margin: 0;
-    }
-
-    .portal-close-btn {
-        background: transparent;
-        border: none;
-        color: white;
-        font-size: 16px;
-        opacity: 0.8;
-        transition: 0.2s;
-        padding: 5px;
-    }
-
-    .portal-close-btn:hover {
-        opacity: 1;
-        transform: scale(1.1);
-    }
-
-    .info-modal-body {
-        padding: 20px;
-        background: white;
-        max-height: 75vh;
-        overflow-y: auto;
-    }
-
-    /* Summary Card - Flattened */
-    .user-summary-card {
-        background: var(--portal-gray);
-        padding: 15px 20px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        border: 1px solid var(--border-light);
-        margin-bottom: 20px;
-    }
-
-    .summary-avatar {
-        font-size: 30px;
-        color: var(--portal-blue);
-        background: white;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        border: 1px solid var(--border-light);
-    }
-
-    .summary-details h4 {
-        margin: 0;
-        font-weight: 700;
-        color: var(--portal-dark);
-        font-size: 1.1rem;
-    }
-
-    .summary-details p {
-        margin: 2px 0 0;
-        color: #666;
-        font-size: 13px;
-    }
-
-    /* Details Grid */
-    .details-cards-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-    }
-
-    .detail-card {
-        background: white;
-        padding: 12px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border: 1px solid var(--border-light);
-    }
-
-    .card-icon {
-        color: var(--portal-blue);
-        font-size: 14px;
-    }
-
-    .card-content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .card-label {
-        font-size: 9px;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: #999;
-    }
-
-    .card-value {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--portal-dark);
-    }
-
-    /* Config Section */
-    .config-container-premium {
-        margin-top: 20px;
-        border: 1px solid var(--border-light);
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .config-header {
-        background: var(--portal-gray);
-        padding: 10px 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--border-light);
-    }
-
-    .config-header h5 {
-        margin: 0;
-        font-weight: 700;
-        color: var(--portal-dark);
-        font-size: 13px;
-    }
-
-    .config-count {
-        background: var(--portal-blue);
-        color: white;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 700;
-    }
-
-    .premium-table {
-        width: 100%;
-        font-size: 13px;
-    }
-
-    .premium-table thead th {
-        background: #fafafa;
-        padding: 10px 15px;
-        text-align: left;
-        font-size: 11px;
-        color: #777;
-        border-bottom: 1px solid var(--border-light);
-    }
-
-    .premium-table tbody td {
-        padding: 10px 15px;
-        border-bottom: 1px solid #f9f9f9;
-    }
-
-    /* Badge Style */
-    .status-badge-premium {
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-weight: 700;
-        font-size: 10px;
-        text-transform: uppercase;
-        border: 1px solid transparent;
-    }
-
-    .status-approved-p { background: #e6fdf5; color: #059669; border-color: #a7f3d0; }
-    .status-pending-p { background: #fffbeb; color: #d97706; border-color: #fde68a; }
-    .status-rejected-p { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
-
-    .portal-modal-footer {
-        padding: 12px 20px;
-        background: #fafafa;
-        border-top: 1px solid var(--border-light);
-        display: flex;
-        justify-content: center;
-    }
-
-    .btn-portal-close {
-        background: var(--portal-dark);
-        color: white;
-        border: none;
-        padding: 8px 40px;
-        border-radius: 4px;
-        font-weight: 700;
-        font-size: 12px;
-        transition: 0.2s;
-    }
-
-    .btn-portal-close:hover {
-        background: #000;
-    }
-
-    @media (max-width: 768px) {
-        .details-cards-grid { grid-template-columns: 1fr; }
-    }
-</style>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     function closeRequestModal() {
         $("#accountRequestModal").modal("hide");
@@ -898,23 +667,19 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $("#approvalModal" + id).modal("show");
     }
     $(document).ready(function() {
-        $("#approvalRequests").dataTable({
+        $("#approvalRequests").DataTable({
             paging: true,
             searching: true,
             info: true,
             ordering: true,
             lengthChange: true,
-            // pageLength: 10,
-            // scrollX: true,
-            // scrollY: '500px',
-            scrollCollapse: true,
+            scrollX: true,
             "aLengthMenu": [
                 [25, 50, 100, 500, -1],
                 [25, 50, 100, 500, "All"]
             ],
             "iDisplayLength": 25
         });
-
     });
 
     function openModel(id) {
@@ -953,36 +718,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 </script>
 
 
-{{-- ✅ Custom Tab CSS --}}
-<style>
-    .custom-tabs {
-        display: flex;
-        gap: 1px;
-        border-bottom: 2px solid #dee2e6;
-        padding-bottom: 6px;
-    }
-
-    .tab-btn {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        padding: 8px 16px;
-        font-size: 14px;
-        border-radius: 8px 8px 0 0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .tab-btn:hover {
-        background: #e9ecef;
-    }
-
-    .tab-btn.active {
-        background: #007bff;
-        color: #fff;
-        font-weight: 600;
-        border-bottom: 2px solid #007bff;
-    }
-</style>
+{{-- Duplicate tab CSS removed; styles live in assets/css/portal/pages/view-approval-request.css --}}
 
 {{-- ✅ JavaScript for Filtering + Count --}}
 <script>

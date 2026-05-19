@@ -1,117 +1,698 @@
-/* protocol/index — page-specific (above shared module in former cascade) */
-/* portal: migrated from protocol/index.blade.php */
-.protocol-page {
-        font-family: 'Inter', sans-serif;
+/* Protocol Management — index listing (new design) */
+
+.protocol-index-page {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+#main-content.protocol-index-page .wrapper {
+    padding-top: 8px !important;
+}
+
+/* —— Breadcrumb —— */
+.protocol-index-page .pi-breadcrumb-wrap {
+    padding: 4px 0 12px;
+    margin: 0;
+}
+
+.protocol-index-page .pi-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    background: #1e293b;
+    border-radius: 50px;
+    padding: 6px 18px 6px 8px;
+    box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
+}
+
+.protocol-index-page .pi-bc-home {
+    width: 30px;
+    height: 30px;
+    background: #76CF1C;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    flex-shrink: 0;
+    color: #1e293b;
+    text-decoration: none;
+}
+
+.protocol-index-page .pi-bc-home i {
+    font-size: 13px;
+}
+
+.protocol-index-page .pi-bc-item {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.protocol-index-page a.pi-bc-item:hover {
+    color: #e2e8f0;
+}
+
+.protocol-index-page .pi-bc-sep {
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0 8px;
+    font-size: 12px;
+}
+
+.protocol-index-page .pi-bc-active {
+    color: #76CF1C !important;
+    font-weight: 700;
+}
+
+/* —— Panel —— */
+.protocol-index-page .pi-panel {
+    margin-top: 0 !important;
+    overflow: visible !important;
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
+}
+
+.protocol-index-page .pi-panel-head,
+.protocol-index-page .c_panel .c_title.pi-panel-head {
+    padding: 0 !important;
+    border-bottom: none !important;
+    background: #1e293b !important;
+    border-radius: 14px 14px 0 0 !important;
+    overflow: hidden !important;
+}
+
+.protocol-index-page .pi-title-row.bgx-title-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 !important;
+    padding: 14px 20px !important;
+    width: 100%;
+    background: #1e293b !important;
+}
+
+.protocol-index-page .pi-title-row > [class*="col-"] {
+    float: none !important;
+    width: auto !important;
+    flex: 0 1 auto;
+    padding: 0 !important;
+}
+
+.protocol-index-page .pi-title-col {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left !important;
+}
+
+.protocol-index-page .pi-actions-col {
+    flex: 0 0 auto;
+    margin-left: auto;
+    text-align: right !important;
+}
+
+.protocol-index-page .c_title h2::before {
+    content: none !important;
+    display: none !important;
+}
+
+.protocol-index-page .pi-panel-title {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 10px;
+    margin: 0 !important;
+    color: #fff !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.protocol-index-page .pi-panel-title > i {
+    color: #76CF1C;
+    font-size: 15px;
+}
+
+.protocol-index-page .pi-btn-add {
+    background: #76CF1C !important;
+    color: #0f172a !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 9px 18px !important;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 14px rgba(118, 207, 28, 0.35) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.protocol-index-page .pi-btn-add:hover,
+.protocol-index-page .pi-btn-add:focus {
+    background: #65b515 !important;
+    color: #0f172a !important;
+    transform: translateY(-1px);
+}
+
+.protocol-index-page .pi-panel-body {
+    padding: 20px 22px 24px !important;
+}
+
+.protocol-index-page .pi-alert-success {
+    border: none;
+    border-radius: 10px;
+    background: #dcfce7;
+    color: #15803d;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.protocol-index-page .pi-alert-success i {
+    margin-right: 8px;
+}
+
+/* —— Stat cards —— */
+.protocol-index-page .pi-stats-row {
+    margin: 0 0 22px;
+}
+
+.protocol-index-page .pi-stats-row > [class*="col-"] {
+    margin-bottom: 12px;
+}
+
+.protocol-index-page .pi-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 18px;
+    min-height: 100px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.protocol-index-page .pi-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+}
+
+.protocol-index-page .pi-stat-card__icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 22px;
+}
+
+.protocol-index-page .pi-stat-card--total .pi-stat-card__icon {
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+    color: #0369a1;
+}
+
+.protocol-index-page .pi-stat-card--active .pi-stat-card__icon {
+    background: linear-gradient(135deg, #e4facd 0%, #c4f396 100%);
+    color: #4d7c0f;
+}
+
+.protocol-index-page .pi-stat-card--packets .pi-stat-card__icon {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    color: #1e293b;
+}
+
+.protocol-index-page .pi-stat-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.protocol-index-page .pi-stat-card__value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.protocol-index-page .pi-stat-card__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.protocol-index-page .pi-stat-card--total {
+    border-left: 4px solid #0ea5e9;
+}
+
+.protocol-index-page .pi-stat-card--active {
+    border-left: 4px solid #76CF1C;
+}
+
+.protocol-index-page .pi-stat-card--packets {
+    border-left: 4px solid #1e293b;
+}
+
+/* —— Table shell —— */
+.protocol-index-page .pi-table-shell {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.protocol-index-page table#protocol_table.pi-datatable-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+}
+
+.protocol-index-page table#protocol_table col.pi-col-sr { width: 72px; }
+.protocol-index-page table#protocol_table col.pi-col-name { width: 32%; }
+.protocol-index-page table#protocol_table col.pi-col-packets { width: 22%; }
+.protocol-index-page table#protocol_table col.pi-col-status { width: 14%; }
+.protocol-index-page table#protocol_table col.pi-col-actions { width: 18%; }
+
+/* Full navy header row — all columns (beats DataTables / theme defaults) */
+#main-content.protocol-index-page #protocol_table.dataTable thead > tr > th,
+#main-content.protocol-index-page #protocol_table.dataTable thead > tr > th.sorting,
+#main-content.protocol-index-page #protocol_table.dataTable thead > tr > th.sorting_asc,
+#main-content.protocol-index-page #protocol_table.dataTable thead > tr > th.sorting_desc,
+#main-content.protocol-index-page #protocol_table.dataTable thead > tr > th.sorting_disabled,
+.protocol-index-page table#protocol_table.table thead th,
+.protocol-index-page table#protocol_table thead th {
+    background: linear-gradient(180deg, #1e293b 0%, #243652 100%) !important;
+    background-color: #1e293b !important;
+    background-image: none !important;
+    color: #fff !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 14px !important;
+    border: none !important;
+    border-bottom: 2px solid #141c2c !important;
+    vertical-align: middle !important;
+    position: relative;
+    white-space: nowrap;
+}
+
+.protocol-index-page .dataTables_wrapper table#protocol_table.dataTable thead > tr > th,
+.protocol-index-page .dataTables_wrapper table#protocol_table.dataTable thead > tr > th.sorting_disabled {
+    background: linear-gradient(180deg, #1e293b 0%, #243652 100%) !important;
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+.protocol-index-page table#protocol_table thead th .pi-th-label,
+#main-content.protocol-index-page #protocol_table.dataTable thead > tr > th .pi-th-label,
+#main-content.protocol-index-page #protocol_table.dataTable thead > tr > th.sorting_disabled .pi-th-label {
+    color: #fff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.protocol-index-page table#protocol_table thead > tr {
+    background: #1e293b !important;
+}
+
+.protocol-index-page table#protocol_table thead th:first-child {
+    border-top-left-radius: 0;
+}
+
+.protocol-index-page table#protocol_table thead th:last-child {
+    border-top-right-radius: 0;
+}
+
+.protocol-index-page table#protocol_table thead th.pi-th-sr {
+    text-align: center !important;
+    padding-right: 24px !important;
+}
+
+.protocol-index-page table#protocol_table thead th.pi-th-actions,
+.protocol-index-page table#protocol_table thead th.pi-th-no-sort,
+.protocol-index-page table#protocol_table thead th.sorting_disabled {
+    cursor: default !important;
+    background: linear-gradient(180deg, #1e293b 0%, #243652 100%) !important;
+    background-color: #1e293b !important;
+}
+
+.protocol-index-page table#protocol_table thead th.pi-th-actions:before,
+.protocol-index-page table#protocol_table thead th.pi-th-actions:after,
+.protocol-index-page table#protocol_table thead th.pi-th-no-sort:before,
+.protocol-index-page table#protocol_table thead th.pi-th-no-sort:after,
+.protocol-index-page table#protocol_table thead th.sorting_disabled:before,
+.protocol-index-page table#protocol_table thead th.sorting_disabled:after {
+    display: none !important;
+    content: none !important;
+}
+
+.protocol-index-page table#protocol_table thead th.pi-th-sr:before {
+    display: none !important;
+    content: none !important;
+}
+
+.protocol-index-page table#protocol_table thead th.pi-th-sr.sorting:after,
+.protocol-index-page table#protocol_table thead th.pi-th-sr.sorting_asc:after,
+.protocol-index-page table#protocol_table thead th.pi-th-sr.sorting_desc:after {
+    display: block !important;
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    transform: translateY(-50%) !important;
+    color: rgba(255, 255, 255, 0.92) !important;
+    opacity: 1 !important;
+    font-size: 10px !important;
+}
+
+.protocol-index-page table#protocol_table tbody td {
+    padding: 12px 14px !important;
+    vertical-align: middle !important;
+    border: none !important;
+    border-bottom: 1px solid #eef2f6 !important;
+    font-size: 13px;
+    color: #334155;
+    background: #fff !important;
+}
+
+.protocol-index-page table#protocol_table tbody tr:nth-child(even) td {
+    background: #f8fafc !important;
+}
+
+.protocol-index-page table#protocol_table tbody tr:hover td {
+    background: #f1f5f9 !important;
+}
+
+.protocol-index-page table#protocol_table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+.protocol-index-page .pi-td-sr {
+    text-align: center !important;
+    font-weight: 700;
+    color: #475569 !important;
+}
+
+/* Protocol name cell */
+.protocol-index-page .pi-protocol-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.protocol-index-page .pi-protocol-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    color: #1e293b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 17px;
+    border: 1px solid #e2e8f0;
+}
+
+.protocol-index-page .pi-protocol-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.protocol-index-page .pi-protocol-name {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.protocol-index-page .pi-protocol-date {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* View packets button */
+.protocol-index-page .pi-btn-packets {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 7px 14px !important;
+    border-radius: 8px !important;
+    border: none !important;
+    background: linear-gradient(135deg, #243652 0%, #1e293b 100%) !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 3px 10px rgba(30, 41, 59, 0.2);
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.protocol-index-page .pi-btn-packets:hover {
+    color: #fff !important;
+    filter: brightness(1.08);
+}
+
+.protocol-index-page .pi-packet-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: #fff !important;
+    color: #1e293b !important;
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Status pills */
+.protocol-index-page .pi-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.protocol-index-page .pi-status--on {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.protocol-index-page .pi-status--on i {
+    color: #16a34a;
+}
+
+.protocol-index-page .pi-status--off {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+/* Row actions */
+.protocol-index-page .pi-row-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.protocol-index-page .pi-delete-form {
+    display: inline-flex;
+    margin: 0;
+    padding: 0;
+}
+
+.protocol-index-page .pi-btn-edit,
+.protocol-index-page .pi-btn-delete {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border: none !important;
+    min-height: 32px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.protocol-index-page .pi-btn-edit {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+}
+
+.protocol-index-page .pi-btn-delete {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.3);
+}
+
+.protocol-index-page .pi-btn-edit:hover,
+.protocol-index-page .pi-btn-delete:hover {
+    transform: translateY(-1px);
+    color: #fff !important;
+}
+
+/* DataTables chrome */
+.protocol-index-page .dataTables_wrapper {
+    padding: 14px 16px 12px !important;
+}
+
+.protocol-index-page .dataTables_wrapper > .row:first-child {
+    padding: 0 0 14px !important;
+    margin: 0 !important;
+}
+
+.protocol-index-page .dataTables_wrapper > .row:last-child {
+    padding: 12px 0 0 !important;
+    margin: 0 !important;
+    border-top: 1px solid #eef2f6;
+}
+
+.protocol-index-page .dataTables_wrapper .dataTables_length label,
+.protocol-index-page .dataTables_wrapper .dataTables_filter label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.protocol-index-page .dataTables_wrapper .dataTables_length select,
+.protocol-index-page .dataTables_wrapper .dataTables_filter input {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 6px 10px;
+    outline: none;
+    font-size: 13px;
+}
+
+.protocol-index-page .dataTables_wrapper .dataTables_filter input:focus,
+.protocol-index-page .dataTables_wrapper .dataTables_length select:focus {
+    border-color: #76CF1C;
+    box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.15);
+}
+
+.protocol-index-page .dataTables_wrapper .dataTables_info {
+    color: #64748b;
+    font-weight: 500;
+    padding-top: 8px;
+}
+
+.protocol-index-page .dataTables_wrapper .dataTables_paginate .paginate_button {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    margin: 0 3px !important;
+    background: #fff !important;
+    color: #475569 !important;
+}
+
+.protocol-index-page .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.protocol-index-page .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: #76CF1C !important;
+    border-color: #76CF1C !important;
+    color: #0f172a !important;
+    font-weight: 700;
+}
+
+.protocol-index-page .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #1e293b !important;
+    border-color: #1e293b !important;
+    color: #fff !important;
+}
+
+/* —— Responsive —— */
+@media (max-width: 991px) {
+    .protocol-index-page .pi-title-row.bgx-title-container {
+        flex-direction: column;
+        align-items: stretch !important;
     }
 
-    #main-content.protocol-page .wrapper {
-        padding-top: 0 !important;
+    .protocol-index-page .pi-actions-col {
+        text-align: center !important;
+        margin-left: 0;
     }
 
-    .protocol-breadcrumb-wrap {
-        margin-top: 0 !important;
-        padding: 0 0 14px 0 !important;
-    }
-
-    .protocol-breadcrumb {
-        display: inline-flex;
-        align-items: center;
-        background: #1e293b;
-        border-radius: 50px;
-        padding: 6px 18px 6px 8px;
-        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
-    }
-
-    .protocol-breadcrumb .bc-home {
-        width: 30px;
-        height: 30px;
-        background: #76CF1C;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
+    .protocol-index-page .pi-btn-add {
+        width: 100%;
         justify-content: center;
-        margin-right: 10px;
-        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 767px) {
+    #main-content.protocol-index-page > section.wrapper {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
     }
 
-    .protocol-breadcrumb .bc-home i {
-        color: #1e293b;
-        font-size: 13px;
+    .protocol-index-page .pi-panel-body {
+        padding: 14px 12px 18px !important;
     }
 
-    .protocol-breadcrumb .bc-item {
-        color: rgba(255, 255, 255, 0.65);
-        font-size: 13px;
-        font-weight: 500;
-        text-decoration: none;
-        white-space: nowrap;
+    .protocol-index-page .pi-breadcrumb {
+        border-radius: 12px;
+        width: 100%;
     }
 
-    .protocol-breadcrumb .bc-sep {
-        color: rgba(255, 255, 255, 0.35);
-        margin: 0 8px;
-        font-size: 12px;
-    }
-
-    .protocol-breadcrumb .bc-item.active {
-        color: #76CF1C;
-        font-weight: 700;
-    }
-
-    .protocol-breadcrumb--scroll {
-        max-width: 100%;
-        box-sizing: border-box;
-        flex-wrap: nowrap;
+    .protocol-index-page .pi-table-shell {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-    }
-    .protocol-breadcrumb--scroll .bc-item {
-        flex-shrink: 0;
     }
 
-    @media (max-width: 767px) {
-        #main-content.protocol-page > section.wrapper {
-            padding-left: 6px !important;
-            padding-right: 6px !important;
-        }
-        .protocol-breadcrumb-wrap {
-            padding: 0 0 10px 0 !important;
-        }
-        .protocol-breadcrumb.protocol-breadcrumb--scroll {
-            display: flex;
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            padding: 6px 12px 6px 6px;
-            border-radius: 12px;
-            justify-content: flex-start;
-        }
-        .protocol-page-title-row > [class*="col-"] {
-            text-align: left !important;
-            margin-bottom: 0 !important;
-        }
-        .protocol-page-title-row .protocol-page-actions-col {
-            text-align: left !important;
-        }
+    .protocol-index-page table#protocol_table {
+        min-width: 720px !important;
     }
 
-
-@import url('../components/protocol-core.css');
-
-/* protocol/index — page-specific tail */
-
-/* protocol/index — page-specific tail (after shared in former cascade) */
-/* portal: migrated from protocol/index.blade.php */
-/* Ensure packet count number is always visible */
-    #protocol_table td .protocol-field-badge {
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    .protocol-index-page .dataTables_wrapper .dataTables_length,
+    .protocol-index-page .dataTables_wrapper .dataTables_filter {
+        float: none !important;
+        width: 100%;
+        text-align: left;
+        margin-bottom: 10px;
     }
 
-    /* Improve serial number visibility */
-    #protocol_table tbody td:first-child {
-        color: #334155 !important;
-        font-weight: 700 !important;
+    .protocol-index-page .dataTables_wrapper .dataTables_filter input {
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-top: 6px;
     }
+
+    .protocol-index-page .pi-btn-edit span,
+    .protocol-index-page .pi-btn-delete span {
+        display: none;
+    }
+}

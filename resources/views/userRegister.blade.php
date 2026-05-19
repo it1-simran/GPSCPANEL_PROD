@@ -148,7 +148,7 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
             </div>
         </div>
     </div>
-    <div class="modal fade" id="otpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal" id="otpModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content shadow-lg rounded-4 border-0">
                 <div class="modal-header">

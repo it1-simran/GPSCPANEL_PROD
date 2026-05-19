@@ -90,6 +90,8 @@ if ($userType === 'admin') {
     <link href="{{ asset('assets/vendors/select2/select2.css') }}" rel="stylesheet" />
     <link href="{{ \App\Support\PortalAssets::publicUrl('assets/css/custom.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="{{ \App\Support\PortalAssets::publicUrl('assets/css/portal/tokens.css') }}" />
+    <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @include('partials.gps-notifications-assets')
 
     <!-- ===== Loader: Hide INSTANTLY in head if NOT a reload (before any paint) ===== -->
@@ -175,15 +177,21 @@ if ($userType === 'admin') {
 
                     <!-- 🔔 Notification Dropdown -->
                     @if(Auth::user()->user_type == 'Admin')
-                        <li class="nav-item dropdown">
-                            <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-bell fa-lg"></i>
-                                @if($ticketCount > 0)
-                                    <span class="badge badge-danger position-absolute" id="notificationCount">
-                                        {{ $ticketCount }}
+                        <li class="nav-item dropdown gps-notif-nav">
+                            <a class="nav-link gps-notif-trigger" href="#" id="notificationDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                aria-label="Notifications{{ $ticketCount > 0 ? ' (' . $ticketCount . ' unread)' : '' }}">
+                                <span class="gps-notif-chip{{ $ticketCount > 0 ? ' gps-notif-chip--has-count' : '' }}">
+                                    <span class="gps-notif-chip__bell" aria-hidden="true">
+                                        <i class="fa fa-bell"></i>
+                                        @if($ticketCount > 0)
+                                            <span class="gps-notif-chip__dot" aria-hidden="true"></span>
+                                        @endif
                                     </span>
-                                @endif
+                                    @if($ticketCount > 0)
+                                        <span class="gps-notif-chip__count" id="notificationCount" data-digits="{{ strlen((string) $ticketCount) }}">{{ $ticketCount }}</span>
+                                    @endif
+                                </span>
                             </a>
 
                             <div class="dropdown-menu dropdown-menu-right notif-dropdown-menu"
@@ -1181,6 +1189,71 @@ if ($userType === 'admin') {
             }
         });
     })();
+    </script>
+    <script>
+    $(document).ready(function() {
+        // Global handler for link/button clicks requiring SweetAlert
+        $(document).on('click', '.swal-confirm', function(e) {
+            // If it's a submit button inside a form, let the form submit handler catch it instead
+            if ($(this).attr('type') === 'submit') {
+                return;
+            }
+            e.preventDefault();
+            var $el = $(this);
+            var message = $el.data('confirm-msg') || "Are you sure you want to proceed?";
+            
+            Swal.fire({
+                title: 'Confirm Deletion',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No',
+                background: '#1e293b',
+                color: '#f8fafc'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var formId = $el.data('form-id');
+                    if (formId) {
+                        $('#' + formId).submit();
+                    } else if ($el.attr('href') && $el.attr('href') !== '#') {
+                        window.location.href = $el.attr('href');
+                    }
+                }
+            });
+        });
+
+        // Global handler for form submissions requiring SweetAlert
+        $(document).on('submit', 'form.swal-confirm, form:has(button.swal-confirm[type="submit"])', function(e) {
+            var $form = $(this);
+            var $btn = $form.find('button.swal-confirm[type="submit"]');
+            
+            if (!$form.data('swal-confirmed')) {
+                e.preventDefault();
+                var message = $form.data('confirm-msg') || ($btn.length ? $btn.data('confirm-msg') : "Are you sure you want to proceed?");
+                
+                Swal.fire({
+                    title: 'Confirm Deletion',
+                    text: message,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Yes',
+                    cancelButtonText: 'No',
+                    background: '#1e293b',
+                    color: '#f8fafc'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $form.data('swal-confirmed', true);
+                        $form.submit();
+                    }
+                });
+            }
+        });
+    });
     </script>
     @include('partials.gps-flash-scripts')
 </body>

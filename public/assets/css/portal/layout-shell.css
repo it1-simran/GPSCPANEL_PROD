@@ -182,8 +182,8 @@
             color: #76CF1C !important;
         }
 
-        /* ---- Bell / Notification icon ---- */
-        header.header .top-nav .nav-link {
+        /* ---- Bell / Notification trigger (premium) ---- */
+        header.header .top-nav .nav-link:not(.gps-notif-trigger) {
             color: rgba(255,255,255,0.55) !important;
             padding: 8px 10px !important;
             border-radius: 10px !important;
@@ -192,32 +192,143 @@
             align-items: center !important;
             position: relative;
         }
-        header.header .top-nav .nav-link:hover {
+        header.header .top-nav .nav-link:not(.gps-notif-trigger):hover {
             background: rgba(118,207,28,0.12) !important;
             color: #76CF1C !important;
         }
-        header.header .top-nav .nav-link .fa-bell {
-            font-size: 16px !important;
+
+        header.header .top-nav .gps-notif-nav {
+            margin: 0 6px 0 4px;
         }
-        /* Notification badge (pill — grows with digit count; not a fixed circle) */
+
+        header.header .top-nav .gps-notif-trigger {
+            padding: 4px 2px !important;
+            border-radius: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            position: relative !important;
+            color: #fff !important;
+            text-decoration: none !important;
+            background: transparent !important;
+            transition: transform 0.2s ease !important;
+        }
+
+        header.header .top-nav .gps-notif-trigger:hover,
+        header.header .top-nav .gps-notif-trigger:focus,
+        header.header .top-nav .gps-notif-trigger[aria-expanded="true"] {
+            background: transparent !important;
+            transform: translateY(-1px);
+            outline: none !important;
+        }
+
+        /* Bell + full count chip */
+        header.header .top-nav .gps-notif-chip {
+            display: inline-flex;
+            align-items: stretch;
+            min-height: 38px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+        }
+
+        header.header .top-nav .gps-notif-trigger:hover .gps-notif-chip,
+        header.header .top-nav .gps-notif-trigger[aria-expanded="true"] .gps-notif-chip {
+            background: rgba(118, 207, 28, 0.12);
+            border-color: rgba(118, 207, 28, 0.55);
+            box-shadow: 0 4px 18px rgba(118, 207, 28, 0.25);
+        }
+
+        header.header .top-nav .gps-notif-chip__bell {
+            position: relative;
+            width: 42px;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(15, 23, 42, 0.35);
+            transition: color 0.2s ease, background 0.2s ease;
+        }
+
+        header.header .top-nav .gps-notif-trigger:hover .gps-notif-chip__bell,
+        header.header .top-nav .gps-notif-trigger[aria-expanded="true"] .gps-notif-chip__bell {
+            color: #76CF1C;
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        header.header .top-nav .gps-notif-chip__bell .fa-bell {
+            font-size: 17px !important;
+            line-height: 1;
+            transition: transform 0.25s ease;
+        }
+
+        header.header .top-nav .gps-notif-trigger:hover .gps-notif-chip__bell .fa-bell {
+            transform: rotate(-10deg) scale(1.06);
+        }
+
+        header.header .top-nav .gps-notif-chip__dot {
+            position: absolute;
+            top: 7px;
+            right: 9px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #76CF1C;
+            border: 2px solid #1e293b;
+            box-shadow: 0 0 0 2px rgba(118, 207, 28, 0.35);
+            animation: gps-notif-dot-pulse 2s ease-in-out infinite;
+        }
+
+        header.header .top-nav .gps-notif-chip__count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px 0 10px;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: 0.02em;
+            font-variant-numeric: tabular-nums;
+            color: #fff !important;
+            white-space: nowrap;
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+            border-left: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+
+        header.header .top-nav .gps-notif-chip--has-count .gps-notif-chip__count {
+            min-width: 2.75rem;
+        }
+
+        header.header .top-nav .gps-notif-chip__count[data-digits="4"] {
+            font-size: 11px;
+            padding-left: 8px;
+            padding-right: 10px;
+        }
+
+        header.header .top-nav .gps-notif-chip__count[data-digits="5"],
+        header.header .top-nav .gps-notif-chip__count[data-digits="6"] {
+            font-size: 10px;
+            padding-left: 7px;
+            padding-right: 9px;
+        }
+
+        @keyframes gps-notif-dot-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.85; }
+        }
+
+        /* Legacy badge fallback */
         header.header .top-nav .nav-link .badge-danger {
             background: #ef4444 !important;
             color: #fff !important;
             font-size: 10px !important;
             font-weight: 700 !important;
-            min-width: 1.125rem;
-            min-height: 18px;
-            height: auto !important;
-            line-height: 1.15;
-            padding: 3px 8px !important;
             border-radius: 999px !important;
-            top: 2px !important;
-            right: 2px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            white-space: nowrap;
-            box-sizing: border-box;
         }
 
         /* ---- Search box ---- */

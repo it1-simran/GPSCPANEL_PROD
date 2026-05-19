@@ -101,8 +101,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       <form action="/{{$url_type}}/delete-jig/{{$jig->id}}" method="post" style="display:inline;">
                         @csrf
                         @method('DELETE')
-                        <button onclick="return confirm('Are you sure you want to delete this?');"
-                          class="vj-btn-delete" type="submit" title="Delete">
+                        <button class="swal-confirm vj-btn-delete" data-confirm-msg="Are you sure you want to delete this?"
+                           type="submit" title="Delete">
                           <i class="fa fa-trash"></i>
                         </button>
                       </form>

@@ -241,3 +241,154 @@
     .view-template-config-page .c_panel + .c_panel {
         margin-top: 22px !important;
     }
+
+    .vtc-main-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+    .vtc-main-card .header-custom {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #ffffff;
+        padding: 16px 24px;
+        border-bottom: none;
+    }
+    .vtc-main-card .header-custom h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #ffffff !important;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .vtc-main-card .header-custom h4 i {
+        color: #76CF1C;
+        font-size: 18px;
+    }
+    .vtc-main-card .body-custom {
+        padding: 24px;
+        background: #f8fafc;
+    }
+
+    /* Premium Configuration List */
+    .vtc-config-list-box {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+        padding: 24px;
+        margin-top: 16px;
+    }
+    .vtc-config-list-box h6 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .vtc-config-list-box p {
+        font-size: 14px;
+        color: #64748b;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: baseline;
+    }
+    .vtc-config-list-box p:last-child {
+        margin-bottom: 0;
+    }
+    .vtc-config-list-box p strong {
+        color: #334155;
+        font-weight: 700;
+        margin-right: 8px;
+        min-width: 140px;
+    }
+
+/* Accordion Styles (ported from view-configuration) */
+.user-info {
+    margin-bottom: 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+.user-info:hover {
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+    border-color: rgba(118, 207, 28, 0.4);
+}
+
+.vc-section-title {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+    position: relative;
+    background: linear-gradient(to right, rgba(118, 207, 28, 0.08), rgba(255,255,255,0));
+    padding: 16px 24px;
+    margin-bottom: 0 !important;
+    border-left: 5px solid #76CF1C;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid transparent;
+}
+.vc-section-title i.fa {
+    margin-right: 8px;
+    color: #76CF1C;
+    font-size: 16px;
+}
+.vc-section-title:hover {
+    background: linear-gradient(to right, rgba(118, 207, 28, 0.12), rgba(255,255,255,0));
+}
+.vc-section-title::after {
+    content: "\f107"; /* fa-angle-down */
+    font-family: "FontAwesome";
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #64748b;
+    font-size: 18px;
+}
+.vc-section-title.acc-open {
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(to right, rgba(118, 207, 28, 0.05), rgba(255,255,255,0));
+}
+.vc-section-title.acc-open::after {
+    transform: translateY(-50%) rotate(180deg);
+    color: #76CF1C;
+}
+
+.no-accordion .vc-section-title {
+    cursor: default;
+}
+.no-accordion .vc-section-title::after {
+    display: none;
+}
+.no-accordion .vc-section-title:hover {
+    background: linear-gradient(to right, rgba(118, 207, 28, 0.08), rgba(255,255,255,0));
+}
+
+.user-info > .row,
+.acc-content {
+    padding: 24px;
+    background: #ffffff;
+    margin: 0;
+}
+.user-info > .row.view-template-configuration,
+.user-info > .row.bgx-configurations {
+    padding: 24px;
+}
+.acc-content {
+    display: none;
+}

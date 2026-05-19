@@ -30,10 +30,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       <div class="col-md-12">
         <div class="c_panel">
           <div class="c_title">
-            <div class="row bgx-title-container">
-              <div class="col-lg-12 col-md-12">
+            <div class="row bgx-title-container vm-page-title-row">
+              <div class="col-xs-12 col-lg-6">
                 <h2 class="vm-panel-title"><i class="fa fa-list-alt"></i> @if(isset($firmware_id)) View Firmware Models @else View Models @endif</h2>
               </div>
+              @if(Auth::user()->user_type == "Admin" && isset($firmware_id))
+              <div class="col-xs-12 col-lg-6 text-right vm-title-actions-wrap">
+                <button type="button" class="btn vm-btn-add-model" onclick="openModel({{ $firmware_id }})"><i class="fa fa-plus"></i> Add Model</button>
+              </div>
+              @endif
             </div>
 
             <div class="clearfix"></div>
@@ -57,51 +62,46 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
               @endif
             </div>
             @if(Auth::user()->user_type == "Admin" && isset($firmware_id))
-            <div class="col-lg-12 text-right margin-bottom-10">
-              <button type="button" class="btn btn-primary" onclick="openModel({{$firmware_id}})">Add Model</button>
-              <div class="modal text-left" id="addModel{{$firmware_id}}" aria-hidden="true">
-                <div class="modal-dialog">
+            <div class="modal vm-add-model-modal" id="addModel{{$firmware_id}}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
                   <div class="modal-content">
                     <div class="modal-header">
-                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
                       <h5 class="modal-title" id="addModellLabel">Add Model</h5>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                     </div>
                     <form id="addModalForm" onsubmit="return false" method="post">
                       @csrf
                       <div class="modal-body">
                         <!-- Form to Add eSIM -->
-                        <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
-                        <div class="margin-bottom-10">
-                          <label for="userAssign" class="form-label col-12">Assign Account</label>
-                          <select id="userAssign" name="userAssign" class="form-control" class="userAssign" onChange="getModelById({{$firmware_id}})">
+                        <div class="vm-modal-alert alert alert-danger error_msg" role="alert" style="display:none"></div>
+                        <div class="vm-modal-field">
+                          <label for="userAssign" class="vm-modal-label">Assign Account</label>
+                          <select id="userAssign" name="userAssign" class="form-control userAssign" onchange="getModelById({{$firmware_id}})">
                               <option value="">Please Select</option>
                             @foreach($users as $user)
                             <option value="{{$user->id}}">{{$user->name}}</option>
                             @endforeach
                           </select>
                         </div>
-                        <div class="margin-bottom-10 hide-field padding-1" style="display:none;">
-                          <label for="modalname" class="form-label col-12">Model Name</label>
+                        <div class="vm-modal-field hide-field" style="display:none;">
+                          <label for="modalName" class="vm-modal-label">Model Name</label>
                           <input type="text" class="form-control" id="modalName" name="modalName" required>
                         </div>
-                        <div class="margin-bottom-10 hide-field padding-1" style="display:none;">
-                          <label for="vendorId" class="form-label col-12">Vendor Id</label>
+                        <div class="vm-modal-field hide-field" style="display:none;">
+                          <label for="vendorId" class="vm-modal-label">Vendor Id</label>
                           <input type="text" class="form-control" id="vendorId" name="vendorId" required>
                         </div>
                       
                       </div>
                       <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal" aria-hidden="true">Close</button>
-                        <button type="submit" class="btn btn-primary addModalFormBtn">Submit</button>
+                        <button type="button" class="btn vm-modal-btn-close" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn vm-modal-btn-submit addModalFormBtn">Submit</button>
                         <input type="hidden" name="modalId" id="modalId" value =""/>
                         <input type="hidden" name="firmwareId" id="firmwareId{{$firmware_id}}" value="" />
                       </div>
                     </form>
                   </div>
                 </div>
-              </div>
-              <!-- <a href="{{ route('model.excel') }}" class="btn btn-success">Download Excel</a>
-                <a href="{{ route('model.csv') }}" class="btn btn-success">Download CSV</a> -->
             </div>
             @endif
             <div class="vm-table-wrap">
@@ -141,26 +141,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       </form>
                   </td>
                 </tr>
-                <div class="modal" id="deleteModal{{$modal->id}}" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                          </button>
-                        </div>
-                        <div class="modal-body">
-                          Are you sure you want to delete this firmware from All Devices ?
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                          <button type="button" class="btn btn-warning" onclick="confirmDelete({{$modal->id}},false)">No</button>
-                          <button type="button" class="btn btn-danger" onclick="confirmDelete({{$modal->id}},true)">Yes</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+
                 <?php
                 $i++;
                 ?>
@@ -180,7 +161,27 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
   function showDeleteModal(id) {
-    $('#deleteModal' + id).modal('show');
+    Swal.fire({
+      title: 'Confirm Deletion',
+      text: 'Are you sure you want to delete this firmware from All Devices?',
+      icon: 'warning',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonColor: '#3085d6',
+      denyButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes',
+      denyButtonText: 'No',
+      cancelButtonText: 'Cancel',
+      background: '#1e293b',
+      color: '#f8fafc'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        confirmDelete(id, true);
+      } else if (result.isDenied) {
+        confirmDelete(id, false);
+      }
+    });
   }
   function confirmDelete(id, response) {
     const urlType = `{{ $url_type }}`; // Capture Blade variable in JavaScript

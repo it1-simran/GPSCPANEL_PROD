@@ -58,12 +58,32 @@
 
   .vdl-page .c_title {
     margin-bottom: 10px;
+    padding: 14px 20px !important;
   }
 
-  .vdl-title-row {
+  .vdl-page-title-row {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin: 0 !important;
+  }
+
+  .vdl-page-title-row > [class*="col-"] {
+    display: flex;
+    align-items: center;
+  }
+
+  .vdl-title-actions-wrap {
+    justify-content: flex-end;
+  }
+
+  .vdl-page .c_title .vdl-btn-row {
+    display: inline-flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin: 0 !important;
+    flex-wrap: wrap;
   }
 
   .vdl-title {
@@ -106,7 +126,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 0;
   }
 
   .vdl-btn-download {
@@ -130,7 +150,16 @@
   }
 
   .vdl-btn-download.excel {
-    background: linear-gradient(135deg, #1e293b, #2d3f55);
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  }
+
+  .vdl-btn-download.excel:hover {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    filter: none;
   }
 
   .vdl-btn-download.csv {
@@ -188,4 +217,22 @@
     white-space: nowrap;
     color: #475569;
     font-size: 12px;
+  }
+
+  @media (max-width: 991px) {
+    .vdl-page .vdl-page-title-row {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 12px;
+    }
+
+    .vdl-page .vdl-title-actions-wrap {
+      text-align: center !important;
+      justify-content: center !important;
+    }
+
+    .vdl-page .c_title .vdl-btn-row {
+      width: 100%;
+      justify-content: center;
+    }
   }

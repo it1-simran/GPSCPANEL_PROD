@@ -86,11 +86,11 @@ use App\Helper\CommonHelper;
                 <thead>
                   <tr>
                     <th>Sr. No.</th>
-                    <th>Device Category Name</th>
-                    <th>No of Devices</th>
-                    <th>No of Templates</th>
-                    <th>No of Users</th>
-                    <th>No of Firmwares</th>
+                    <th>Device <br>Category Name</th>
+                    <th>No of <br>Devices</th>
+                    <th>No of <br>Templates</th>
+                    <th>No of <br>Users</th>
+                    <th>No of <br>Firmwares</th>
                     @if($dcIsAdmin)
                     <th>Created at</th>
                     <th>Last Edit</th>
@@ -120,57 +120,15 @@ use App\Helper\CommonHelper;
                     <td class="text-center dc-actions-cell">
                       <div class="dc-actions-inner">
                         <a href="{{ url($routePrefix . '/edit-device-category/' . $device_category->id) }}" class="btn btn-primary btn-sm btn-dc-edit" title="Edit" aria-label="Edit"><i class="fa fa-pencil" aria-hidden="true"></i></a>
-                        <button style="margin-top: 0px;" class="btn btn-danger btn-sm btn-dc-delete" onclick="toggleModalDelDeviceCategory(<?php echo $device_category->id; ?>)" type="button" title="Delete" aria-label="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
-                      </div>
-                      <div class="modal" id="deviceCategoryDelOptionModal{{$device_category->id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-md">
-                          <div class="modal-content">
-                            <form action="{{ url('admin/delete-device-category/' . $device_category->id) }}" id="deleteDeviceCategory"
-                              onsubmit="return false;" method="post">
-                              @csrf
-                              @method('DELETE')
-
-
-                              <div class="modal-header">
-                                <button type="button" class="close closeEditDelOptionsModal hide" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-                                <h4 class="modal-title"><strong>Confirmation</strong></h4>
-                              </div>
-                              <div class="modal-body">
-                                <input type="hidden" class="action_type">
-                                <input type="hidden" class="change_type">
-                                <div class="steps_area">
-                                  <div class="step1">
-                                    @if($device_category->devices_count >0)
-                                    <div class="">
-                                      <label for="curl" class="control-label col-lg-12 ">Choose another Device Category <span class="require">*</span></label>
-                                      <div class="col-lg-6">
-                                        <select id="s2example-2{{$device_category->id }}" classs="examplereser" name="deviceCategory" >
-                                          <option value=""> </option>
-                                          @foreach($device_categories as $deviceCategory)
-                                          @if($device_category->id != $deviceCategory->id)
-                                          <option value="{{$deviceCategory->id}}">{{$deviceCategory->device_category_name}}</option>
-                                          @endif
-                                          @endforeach
-                                        </select>
-                                      </div>
-                                    </div>
-                                    @else
-                                    <div>
-                                      <p> Are you sure you want to delete this?</p>
-                                    </div>
-
-                                    @endif
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="modal-footer row bgx-custom-modal-footer">
-                                <button class="col btn btn-primary btn-flat" type="button" onclick="closeDeviceCategoryDeleteModal(<?php echo $device_category->id; ?>)"><i class="fa fa-arrow-left"></i> Back</button>
-                                <button class="col btn btn-primary btn-flat submitDataErr{{$device_category->id}}" type="button" onclick="submitDelCategoryForm(<?php echo $device_category->id; ?>)" data-count="<?php echo $device_category->devices_count;?>"><i class="fa fa-check"></i> Submit</button>
-                                <input type="hidden" id="d_device_ctaegory_id" name="d_device_Category_id" value="{{$device_category->id}}" />
-                              </div>
-                            </form>
-                          </div>
-                        </div>
+                        @php
+                            $optionsHtml = '';
+                            foreach($device_categories as $dc) {
+                                if ($device_category->id != $dc->id) {
+                                    $optionsHtml .= '<option value="'.$dc->id.'">'.htmlspecialchars($dc->device_category_name, ENT_QUOTES).'</option>';
+                                }
+                            }
+                        @endphp
+                        <button style="margin-top: 0px;" class="btn btn-danger btn-sm btn-dc-delete" onclick="toggleModalDelDeviceCategory({{ $device_category->id }}, {{ $device_category->devices_count }}, '{{ base64_encode($optionsHtml) }}')" type="button" title="Delete" aria-label="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>
                       </div>
                     </td>
                     @endif
@@ -193,52 +151,97 @@ use App\Helper\CommonHelper;
 
 @section('scripts')
 <script type="text/javascript">
-  function submitDelCategoryForm(id) {
-
-    let deviceCount = $('.submitDataErr'+id).attr("data-count"); 
-    let choosenDeviceCategory = $("#s2example-2" + id).val();
-    if(deviceCount > 0 && choosenDeviceCategory == ''){
-      alert("Please Chosse Device Category ")
-      return false;
-    }
-    $(".error_msg").html('').hide();
-
+  function submitDelCategoryForm(id, choosenDeviceCategory) {
     $.ajax({
       url: "{{ url('admin/delete-device-category') }}/" + id,
       type: 'DELETE',
       data: {
-        'choosenDeviceCategory': choosenDeviceCategory
+        'choosenDeviceCategory': choosenDeviceCategory,
+        '_token': '{{ csrf_token() }}'
       },
       success: function(response) {
-        let result = JSON.parse(response)
-        console.log("result", result);
+        let result = typeof response === 'string' ? JSON.parse(response) : response;
         if (result.status == 200) {
-          $(".error_msg").append(result.message).show();
-          $('#deviceCategoryDelOptionModal' + id).modal("hide");
-          document.documentElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
-          window.location.reload();
+          if(window.showGpsToast) {
+              window.showGpsToast('success', 'Success', result.message);
+          } else {
+              alert(result.message);
+          }
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          if(window.showGpsToast) {
+              window.showGpsToast('error', 'Error', result.message || 'Failed to delete category');
+          } else {
+              alert(result.message || 'Failed to delete category');
+          }
         }
-        return false
       },
       error: function(xhr, status, error) {
-        alert("An error occurred: " + error);
+        if(window.showGpsToast) {
+            window.showGpsToast('error', 'Error', 'An error occurred: ' + error);
+        } else {
+            alert("An error occurred: " + error);
+        }
       }
     });
-
-  }
-  function closeDeviceCategoryDeleteModal(id) {
-    $('#deviceCategoryDelOptionModal' + id).modal("hide");
-
   }
 
-  function toggleModalDelDeviceCategory(id) {
-    $('#deviceCategoryDelOptionModal' + id).modal("show");
-    $('#s2example-2' + id).select2({
-      placeholder: "Search and Select",
-    });
+  function toggleModalDelDeviceCategory(id, deviceCount, b64Options) {
+      if (deviceCount > 0) {
+          let optionsHtml = atob(b64Options);
+          Swal.fire({
+              title: 'Confirm Deletion',
+              html: `<div style="text-align:left; margin-top:10px;">
+                        <p style="margin-bottom: 15px; color: #cbd5e1; font-size: 14px;">This category contains <strong>${deviceCount} devices</strong>. Please choose another Device Category to migrate them to:</p>
+                        <select id="swal-select-category" style="width: 100%; border-radius: 8px;">
+                            <option value=""></option>
+                            ${optionsHtml}
+                        </select>
+                     </div>`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#3085d6',
+              cancelButtonColor: '#64748b',
+              confirmButtonText: '<i class="fa fa-check"></i> Submit',
+              cancelButtonText: 'Cancel',
+              background: '#1e293b',
+              color: '#f8fafc',
+              didOpen: () => {
+                  $('#swal-select-category').select2({
+                      dropdownParent: $('.swal2-container'),
+                      placeholder: "Search and Select Category"
+                  });
+              },
+              preConfirm: () => {
+                  const val = $('#swal-select-category').val();
+                  if (!val) {
+                      Swal.showValidationMessage('Please select a Device Category to migrate to.');
+                  }
+                  return val;
+              }
+          }).then((result) => {
+              if (result.isConfirmed) {
+                  submitDelCategoryForm(id, result.value);
+              }
+          });
+      } else {
+          Swal.fire({
+              title: 'Confirm Deletion',
+              text: 'Are you sure you want to delete this category?',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#3085d6',
+              cancelButtonColor: '#64748b',
+              confirmButtonText: 'Yes, Delete',
+              cancelButtonText: 'Cancel',
+              background: '#1e293b',
+              color: '#f8fafc'
+          }).then((result) => {
+              if (result.isConfirmed) {
+                  submitDelCategoryForm(id, null);
+              }
+          });
+      }
   }
 
   $(document).ready(function() {

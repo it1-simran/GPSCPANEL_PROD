@@ -182,7 +182,7 @@
           </div>
           <div class="margin-bottom-10">
             <label for="esimProvider1" class="form-label">Profile 1</label>
-            <select id="esimProvider1" name="esimProvider1" class="form-control" class="esimProvider">
+            <select id="esimProvider1" name="esimProvider1" class="form-control esimProvider">
               <option value="Airtel">Airtel</option>
               <option value="Bsnl">Bsnl</option>
               <option value="Jio">Jio</option>
@@ -191,7 +191,7 @@
           </div>
           <div class="margin-bottom-10">
             <label for="esimProvider2" class="form-label">Profile 2</label>
-            <select id="esimProvider2" name="esimProvider2" class="form-control" class="esimProvider">
+            <select id="esimProvider2" name="esimProvider2" class="form-control esimProvider">
               <!-- <option value="Airtel">Airtel</option>
               <option value="Bsnl">Bsnl</option>
               <option value="Jio">Jio</option>
@@ -201,7 +201,7 @@
 
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal" aria-hidden="true">Close</button>
+          <button type="button" class="btn btn-secondary close" data-dismiss="modal" aria-hidden="true">Close</button>
           <button type="submit" id="submitESIMBtn" class="btn btn-primary" form="addESIMForm">Submit</button>
           <input type="hidden" name="esimId" id="esimId" value="" />
         </div>
@@ -228,7 +228,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal" aria-hidden="true">Close</button>
+          <button type="button" class="btn btn-secondary close" data-dismiss="modal" aria-hidden="true">Close</button>
           <button type="submit" id="SubmitBackend" class="btn btn-primary" form="addESIMForm">Submit</button>
           <input type="hidden" name="backendId" id="backendId" value="" />
         </div>

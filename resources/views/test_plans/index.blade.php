@@ -65,30 +65,37 @@
                         @endif
 
                         <div class="adv-table test-plans-adv-table">
-                            <table class="table table-hover" id="test-plans-table" style="width:100%">
+                            <table class="table table-hover tp-datatable-table no-global-table-ui" id="test-plans-table" style="width:100%">
+                                <colgroup>
+                                    <col class="tp-col-sr" />
+                                    <col class="tp-col-name" />
+                                    <col class="tp-col-desc" />
+                                    <col class="tp-col-steps" />
+                                    <col class="tp-col-date" />
+                                    <col class="tp-col-status" />
+                                    <col class="tp-col-actions" />
+                                </colgroup>
                                 <thead>
                                     <tr>
-                                        <th style="width: 60px; text-align: center;">Sr. No.</th>
+                                        <th class="tp-th-sr">Sr. No.</th>
                                         <th>Name</th>
                                         <th>Description</th>
                                         <th>Steps</th>
                                         <th>Created At</th>
                                         <th>Status</th>
-                                        <th style="width: 150px;" class="no-sort">Actions</th>
+                                        <th class="tp-th-actions no-sort">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($testPlans as $index => $plan)
                                         <tr>
-                                            <td style="text-align: center; color: #64748b; font-weight: 600;">{{ $index + 1 }}</td>
-                                            <td style="font-weight: 700; color: #1e293b;">{{ $plan->name }}</td>
-                                            <td class="text-muted">{{ $plan->description ?: 'No description provided' }}</td>
-                                            <td>
-                                                <span class="badge bg-info-soft">
-                                                    {{ $plan->steps_count }} Steps
-                                                </span>
+                                            <td class="tp-td-sr">{{ $index + 1 }}</td>
+                                            <td class="tp-td-name">{{ $plan->name }}</td>
+                                            <td class="tp-td-desc">{{ $plan->description ?: 'No description provided' }}</td>
+                                            <td class="tp-td-steps">
+                                                <span class="badge bg-info-soft">{{ $plan->steps_count }} Steps</span>
                                             </td>
-                                            <td style="color: #64748b;">{{ $plan->created_at->format('Y-m-d H:i') }}</td>
+                                            <td class="tp-td-date">{{ $plan->created_at->format('Y-m-d H:i') }}</td>
                                             <td>
                                                 <span class="badge bg-success-soft">
                                                     Active
@@ -105,7 +112,7 @@
                                                     <a href="{{ route($routePrefix . '.test-validate.index', ['test_plan_id' => $plan->id]) }}" class="btn-action btn-run" title="Run Plan">
                                                         <i class="fa fa-play"></i>
                                                     </a>
-                                                    <a href="javascript:void(0)" class="btn-action btn-delete" onclick="if(confirm('Are you sure you want to delete this plan?')) document.getElementById('delete-form-{{ $plan->id }}').submit();" title="Delete Plan">
+                                                    <a href="javascript:void(0)" class="btn-action btn-delete swal-confirm" data-confirm-msg="Are you sure you want to delete this plan?" data-form-id="delete-form-{{ $plan->id }}" title="Delete Plan">
                                                         <i class="fa fa-trash-o"></i>
                                                     </a>
                                                     <form id="delete-form-{{ $plan->id }}" action="{{ route($routePrefix . '.test-plans.destroy', $plan->id) }}" method="POST" style="display: none;">
@@ -133,7 +140,7 @@
             <i class="fa fa-play"></i>
         </a>
 
-        <a href="javascript:void(0)" class="btn-action btn-delete" onclick="if(confirm('Are you sure you want to delete this plan?')) document.getElementById('delete-form-{{ $plan->id }}').submit();" title="Delete Plan">
+        <a href="javascript:void(0)" class="btn-action btn-delete swal-confirm" data-confirm-msg="Are you sure you want to delete this plan?" data-form-id="delete-form-{{ $plan->id }}" title="Delete Plan">
             <i class="fa fa-trash-o"></i>
         </a>
 

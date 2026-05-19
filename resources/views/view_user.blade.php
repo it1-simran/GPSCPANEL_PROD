@@ -108,6 +108,7 @@
               {{-- download buttons moved to header --}}
               @endif
             </div>
+            <div class="table-responsive" style="overflow-x: auto; width: 100%;">
               <table id="example" class="table">
                 <thead>
                   <tr>
@@ -127,7 +128,7 @@
                     @endif
                     <th>Delete</th>
                     <th>Link Account</th>
-                  </tr>
+                    </tr>
                 </thead>
                 <tbody>
                   @if(count($contacts) > 0)
@@ -165,43 +166,7 @@
                       <a href="/{{strtolower(Auth::user()->user_type)}}/view-configurations/{{$contact['id']}}" class="vu-btn-view" onclick="openConfigurations({{$contact['id']}})"><i class="fa fa-eye"></i> View Config</a>
                     </td>
                     <td><button style="margin-top:1px" class="vu-btn-assign" onclick="open_asign({{$contact['id']}})"><i class="fa fa-link"></i> Assign</button>
-                      <!--****** Start Modal Responsive******-->
-                      <div class="modal assign-device-modal" id="modal-responsive{{ $contact['id']}}" aria-hidden="true">
-                        <div class="modal-dialog modal-md">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-                              <h4 class="modal-title"><strong>Assign Device</strong></h4>
-                            </div>
-                            <form action="/{{$url_type}}/assign-device" method="post">
-                              @csrf
-                              <div class="modal-body">
-                                <div class="form-group">
-                                  <label class="form-label">Single/Multiple Select Device</label>
-                                  <input type="hidden" name="user_id" class="assign-user-id" value="">
-                                  <select class="assignDevices" id="s2example-2{{$contact['id']}}" name="devices[]" multiple>
-                                    @if(count($unassign_device) > 0)
-                                    <option></option>
-                                    <optgroup label="Unassigned Devices">
-                                      @foreach($unassign_device as $user)
-                                      @if(in_array($user->device_category_id,explode(',',$contact->device_category_id)))
-                                      <option value="{{$user->id}}">{{$user->imei}}</option>
-                                      @endif
-                                      @endforeach
-                                      @endif
-                                    </optgroup>
-                                  </select>
-                                </div>
-                              </div>
-                              <div class="modal-footer text-center">
-                                <button type="submit" class="btn btn-primary btn-raised rippler rippler-default">
-                                  <i class="fa fa-check"></i> Assign
-                                </button>
-                              </div>
-                            </form>
-                          </div>
-                        </div>
-                      </div>
+
 
                     </td>
                     @if(Auth::user()->user_type !='User' )
@@ -226,6 +191,50 @@
                 </tbody>
               </table>
             </div>
+
+            {{-- Render Modals Outside Table to avoid Hover Glitches --}}
+            @if(count($contacts) > 0)
+              @foreach($contacts as $contact)
+                <!--****** Start Modal Responsive******-->
+                <div class="modal assign-device-modal" id="modal-responsive{{ $contact['id']}}" aria-hidden="true">
+                  <div class="modal-dialog modal-md">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
+                        <h4 class="modal-title"><strong>Assign Device</strong></h4>
+                      </div>
+                      <form action="/{{$url_type}}/assign-device" method="post">
+                        @csrf
+                        <div class="modal-body">
+                          <div class="form-group">
+                            <label class="form-label">Single/Multiple Select Device</label>
+                            <input type="hidden" name="user_id" class="assign-user-id" value="">
+                            <select class="assignDevices" id="s2example-2{{$contact['id']}}" name="devices[]" multiple>
+                              @if(count($unassign_device) > 0)
+                              <option></option>
+                              <optgroup label="Unassigned Devices">
+                                @foreach($unassign_device as $user)
+                                @if(in_array($user->device_category_id,explode(',',$contact->device_category_id)))
+                                <option value="{{$user->id}}">{{$user->imei}}</option>
+                                @endif
+                                @endforeach
+                                @endif
+                              </optgroup>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="modal-footer text-center">
+                          <button type="submit" class="btn btn-primary btn-raised rippler rippler-default">
+                            <i class="fa fa-check"></i> Assign
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              @endforeach
+            @endif
+
             </div>
           </div><!--/.c_content-->
         </div><!--/.c_panels-->
@@ -272,10 +281,7 @@
         info: true,
         ordering: true,
         lengthChange: true,
-        responsive: true,
         autoWidth: false,
-        scrollX: true,
-        scrollCollapse: true,
         lengthMenu: [
             [25, 50, 100, 500, -1],
             [25, 50, 100, 500, "All"]

@@ -107,7 +107,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         <form action="/{{$url_type}}/delete-backend/{{$list->id}}" method="post">
                                             @csrf
                                             @method('DELETE')
-                                            <button onClick="javascript:return confirm('Are you sure you want to delete this?');" class="btn btn-sm btn-tv-delete" type="submit">Delete</button>
+                                            <button class="swal-confirm btn btn-sm btn-tv-delete" data-confirm-msg="Are you sure you want to delete this?"  type="submit">Delete</button>
 
                                         </form>
                                     </td>

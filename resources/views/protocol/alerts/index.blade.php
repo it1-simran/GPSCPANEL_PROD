@@ -84,7 +84,7 @@
                                                     <a href="{{ route($routePrefix . '.packet-alerts.edit', $alert->id) }}" class="btn btn-primary btn-sm protocol-manage-btn" style="min-width: 80px;">
                                                         <i class="fa fa-pencil"></i> Edit
                                                     </a>
-                                                    <form action="{{ route($routePrefix . '.packet-alerts.destroy', $alert->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this alert?');">
+                                                    <form action="{{ route($routePrefix . '.packet-alerts.destroy', $alert->id) }}" method="POST" style="display:inline-block;" class="swal-confirm" data-confirm-msg="Are you sure you want to delete this alert?">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger btn-sm protocol-delete-btn" style="margin-top: -2px;">

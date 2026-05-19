@@ -512,12 +512,27 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.remove-step', function() {
-        if (!confirm('Are you sure you want to remove this step?')) return;
-        $(this).closest('.step-item').remove();
-        updateStepIndices();
-        if ($('.step-item').length === 0) {
-            $('#empty-steps-msg').show();
-        }
+        var $btn = $(this);
+        Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure you want to remove this step?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Remove',
+            cancelButtonText: 'Cancel',
+            background: '#1e293b',
+            color: '#f8fafc'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $btn.closest('.step-item').remove();
+                updateStepIndices();
+                if ($('.step-item').length === 0) {
+                    $('#empty-steps-msg').show();
+                }
+            }
+        });
     });
 
     $(document).on('change', '.packet-type-select', function() {
@@ -559,8 +574,23 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.remove-rule', function() {
-        if (!confirm('Are you sure you want to remove this rule?')) return;
-        $(this).closest('.rule-row').remove();
+        var $btn = $(this);
+        Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure you want to remove this rule?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Remove',
+            cancelButtonText: 'Cancel',
+            background: '#1e293b',
+            color: '#f8fafc'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $btn.closest('.rule-row').remove();
+            }
+        });
     });
 
     function addRuleRow(stepIdx, packetTypeId) {

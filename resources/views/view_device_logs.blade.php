@@ -35,8 +35,18 @@ use App\Helper\CommonHelper;
       <div class="col-md-12">
         <div class="c_panel">
           <div class="c_title">
-            <div class="vdl-title-row">
-              <h2 class="vdl-title"><i class="fa fa-list-ul vdl-title-icon"></i> View Device Logs</h2>
+            <div class="row bgx-title-container vdl-page-title-row">
+              <div class="col-xs-12 col-lg-6">
+                <h2 class="vdl-title"><i class="fa fa-list-ul vdl-title-icon"></i> View Device Logs</h2>
+              </div>
+              @if(Auth::user()->user_type == "Admin")
+              <div class="col-xs-12 col-lg-6 text-right vdl-title-actions-wrap">
+                <div class="vdl-btn-row">
+                  <a href="{{ route('devicelog.excel') }}" class="vdl-btn-download excel"><i class="fa fa-download"></i> Download Excel</a>
+                  <a href="{{ route('devicelog.csv') }}" class="vdl-btn-download csv"><i class="fa fa-download"></i> Download CSV</a>
+                </div>
+              </div>
+              @endif
             </div>
 
             <div class="clearfix"></div>
@@ -59,12 +69,6 @@ use App\Helper\CommonHelper;
               </div>
               @endif
             </div>
-            @if(Auth::user()->user_type == "Admin")
-              <div class="vdl-btn-row">
-                <a href="{{ route('devicelog.excel') }}" class="vdl-btn-download excel"><i class="fa fa-download"></i> Download Excel</a>
-                <a href="{{ route('devicelog.csv') }}" class="vdl-btn-download csv"><i class="fa fa-download"></i> Download CSV</a>
-              </div>
-            @endif
             <table id="deviceLog" class="table">
               <thead>
                 <tr>

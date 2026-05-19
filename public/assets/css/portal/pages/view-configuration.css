@@ -115,21 +115,13 @@
         box-shadow: 0 4px 24px rgba(0,0,0,0.09) !important;
         overflow: hidden;
         margin-bottom: 24px;
+        background: #f8fafc;
+    }
+    .card-body.body-custom {
+        padding: 24px !important;
     }
 
-    /* ---- Section titles ---- */
-    .vc-section-title {
-        font-size: 13px;
-        font-weight: 700;
-        color: #0f172a;
-        padding: 10px 0 8px;
-        border-bottom: 2px solid #76CF1C;
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-    }
-    .vc-section-title i { color: #76CF1C; }
+
 
     /* ---- Info stat badges ---- */
     .vc-stat-badge {
@@ -176,27 +168,272 @@
     }
 
     /* ---- Child Accounts Table ---- */
-    .vc-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #f0f0f0; }
-    .vc-table {
+    .view-configuration-page .vc-table-wrap {
+        overflow-x: auto;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .view-configuration-page .vc-table-wrap .table-container {
+        display: block;
         width: 100%;
-        border-collapse: collapse;
+        overflow: visible;
+    }
+
+    .view-configuration-page table.vc-child-table thead,
+    .view-configuration-page table.vc-child-table tbody {
+        display: table-row-group !important;
+    }
+
+    .view-configuration-page table.vc-child-table tr {
+        display: table-row !important;
+    }
+
+    .view-configuration-page table.vc-child-table th,
+    .view-configuration-page table.vc-child-table td {
+        display: table-cell !important;
+    }
+
+    .view-configuration-page .vc-table,
+    .view-configuration-page table.vc-child-table {
+        min-width: 1200px !important;
+        max-width: none;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
         font-size: 13px;
+        table-layout: auto !important;
     }
-    .vc-table thead tr {
-        background: linear-gradient(90deg, #0f172a, #1d283e);
+
+  /* Column widths — thead/body stay aligned */
+    .view-configuration-page table.vc-child-table col.vc-col-expand { width: 48px; }
+    .view-configuration-page table.vc-child-table col.vc-col-type { width: 11%; }
+    .view-configuration-page table.vc-child-table col.vc-col-name { width: 13%; }
+    .view-configuration-page table.vc-child-table col.vc-col-mobile { width: 11%; }
+    .view-configuration-page table.vc-child-table col.vc-col-email { width: 18%; }
+    .view-configuration-page table.vc-child-table col.vc-col-password { width: 17%; }
+    .view-configuration-page table.vc-child-table col.vc-col-devices { width: 9%; }
+    .view-configuration-page table.vc-child-table col.vc-col-pings { width: 10%; }
+    .view-configuration-page table.vc-child-table col.vc-col-today { width: 11%; }
+
+    .view-configuration-page table.vc-child-table thead th,
+    .view-configuration-page table.vc-child-table tbody td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        box-sizing: border-box;
     }
-    .vc-table thead th {
-        color: rgba(255,255,255,0.85) !important;
-        font-weight: 600 !important;
-        font-size: 12px !important;
+
+    .view-configuration-page table.vc-child-table thead th.vc-th-expand,
+    .view-configuration-page table.vc-child-table tbody td.vc-td-expand {
+        width: 48px !important;
+        min-width: 48px !important;
+        max-width: 48px !important;
+        padding: 12px 8px !important;
+        text-align: center !important;
+    }
+
+    .view-configuration-page table.vc-child-table thead th.vc-th-num,
+    .view-configuration-page table.vc-child-table tbody td.vc-td-num {
+        text-align: center !important;
+        white-space: nowrap !important;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: #475569 !important;
+    }
+
+    .view-configuration-page table.vc-child-table tbody td.vc-td-email {
+        word-break: break-all;
+    }
+
+    .view-configuration-page table.vc-child-table tbody td.vc-td-password {
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    .view-configuration-page table.fold-table > tbody > tr.view td:first-child,
+    .view-configuration-page table.fold-table > tbody > tr.view th:first-child {
+        padding-left: 8px !important;
+        position: static !important;
+    }
+
+    .view-configuration-page .vc-table thead th,
+    .view-configuration-page table.view_user_table thead th,
+    .view-configuration-page table.vc-child-table thead th {
+        background: linear-gradient(180deg, #1e293b 0%, #243652 100%) !important;
+        background-color: #1e293b !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 11px !important;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
         padding: 12px 14px !important;
         border: none !important;
-        letter-spacing: 0.3px;
+        border-bottom: 2px solid #141c2c !important;
+        vertical-align: middle !important;
         white-space: nowrap;
     }
-    .vc-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background 0.15s; }
-    .vc-table tbody tr:hover { background: rgba(118,207,28,0.04); }
-    .vc-table tbody td { padding: 11px 14px; color: #374151; vertical-align: middle; border: none !important; }
+
+    .view-configuration-page .vc-table tbody tr,
+    .view-configuration-page table.vc-child-table tbody tr {
+        border-bottom: 1px solid #eef2f6;
+        transition: background 0.15s ease;
+    }
+
+    .view-configuration-page .vc-table tbody tr:nth-child(even),
+    .view-configuration-page table.vc-child-table tbody tr:nth-child(even) {
+        background: #f8fafc;
+    }
+
+    .view-configuration-page .vc-table tbody tr:hover td,
+    .view-configuration-page table.vc-child-table tbody tr:hover td {
+        background: rgba(118, 207, 28, 0.05) !important;
+    }
+
+    .view-configuration-page .vc-table tbody td,
+    .view-configuration-page table.vc-child-table tbody td {
+        padding: 12px 14px !important;
+        color: #334155 !important;
+        vertical-align: middle !important;
+        border: none !important;
+        font-size: 13px;
+    }
+
+    /* Password pill + eye toggle */
+    .view-configuration-page .vc-pwd-field {
+        display: inline-flex;
+        align-items: center;
+        width: 100%;
+        max-width: 100%;
+        min-height: 38px;
+        padding: 0 4px 0 14px;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+        box-sizing: border-box;
+    }
+
+    .view-configuration-page .vc-pwd-field__dots {
+        flex: 1;
+        min-width: 0;
+        color: #94a3b8;
+        font-size: 11px;
+        letter-spacing: 3px;
+        line-height: 1;
+        user-select: none;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .view-configuration-page .vc-pwd-field__value {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: #1e293b;
+        font-family: ui-monospace, Consolas, monospace;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: none;
+    }
+
+    .view-configuration-page .vc-pwd-field--visible .vc-pwd-field__dots {
+        display: none;
+    }
+
+    .view-configuration-page .vc-pwd-field--visible .vc-pwd-field__value {
+        display: block;
+    }
+
+    .view-configuration-page .vc-pwd-field__toggle {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        margin: 0;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #4d7c0f;
+        background: linear-gradient(135deg, #e4facd 0%, #c4f396 100%);
+        box-shadow: 0 2px 6px rgba(118, 207, 28, 0.25);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .view-configuration-page .vc-pwd-field__toggle:hover {
+        transform: scale(1.06);
+        box-shadow: 0 4px 10px rgba(118, 207, 28, 0.35);
+        background: linear-gradient(135deg, #d4f5a8 0%, #b8e86f 100%);
+    }
+
+    .view-configuration-page .vc-pwd-field__toggle .fa {
+        font-size: 14px;
+        line-height: 1;
+    }
+
+    .view-configuration-page .vc-pwd-field--visible .vc-pwd-field__toggle {
+        color: #1e293b;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    /* Fold / accordion rows */
+    .view-configuration-page table.fold-table > tbody > tr.view.open {
+        background: rgba(118, 207, 28, 0.1) !important;
+        color: #1e293b !important;
+    }
+
+    .view-configuration-page table.fold-table > tbody > tr.view:hover {
+        background: rgba(118, 207, 28, 0.06) !important;
+    }
+
+    .view-configuration-page table.fold-table > tbody > tr.view:nth-child(4n-1) {
+        background: transparent !important;
+    }
+
+    .view-configuration-page .fold-content {
+        padding: 12px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .view-configuration-page .fold-content > table {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .view-configuration-page .svg-container svg {
+        fill: #1e293b !important;
+    }
+
+    .view-configuration-page .vc-btn-edit-user {
+        background: linear-gradient(135deg, #1e293b 0%, #243652 100%) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 10px 28px !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        letter-spacing: 0.3px;
+        box-shadow: 0 4px 14px rgba(30, 41, 59, 0.25) !important;
+    }
+
+    .view-configuration-page .vc-btn-edit-user:hover {
+        background: linear-gradient(135deg, #243652 0%, #1e293b 100%) !important;
+        transform: translateY(-1px);
+    }
+
+    .view-configuration-page .vc-stat-badge.blue {
+        background: rgba(30, 41, 59, 0.08) !important;
+        color: #1e293b !important;
+        border: 1px solid rgba(30, 41, 59, 0.18) !important;
+    }
 
     /* ---- Configuration item card ---- */
     .configuration-item {
@@ -204,7 +441,7 @@
         border-radius: 12px;
         border: 1px solid #e5e7eb;
         padding: 18px;
-        height: 100%;
+        height: auto;
         transition: box-shadow 0.2s, border-color 0.2s;
         box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
     }
@@ -602,7 +839,7 @@
             padding-left: 0 !important;
         }
 
-        .vc-table { min-width: 550px; }
+        .view-configuration-page table.vc-child-table { min-width: 900px; }
         .vc-table thead th {
             font-size: 11px !important;
             padding: 10px 8px !important;
@@ -635,3 +872,185 @@
         .configuration-item [id^="config-"] p,
         .configuration-item [id^="canConfig-"] p { font-size: 11px; }
     }
+
+/* Premium Accordion CSS Update */
+.user-info {
+    margin-bottom: 24px !important;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+.user-info:hover {
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+    border-color: rgba(118, 207, 28, 0.4);
+}
+
+/* --- Premium Layout Utilities for User Information --- */
+.view-configuration-page .vuc-info-layout {
+    align-items: flex-start;
+}
+.view-configuration-page .vuc-meta-col {
+    padding-right: 16px;
+}
+.view-configuration-page .vuc-dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+}
+.view-configuration-page .vuc-dl-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+.view-configuration-page .vuc-dl dt {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+}
+.view-configuration-page .vuc-dl dd {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+.view-configuration-page .vuc-date {
+    font-weight: 600 !important;
+    color: #475569 !important;
+    font-size: 13px !important;
+}
+
+/* Badge Stacks */
+.view-configuration-page .vuc-badges-col {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+@media (max-width: 991px) {
+    .view-configuration-page .vuc-badges-col {
+        justify-content: flex-start;
+        margin-top: 24px;
+    }
+}
+.view-configuration-page .vuc-badge-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    max-width: 320px;
+    width: 100%;
+}
+.view-configuration-page .vuc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px 10px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    border: none;
+    white-space: nowrap;
+}
+.view-configuration-page .vuc-pill-glyph {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.25);
+    flex-shrink: 0;
+    font-size: 13px;
+}
+.view-configuration-page .vuc-pill.green {
+    background: linear-gradient(135deg, #76CF1C 0%, #5ba811 100%);
+}
+.view-configuration-page .vuc-pill.navy {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+.view-configuration-page .vuc-pill.blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+.view-configuration-page .vuc-pill.orange {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.vc-section-title {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+    position: relative;
+    background: linear-gradient(to right, rgba(118, 207, 28, 0.08), rgba(255,255,255,0));
+    padding: 16px 24px;
+    margin-bottom: 0 !important;
+    border-left: 5px solid #76CF1C;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid transparent;
+}
+.vc-section-title i.fa {
+    margin-right: 8px;
+    color: #76CF1C;
+    font-size: 16px;
+}
+.vc-section-title:hover {
+    background: linear-gradient(to right, rgba(118, 207, 28, 0.12), rgba(255,255,255,0));
+}
+.vc-section-title::after {
+    content: "\f107"; /* fa-angle-down */
+    font-family: "FontAwesome";
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #64748b;
+    font-size: 18px;
+}
+.vc-section-title.acc-open {
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(to right, rgba(118, 207, 28, 0.05), rgba(255,255,255,0));
+}
+.vc-section-title.acc-open::after {
+    transform: translateY(-50%) rotate(180deg);
+    color: #76CF1C;
+}
+
+.no-accordion .vc-section-title {
+    cursor: default;
+}
+.no-accordion .vc-section-title::after {
+    display: none;
+}
+.no-accordion .vc-section-title:hover {
+    background: linear-gradient(to right, rgba(118, 207, 28, 0.08), rgba(255,255,255,0));
+}
+
+.user-info > .row,
+.acc-content {
+    padding: 24px;
+    background: #ffffff;
+    margin: 0;
+}
+.user-info > .row.view-user-configurations,
+.user-info > .row.bgx-configurations {
+    padding: 24px;
+}
+.acc-content {
+    display: none;
+}

@@ -34,13 +34,16 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
         </div>
         <div class="row">
             <div class="col-md-12">
-                <div class="c_panel vtc-top-panel">
-                    <div class="c_title">
-                        <h2 class="vtc-main-title"><i class="fa fa-file-text-o"></i> Template Information</h2>
+                <div class="card vtc-main-card">
+                    <div class="card-header header-custom">
+                        <h4>
+                            <i class="fa fa-bars" aria-hidden="true"></i>
+                            Template and Configurations
+                        </h4>
                     </div>
-                    <div class="c_content vtc-info-body">
-                                    {{-- Display User Information --}}
-                                    <div class="user-info mb-0">
+                    <div class="card-body body-custom">
+                <div class="user-info no-accordion mb-4">
+                    <div class="vc-section-title"><i class="fa fa-file-text-o"></i> Template Information</div>
                                         <div class='row bgx-configurations vtc-info-layout'>
                                             <div class="view-template-configuration vtc-view-block row">
                                                 <div class='col-lg-6 col-md-12 vtc-meta-col'>
@@ -164,15 +167,10 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                             @endif
                                             @endif
                                         </div>
-                                    </div>
-                    </div>
                 </div>
-                <div class="c_panel vtc-config-panel">
-                    <div class="c_title">
-                        <h2 class="vtc-main-title"><i class="fa fa-sliders"></i> Template Configurations</h2>
-                    </div>
-                    <div class="c_content vtc-config-body">
-                                    <div class="user-info mb-0">
+
+                <div class="user-info mb-4">
+                    <div class="vc-section-title"><i class="fa fa-sliders"></i> Template Configurations</div>
                                         @empty($template_info['configurations'])
                                         <p class="col-md-12">No configurations found.</p>
                                         @else
@@ -188,7 +186,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                         @endphp
                                         <div class="row d-flex">
                                             <div class="col-lg-12 mb-4">
-                                                <div class="configuration-item">
+                                                <div class="configuration-item vtc-config-list-box">
                                                     <h6><b>{{ CommonHelper::getDeviceCategoryName($template_info['device_category_id']) }}</b></h6>
                                                     <div class="bgx-configurations">
                                                         <div id="config">
@@ -262,15 +260,9 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                         </div>
                                         @endempty
                                     </div>
-                    </div>
-                </div>
                                     @if($getCanEnableByDeviceCategory && $getCanEnableByDeviceCategory->is_can_protocol == 1)
-                <div class="c_panel vtc-can-panel">
-                    <div class="c_title">
-                        <h2 class="vtc-main-title"><i class="fa fa-microchip"></i> CAN Protocol Configurations</h2>
-                    </div>
-                    <div class="c_content">
-                                    <div class="user-info mb-0">
+                <div class="user-info mb-4">
+                    <div class="vc-section-title"><i class="fa fa-microchip"></i> CAN Protocol Configurations</div>
                                         @empty($template_info['can_configurations'])
 
                                         @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
@@ -306,10 +298,10 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                         @endif
                                         @endif
                                         @endempty
-                                    </div>
-                    </div>
                 </div>
                                     @endif
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -365,6 +357,42 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
             $('#config').show();
             $('#form').hide();
         });
+
+		// Dynamic Accordion Conversion
+		$('.user-info:not(.no-accordion)').each(function(index) {
+			var $info = $(this);
+			var $title = $info.find('.vc-section-title').first();
+			
+			// Find the immediate wrapper of the title, if it's a col-lg-9 or col-lg-12
+			var $titleWrapper = $title.parent('[class*="col-lg-"]').length ? $title.parent() : $title;
+			
+			// Wrap everything else in an accordion content div
+			var $contents = $info.contents().filter(function() {
+				// Don't wrap the title wrapper, and don't wrap empty text nodes
+				if (this === $titleWrapper[0]) return false;
+				if (this.nodeType === 3 && $.trim(this.nodeValue) === '') return false;
+				return true;
+			});
+			$contents.wrapAll('<div class="acc-content" style="display: none;"></div>');
+			
+			// Style the title
+			$title.addClass('vc-acc-header');
+			
+			// Handle clicks
+			$title.css('cursor', 'pointer').on('click', function() {
+				var $myContent = $info.find('.acc-content');
+				if ($title.hasClass('acc-open')) {
+					$myContent.slideUp(250);
+					$title.removeClass('acc-open');
+				} else {
+					$('.acc-content').slideUp(250);
+					$('.vc-acc-header').removeClass('acc-open');
+					
+					$myContent.slideDown(250);
+					$title.addClass('acc-open');
+				}
+			});
+		});
     });
 </script>
 @endsection

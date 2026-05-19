@@ -366,7 +366,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             <div class="custom-modal modal" id="rejectModal{{ $request->id }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
                                                     <div class="modal-content custom-modal-content">
-                                                        <div class="modal-header custom-modal-header   d-flex justify-content-between">
+                                                        <div class="modal-header custom-modal-header d-flex justify-content-between">
                                                             <h5 class="modal-title">Reject Request</h5>
                                                             <!-- <button type="button" class="bg-calendar-content btn-close margin-top-1" data-bs-dismiss="modal" aria-label="Close"
                                                                 onclick="cancelRejectModel({{ $request->id }})" style="border:none;">X</button> -->

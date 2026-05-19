@@ -288,34 +288,46 @@ $currentEmail = Auth::user()->email;
       if (allVals.length <= 0) {
         showToast("Please select at least one device first.", "warning", "No Device Selected");
       } else {
-        var check = confirm("Are you sure want to delete these Device?");
-        if (check == true) {
-          var join_selected_values = allVals.join(",");
-          $.ajax({
-            url: $(this).data('url'),
-            type: 'DELETE',
-            headers: {
-              'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            data: 'ids=' + join_selected_values,
-            success: function(data) {
-              if (data['success']) {
-                $(".sub_chk:checked").each(function() {
-                  $(this).parents("tr").remove();
-                });
-                alert(data['success']);
-                location.reload();
-              } else if (data['error']) {
-                alert(data['error']);
-              } else {
-                // alert('Whoops Something went wrong!!');
-              }
-            },
-            error: function(data) {
-              alert(data.responseText);
+        Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure want to delete these ' + allVals.length + ' Devices?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'No',
+            background: '#1e293b',
+            color: '#f8fafc'
+        }).then((result) => {
+            if (result.isConfirmed) {
+              var join_selected_values = allVals.join(",");
+              $.ajax({
+                url: $(this).data('url'),
+                type: 'DELETE',
+                headers: {
+                  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: 'ids=' + join_selected_values,
+                success: function(data) {
+                  if (data['success']) {
+                    $(".sub_chk:checked").each(function() {
+                      $(this).parents("tr").remove();
+                    });
+                    showToast(data['success'], "success", "Success");
+                    setTimeout(function(){ location.reload(); }, 1500);
+                  } else if (data['error']) {
+                    showToast(data['error'], "error", "Error");
+                  } else {
+                    // alert('Whoops Something went wrong!!');
+                  }
+                },
+                error: function(data) {
+                  showToast(data.responseText, "error", "Error");
+                }
+              });
             }
-          });
-        }
+        });
       }
     });
     $('.user_assign_all').on('click', function(e) {

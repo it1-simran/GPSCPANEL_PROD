@@ -72,14 +72,21 @@
     .view-data-fields-page .vdf-table-wrap {
         border: 1px solid #e2e8f0;
         border-radius: 10px;
-        overflow: hidden;
+        overflow: visible;
         background: #fff;
         margin-top: 4px;
     }
     .view-data-fields-page .dataTables_wrapper > .row { margin-left: 0 !important; margin-right: 0 !important; }
     .view-data-fields-page .dataTables_wrapper > .row:nth-child(2) {
-        overflow-x: auto;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
         -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+    }
+    .view-data-fields-page .dataTables_wrapper > .row:nth-child(2)::-webkit-scrollbar { height: 10px; }
+    .view-data-fields-page .dataTables_wrapper > .row:nth-child(2)::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 5px;
     }
     .view-data-fields-page .dataTables_wrapper > .row:nth-child(2) > [class*="col-"] { min-width: 0; padding-left: 0; padding-right: 0; }
     .view-data-fields-page .dataTables_wrapper .row:first-child {
@@ -93,34 +100,156 @@
     .view-data-fields-page .dataTables_wrapper .row:first-child .dataTables_length { padding-left: 2px; }
     .view-data-fields-page .dataTables_wrapper .row:first-child .dataTables_filter { padding-right: 2px; }
 
-    /* Bootstrap + DT use border-collapse: separate on bordered tables — breaks thead/body column alignment */
-    .view-data-fields-page table.dataTable.table-bordered {
+    /* Table layout — match view-device-category (no bordered squeeze) */
+    .view-data-fields-page table.dataTable.vdf-datatable-table.no-global-table-ui {
         border-collapse: collapse !important;
         border-spacing: 0 !important;
         table-layout: fixed !important;
         width: 100% !important;
+        max-width: 100%;
+        border: 1px solid #e8ecf1 !important;
     }
-    .view-data-fields-page .vdf-datatable-table thead th,
-    .view-data-fields-page .vdf-datatable-table tbody td,
-    .view-data-fields-page table.dataTable.vdf-datatable-table thead th,
-    .view-data-fields-page table.dataTable.vdf-datatable-table tbody td {
+    .view-data-fields-page table.dataTable.vdf-datatable-table.no-global-table-ui thead th,
+    .view-data-fields-page table.dataTable.vdf-datatable-table.no-global-table-ui tbody td {
         min-width: 0;
         box-sizing: border-box;
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
         word-break: break-word;
     }
+    .view-data-fields-page table#dataFieldsTable.dataTable.vdf-datatable-table.no-global-table-ui thead th,
     .view-data-fields-page .vdf-datatable-table thead th {
-        background: #f8fafc !important;
-        color: #1e293b !important;
+        background-color: #1e293b !important;
+        background-image: none !important;
+        color: #ffffff !important;
         font-weight: 700 !important;
         font-size: 11px !important;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        border-bottom: 1px solid #e2e8f0 !important;
+        border-bottom: 2px solid #141c2c !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-top: none !important;
         vertical-align: middle !important;
-        white-space: normal;
-        line-height: 1.25;
+        white-space: nowrap;
+        line-height: 1.35 !important;
         padding: 12px 10px !important;
+        min-height: 44px;
+        height: auto !important;
+        overflow: visible !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        text-indent: 0 !important;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th .vdf-th-label {
+        display: inline-block;
+        color: #ffffff !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        line-height: 1.35 !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        -webkit-text-fill-color: currentColor !important;
+    }
+    #main-content.view-data-fields-page #dataFieldsTable.dataTable thead > tr > th,
+    #main-content.view-data-fields-page #dataFieldsTable.dataTable thead > tr > th.sorting,
+    #main-content.view-data-fields-page #dataFieldsTable.dataTable thead > tr > th.sorting_asc,
+    #main-content.view-data-fields-page #dataFieldsTable.dataTable thead > tr > th.sorting_desc,
+    #main-content.view-data-fields-page #dataFieldsTable.dataTable thead > tr > th.sorting_disabled {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+        background-image: none !important;
+    }
+
+    /* Column widths */
+    .view-data-fields-page table#dataFieldsTable thead th.vdf-th-sr,
+    .view-data-fields-page table#dataFieldsTable tbody td:first-child {
+        width: 72px !important;
+        min-width: 72px !important;
+        max-width: 72px !important;
+        text-align: center;
+        white-space: nowrap !important;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th:nth-child(2),
+    .view-data-fields-page table#dataFieldsTable tbody td:nth-child(2) { width: 8%; }
+    .view-data-fields-page table#dataFieldsTable thead th:nth-child(3),
+    .view-data-fields-page table#dataFieldsTable tbody td:nth-child(3) { width: 12%; }
+    .view-data-fields-page table#dataFieldsTable thead th:nth-child(4),
+    .view-data-fields-page table#dataFieldsTable tbody td:nth-child(4) { width: 12%; }
+    .view-data-fields-page table#dataFieldsTable thead th:nth-child(5),
+    .view-data-fields-page table#dataFieldsTable tbody td:nth-child(5) { width: 10%; }
+    .view-data-fields-page table#dataFieldsTable thead th:nth-child(6),
+    .view-data-fields-page table#dataFieldsTable tbody td:nth-child(6) { width: 22%; }
+    .view-data-fields-page table#dataFieldsTable thead th:nth-child(7),
+    .view-data-fields-page table#dataFieldsTable tbody td:nth-child(7) { width: 11%; }
+    .view-data-fields-page table#dataFieldsTable thead th:nth-child(8),
+    .view-data-fields-page table#dataFieldsTable tbody td:nth-child(8) { width: 11%; }
+    .view-data-fields-page table#dataFieldsTable thead th.vdf-th-actions,
+    .view-data-fields-page table#dataFieldsTable tbody td:last-child { width: 10%; }
+
+    /* Sort icons on all columns except Actions */
+    .view-data-fields-page table#dataFieldsTable thead th.vdf-th-actions:before,
+    .view-data-fields-page table#dataFieldsTable thead th.vdf-th-actions:after {
+        display: none !important;
+        content: none !important;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th.vdf-th-actions {
+        padding-right: 10px !important;
+        cursor: default !important;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th:not(.vdf-th-actions) {
+        position: relative !important;
+        padding-right: 22px !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        background-image: none !important;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th:not(.vdf-th-actions) .vdf-th-label {
+        pointer-events: none;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th:not(.vdf-th-actions):before,
+    .view-data-fields-page table.dataTable thead th:not(.vdf-th-actions).sorting:before,
+    .view-data-fields-page table.dataTable thead th:not(.vdf-th-actions).sorting_asc:before,
+    .view-data-fields-page table.dataTable thead th:not(.vdf-th-actions).sorting_desc:before {
+        display: none !important;
+        content: none !important;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th:not(.vdf-th-actions).sorting:after,
+    .view-data-fields-page table#dataFieldsTable thead th:not(.vdf-th-actions).sorting_asc:after,
+    .view-data-fields-page table#dataFieldsTable thead th:not(.vdf-th-actions).sorting_desc:after {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: absolute !important;
+        top: 50% !important;
+        right: 7px !important;
+        left: auto !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        line-height: 1 !important;
+        pointer-events: none !important;
+        background: none !important;
+        background-image: none !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th:not(.vdf-th-actions).sorting:after {
+        content: "↕" !important;
+        color: rgba(255, 255, 255, 0.5) !important;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th:not(.vdf-th-actions).sorting_asc:after {
+        content: "▲" !important;
+        color: #ffffff !important;
+    }
+    .view-data-fields-page table#dataFieldsTable thead th:not(.vdf-th-actions).sorting_desc:after {
+        content: "▼" !important;
+        color: #ffffff !important;
     }
     .view-data-fields-page .vdf-datatable-table tbody td {
         vertical-align: top !important;
@@ -143,15 +272,10 @@
         justify-content: center;
         gap: 8px;
     }
-    .view-data-fields-page .vdf-datatable-table col.vdf-w-sr { width: 4%; }
-    .view-data-fields-page .vdf-datatable-table col.vdf-w-id { width: 5%; }
-    .view-data-fields-page .vdf-datatable-table col.vdf-w-type { width: 10%; }
-    .view-data-fields-page .vdf-datatable-table col.vdf-w-name { width: 12%; }
-    .view-data-fields-page .vdf-datatable-table col.vdf-w-input { width: 14%; }
-    .view-data-fields-page .vdf-datatable-table col.vdf-w-val { width: 28%; }
-    .view-data-fields-page .vdf-datatable-table col.vdf-w-common { width: 8%; }
-    .view-data-fields-page .vdf-datatable-table col.vdf-w-can { width: 8%; }
-    .view-data-fields-page .vdf-datatable-table col.vdf-w-actions { width: 11%; }
+    .view-data-fields-page table#dataFieldsTable thead th.vdf-th-actions {
+        text-align: center !important;
+        padding-right: 10px !important;
+    }
     .view-data-fields-page .vdf-badge {
         display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
     }
@@ -267,7 +391,7 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        .view-data-fields-page #dataFieldsTable {
+        .view-data-fields-page table#dataFieldsTable.dataTable.vdf-datatable-table.no-global-table-ui {
             table-layout: auto !important;
             width: auto !important;
             min-width: 1020px !important;

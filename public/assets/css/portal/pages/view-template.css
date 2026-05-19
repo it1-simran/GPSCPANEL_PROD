@@ -1,112 +1,126 @@
-/* portal: migrated from view_template.blade.php */
-.view-settings-page .wrapper {
-        padding-top: 8px !important;
+/* portal: view-template page redesign (premium, responsive) */
+
+    .vt-modern-page {
+        padding-top: 70px !important;
+        margin-top: 0 !important;
+    }
+    
+    .vt-modern-page .wrapper {
+        padding-top: 0 !important;
     }
 
-    .view-settings-page .protocol-breadcrumb-wrap {
-        padding: 4px 0 12px 0 !important;
-        margin: 0 !important;
+    /* ---- Modern Breadcrumb ---- */
+    .vt-breadcrumb-bar {
+        background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%);
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 22px;
+        border: 1px solid rgba(118, 207, 28, 0.2);
+        border-radius: 999px;
+        box-shadow: 0 8px 20px rgba(2, 8, 23, 0.22);
+        width: fit-content;
+        max-width: 100%;
     }
-
-    .view-settings-page .protocol-breadcrumb {
-        display: inline-flex !important;
-        align-items: center !important;
-        flex-wrap: wrap;
-        row-gap: 6px;
-        background: #1e293b !important;
-        border-radius: 50px !important;
-        padding: 6px 18px 6px 8px !important;
-        box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18) !important;
+    .vt-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
     }
-
-    .view-settings-page .protocol-breadcrumb .bc-home {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
+    .vt-breadcrumb li { display: flex; align-items: center; gap: 6px; }
+    .vt-breadcrumb li a {
+        color: rgba(226, 232, 240, 0.82);
+        font-size: 12.5px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: color 0.2s;
+        line-height: 1;
+    }
+    .vt-breadcrumb li a:hover { color: #ffffff; }
+    .vt-breadcrumb li.active span {
+        color: #76CF1C;
+        font-size: 12.5px;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .vt-breadcrumb .sep {
+        color: rgba(148, 163, 184, 0.9);
+        font-size: 18px;
+        margin: 0 2px;
+    }
+    .vt-breadcrumb .home-icon {
+        width: 28px;
+        height: 28px;
         background: #76CF1C;
-        display: inline-flex;
+        border-radius: 999px;
+        display: flex;
         align-items: center;
         justify-content: center;
-        margin-right: 10px;
-        flex-shrink: 0;
-    }
-
-    .view-settings-page .protocol-breadcrumb .bc-home i {
-        color: #1e293b;
-        font-size: 13px;
-    }
-
-    .view-settings-page .protocol-breadcrumb .bc-item {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 13px;
-        font-weight: 500;
-        text-decoration: none;
-    }
-
-    .view-settings-page .protocol-breadcrumb .bc-sep {
-        color: rgba(255, 255, 255, 0.35);
-        margin: 0 8px;
+        color: #0f172a;
         font-size: 12px;
+        text-decoration: none;
+        transition: background 0.2s, transform 0.2s;
+        box-shadow: 0 0 0 4px rgba(118, 207, 28, 0.15);
+    }
+    .vt-breadcrumb .home-icon:hover { background: #86de2d; transform: translateY(-1px); }
+
+    @media (max-width: 768px) {
+        .vt-breadcrumb-bar {
+            border-radius: 14px;
+            width: 100%;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .vt-breadcrumb li a,
+        .vt-breadcrumb li.active span {
+            font-size: 12px;
+        }
     }
 
-    .view-settings-page .protocol-breadcrumb .bc-item.active {
-        color: #76CF1C;
-        font-weight: 700;
+    /* ---- Card & Header ---- */
+    .vt-card {
+        border: none !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.09) !important;
+        overflow: visible;
+        margin-bottom: 24px;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
     }
-
-    .view-settings-page .protocol-breadcrumb a.bc-item:hover {
-        color: #e2e8f0;
-    }
-
-    /* Single-line breadcrumb on narrow screens (horizontal scroll) */
-    .view-settings-page .protocol-breadcrumb.protocol-breadcrumb--scroll {
-        max-width: 100%;
-        flex-wrap: nowrap !important;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-    }
-
-    .view-settings-page .protocol-breadcrumb.protocol-breadcrumb--scroll .bc-home {
-        flex-shrink: 0;
-    }
-
-    /* Prevent panel clipping overflow from horizontal table scroll */
-    .view-settings-page .view-settings-c-panel.c_panel {
-        overflow: visible !important;
-    }
-
-    .view-settings-page .c_title {
-        margin-top: 4px !important;
-    }
-
-    .view-settings-page .c_title h2::before {
-        content: none !important;
-        display: none !important;
-    }
-
-    .view-settings-page .view-settings-panel-title {
-        display: inline-flex !important;
+    
+    .vt-card-header {
+        background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
+        padding: 16px 24px !important;
+        border-radius: 12px 12px 0 0 !important;
+        display: flex;
         align-items: center;
-        gap: 8px;
-        margin: 0;
+        justify-content: space-between;
+        gap: 10px;
+        border: none !important;
+        flex-wrap: wrap;
+    }
+    
+    .vt-card-header h4 {
         color: #ffffff !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
         font-weight: 800 !important;
-        letter-spacing: 0.6px;
+        margin: 0 !important;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
         text-transform: uppercase;
     }
-
-    .view-settings-page .view-settings-panel-title > i {
+    
+    .vt-card-header h4 i {
         color: #76CF1C;
-        font-size: 14px;
-        width: 22px;
-        text-align: center;
     }
-
-    /* Override custom.css .bgx-title-container .btn-success (small 12px / 7px padding) */
-    .view-settings-page .c_title .bgx-title-container .btn-success.btn-settings-add,
-    .view-settings-page .c_title .btn-settings-add.btn-success {
+    
+    .vt-btn-add {
         background: linear-gradient(135deg, #81e025 0%, #76CF1C 100%) !important;
         border: none !important;
         border-radius: 8px !important;
@@ -114,37 +128,37 @@
         font-weight: 700 !important;
         letter-spacing: 0.02em !important;
         padding: 10px 20px !important;
-        min-height: 42px !important;
+        color: #fff !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         gap: 8px !important;
         white-space: nowrap !important;
         box-shadow: 0 4px 12px rgba(118, 207, 28, 0.28) !important;
+        transition: all 0.2s ease !important;
     }
-
-    .view-settings-page .c_title .btn-settings-add .fa {
-        font-size: 14px !important;
-    }
-
-    .view-settings-page .c_title .bgx-title-container .btn-success.btn-settings-add:hover,
-    .view-settings-page .c_title .btn-settings-add.btn-success:hover {
+    .vt-btn-add:hover {
         background: linear-gradient(135deg, #65b515 0%, #5dab13 100%) !important;
         box-shadow: 0 5px 14px rgba(118, 207, 28, 0.38) !important;
+        color: #fff !important;
+        transform: translateY(-1px);
     }
-
-    .view-settings-page .settings-view-toolbar {
+    
+    .vt-card-body {
+        padding: 24px !important;
+    }
+    
+    /* ---- Toolbar & Tabs ---- */
+    .vt-view-toolbar {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
         gap: 14px;
-        margin-bottom: 18px;
+        margin-bottom: 20px;
     }
-
-    .view-settings-page .settings-category-tabs {
-        overflow: visible !important;
-        border-bottom: none !important;
+    
+    .vt-category-tabs {
         display: flex !important;
         flex-wrap: wrap;
         gap: 8px;
@@ -152,382 +166,425 @@
         flex: 1 1 auto;
         min-width: 0;
     }
-
-    .view-settings-page .settings-category-tabs .tablinks {
-        float: none !important;
+    
+    .vt-tab-btn {
         border-radius: 999px !important;
         border: 1px solid #e2e8f0 !important;
-        background: #f8fafc !important;
+        background: #ffffff !important;
         color: #475569 !important;
-        padding: 8px 16px !important;
-        font-weight: 600 !important;
+        padding: 9px 18px !important;
+        font-weight: 700 !important;
         font-size: 13px !important;
         margin: 0 !important;
         transition: all 0.2s ease !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     }
-
-    .view-settings-page .settings-category-tabs .tablinks:hover {
+    .vt-tab-btn:hover {
         background: #f0fce8 !important;
         border-color: rgba(118, 207, 28, 0.45) !important;
         color: #1d283e !important;
     }
-
-    .view-settings-page .settings-category-tabs .tablinks.active {
+    .vt-tab-btn.active {
         background: linear-gradient(135deg, #76CF1C 0%, #5dab13 100%) !important;
         color: #fff !important;
         border-color: transparent !important;
         box-shadow: 0 4px 12px rgba(118, 207, 28, 0.28) !important;
     }
-
-    .view-settings-page .settings-export-actions {
+    
+    .vt-export-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 10px;
         align-items: center;
-        flex-shrink: 0;
     }
-
-    .view-settings-page .btn-export {
+    
+    .vt-btn-export {
         border-radius: 8px !important;
         font-weight: 600 !important;
         font-size: 12px !important;
-        padding: 7px 14px !important;
+        padding: 8px 16px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         gap: 8px !important;
+        transition: all 0.2s ease !important;
     }
-
-    .view-settings-page .btn-export-csv {
+    
+    .vt-btn-csv {
         background: linear-gradient(135deg, #76CF1C 0%, #5dab13 100%) !important;
         border: none !important;
         color: #fff !important;
         box-shadow: 0 3px 10px rgba(118, 207, 28, 0.28) !important;
     }
-
-    .view-settings-page .btn-export-csv:hover {
+    .vt-btn-csv:hover {
         background: linear-gradient(135deg, #65b515 0%, #4d9a0f 100%) !important;
         color: #fff !important;
+        transform: translateY(-1px);
     }
-
-    .view-settings-page .btn-export-excel {
+    
+    .vt-btn-excel {
         background: #1e293b !important;
         color: #fff !important;
         border: 1px solid #334155 !important;
     }
-
-    .view-settings-page .btn-export-excel:hover {
+    .vt-btn-excel:hover {
         background: #334155 !important;
         color: #fff !important;
+        transform: translateY(-1px);
     }
 
-    .view-settings-page .settings-tab-panel.tabcontent {
-        border: none !important;
-        padding: 0 !important;
-    }
-
-    .view-settings-page .settings-table-wrap {
-        border: 1px solid #e2e8f0;
+    /* ---- Table styling ---- */
+    .vt-table-wrap {
+        background: #ffffff;
         border-radius: 10px;
-        overflow-x: auto;
-        overflow-y: visible;
-        background: #fff;
-        -webkit-overflow-scrolling: touch;
+        border: 1px solid #e2e8f0;
+        padding: 0;
+        /* No overflow-x here, relying on DataTables Responsive */
     }
-
-    /* Single-table DataTables (no scrollX): keep header/body aligned */
-    .view-settings-page .settings-table-wrap .dataTables_wrapper {
-        width: 100% !important;
-        clear: both;
-    }
-
-    .view-settings-page .settings-table-wrap table.dataTable {
+    
+    .vt-table {
         width: 100% !important;
         margin: 0 !important;
         border-collapse: separate !important;
         border-spacing: 0 !important;
-        table-layout: auto !important;
     }
-
-    .view-settings-page .settings-table-wrap table.dataTable thead th,
-    .view-settings-page .settings-table-wrap table.dataTable tbody td {
-        box-sizing: border-box !important;
-    }
-
-    .view-settings-page .settings-table-wrap .dataTables_scroll,
-    .view-settings-page .settings-table-wrap .dataTables_scrollHead {
-        overflow: visible !important;
-    }
-
-    /* Table header — same slate/navy as breadcrumb, card title, global DataTables */
-    .view-settings-page .settings-template-table thead th {
-        background: #1e293b !important;
-        color: #fff !important;
+    
+    .vt-table thead th {
+        background: linear-gradient(180deg, #1e293b 0%, #243652 100%) !important;
+        color: #ffffff !important;
         font-weight: 800 !important;
-        font-size: 11px !important;
+        font-size: 11.5px !important;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         border: none !important;
-        border-bottom: none !important;
-        padding: 13px 16px !important;
+        border-bottom: 3px solid #141c2c !important;
+        padding: 14px 16px !important;
         vertical-align: middle !important;
         white-space: nowrap !important;
     }
-
-    .view-settings-page .settings-template-table thead th:first-child {
+    
+    .vt-table thead th:first-child {
         border-top-left-radius: 10px !important;
     }
-
-    .view-settings-page .settings-template-table thead th:last-child {
+    .vt-table thead th:last-child {
         border-top-right-radius: 10px !important;
     }
-
-    .view-settings-page .settings-template-table thead .sorting:after,
-    .view-settings-page .settings-template-table thead .sorting_asc:after,
-    .view-settings-page .settings-template-table thead .sorting_desc:after {
-        color: rgba(255, 255, 255, 0.55) !important;
-        opacity: 1 !important;
+    
+    .vt-table tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.2s ease;
+    }
+    .vt-table tbody tr:nth-child(even) {
+        background: #f8fafc;
+    }
+    .vt-table tbody tr:hover td {
+        background: rgba(118, 207, 28, 0.06) !important;
+    }
+    
+    .vt-table tbody td {
+        padding: 14px 16px !important;
+        color: #334155 !important;
+        font-size: 13px !important;
+        vertical-align: middle !important;
+        border: none !important;
     }
 
-    .view-settings-page .settings-template-table thead .sorting:after {
-        opacity: 0.35 !important;
+    /* Remove focus outlines on datatables rows */
+    .vt-table tbody tr:focus { outline: none; }
+    
+    /* Responsive DataTables collapse row styling */
+    table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control, 
+    table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control {
+        position: relative;
+        padding-left: 35px !important;
+        cursor: pointer;
     }
-
-    .view-settings-page .settings-default-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 12px;
-        padding: 4px 10px;
-        border-radius: 6px;
+    table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before, 
+    table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control:before {
+        top: 50%;
+        left: 10px;
+        height: 16px;
+        width: 16px;
+        margin-top: -8px;
+        display: block;
+        position: absolute;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        box-shadow: 0 0 3px #444;
+        box-sizing: content-box;
+        text-align: center;
+        text-indent: 0 !important;
+        line-height: 16px;
+        content: '+';
+        background-color: #76CF1C;
+        font-weight: 800;
     }
-
-    .view-settings-page .btn-settings-view,
-    .view-settings-page .btn-settings-apply {
+    table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td.dtr-control:before, 
+    table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control:before {
+        content: '-';
+        background-color: #ef4444;
+    }
+    
+    /* Buttons in table */
+    .vt-btn-view, .vt-btn-apply, .vt-btn-delete {
         border-radius: 6px !important;
         font-weight: 600 !important;
+        font-size: 12px !important;
+        padding: 6px 12px !important;
+        border: none !important;
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .vt-btn-view {
+        background: rgba(59,130,246,0.1) !important;
+        color: #2563eb !important;
+    }
+    .vt-btn-view:hover {
+        background: #2563eb !important;
+        color: #fff !important;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(59,130,246,0.3);
+    }
+    
+    .vt-btn-apply {
+        background: rgba(118,207,28,0.12) !important;
+        color: #4d8613 !important;
+    }
+    .vt-btn-apply:hover {
+        background: #76CF1C !important;
+        color: #fff !important;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(118,207,28,0.3);
+    }
+    
+    .vt-btn-delete {
+        background: rgba(239,68,68,0.1) !important;
+        color: #ef4444 !important;
+    }
+    .vt-btn-delete:hover {
+        background: #ef4444 !important;
+        color: #fff !important;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(239,68,68,0.3);
+    }
+    
+    .vt-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 6px;
+    }
+    
+    .default-yes {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: #fff;
+        box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+    }
+    .default-no {
+        background: #f1f5f9;
+        color: #94a3b8;
     }
 
-    .view-settings-page .settings-template-table td:nth-child(4),
-    .view-settings-page .settings-template-table td:nth-child(5) {
-        white-space: nowrap;
+    /* ---- DataTables Overrides ---- */
+    .vt-table-wrap .dataTables_wrapper {
+        padding: 16px;
+    }
+    .vt-table-wrap .dataTables_length select,
+    .vt-table-wrap .dataTables_filter input {
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        outline: none !important;
+    }
+    .vt-table-wrap .dataTables_filter input:focus {
+        border-color: #76CF1C !important;
+        box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.15) !important;
+    }
+    .vt-table-wrap .dataTables_info,
+    .vt-table-wrap .dataTables_paginate {
+        margin-top: 16px !important;
+        font-size: 13px !important;
+        color: #475569 !important;
+    }
+    .vt-table-wrap .paginate_button {
+        border-radius: 6px !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #fff !important;
+        color: #1e293b !important;
+        margin: 0 2px !important;
+        padding: 6px 12px !important;
+    }
+    .vt-table-wrap .paginate_button.current, 
+    .vt-table-wrap .paginate_button.current:hover {
+        background: #76CF1C !important;
+        color: #fff !important;
+        border-color: #76CF1C !important;
+        box-shadow: 0 3px 8px rgba(118,207,28,0.3) !important;
+    }
+    .vt-table-wrap .paginate_button:hover {
+        background: #f8fafc !important;
+        color: #1e293b !important;
     }
 
-    /* —— Assign template modal (site navy + brand green) —— */
-    .view-settings-page .view-settings-modal-shell {
+    /* ---- Modal Styling ---- */
+    .vt-modal-content {
         border: none !important;
         border-radius: 12px !important;
         overflow: hidden !important;
         box-shadow: 0 18px 50px rgba(15, 23, 42, 0.22) !important;
     }
-
-    .view-settings-page .view-settings-modal-header {
+    .vt-modal-header {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
         border-bottom: 2px solid #76CF1C !important;
         padding: 16px 20px !important;
-        border-radius: 0 !important;
     }
-
-    .view-settings-page .view-settings-modal-title {
-        margin: 0 !important;
-        padding: 0 !important;
+    .vt-modal-title {
         color: #fff !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
         font-weight: 800 !important;
-        letter-spacing: 0.55px !important;
         text-transform: uppercase !important;
-        line-height: 1.3 !important;
         display: flex !important;
         align-items: center;
         gap: 10px;
+        margin: 0;
     }
-
-    .view-settings-page .view-settings-modal-title > i {
+    .vt-modal-title i {
         color: #76CF1C !important;
-        font-size: 15px !important;
     }
-
-    .view-settings-page .view-settings-modal-close {
-        margin-top: -4px !important;
-        opacity: 0.85 !important;
+    .vt-modal-close {
         color: #fff !important;
+        opacity: 0.8 !important;
         text-shadow: none !important;
-        font-size: 26px !important;
         font-weight: 300 !important;
-        line-height: 1 !important;
+        font-size: 24px !important;
+        margin-top: -4px !important;
     }
-
-    .view-settings-page .view-settings-modal-close:hover,
-    .view-settings-page .view-settings-modal-close:focus {
-        opacity: 1 !important;
+    .vt-modal-close:hover {
         color: #76CF1C !important;
+        opacity: 1 !important;
     }
-
-    .view-settings-page .view-settings-modal-body {
-        padding: 22px 24px 20px !important;
+    .vt-modal-body {
+        padding: 24px !important;
         background: #fff !important;
     }
-
-    .view-settings-page .view-settings-modal-label {
-        display: block !important;
-        margin-bottom: 8px !important;
+    .vt-modal-label {
         font-size: 13px !important;
         font-weight: 700 !important;
         color: #334155 !important;
-        text-transform: none !important;
+        margin-bottom: 8px !important;
     }
-
-    .view-settings-page .view-settings-modal-hint {
-        margin: 10px 0 0 0 !important;
+    .vt-modal-hint {
         font-size: 12px !important;
         color: #64748b !important;
+        margin-top: 8px !important;
     }
-
-    .view-settings-page .view-settings-modal-footer {
-        margin-top: 22px !important;
-        padding-top: 18px !important;
+    .vt-modal-footer {
+        margin-top: 24px !important;
+        padding-top: 16px !important;
         border-top: 1px solid #e2e8f0 !important;
-        text-align: center !important;
+        text-align: right !important;
     }
-
-    .view-settings-page .btn-settings-modal-assign {
+    .vt-btn-modal-assign {
         background: linear-gradient(135deg, #76CF1C 0%, #5dab13 100%) !important;
         color: #fff !important;
         border: none !important;
         border-radius: 8px !important;
         font-weight: 700 !important;
-        font-size: 13px !important;
-        letter-spacing: 0.35px !important;
-        padding: 10px 28px !important;
-        box-shadow: 0 4px 14px rgba(118, 207, 28, 0.35) !important;
+        padding: 10px 24px !important;
         text-transform: uppercase !important;
+        box-shadow: 0 4px 14px rgba(118, 207, 28, 0.35) !important;
+        letter-spacing: 0.5px;
     }
-
-    .view-settings-page .btn-settings-modal-assign:hover,
-    .view-settings-page .btn-settings-modal-assign:focus {
+    .vt-btn-modal-assign:hover {
         background: linear-gradient(135deg, #65b515 0%, #4d9a0f 100%) !important;
-        color: #fff !important;
         box-shadow: 0 6px 18px rgba(118, 207, 28, 0.42) !important;
     }
-
-    .view-settings-page .view-settings-assign-modal .select2-container {
+    
+    /* Select2 in modal */
+    .vt-assign-modal .select2-container {
         width: 100% !important;
     }
-
-    .view-settings-page .view-settings-assign-modal .select2-container--default .select2-selection--multiple {
+    .vt-assign-modal .select2-selection--multiple {
         border: 1px solid #cbd5e1 !important;
         border-radius: 8px !important;
-        background: #fff !important;
         min-height: 46px !important;
-        padding: 4px 8px !important;
+        padding: 4px !important;
     }
-
-    .view-settings-page .view-settings-assign-modal .select2-container--default.select2-container--focus .select2-selection--multiple {
+    .vt-assign-modal .select2-container--focus .select2-selection--multiple {
         border-color: #76CF1C !important;
         box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.15) !important;
     }
-
-    .view-settings-page .view-settings-assign-modal .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    .vt-assign-modal .select2-selection__choice {
         background: #76CF1C !important;
         border: none !important;
         border-radius: 6px !important;
         color: #1e293b !important;
-        font-size: 12px !important;
         font-weight: 600 !important;
-        padding: 3px 8px !important;
+        padding: 4px 8px !important;
     }
-
-    .view-settings-page .view-settings-assign-modal .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    .vt-assign-modal .select2-selection__choice__remove {
         color: #1e293b !important;
-        margin-right: 4px !important;
+        margin-right: 6px !important;
     }
 
-    .view-settings-page .view-settings-assign-modal .select2-dropdown {
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 8px !important;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+    /* ---- Responsive adjustments ---- */
+    @media (max-width: 991px) {
+        .vt-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .vt-card-header-actions {
+            margin-top: 14px;
+            width: 100%;
+        }
+        .vt-btn-add {
+            width: 100%;
+        }
+        .vt-view-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .vt-export-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+        .vt-btn-export {
+            flex: 1;
+        }
+        .vt-category-tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .vt-tab-btn {
+            white-space: nowrap;
+        }
+        .vt-table-wrap .dataTables_wrapper > .row:first-child > div,
+        .vt-table-wrap .dataTables_wrapper > .row:last-child > div {
+            width: 100% !important;
+            float: none !important;
+            text-align: left !important;
+            margin-bottom: 10px !important;
+        }
+        .vt-table-wrap .dataTables_filter input {
+            width: 100% !important;
+            margin-left: 0 !important;
+            box-sizing: border-box !important;
+        }
     }
 
-    .view-settings-page .view-settings-assign-modal .select2-results__option--highlighted {
-        background-color: #76CF1C !important;
-        color: #1e293b !important;
-    }
-
-    /* Portal for modals: stacking above table without touching document.body */
+    /* Portal for modals: stacking above table */
     .view-settings-modal-root {
         position: relative;
         z-index: 1060;
         min-height: 0;
-    }
-
-    /* —— Narrow / tablet–mobile (aligns with custom.css @991 stacking) —— */
-    @media (max-width: 991px) {
-        .view-settings-page .view-settings-title-row.bgx-title-container {
-            align-items: stretch !important;
-        }
-
-        .view-settings-page .view-settings-actions-col.text-right {
-            text-align: center !important;
-        }
-
-        .view-settings-page .c_title .bgx-title-container .btn-success.btn-settings-add,
-        .view-settings-page .c_title .btn-settings-add.btn-success {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-height: 48px !important;
-            font-size: 14px !important;
-            padding: 12px 18px !important;
-        }
-
-        .view-settings-page .settings-view-toolbar {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 14px !important;
-            margin-bottom: 16px !important;
-        }
-
-        .view-settings-page .settings-category-tabs {
-            flex-wrap: nowrap !important;
-            overflow-x: auto !important;
-            overflow-y: visible !important;
-            -webkit-overflow-scrolling: touch;
-            gap: 8px !important;
-            padding-bottom: 6px !important;
-            margin: 0 !important;
-            scrollbar-width: thin;
-        }
-
-        .view-settings-page .settings-category-tabs .tablinks {
-            flex-shrink: 0 !important;
-            white-space: nowrap !important;
-        }
-
-        .view-settings-page .settings-export-actions {
-            width: 100% !important;
-            justify-content: stretch !important;
-            gap: 10px !important;
-        }
-
-        .view-settings-page .settings-export-actions .btn-export {
-            flex: 1 1 0 !important;
-            min-height: 44px !important;
-            font-size: 13px !important;
-            padding: 10px 12px !important;
-        }
-
-        .view-settings-page .settings-table-wrap .dataTables_wrapper > .row:first-child > div[class*="col-"],
-        .view-settings-page .settings-table-wrap .dataTables_wrapper > .row:last-child > div[class*="col-"] {
-            float: none !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            text-align: left !important;
-            margin-bottom: 10px !important;
-        }
-
-        .view-settings-page .settings-table-wrap .dataTables_filter input {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin-left: 0 !important;
-            box-sizing: border-box !important;
-        }
     }

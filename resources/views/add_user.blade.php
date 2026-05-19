@@ -293,7 +293,7 @@
                               <select class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }} style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;">
                                 <!-- <option value="">Please Select</option> -->
                                 @foreach($validationConfig['selectOptions'] as $configkey => $option)
-                                <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
+                                <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value']) && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
                                 @endforeach
                               </select>
                             </div>
@@ -309,7 +309,7 @@
                                 @foreach($validationConfig['selectOptions'] as $configkey => $option)
                                 @php
                                 $inputKey = str_replace(' ', '_', strtolower($input['key']));
-                                $rawValue = $configurationValue[$inputKey]['value'] ?? [];
+                                $rawValue = isset($configurationValue[$inputKey]['value']) ? $configurationValue[$inputKey]['value'] : [];
                                 if (is_string($rawValue)) {
                                 $decoded = json_decode($rawValue, true);
                                 $selectedValues = is_array($decoded) ? $decoded : explode(',', $rawValue);
@@ -1214,6 +1214,44 @@
 
     });
 
+    function initCanMultiselect($select) {
+      if (!$select || !$select.length || typeof $.fn.select2 !== 'function') {
+        return;
+      }
+
+      if ($select.data('select2')) {
+        $select.select2('destroy');
+      }
+
+      $select.removeClass('form-control inputType');
+
+      var maxSel = parseInt($select.data('max-select'), 10) || 0;
+      var placeholder = $select.data('placeholder') || 'Select options';
+
+      $select.select2({
+        placeholder: placeholder,
+        width: '100%',
+        dropdownCssClass: 'au-can-select2-drop'
+      });
+
+      if (maxSel > 0) {
+        $select.off('change.auMaxSelect').on('change.auMaxSelect', function() {
+          var selected = $(this).select2('val') || [];
+          if (selected.length > maxSel) {
+            selected.splice(maxSel);
+            $(this).select2('val', selected);
+            alert('You can only select up to ' + maxSel + ' options.');
+          }
+        });
+      }
+    }
+
+    function initCanMultiselects(index) {
+      $('#dynamicCanFields' + index).find('select.can-multiselect').each(function() {
+        initCanMultiselect($(this));
+      });
+    }
+
     function selectedCanProtocol(index) {
       let canProtocolValue = $('#can_protocol' + index).val();
       if (!canProtocolValue) return;
@@ -1241,9 +1279,8 @@
             }
             let inputHtml = `<input type="hidden" name="idCanParameters[${index}][${fieldId}]" value="${field.id}" />`;
             inputHtml += `<input type="hidden" name="CanParametersType[${index}][${fieldId}]" value="${inputType}" />`;
-            let inputHeight = (inputType === 'text_array' || inputType === 'multiselect') ? '' : 'height: 44px;';
-            let appearanceCSS = (inputType === 'select') ? "appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px;" : "";
-            let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control" placeholder="Enter ${field.fieldName}" style="border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; font-size: 14px; color: #64748b; width: 100%; ${inputHeight} ${appearanceCSS}"`;
+            let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="can-field-input" placeholder="Enter ${field.fieldName}"`;
+            let selectAttr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="can-field-input can-field-select"`;
 
             if (inputType === 'number') {
               if (validation.numberInput) {
@@ -1251,7 +1288,7 @@
               }
               inputHtml += `<input type="number" ${attr} />`;
             } else if (inputType === 'select') {
-              inputHtml += `<select ${attr}><option value="">-- Select ${field.fieldName} --</option>`;
+              inputHtml += `<select ${selectAttr}><option value="">-- Select ${field.fieldName} --</option>`;
               if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
                 validation.selectOptions.forEach(option => {
                   inputHtml += `<option value="${option}">${option}</option>`;
@@ -1265,7 +1302,9 @@
               }
               inputHtml += `</select>`;
             } else if (inputType == 'multiselect') {
-              inputHtml += `<select id="${fieldId}" name="canConfiguration[${index}][${fieldId}][]" class="form-control can-multiselect" multiple style="border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; font-size: 14px; color: #64748b; width: 100%; min-height: 44px;">`;
+              const maxSel = validation.maxSelectValue || 0;
+              const fieldLabel = String(field.fieldName).replace(/"/g, '&quot;');
+              inputHtml += `<div class="can-multiselect-wrap"><select id="${fieldId}" name="canConfiguration[${index}][${fieldId}][]" class="can-multiselect" multiple data-max-select="${maxSel}" data-placeholder="${fieldLabel}">`;
 
               if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
                 const vals = Array.isArray(validation.selectValues) ? validation.selectValues : [];
@@ -1281,31 +1320,7 @@
                 inputHtml += `<option value="">-- No options available --</option>`;
               }
 
-              inputHtml += `</select>`;
-
-              // Apply Select2 after DOM is ready
-              setTimeout(() => {
-                var $select = $('#' + fieldId);
-                if ($select.length && typeof $.fn.select2 === 'function') {
-                  $select.select2({
-                    placeholder: 'Select options',
-                    width: '100%',
-                    dropdownParent: $('#canModal' + index),
-                    allowClear: true
-                  });
-                  const maxSel = validation.maxSelectValue || 0;
-                  if (maxSel) {
-                    $select.on('change', function() {
-                      const selected = $(this).val() || [];
-                      if (selected.length > maxSel) {
-                        selected.splice(maxSel);
-                        $(this).val(selected).trigger('change.select2');
-                        alert('You can only select up to ' + maxSel + ' options.');
-                      }
-                    });
-                  }
-                }
-              }, 150);
+              inputHtml += `</select></div>`;
             } else if (inputType === 'text_array') {
               console.log(validation);
               let values = [""];
@@ -1385,7 +1400,7 @@
                 updateHiddenValue();
               }, 100);
             } else if (inputType === 'hex') {
-              let attr1 = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control text-array-space me-2"`;
+              let attr1 = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="can-field-input text-array-space me-2"`;
               let maxValue = validation.maxValueInput || 0;
               if (validation.maxValueInput) {
                 attr1 += `maxlength="${validation.maxValueInput}"`;
@@ -1414,6 +1429,7 @@
           });
           html += '</div>';
           $('#dynamicCanFields' + index).html(html).show();
+          initCanMultiselects(index);
         },
         error: function(xhr) {
           console.error("Error fetching CAN protocol fields", xhr);

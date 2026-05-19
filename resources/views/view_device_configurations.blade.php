@@ -127,10 +127,8 @@ $errors = json_decode($device['errors'], true);
                                             @endforeach
                                         @endif
                                         {{-- Display User Information --}}
-                                        <div class="user-info mb-4">
-                                            <div class='col-lg-12'>
-                                                <h4><b>Device Information</b></h4>
-                                            </div>
+                                        <div class="user-info no-accordion mb-4">
+                                            <div class="vc-section-title"><i class="fa fa-info-circle"></i> Device Information</div>
                                             <div class='row  bgx-configurations view-device-configuration'>
                                                 <div class='col-lg-5'>
                                                     <div class="bgx-table-container">
@@ -448,7 +446,7 @@ $errors = json_decode($device['errors'], true);
                                             </div>
                                         </div>
                                         <div class="user-info">
-                                            <h4><b>Device Configurations</b></h4>
+                                            <div class="vc-section-title"><i class="fa fa-cogs"></i> Device Configurations</div>
                                             @empty($device['configurations'])
                                                 <p class="col-md-12">No configurations found.</p>
                                             @else
@@ -481,7 +479,7 @@ $errors = json_decode($device['errors'], true);
                                         @if(isset($configurations['can_interface']['value']) && $configurations['can_interface']['value'] == 1)
                                             @if($getCanEnableByDeviceCategory->is_can_protocol == 1)
                                                 <div class="user-info">
-                                                    <h4><b>CAN Protocol Configurations</b></h4>
+                                                    <div class="vc-section-title"><i class="fa fa-sitemap"></i> CAN Protocol Configurations</div>
                                                     @php $canConfigData = is_array($canConfigurations) ? $canConfigurations : json_decode($canConfigurations, true);
                                                     @endphp
                                                     @empty($device['can_configurations'])
@@ -541,7 +539,7 @@ $errors = json_decode($device['errors'], true);
                                         <div class="user-info">
 
 
-                                                                                    <h4><b>Device Parameters</b> <small>(<b>Last updated on:</b> {{ isset($device->api_updated_at) ? CommonHelper::getDateAsTimeZone($device->api_updated_at) : '' }})</small></h4>
+                                                                                    <div class="vc-section-title"><i class="fa fa-list-alt"></i> Device Parameters <small style="color:inherit; margin-left:6px;">(<b>Last updated on:</b> {{ isset($device->api_updated_at) ? CommonHelper::getDateAsTimeZone($device->api_updated_at) : '' }})</small></div>
                                             @empty($device['parameters'])
                                                 <div class="card padding-10 text-center">
                                                     <p>No configurations found.</p>
@@ -1011,4 +1009,42 @@ $('#vendorId').show().val(modal.vendorId);
             longitude: Number(lon.toFixed(6))
         };
     }
+
+	$(document).ready(function() {
+		// Dynamic Accordion Conversion
+		$('.user-info:not(.no-accordion)').each(function(index) {
+			var $info = $(this);
+			var $title = $info.find('.vc-section-title').first();
+			
+			// Find the immediate wrapper of the title, if it's a col-lg-9 or col-lg-12
+			var $titleWrapper = $title.parent('[class*="col-lg-"]').length ? $title.parent() : $title;
+			
+			// Wrap everything else in an accordion content div
+			var $contents = $info.contents().filter(function() {
+				// Don't wrap the title wrapper, and don't wrap empty text nodes
+				if (this === $titleWrapper[0]) return false;
+				if (this.nodeType === 3 && $.trim(this.nodeValue) === '') return false;
+				return true;
+			});
+			$contents.wrapAll('<div class="acc-content" style="display: none;"></div>');
+			
+			// Style the title
+			$title.addClass('vc-acc-header');
+			
+			// Handle clicks
+			$title.css('cursor', 'pointer').on('click', function() {
+				var $myContent = $info.find('.acc-content');
+				if ($title.hasClass('acc-open')) {
+					$myContent.slideUp(250);
+					$title.removeClass('acc-open');
+				} else {
+					$('.acc-content').slideUp(250);
+					$('.vc-acc-header').removeClass('acc-open');
+					
+					$myContent.slideDown(250);
+					$title.addClass('acc-open');
+				}
+			});
+		});
+	});
 </script>

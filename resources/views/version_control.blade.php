@@ -66,13 +66,13 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   <th>Sr. No.</th>
                   <th>Version</th>
                   <th>Created At</th>
-                  <th>View</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <?php $i = 1; ?>
               <tbody>
                 @foreach ($version as $ver)
-                <tr>
+                <tr id="version-row-{{ $ver->id }}">
                   <td>{{ $i }}</td>
                   <td>
                     <div class="vv-version-cell">
@@ -88,6 +88,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     <button class="vv-btn-view" title="View Release Notes"
                       data-toggle="modal" data-target="#viewReleaseNotesModal{{ $ver->id }}">
                       <i class="fa fa-eye"></i> Notes
+                    </button>
+                    <button class="vi-btn-delete single-delete-btn" data-id="{{ $ver->id }}" data-url="{{ route('version.destroy', $ver->id) }}" style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(220,38,38,0.25);cursor:pointer;white-space:nowrap;margin-left:8px;">
+                      <i class="fa fa-trash"></i> Delete
                     </button>
 
                     {{-- Release Notes Modal --}}
@@ -157,14 +160,16 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       </div>
     </div>
 
+
+
   </section>
 </section>
 
 @stop
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@push('scripts')
 <script>
   $(document).ready(function () {
-    $('#esim').DataTable({
+    var table = $('#esim').DataTable({
       paging: true,
       searching: true,
       info: true,
@@ -175,5 +180,57 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       lengthMenu: [[25, 50, 100, 500, -1],[25, 50, 100, 500, "All"]],
       pageLength: 25
     });
+
+    var deleteData = null;
+
+    // Single Delete Button logic
+    $('#esim tbody').on('click', '.single-delete-btn', function(e) {
+        e.preventDefault();
+        var $btn = $(this);
+        
+        Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure you want to delete this version?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'No',
+            background: '#1e293b',
+            color: '#f8fafc'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                var url = $btn.data('url');
+                var id = $btn.data('id');
+                var originalText = $btn.html();
+                
+                $btn.html('<i class="fa fa-spinner fa-spin"></i>').prop('disabled', true);
+
+                $.ajax({
+                    url: url,
+                    type: 'DELETE',
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            var row = $('#version-row-' + id);
+                            table.row(row).remove().draw(false);
+                            window.showGpsToast('success', 'Success', response.message);
+                        } else {
+                            window.showGpsToast('error', 'Error', response.message || 'Error occurred while deleting.');
+                            $btn.html(originalText).prop('disabled', false);
+                        }
+                    },
+                    error: function() {
+                        window.showGpsToast('error', 'Error', 'An error occurred while processing your request.');
+                        $btn.html(originalText).prop('disabled', false);
+                    }
+                });
+            }
+        });
+    });
   });
 </script>
+@endpush

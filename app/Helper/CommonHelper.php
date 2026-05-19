@@ -225,7 +225,7 @@ class CommonHelper
                             $html .= '<form action="' . route('device.delete', $contact->id) . '" method="post">';
                             $html .= csrf_field();
                             $html .= method_field('DELETE');
-                            $html .= '<button onClick="javascript:return confirm(\'Are you sure you want to delete this?\');" class="btn btn-danger btn-sm" type="submit"><i class="fa fa-trash"></i> Delete</button>';
+                            $html .= '<button class="btn btn-danger btn-sm swal-confirm" data-confirm-msg="Are you sure you want to delete this device?" type="submit"><i class="fa fa-trash"></i> Delete</button>';
                             $html .= '</form>';
                             $html .= '</td>';
                         }

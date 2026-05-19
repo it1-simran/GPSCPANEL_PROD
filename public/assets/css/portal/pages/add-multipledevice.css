@@ -1,164 +1,479 @@
 /* portal: migrated from add_MultipleDevice.blade.php */
-#main-content .wrapper { padding-top: 10px !important; }
+#main-content .wrapper {
+    padding-top: 10px !important;
+}
 
-    /* Breadcrumb (reference style) */
-    .amd-breadcrumb-wrap { padding: 14px 0 18px 0; }
-    .amd-breadcrumb {
-        display: inline-flex;
-        align-items: center;
-        background: #1e293b;
-        border-radius: 50px;
-        padding: 6px 18px 6px 8px;
-        box-shadow: 0 4px 16px rgba(30,41,59,0.18);
-        gap: 0;
-    }
-    .amd-breadcrumb .bc-home {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: #76CF1C;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 10px;
-        color: #1e293b;
-        text-decoration: none;
-        flex-shrink: 0;
-    }
-    .amd-breadcrumb .bc-item {
-        color: rgba(255,255,255,0.65);
-        font-size: 13px;
-        font-weight: 500;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-    .amd-breadcrumb .bc-sep {
-        color: rgba(255,255,255,0.35);
-        margin: 0 8px;
-        font-size: 12px;
-    }
-    .amd-breadcrumb .bc-item.active {
-        color: #76CF1C;
-        font-weight: 700;
+/* Breadcrumb (reference style) */
+.amd-breadcrumb-wrap {
+    padding: 14px 0 18px 0;
+}
+
+.amd-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    background: #1e293b;
+    border-radius: 50px;
+    padding: 6px 18px 6px 8px;
+    box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
+    gap: 0;
+}
+
+.amd-breadcrumb .bc-home {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #76CF1C;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    color: #1e293b;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.amd-breadcrumb .bc-item {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.amd-breadcrumb .bc-sep {
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0 8px;
+    font-size: 12px;
+}
+
+.amd-breadcrumb .bc-item.active {
+    color: #76CF1C;
+    font-weight: 700;
+}
+
+/* Panel and form polish */
+#main-content .c_panel {
+    border: 0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08) !important;
+    overflow: hidden;
+}
+
+#main-content .c_title {
+    background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
+    padding: 16px 22px !important;
+    border-bottom: 1px solid rgba(118, 207, 28, 0.2) !important;
+}
+
+#main-content .c_title h2 {
+    margin: 0 !important;
+    color: #fff !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+#main-content .c_content {
+    padding: 22px 20px !important;
+}
+
+#main-content #commentForm .form-group {
+    margin-bottom: 14px !important;
+}
+
+#main-content #commentForm .control-label {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #334155 !important;
+    padding-top: 10px !important;
+}
+
+#main-content #commentForm .form-control,
+#main-content #commentForm select,
+#main-content #commentForm .select2-selection--single,
+#main-content #commentForm .select2-selection--multiple {
+    min-height: 40px !important;
+    border: 1px solid #d5deea !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    font-size: 13px !important;
+    color: #334155 !important;
+    background: #fff !important;
+    width: 100% !important;
+}
+
+#main-content #commentForm .select2-container {
+    width: 100% !important;
+}
+
+/* CAN Protocol modal — header padding, close alignment, vertical position */
+#canModal .amd-can-modal-dialog {
+    margin: 8vh auto 30px;
+    max-width: 560px;
+}
+
+#canModal .amd-can-modal-content {
+    border: none;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+}
+
+#canModal .amd-can-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 12px;
+    padding: 16px 18px;
+    min-height: 56px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-bottom: 1px solid rgba(118, 207, 28, 0.28);
+}
+
+#canModal .amd-can-modal-header .modal-title {
+    float: none;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #f8fafc;
+    line-height: 1.4;
+    flex: 1;
+    min-width: 0;
+}
+
+#canModal .amd-can-modal-header .close {
+    float: none;
+    position: static;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 22px;
+    font-weight: 300;
+    line-height: 1;
+    opacity: 0.9;
+    color: #e2e8f0;
+    text-shadow: none;
+    outline: none;
+}
+
+#canModal .amd-can-modal-header .close:hover,
+#canModal .amd-can-modal-header .close:focus {
+    opacity: 1;
+    color: #76CF1C;
+}
+
+#canModal .amd-can-modal-body {
+    padding: 20px 22px 8px;
+    background: #f8fafc;
+}
+
+#canModal .amd-can-modal-footer {
+    padding: 14px 18px 18px;
+    margin-top: 0;
+    text-align: right;
+    background: #f1f5f9;
+    border-top: 1px solid #e2e8f0;
+}
+
+#canModal .amd-can-submit-btn {
+    min-width: 120px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 20px;
+}
+
+#canModal .amd-can-modal-body .form-control,
+#canModal .amd-can-modal-body select {
+    border-radius: 8px;
+}
+
+#canModal .amd-can-modal-body .select2-container {
+    width: 100% !important;
+}
+
+/* Page scope */
+.add-multiple-device-page .amd-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.add-multiple-device-page .amd-panel-title>i {
+    color: #76CF1C;
+    font-size: 15px;
+}
+
+.add-multiple-device-page .c_title h2::before {
+    display: none !important;
+    content: none !important;
+}
+
+.add-multiple-device-page .amd-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.add-multiple-device-page .amd-form-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 22px 24px 20px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.add-multiple-device-page .amd-section-title {
+    margin: 0 0 20px 0;
+    padding: 0 0 14px 0;
+    border-bottom: 1px solid #e2e8f0;
+    color: #0f172a;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.add-multiple-device-page .amd-section-title i {
+    color: #76CF1C;
+    font-size: 16px;
+}
+
+.add-multiple-device-page .amd-form.form-horizontal .control-label {
+    text-align: left !important;
+}
+
+.add-multiple-device-page .amd-form-row {
+    margin-bottom: 14px !important;
+}
+
+.add-multiple-device-page .require {
+    color: #dc2626;
+}
+
+/* File upload row */
+.add-multiple-device-page .amd-file-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.add-multiple-device-page .amd-file-input {
+    flex: 1 1 220px;
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+    border: 1px dashed #cbd5e1 !important;
+    border-radius: 8px !important;
+    background: #f8fafc !important;
+    font-size: 13px !important;
+    cursor: pointer;
+}
+
+.add-multiple-device-page .amd-file-input:hover {
+    border-color: #76CF1C !important;
+    background: rgba(118, 207, 28, 0.06) !important;
+}
+
+.add-multiple-device-page .amd-file-info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid #d5deea;
+    background: #fff;
+    color: #1e293b;
+    font-size: 18px;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    flex-shrink: 0;
+}
+
+.add-multiple-device-page .amd-file-info:hover,
+.add-multiple-device-page .amd-file-info:focus {
+    border-color: #76CF1C;
+    color: #76CF1C;
+    background: rgba(118, 207, 28, 0.08);
+}
+
+/* CAN inline */
+.add-multiple-device-page .amd-can-inline {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.add-multiple-device-page .amd-can-readonly {
+    flex: 1 1 200px;
+    min-width: 0;
+    margin: 0 !important;
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+}
+
+.add-multiple-device-page .amd-btn-can {
+    flex-shrink: 0;
+    margin: 0 0 0 4px !important;
+    min-height: 40px;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.add-multiple-device-page .amd-btn-can:hover,
+.add-multiple-device-page .amd-btn-can:focus {
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(30, 41, 59, 0.35);
+    transform: translateY(-1px);
+}
+
+.add-multiple-device-page .amd-btn-can i {
+    margin-right: 6px;
+    color: #76CF1C;
+}
+
+/* Radio pills */
+.add-multiple-device-page .amd-radio-pills {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.add-multiple-device-page .amd-radio-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 110px;
+    min-height: 42px;
+    margin: 0;
+    padding: 0 18px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.add-multiple-device-page .amd-radio-pill input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.add-multiple-device-page .amd-radio-pill span {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.add-multiple-device-page .amd-radio-pill:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.add-multiple-device-page .amd-radio-pill:has(input:checked) {
+    border-color: #76CF1C;
+    background: rgba(118, 207, 28, 0.12);
+    box-shadow: 0 0 0 3px rgba(118, 207, 28, 0.12);
+}
+
+.add-multiple-device-page .amd-radio-pill:has(input:checked) span {
+    color: #0f172a;
+}
+
+/* Save */
+.add-multiple-device-page .amd-form-actions {
+    display: flex;
+    justify-content: flex-start;
+    padding: 4px 0 8px;
+}
+
+.add-multiple-device-page .amd-btn-save {
+    min-width: 140px;
+    min-height: 44px;
+    padding: 10px 28px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #76CF1C 0%, #5fb015 100%);
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    box-shadow: 0 4px 14px rgba(118, 207, 28, 0.35);
+    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+}
+
+.add-multiple-device-page .amd-btn-save:hover,
+.add-multiple-device-page .amd-btn-save:focus {
+    color: #0f172a;
+    filter: brightness(1.05);
+    box-shadow: 0 6px 20px rgba(118, 207, 28, 0.45);
+    transform: translateY(-1px);
+}
+
+.add-multiple-device-page .amd-btn-save i {
+    margin-right: 8px;
+}
+
+.add-multiple-device-page .amd-btn-save:disabled,
+.add-multiple-device-page .amd-btn-save.btn-disable-after-submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+@media (max-width: 767px) {
+    .add-multiple-device-page .amd-form-card {
+        padding: 16px 14px 14px;
     }
 
-    /* Panel and form polish */
-    #main-content .c_panel {
-        border: 0 !important;
-        border-radius: 12px !important;
-        box-shadow: 0 6px 24px rgba(15,23,42,0.08) !important;
-        overflow: hidden;
+    .add-multiple-device-page #commentForm .control-label {
+        padding-top: 0 !important;
+        margin-bottom: 6px;
     }
-    #main-content .c_title {
-        background: linear-gradient(135deg, #0f172a 0%, #1d283e 100%) !important;
-        padding: 16px 22px !important;
-        border-bottom: 1px solid rgba(118,207,28,0.2) !important;
-    }
-    #main-content .c_title h2 {
-        margin: 0 !important;
-        color: #fff !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-    #main-content .c_content { padding: 22px 20px !important; }
-    #main-content #commentForm .form-group { margin-bottom: 14px !important; }
-    #main-content #commentForm .control-label {
-        font-size: 13px !important;
-        font-weight: 700 !important;
-        color: #334155 !important;
-        padding-top: 10px !important;
-    }
-    #main-content #commentForm .form-control,
-    #main-content #commentForm select,
-    #main-content #commentForm .select2-selection--single,
-    #main-content #commentForm .select2-selection--multiple {
-        min-height: 40px !important;
-        border: 1px solid #d5deea !important;
-        border-radius: 8px !important;
-        box-shadow: none !important;
-        font-size: 13px !important;
-        color: #334155 !important;
-        background: #fff !important;
-        width: 100% !important;
-    }
-    #main-content #commentForm .select2-container { width: 100% !important; }
 
-    /* CAN Protocol modal — header padding, close alignment, vertical position */
-    #canModal .amd-can-modal-dialog {
-        margin: 8vh auto 30px;
-        max-width: 560px;
+    .add-multiple-device-page .amd-can-inline {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
     }
-    #canModal .amd-can-modal-content {
-        border: none;
-        border-radius: 14px;
-        overflow: hidden;
-        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+
+    .add-multiple-device-page .amd-btn-can {
+        width: 100%;
+        margin: 8px 0 0 0 !important;
     }
-    #canModal .amd-can-modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: nowrap;
-        gap: 12px;
-        padding: 16px 18px;
-        min-height: 56px;
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        border-bottom: 1px solid rgba(118, 207, 28, 0.28);
+
+    .add-multiple-device-page .amd-radio-pills {
+        width: 100%;
     }
-    #canModal .amd-can-modal-header .modal-title {
-        float: none;
-        margin: 0;
-        padding: 0;
-        font-size: 14px;
-        font-weight: 800;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: #f8fafc;
-        line-height: 1.4;
-        flex: 1;
-        min-width: 0;
+
+    .add-multiple-device-page .amd-radio-pill {
+        flex: 1 1 calc(50% - 6px);
     }
-    #canModal .amd-can-modal-header .close {
-        float: none;
-        position: static;
-        margin: 0;
-        padding: 8px 12px;
-        font-size: 22px;
-        font-weight: 300;
-        line-height: 1;
-        opacity: 0.9;
-        color: #e2e8f0;
-        text-shadow: none;
-        outline: none;
+
+    .add-multiple-device-page .amd-form-actions {
+        justify-content: stretch;
     }
-    #canModal .amd-can-modal-header .close:hover,
-    #canModal .amd-can-modal-header .close:focus {
-        opacity: 1;
-        color: #76CF1C;
+
+    .add-multiple-device-page .amd-btn-save {
+        width: 100%;
     }
-    #canModal .amd-can-modal-body {
-        padding: 20px 22px 8px;
-        background: #f8fafc;
-    }
-    #canModal .amd-can-modal-footer {
-        padding: 14px 18px 18px;
-        margin-top: 0;
-        text-align: right;
-        background: #f1f5f9;
-        border-top: 1px solid #e2e8f0;
-    }
-    #canModal .amd-can-submit-btn {
-        min-width: 120px;
-        font-weight: 700;
-        border-radius: 8px;
-        padding: 10px 20px;
-    }
-    #canModal .amd-can-modal-body .form-control,
-    #canModal .amd-can-modal-body select {
-        border-radius: 8px;
-    }
-    #canModal .amd-can-modal-body .select2-container {
-        width: 100% !important;
-    }
+}

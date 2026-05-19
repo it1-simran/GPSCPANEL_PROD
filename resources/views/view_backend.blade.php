@@ -105,7 +105,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       <form action="/{{$url_type}}/delete-backend/{{ $back->id }}" method="post" style="display:inline;">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn vb-icon-btn vb-icon-btn-delete" onclick="return confirm('Are you sure you want to delete this?');" title="Delete" aria-label="Delete"><i class="fa fa-trash"></i></button>
+                        <button type="submit" class="btn vb-icon-btn vb-icon-btn-delete swal-confirm" data-confirm-msg="Are you sure you want to delete this?" title="Delete" aria-label="Delete"><i class="fa fa-trash"></i></button>
                       </form>
                     </div>
                   </td>

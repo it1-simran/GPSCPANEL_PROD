@@ -32,7 +32,7 @@
 
         <div class="split-left__inner">
             <h1 id="brand-heading" class="split-left__title">GPS <span class="accent">Control</span> Panel</h1>
-            <p class="split-left__lead">Real-time tracking. Smart analytics. Complete control over your fleet.</p>
+            <p class="split-left__lead">Web based Device Configuration Tool.</p>
 
             <div class="gps-stage" aria-hidden="true">
                 <div class="gps-sweep"></div>
@@ -62,21 +62,34 @@
 
             <div class="feature-row">
                 <div class="feature-card">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                    <h3>Live Tracking</h3>
-                    <p>Real-time updates</p>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path d="M12 6v6l4 2"/>
+                        <circle cx="12" cy="12" r="9"/>
+                    </svg>
+                    <h3>Easy Configuration</h3>
+                    <p>Quick and simple device setup</p>
                 </div>
+
                 <div class="feature-card">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <h3>Secure Data</h3>
-                    <p>Enterprise grade</p>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path d="M9 17v-6h13"/>
+                        <path d="M13 7h8v10"/>
+                        <circle cx="5" cy="17" r="2"/>
+                    </svg>
+                    <h3>View Device Parameters</h3>
+                    <p>Monitor real-time device information</p>
                 </div>
+
                 <div class="feature-card">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
-                    <h3>Smart Insights</h3>
-                    <p>Actionable reports</p>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16v16H4z"/>
+                        <path d="M8 8h8M8 12h8M8 16h5"/>
+                    </svg>
+                    <h3>Account Management</h3>
+                    <p>Manage users and permissions easily</p>
                 </div>
             </div>
+
         </div>
     </section>
 

@@ -60,7 +60,7 @@ Route::post('/login/admin', [LoginController::class, 'adminLogin']);
 Route::post('/login/writer', [LoginController::class, 'writerLogin']);
 Route::post('/login/reseller', [LoginController::class, 'resellerLogin']);
 Route::post('/register/admin', [RegisterController::class, 'createAdmin'])->name('register.admin');
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::match(['get', 'post'], '/logout', [LoginController::class, 'logout'])->name('logout');
 Route::view('/home', 'home')->middleware('auth');
 // Authenticated Home Route
 Route::get('/register/user', [GuestUserController::class, 'index'])->name('register.user')->middleware('signed');
@@ -175,6 +175,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/admin/view-esim-customers', [FirmwareController::class, 'esimCustomer']);
     Route::get('/admin/view-imeis', [ImeiController::class, 'viewImei']);
     Route::delete('/admin/uploaded-imei/{id}', [ImeiController::class, 'destroy'])->name('imei.uploaded.destroy');
+    Route::post('/admin/multi-delete-imeis', [ImeiController::class, 'multiDelete'])->name('imei.uploaded.multi-delete');
     Route::get('/admin/view-jig', [JigController::class, 'viewJig']);
     Route::post('/admin/submit-jig', [JigController::class, 'create']);
     Route::delete('/admin/delete-jig/{id}', [JigController::class, 'delete']);
@@ -261,6 +262,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::post('/admin/tickets/{id}/resolve', [TicketController::class, 'markAsResolved'])->name('admin.tickets.resolve');
     Route::get('/admin/version-control', [versionController::class, 'index'])->name('version.view');
     Route::post('/admin/submit-version-control', [versionController::class, 'submitVersion'])->name('admin.updateVersion');
+    Route::delete('/admin/delete-version/{id}', [versionController::class, 'destroy'])->name('version.destroy');
     Route::post('/admin/get-can-protocol-fields', [DeviceController::class, 'getCanProtoColFields']);
     Route::post('/admin/request/send', [GuestUserController::class, 'send'])->name('admin.request.send');
     Route::post('/admin/get-firmware-with-models', [FirmwareController::class, 'getFirmwareWithModel']);

@@ -115,7 +115,7 @@
                                                     <a href="{{ route($routePrefix . '.fields', $type->id) }}" class="btn btn-primary btn-sm protocol-manage-btn">
                                                         <i class="fa fa-cogs"></i> Manage Parameters
                                                     </a>
-                                                    <form action="{{ route($routePrefix . '.packet-types.destroy', $type->id) }}" method="POST" style="display:inline-flex; margin: 0; padding: 0;" onsubmit="return confirm('Are you sure you want to delete this packet type? This will also delete all its associated parameters.');">
+                                                    <form action="{{ route($routePrefix . '.packet-types.destroy', $type->id) }}" method="POST" style="display:inline-flex; margin: 0; padding: 0;" class="swal-confirm" data-confirm-msg="Are you sure you want to delete this packet type? This will also delete all its associated parameters.">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger protocol-delete-btn" style="margin-top: -2px;">

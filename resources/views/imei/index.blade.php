@@ -122,7 +122,7 @@
                                                         <i class="fa fa-list-alt"></i>
                                                     </a>
 
-                                                    <a href="#" onclick="event.preventDefault(); if(confirm('Are you sure you want to delete this IMEI recording?')) document.getElementById('delete-form-{{ $device->id }}').submit();" class="btn imei-action-btn btn-delete" title="Delete">
+                                                    <a href="#" class="btn imei-action-btn btn-delete swal-confirm" title="Delete" data-form-id="delete-form-{{ $device->id }}" data-confirm-msg="Are you sure you want to delete this IMEI recording?">
                                                         <i class="fa fa-trash"></i>
                                                     </a>
                                                     <form id="delete-form-{{ $device->id }}" action="{{ route($routePrefix . 'imei-devices.destroy', $device->id) }}" method="POST" style="display: none;">
@@ -139,6 +139,7 @@
                 </div>
             </div>
         </div>
+
     </section>
 </section>
 <script>

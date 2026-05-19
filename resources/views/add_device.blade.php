@@ -188,25 +188,25 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         <!--======== Form Validation Content Start End ========-->
     </section>
 </section>
-<!-- Modal -->
-<div class="modal" id="canModal" aria-hidden="true">
-    <div class="modal-dialog modal-md">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-                <h5 class="modal-title">CAN Protocol Configuration</h5>
+<!-- Modal: CAN Protocol (scoped #canModal) -->
+<div class="modal ad-can-modal-root" id="canModal" aria-hidden="true">
+    <div class="modal-dialog modal-md ad-can-modal-dialog">
+        <div class="modal-content ad-can-modal-content">
+            <div class="modal-header ad-can-modal-header">
+                <h5 class="modal-title" id="canModalTitle">CAN Protocol Configuration</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body ad-can-modal-body">
                 <div class="row">
                     <div class="col-md-12">
                         <form id="canForm">
                             <!-- Protocol Selection -->
                             <div class="isCanEnable" style="display:none;">
-                                <div>
-                                    <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                    <div class="col-lg-12 padding-1 padding-bottom-10">
+                                <div class="ad-can-field">
+                                    <label for="can_channel" class="control-label">Can Channel <span class="require">*</span></label>
+                                    <div class="ad-can-control">
                                         <select id="can_channel" name="canConfiguration[canChannel]" required>
-                                            <option value="">-- Select CAN Channel --</option>
+                                            <option value="">-- Select CAN channel --</option>
                                             <option value="1">CAN 1</option>
                                             <option value="2">CAN 2</option>
                                             <option value="3">CAN 3</option>
@@ -214,25 +214,29 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         </select>
                                     </div>
                                 </div>
-                                <div style="margin:10px 0px;">
-                                    <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                    <select id="can_baud_rate" name="canConfiguration[can_baud_rate]" class="form-control" required>
-                                        <option value="">-- Select Protocol --</option>
-                                        <option value="500">500 kbps</option>
-                                        <option value="250">250 kbps</option>
-                                    </select>
+                                <div class="ad-can-field">
+                                    <label for="can_baud_rate" class="control-label">Can Baud Rate <span class="require">*</span></label>
+                                    <div class="ad-can-control">
+                                        <select id="can_baud_rate" name="canConfiguration[can_baud_rate]" class="form-control" required>
+                                            <option value="">-- Select baud rate --</option>
+                                            <option value="500">500 kbps</option>
+                                            <option value="250">250 kbps</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div style="margin:10px 0px;">
-                                    <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                    <select id="can_id_type" name="canConfiguration[can_id_type]" class="form-control" required>
-                                        <option value="">-- Select Protocol --</option>
-                                        <option value="0">Standard</option>
-                                        <option value="1">Extended</option>
-                                    </select>
+                                <div class="ad-can-field">
+                                    <label for="can_id_type" class="control-label">Can ID Type <span class="require">*</span></label>
+                                    <div class="ad-can-control">
+                                        <select id="can_id_type" name="canConfiguration[can_id_type]" class="form-control" required>
+                                            <option value="">-- Select ID type --</option>
+                                            <option value="0">Standard</option>
+                                            <option value="1">Extended</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label for="curl" class="control-label padding-left-3">Can Protocol<span class="require">*</span></label>
-                                    <div class="col-lg-12 padding-1 padding-bottom-10">
+                                <div class="ad-can-field">
+                                    <label for="can_protocol" class="control-label">Can Protocol <span class="require">*</span></label>
+                                    <div class="ad-can-control">
                                         <select class="" id="can_protocol" name="canConfiguration[can_protocol]" onChange="selectedCanProtocol()" required>
                                             <option value=""> </option>
                                             <option value="1">J1979</option>
@@ -243,21 +247,13 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 </div>
                             </div>
                             <div id="dynamicCanFields"></div>
-                            <!-- Submit -->
-                            <!-- <button type="button" class="btn btn-success mt-4">Generate JSON</button> -->
                         </form>
                     </div>
-                    <div class="col-md-12 text-right">
-                        <button type="button" class="btn btn-success mt-4" onclick="generateJSON()">Submit</button>
-                    </div>
                 </div>
-                <!-- Output JSON -->
-                <!-- <div class="mt-4">
-                    <label class="form-label">Generated JSON:</label>
-                    <textarea class="form-control" id="outputJson" rows="10" readonly></textarea>
-                </div> -->
             </div>
-
+            <div class="modal-footer ad-can-modal-footer">
+                <button type="button" class="btn btn-success ad-can-submit-btn" onclick="generateJSON()">Submit</button>
+            </div>
         </div>
     </div>
 </div>
@@ -708,16 +704,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         }
                         inputHtml += `<input type="text" ${attr} />`;
                     }
-                    html += `<div class="col-md-12 padding-3 padding-top-10">
-                        <div class="form-group" id="modalInput">
-                            <label for="${fieldId}" class="control-label padding-left-14" required>
+                    html += `<div class="ad-can-field padding-top-10">
+                            <label for="${fieldId}" class="control-label" required>
                                 ${field.fieldName} <span class="require">*</span>
                             </label>
-                            <div class="col-lg-12">
+                            <div class="ad-can-control">
                                 ${inputHtml}
                                 <div class="col-sm-12 alert alert-danger ${fieldId}_error" role="alert" style="display:none"></div>
                             </div>
-                        </div>
                     </div>`;
                 });
                 html += '</div>';

@@ -173,26 +173,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       </div>
                     </td>
                   </tr>
-                  <div class="modal" id="deleteFirmwareModal{{$firmware->id}}" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header fw-panel-modal-header">
-                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                          </button>
-                          <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                        </div>
-                        <div class="modal-body">
-                          Are you sure you want to delete this firmware from All Devices ?
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                          <button type="button" class="btn btn-warning" onclick="confirmDelete({{$firmware->id}},false)">No</button>
-                          <button type="button" class="btn btn-danger" onclick="confirmDelete({{$firmware->id}},true)">Yes</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+
                   <div class="modal" id="addModel{{$firmware->id}}" aria-hidden="true">
                     <div class="modal-dialog">
                       <div class="modal-content">
@@ -215,7 +196,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             </div>
                             <div class="margin-bottom-10">
                               <label for="userAssign" class="form-label col-12">Assign Account</label>
-                              <select id="userAssign" name="userAssign" class="form-control" class="userAssign" onChange="getModelById({{$firmware->id}})">
+                              <select id="userAssign" name="userAssign" class="form-control userAssign" onChange="getModelById({{$firmware->id}})">
                                   <option value="">Please Select</option>
                                 @foreach($users as $user)
                                 <option value="{{$user->id}}">{{$user->name}}</option>
@@ -224,7 +205,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             </div>
                           </div>
                           <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal" aria-hidden="true">Close</button>
+                            <button type="button" class="btn btn-secondary close" data-dismiss="modal" aria-hidden="true">Close</button>
                             <button type="submit" class="btn btn-primary addModalFormBtn">Submit</button>
                             <input type="hidden" name="modalId" id="modalId" value =""/>
                             <input type="hidden" name="firmwareId" id="firmwareId{{$firmware->id}}" value="" />
@@ -233,44 +214,37 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       </div>
                     </div>
                   </div>
-                  <div class="modal" id="editFirmware{{$firmware->id}}" aria-hidden="true">
-                    <div class="modal-dialog">
+                  <div class="modal fw-firmware-modal fw-firmware-modal--edit" id="editFirmware{{$firmware->id}}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
                       <div class="modal-content">
                         <div class="modal-header fw-panel-modal-header">
-                          <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
                           <h5 class="modal-title" id="editFirmwareModalLabel">Edit Firmware</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                         </div>
-                        <form id="editFirmwareForm" onsubmit="return false" method="post">
+                        <form id="editFirmwareForm" class="fw-firmware-modal__form" onsubmit="return false" method="post" enctype="multipart/form-data">
                           @csrf
                           <div class="modal-body">
                             <!-- Form to Add eSIM -->
-                            <div class="col-sm-12 alert alert-danger error_msg_firmware" role="alert" style="display:none"></div>
-                            <div class="margin-bottom-10">
-                              <label for="modalname" class="form-label col-12">Firmware File</label>
+                            <div class="fw-modal-alert alert alert-danger error_msg_firmware" role="alert" style="display:none"></div>
+                            <div class="fw-modal-field">
+                              <label class="fw-modal-label">Firmware File</label>
                               @if(isset($config->filename))
-                              <!-- Display the existing file -->
-                              <div>
-                                <p>Current file: <a href="{{ asset('fw/' . $config->filename) }}" target="_blank">{{ basename($config->filename) }}</a></p>
-                              </div>
+                              <p class="fw-current-file">Current file: <a href="{{ asset('fw/' . $config->filename) }}" target="_blank" rel="noopener">{{ basename($config->filename) }}</a></p>
                               @endif
-                              <input type="file" name="firmwareFile" id="firmwareFile" accept=".bin" class="reqfield" required/>
+                              <input type="file" name="firmwareFile" id="firmwareFile" accept=".bin" class="form-control fw-file-input reqfield" />
                             </div>
-                            <div class="margin-bottom-10">
-                              <label for="userAssign" class="form-label col-12">Firmware Version</label>
-                              <input class="form-control " type="text" placeholder="Firmware version" name="firmware_version" value="{{ $config->version ?? '-' }}" required />
+                            <div class="fw-modal-field">
+                              <label class="fw-modal-label">Firmware Version</label>
+                              <input class="form-control" type="text" placeholder="Firmware version" name="firmware_version" value="{{ $config->version ?? '' }}" required />
                             </div>
-                            <div class="margin-bottom-10">
-                                 <label for="releasingNotes" class="form-label">Releasing Notes</label>
-                                 <div>
-                                    <textarea class="form-control " id="releasingNotes" name="releasingNotes" rows="6" cols="63">
-                                      {{isset($config->releasingNotes)? $config->releasingNotes :''}}
-                                    </textarea>
-                                 </div>
-                             </div>
+                            <div class="fw-modal-field">
+                              <label for="releasingNotes" class="fw-modal-label">Releasing Notes</label>
+                              <textarea class="form-control" id="releasingNotes" name="releasingNotes" rows="5" placeholder="Enter release notes…">{{ isset($config->releasingNotes) ? trim($config->releasingNotes) : '' }}</textarea>
+                            </div>
                           </div>
                           <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" class="close" data-dismiss="modal" aria-hidden="true">Close</button>
-                            <button type="submit" class="btn btn-primary editFirmwareFormBtn">Update</button>
+                            <button type="button" class="btn fw-modal-btn-close" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn fw-modal-btn-submit editFirmwareFormBtn">Update</button>
                             <input type="hidden" name="firmwareIdEdit" id="firmwareIdEdit{{$firmware->id}}" value="" />
                           </div>
                         </form>
@@ -301,7 +275,27 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 @section('scripts')
 <script>
   function showDeleteModal(id) {
-    $('#deleteFirmwareModal' + id).modal('show');
+    Swal.fire({
+      title: 'Confirm Deletion',
+      text: 'Are you sure you want to delete this firmware from All Devices?',
+      icon: 'warning',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonColor: '#3085d6',
+      denyButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes',
+      denyButtonText: 'No',
+      cancelButtonText: 'Cancel',
+      background: '#1e293b',
+      color: '#f8fafc'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        confirmDelete(id, true);
+      } else if (result.isDenied) {
+        confirmDelete(id, false);
+      }
+    });
   }
   function confirmDelete(id,response) {
       

@@ -225,50 +225,39 @@
             <div id="all" class="tab-content active">
               <div class="vdf-table-wrap">
                     <table id="dataFieldsTable"
-                        class="table table-bordered table-striped vdf-datatable-table"
+                        class="table table-striped vdf-datatable-table no-global-table-ui"
                         style="width:100%; font-size:14px;">
-                  <colgroup>
-                    <col class="vdf-w-sr" />
-                    <col class="vdf-w-id" />
-                    <col class="vdf-w-type" />
-                    <col class="vdf-w-name" />
-                    <col class="vdf-w-input" />
-                    <col class="vdf-w-val" />
-                    <col class="vdf-w-common" />
-                    <col class="vdf-w-can" />
-                    <col class="vdf-w-actions" />
-                  </colgroup>
                   <thead>
                     <tr>
-                      <th>Sr. No.</th>
-                      <th>Field ID</th>
-                      <th>Field Type</th>
-                      <th>Field Name</th>
-                      <th>Input Type</th>
-                      <th>Validation Rule</th>
-                      <th>Common Field</th>
-                      <th>Can Protocol</th>
-                      <th class="text-center">Actions</th>
+                      <th class="vdf-th-sr"><span class="vdf-th-label">Sr. No.</span></th>
+                      <th><span class="vdf-th-label">Field ID</span></th>
+                      <th><span class="vdf-th-label">Field Type</span></th>
+                      <th><span class="vdf-th-label">Field Name</span></th>
+                      <th><span class="vdf-th-label">Input Type</span></th>
+                      <th><span class="vdf-th-label">Validation Rule</span></th>
+                      <th><span class="vdf-th-label">Common Field</span></th>
+                      <th><span class="vdf-th-label">Can Protocol</span></th>
+                      <th class="text-center vdf-th-actions"><span class="vdf-th-label">Actions</span></th>
                     </tr>
                   </thead>
                   <tbody>
                     @foreach ($dataFields as $i => $dataField)
                       <tr>
-                        <td>{{$i + 1}}</td>
-                        <td>{{$dataField->id}}</td>
+                        <td data-order="{{ $i + 1 }}">{{ $i + 1 }}</td>
+                        <td data-order="{{ $dataField->id }}">{{ $dataField->id }}</td>
                         <!-- <td>{{$dataField->fieldType == 0 ? 'Configurations' : 'Parameters'}}</td> -->
                         <td class="field-type">{{$dataField->fieldType == 0 ? 'Configurations' : 'Parameters'}}</td>
                         <td>{{$dataField->fieldName}}</td>
                         <td>{{$dataField->inputType}}</td>
                         <td>{{$dataField->validationConfig}}</td>
-                        <td>
+                        <td data-order="{{ $dataField->is_common ? 1 : 0 }}">
                           @if ($dataField->is_common)
                             <span class="vdf-badge vdf-badge-true">True</span>
                           @else
                             <span class="vdf-badge vdf-badge-false">False</span>
                           @endif
                         </td>
-                        <td>
+                        <td data-order="{{ $dataField->is_can_protocol ? 1 : 0 }}">
                           @if ($dataField->is_can_protocol)
                             <span class="vdf-badge vdf-badge-true">True</span>
                           @else
@@ -286,12 +275,14 @@
                                 title="Edit" aria-label="Edit"
                                 onclick="openEditModel(this)"><i class="fa fa-pencil" aria-hidden="true"></i></button>
                             @endif
-                            <form id="deleteForm-{{$dataField->id}}" action="" method="post" class="form-inline" style="display:inline;">
+                            <form action="{{ url($routePrefix . '/delete-category-fields/' . $dataField->id) }}" method="post" class="form-inline" style="display:inline;">
                               @csrf
                               @method('DELETE')
-                              <button type="button" class="btn btn-danger btn-sm vdf-btn-delete"
-                                title="Delete" aria-label="Delete"
-                                onclick="showDeleteModal({{$dataField->id}})"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                              <button type="submit" class="swal-confirm btn btn-danger btn-sm vdf-btn-delete"
+                                data-confirm-msg="Are you sure you want to delete this data field?"
+                                title="Delete" aria-label="Delete">
+                                <i class="fa fa-trash" aria-hidden="true"></i>
+                              </button>
                             </form>
                           </div>
                         </td>
@@ -300,28 +291,6 @@
                   </tbody>
                 </table>
               </div>
-              @foreach ($dataFields as $dataField)
-              <div class="modal" id="deleteModal{{$dataField->id}}" aria-hidden="true">
-                <div class="modal-dialog">
-                  <div class="modal-content">
-                    <div class="modal-header d-flex" style="justify-content: space-between;">
-                      <h5 class="modal-title" id="deleteModalLabel">Confirm delete</h5>
-                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                      </button>
-                    </div>
-                    <div class="modal-body">
-                      Are you sure you want to delete this data field?
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                      <button type="button" class="btn btn-danger"
-                        onclick="confirmDelete({{$dataField->id}},true)">Delete</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              @endforeach
             </div>
             <div id="cat" class="tab-content">
               <p>This is Tab 2 content.</p>
@@ -359,9 +328,6 @@
   //   evt.currentTarget.classList.add("active");
   // }
 
-  function showDeleteModal(id) {
-    $('#deleteModal' + id).modal('show');
-  }
 
   function openEditModel(button) {
     $('#field_type').val("");
@@ -486,12 +452,6 @@
         $('.append-maxValue-options').show();
         break;
     }
-  }
-
-  function confirmDelete(id) {
-    const form = document.getElementById('deleteForm-' + id);
-    form.action = "{{ url($routePrefix . '/delete-category-fields') }}/" + id;
-    form.submit();
   }
 
   $(document).ready(function () {
@@ -757,6 +717,22 @@
 
 
   var vdfDataTable;
+
+  function vdfSyncTableHeaderStyles() {
+    var $dt = $('#dataFieldsTable');
+    if (!$dt.length) return;
+    $dt.find('thead th').each(function () {
+      var $th = $(this);
+      $th.css({ color: '#ffffff', backgroundColor: '#1e293b' });
+      $th.find('.vdf-th-label').css({ color: '#ffffff' });
+      if ($th.hasClass('vdf-th-actions')) {
+        $th.removeClass('sorting sorting_asc sorting_desc').addClass('sorting_disabled');
+      } else {
+        $th.removeClass('sorting_disabled');
+      }
+    });
+  }
+
   $(document).ready(function () {
     if (!window.jQuery || !$.fn.DataTable) return;
     var $dt = $('#dataFieldsTable');
@@ -775,14 +751,27 @@
       autoWidth: false,
       pageLength: 10,
       stripeClasses: [],
+      order: [[0, 'asc']],
       lengthMenu: [[10, 25, 50, 100, 500, -1], [10, 25, 50, 100, 500, 'All']],
+      columnDefs: [
+        { type: 'num', targets: [0, 1] },
+        { orderable: false, targets: 8 }
+      ],
       dom: "<'row'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>",
       initComplete: function () {
+        vdfSyncTableHeaderStyles();
         try { this.api().columns.adjust(); } catch (e) { /* noop */ }
+      },
+      drawCallback: function () {
+        vdfSyncTableHeaderStyles();
       }
+    });
+    $dt.on('order.dt', function () {
+      vdfSyncTableHeaderStyles();
     });
     setTimeout(function () {
       $dt.closest('.dataTables_wrapper').find('.dataTables_filter input').attr('placeholder', 'Search data fields...');
+      vdfSyncTableHeaderStyles();
       if (vdfDataTable) {
         try { vdfDataTable.columns.adjust(); } catch (e) { /* noop */ }
       }

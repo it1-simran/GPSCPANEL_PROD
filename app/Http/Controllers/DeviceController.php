@@ -1507,12 +1507,20 @@ class DeviceController extends Controller
         unset($data[0]); // Remove header row
 
         $processedImeis = []; // Track processed IMEIs
+        $errorImeis = [];
 
         if (count($data) > 0) {
             foreach ($data as $value) {
                 $sr_no = $value[0] ?? '';
                 $name = $value[1] ?? '';
-                $imei = isset($value[2]) ? strval($value[2]) : '';
+                
+                // Clean IMEI: remove non-digits
+                $imei = isset($value[2]) ? preg_replace('/\D/', '', trim($value[2])) : '';
+
+                // Skip empty or extremely short rows (like trailing empty excel rows)
+                if ($imei === "" || strlen($imei) < 14) {
+                    continue;
+                }
 
                 // Skip already processed IMEIs in the sheet
                 if (in_array($imei, $processedImeis)) {
@@ -1558,12 +1566,20 @@ class DeviceController extends Controller
                         $new_imei_html .= '</tr>';
                     }
                 } else {
-                    return json_encode([
-                        "error" => 403,
-                        "error_msg" => $imei . " is invalid. Please correct this."
-                    ]);
+                    $errorImeis[] = $imei;
                 }
             }
+        }
+
+        if (count($errorImeis) > 0) {
+            return json_encode([
+                "error" => 403,
+                "error_msg" => "Invalid IMEI(s): " . implode(", ", $errorImeis) . ". Please correct them.",
+                'dup_imei' => $dup_imei,
+                'new_imei' => $new_imei,
+                'new_imei_html' => $new_imei_html,
+                'dup_imei_html' => $dup_imei_html
+            ]);
         }
 
         return json_encode([
@@ -2013,65 +2029,67 @@ class DeviceController extends Controller
         unset($data[0]);
         if (count($data) > 0) {
             foreach ($data as $value) {
+                // Clean and check IMEI
+                $imei = isset($value[2]) ? preg_replace('/\D/', '', trim($value[2])) : '';
+
+                // Skip empty or extremely short rows
+                if ($imei === "" || strlen($imei) < 14) {
+                    continue;
+                }
 
                 $name = $value[1];
-                $imei = strval($value[2]);
                 $deviceData = Device::Select('*')->where('imei', $imei)->first();
-                if ($imei) {
-                    $arr = [];
-                    $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
-                    if (!is_array($oldConfig)) {
-                        $oldConfig = [];
-                    }
-                    $newConfig = array_merge($oldConfig, $converted);
-                    $arr['configurations'] = json_encode($newConfig);
-                    $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
-                    $arr['can_configurations'] = json_encode($canConverted);
-                    $master_id = Auth::user()->id;
-                    if (in_array($imei, $new_imei_list)) {
-                        $mid = null;
-                        $assign_to_ids = '';
-                        if ($request->user_id) {
-                            $mid = $master_id;
-                            $assign_to_ids = $master_id;
-                        }
-
-                        $arr['name'] = $name;
-                        $arr['imei'] = $imei;
-                        $arr['master_id'] = $mid;
-                        $arr['user_id'] = $request->user_id;
-                        $arr['assign_to_ids'] = $assign_to_ids;
-                        $arr['device_category_id'] = $request->deviceCategory;
-                        Device::create($arr);
+                $arr = [];
+                $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
+                if (!is_array($oldConfig)) {
+                    $oldConfig = [];
+                }
+                $newConfig = array_merge($oldConfig, $converted);
+                $arr['configurations'] = json_encode($newConfig);
+                $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
+                $arr['can_configurations'] = json_encode($canConverted);
+                $master_id = Auth::user()->id;
+                if (in_array($imei, $new_imei_list)) {
+                    $mid = null;
+                    $assign_to_ids = '';
+                    if ($request->user_id) {
+                        $mid = $master_id;
+                        $assign_to_ids = $master_id;
                     }
 
-                    if (in_array($imei, $dup_imei_list) && $dup_type == 'overwrite') {
-                        $mid = null;
-                        $assign_to_ids = '';
+                    $arr['name'] = $name;
+                    $arr['imei'] = $imei;
+                    $arr['master_id'] = $mid;
+                    $arr['user_id'] = $request->user_id;
+                    $arr['assign_to_ids'] = $assign_to_ids;
+                    $arr['device_category_id'] = $request->deviceCategory;
+                    Device::create($arr);
+                }
 
-                        if ($request->user_id) {
-                            $mid = $master_id;
-                            $assign_to_ids = $master_id;
-                        }
-                        $arr['name'] = $name;
-                        $arr['master_id'] = $mid;
-                        $arr['assign_to_ids'] = $assign_to_ids;
-                        $arr['user_id'] = $request->user_id;
-                        // $arr['device_category_id'] = $request->deviceCategory;
-                        // dd($arr);
-                        // dd($imei);
-                        $device = DB::table('devices')->where('imei', $imei)->update($arr);
-                        // dd($deviceData);
-                        $log = Devicelog::create([
-                            'device_id' => $deviceData->id,
-                            'user_id' => $master_id,
-                            'log' => 'Device with imei no ' . $imei . ' Created Successfully',
-                            'action' => 'Created',
-                            'is_active' => 1
-                        ]);
+                if (in_array($imei, $dup_imei_list) && $dup_type == 'overwrite') {
+                    $mid = null;
+                    $assign_to_ids = '';
+
+                    if ($request->user_id) {
+                        $mid = $master_id;
+                        $assign_to_ids = $master_id;
                     }
-                } else {
-                    return back()->with('error', "imei not found in file");
+                    $arr['name'] = $name;
+                    $arr['master_id'] = $mid;
+                    $arr['assign_to_ids'] = $assign_to_ids;
+                    $arr['user_id'] = $request->user_id;
+                    // $arr['device_category_id'] = $request->deviceCategory;
+                    // dd($arr);
+                    // dd($imei);
+                    $device = DB::table('devices')->where('imei', $imei)->update($arr);
+                    // dd($deviceData);
+                    $log = Devicelog::create([
+                        'device_id' => $deviceData->id,
+                        'user_id' => $master_id,
+                        'log' => 'Device with imei no ' . $imei . ' Created Successfully',
+                        'action' => 'Created',
+                        'is_active' => 1
+                    ]);
                 }
             }
 
@@ -2149,65 +2167,67 @@ class DeviceController extends Controller
         unset($data[0]);
         if (count($data) > 0) {
             foreach ($data as $value) {
+                // Clean and check IMEI
+                $imei = isset($value[2]) ? preg_replace('/\D/', '', trim($value[2])) : '';
+
+                // Skip empty or extremely short rows
+                if ($imei === "" || strlen($imei) < 14) {
+                    continue;
+                }
 
                 $name = $value[1];
-                $imei = strval($value[2]);
                 $deviceData = Device::Select('*')->where('imei', $imei)->first();
-                if ($imei) {
-                    $arr = [];
-                    $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
-                    if (!is_array($oldConfig)) {
-                        $oldConfig = [];
-                    }
-                    $newConfig = array_merge($oldConfig, $converted);
-                    $arr['configurations'] = json_encode($newConfig);
-                    $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
-                    $arr['can_configurations'] = json_encode($canConverted);
-                    $master_id = Auth::user()->id;
-                    if (in_array($imei, $new_imei_list)) {
-                        $mid = null;
-                        $assign_to_ids = '';
-                        if ($request->user_id) {
-                            $mid = $master_id;
-                            $assign_to_ids = $master_id;
-                        }
-
-                        $arr['name'] = $name;
-                        $arr['imei'] = $imei;
-                        $arr['master_id'] = $mid;
-                        $arr['user_id'] = $request->user_id;
-                        $arr['assign_to_ids'] = $assign_to_ids;
-                        $arr['device_category_id'] = $request->deviceCategory;
-                        Device::create($arr);
+                $arr = [];
+                $oldConfig = $deviceData ? json_decode($deviceData->configurations, true) : [];
+                if (!is_array($oldConfig)) {
+                    $oldConfig = [];
+                }
+                $newConfig = array_merge($oldConfig, $converted);
+                $arr['configurations'] = json_encode($newConfig);
+                $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
+                $arr['can_configurations'] = json_encode($canConverted);
+                $master_id = Auth::user()->id;
+                if (in_array($imei, $new_imei_list)) {
+                    $mid = null;
+                    $assign_to_ids = '';
+                    if ($request->user_id) {
+                        $mid = $master_id;
+                        $assign_to_ids = $master_id;
                     }
 
-                    if (in_array($imei, $dup_imei_list) && $dup_type == 'overwrite') {
-                        $mid = null;
-                        $assign_to_ids = '';
+                    $arr['name'] = $name;
+                    $arr['imei'] = $imei;
+                    $arr['master_id'] = $mid;
+                    $arr['user_id'] = $request->user_id;
+                    $arr['assign_to_ids'] = $assign_to_ids;
+                    $arr['device_category_id'] = $request->deviceCategory;
+                    Device::create($arr);
+                }
 
-                        if ($request->user_id) {
-                            $mid = $master_id;
-                            $assign_to_ids = $master_id;
-                        }
-                        $arr['name'] = $name;
-                        $arr['master_id'] = $mid;
-                        $arr['assign_to_ids'] = $assign_to_ids;
-                        $arr['user_id'] = $request->user_id;
-                        // $arr['device_category_id'] = $request->deviceCategory;
-                        // dd($arr);
-                        // dd($imei);
-                        $device = DB::table('devices')->where('imei', $imei)->update($arr);
-                        // dd($deviceData);
-                        $log = Devicelog::create([
-                            'device_id' => $deviceData->id,
-                            'user_id' => $master_id,
-                            'log' => 'Device with imei no ' . $imei . ' Created Successfully',
-                            'action' => 'Created',
-                            'is_active' => 1
-                        ]);
+                if (in_array($imei, $dup_imei_list) && $dup_type == 'overwrite') {
+                    $mid = null;
+                    $assign_to_ids = '';
+
+                    if ($request->user_id) {
+                        $mid = $master_id;
+                        $assign_to_ids = $master_id;
                     }
-                } else {
-                    return back()->with('error', "imei not found in file");
+                    $arr['name'] = $name;
+                    $arr['master_id'] = $mid;
+                    $arr['assign_to_ids'] = $assign_to_ids;
+                    $arr['user_id'] = $request->user_id;
+                    // $arr['device_category_id'] = $request->deviceCategory;
+                    // dd($arr);
+                    // dd($imei);
+                    $device = DB::table('devices')->where('imei', $imei)->update($arr);
+                    // dd($deviceData);
+                    $log = Devicelog::create([
+                        'device_id' => $deviceData->id,
+                        'user_id' => $master_id,
+                        'log' => 'Device with imei no ' . $imei . ' Created Successfully',
+                        'action' => 'Created',
+                        'is_active' => 1
+                    ]);
                 }
             }
 

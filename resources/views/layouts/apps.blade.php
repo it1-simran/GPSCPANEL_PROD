@@ -94,18 +94,6 @@ if ($userType === 'admin') {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @include('partials.gps-notifications-assets')
 
-    <!-- ===== Loader: Hide INSTANTLY in head if NOT a reload (before any paint) ===== -->
-    <script>
-        try {
-            var _entries = performance.getEntriesByType('navigation');
-            var _type = _entries.length
-                ? _entries[0].type
-                : (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
-            if (_type !== 'reload') {
-                document.documentElement.classList.add('no-loader');
-            }
-        } catch(e) { /* fail-safe: show loader */ }
-    </script>
 
     <!-- Page loader + header / nav (assets/css/portal/layout-shell.css) -->
     <link rel="stylesheet" href="{{ \App\Support\PortalAssets::publicUrl('assets/css/portal/layout-shell.css') }}">
@@ -885,26 +873,7 @@ if ($userType === 'admin') {
             var loader = document.getElementById('page-loader');
             if (!loader) return;
 
-            // If head script already marked as no-loader, nothing to do
-            if (document.documentElement.classList.contains('no-loader')) return;
-
-            // Fail-safe: default TRUE so loader shows if detection is uncertain
-            var isReload = true;
-            try {
-                var _e = performance.getEntriesByType('navigation');
-                if (_e && _e.length) {
-                    isReload = (_e[0].type === 'reload');
-                } else if (performance.navigation) {
-                    isReload = (performance.navigation.type === 1);
-                }
-            } catch(e) { /* keep true */ }
-
-            if (!isReload) {
-                loader.style.display = 'none';
-                return;
-            }
-
-            // ---- Reload confirmed: show for min 1.5s then fade out ----
+            // ---- Show for min 1.5s then fade out ----
             var MIN_SHOW_MS = 1500;
             var startTime = Date.now();
 

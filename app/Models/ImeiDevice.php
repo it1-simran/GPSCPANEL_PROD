@@ -127,4 +127,15 @@ class ImeiDevice extends Model
 
         return static::$columnCache[$column];
     }
+
+    public static function syncExpiredStatus(): void
+    {
+        $now = now();
+        $endColumn = static::hasTrackerColumn('end_at') ? 'end_at' : 'schedule_end';
+
+        static::where('status', self::STATUS_ON)
+            ->whereNotNull($endColumn)
+            ->where($endColumn, '<', $now)
+            ->update(['status' => self::STATUS_OFF]);
+    }
 }

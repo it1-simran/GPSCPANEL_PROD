@@ -2401,9 +2401,16 @@ class DeviceController extends Controller
 
         $changedFields = [];
         foreach ($newChanges as $key => $value) {
-            if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $value['value']) {
-                $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? $oldChanges[$key]['value'] : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : 'N/A');
-                $newValue = $value['value'];
+            $newValue = $value['value'] ?? null;
+            if ($newValue === null || $newValue === "" || strtolower((string)$newValue) === 'null') {
+                $newValue = "0";
+                $newChanges[$key]['value'] = "0";
+            }
+            $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? null) : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '0');
+            if ($oldValue === null || $oldValue === "" || strtolower((string)$oldValue) === 'null' || $oldValue === 'N/A') {
+                $oldValue = "0";
+            }
+            if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $newValue) {
                 $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
             }
         }
@@ -2474,7 +2481,10 @@ class DeviceController extends Controller
 
         foreach ($newChanges as $key => $value) {
             if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $value['value']) {
-                $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? $oldChanges[$key]['value'] : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : 'N/A');
+                $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? $oldChanges[$key]['value'] : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '0');
+                if ($oldValue === null || $oldValue === "" || strtolower((string)$oldValue) === 'null' || $oldValue === 'N/A') {
+                    $oldValue = "0";
+                }
                 $newValue = $value['value'];
                 $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
             }
@@ -2615,9 +2625,16 @@ class DeviceController extends Controller
             // dd($newChanges);
             $changedFields = [];
             foreach ($newChanges as $key => $value) {
-                if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $value['value']) {
-                    $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? '') : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : 'N/A');
-                    $newValue = $value['value'] ?? '';
+                $newValue = $value['value'] ?? null;
+                if ($newValue === null || $newValue === "" || strtolower((string)$newValue) === 'null') {
+                    $newValue = "0";
+                    $newChanges[$key]['value'] = "0";
+                }
+                $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? null) : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '0');
+                if ($oldValue === null || $oldValue === "" || strtolower((string)$oldValue) === 'null' || $oldValue === 'N/A') {
+                    $oldValue = "0";
+                }
+                if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $newValue) {
                     $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
                 }
             }
@@ -2711,9 +2728,16 @@ class DeviceController extends Controller
             $changedFields = [];
 
             foreach ($newChanges as $key => $value) {
-                if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $value['value']) {
-                    $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? '') : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : 'N/A');
-                    $newValue = $value['value'] ?? '';
+                $newValue = $value['value'] ?? null;
+                if ($newValue === null || $newValue === "" || strtolower((string)$newValue) === 'null') {
+                    $newValue = "0";
+                    $newChanges[$key]['value'] = "0";
+                }
+                $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? null) : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '0');
+                if ($oldValue === null || $oldValue === "" || strtolower((string)$oldValue) === 'null' || $oldValue === 'N/A') {
+                    $oldValue = "0";
+                }
+                if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $newValue) {
                     $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
                 }
             }

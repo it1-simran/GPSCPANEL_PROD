@@ -282,6 +282,38 @@ if ($userType === 'admin') {
         <!--sidebar start-->
         <aside>
             <div id="sidebar" class="nav-collapse md-box-shadowed">
+                @php
+                    $userType = Auth::check() ? Auth::user()->user_type : '';
+                    $areaLabel = 'User Area';
+                    if ($userType === 'Admin') {
+                        $areaLabel = 'Admin Area';
+                    } elseif ($userType === 'Reseller') {
+                        $areaLabel = 'Manufacturer Area';
+                    } elseif ($userType === 'Support') {
+                        $areaLabel = 'Support Area';
+                    } elseif ($userType === 'User') {
+                        $areaLabel = 'Dealer Area';
+                    }
+                @endphp
+
+                <!-- Mobile Sidebar Header -->
+                <div class="sidebar-mobile-header">
+                    <div class="sidebar-mobile-profile">
+                        <div class="sidebar-mobile-avatar">
+                            <svg class="shield-svg" viewBox="0 0 24 24" width="24" height="24">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="sidebar-mobile-userinfo">
+                            <span class="sidebar-mobile-greeting">Hi, {{ ucfirst(Auth::user()->name) }}</span>
+                            <span class="sidebar-mobile-role">{{ $areaLabel }}</span>
+                        </div>
+                    </div>
+                    <button type="button" class="sidebar-mobile-close" id="sidebarMobileCloseBtn" aria-label="Close Sidebar">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+
                 <!-- sidebar menu start-->
                 <div class="leftside-navigation leftside-navigation-scroll">
                     <ul class="sidebar-menu" id="nav-accordion">
@@ -1071,6 +1103,15 @@ if ($userType === 'admin') {
         var overlay = document.getElementById('sidebarOverlay');
         var mainContent = document.getElementById('main-content');
         if (!sidebar || !overlay) return;
+
+        // Mobile close button handler
+        var closeBtn = document.getElementById('sidebarMobileCloseBtn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                closeSidebar();
+            });
+        }
 
         function isMobile() { return window.innerWidth <= 991; }
 

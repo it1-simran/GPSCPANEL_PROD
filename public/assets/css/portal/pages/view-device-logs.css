@@ -236,3 +236,355 @@
       justify-content: center;
     }
   }
+
+  /* ==========================================================================
+     Premium Log Details Modal Styles
+     ========================================================================== */
+  .vdl-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 105000; /* Ensure it is above the sidebar and header */
+    display: none;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    overflow-y: auto; /* Enable modal vertical scrolling */
+    padding: 30px 10px;
+    box-sizing: border-box;
+    outline: 0;
+  }
+  .vdl-modal.fade-in {
+    display: flex;
+  }
+  .vdl-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+  }
+  .vdl-modal.show .vdl-modal-backdrop {
+    opacity: 1;
+  }
+  .vdl-modal-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin: auto; /* Centers when viewport is tall, allows top-scrolling when viewport is small */
+    pointer-events: none;
+    transform: scale(0.95) translateY(10px);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease-out;
+    z-index: 105001;
+  }
+  .vdl-modal.show .vdl-modal-dialog {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ===== TICKET MODAL SAME TO SAME STYLE ===== */
+  .tk-modal-content {
+      border: none !important;
+      border-radius: 14px !important;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18) !important;
+      background: #ffffff !important;
+      color: #334155 !important;
+  }
+  .tk-modal-header {
+      background: #1e293b;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+  }
+  .tk-modal-title { display: flex; align-items: center; gap: 14px; text-align: left; }
+  .tk-modal-icon {
+      width: 40px; height: 40px;
+      background: rgba(118,207,28,0.15);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: #76CF1C; font-size: 18px;
+      border: 1px solid rgba(118,207,28,0.25);
+  }
+  .tk-modal-title h5 { margin: 0; color: #fff; font-size: 16px; font-weight: 700; line-height: 1.2; }
+  .tk-modal-title small { color: #94a3b8; font-size: 12px; font-weight: 400; }
+  .tk-modal-close {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff; width: 32px; height: 32px;
+      border-radius: 8px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; transition: all 0.2s; padding: 0;
+  }
+  .tk-modal-close:hover { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #ef4444; }
+
+  /* Body */
+  .tk-modal-body {
+      padding: 22px;
+      background: #fff;
+      min-width: 0;
+      overflow-x: hidden;
+      overflow-y: auto; /* Enable scrollbar inside the popup */
+      max-height: calc(100vh - 220px); /* Cap height to fit viewport perfectly */
+      text-align: left;
+  }
+
+  /* Webkit custom scrollbars for modal body */
+  .tk-modal-body::-webkit-scrollbar {
+    width: 6px;
+  }
+  .tk-modal-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 3px;
+  }
+  .tk-modal-body::-webkit-scrollbar-thumb {
+    background: rgba(118, 207, 28, 0.35);
+    border-radius: 3px;
+  }
+  .tk-modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(118, 207, 28, 0.55);
+  }
+
+  /* Subject row */
+  .tk-modal-subject-row { margin-bottom: 18px; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .tk-modal-subject {
+      font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+  }
+  .tk-modal-type-pill {
+      display: inline-block;
+      background: rgba(118,207,28,0.12); color: #5a9e12;
+      border: 1px solid rgba(118,207,28,0.3);
+      padding: 3px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; text-transform: capitalize;
+  }
+
+  /* Sections */
+  .tk-modal-section { margin-bottom: 18px; min-width: 0; text-align: left; }
+  .tk-modal-section-title {
+      font-size: 12px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .tk-modal-section-title i { color: #76CF1C; }
+  .tk-modal-desc {
+      background: #f8fafc; border: 1px solid #e9ecef;
+      border-left: 3px solid #76CF1C;
+      border-radius: 6px; padding: 12px 14px;
+      color: #334155; font-size: 13px; line-height: 1.6;
+      max-width: 100%;
+      box-sizing: border-box;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+  }
+
+  .vdl-log-display-container {
+    position: relative;
+    background: #0f172a;
+    border: 1px solid #e9ecef;
+    border-left: 3px solid #76CF1C;
+    border-radius: 6px;
+    overflow: visible;
+  }
+  .vdl-log-code-block {
+    margin: 0;
+    padding: 12px 14px;
+    font-family: 'Fira Code', 'Consolas', 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    background: transparent;
+    color: #e2e8f0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  /* Webkit custom scrollbars for code block */
+  .vdl-log-code-block::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .vdl-log-code-block::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.2);
+  }
+  .vdl-log-code-block::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 3px;
+  }
+  .vdl-log-code-block::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  /* JSON Syntax Highlighting */
+  .json-key {
+    color: #38bdf8; /* sky blue */
+    font-weight: 600;
+  }
+  .json-string {
+    color: #4ade80; /* bright green */
+  }
+  .json-number {
+    color: #fb7185; /* light rose */
+  }
+  .json-boolean {
+    color: #fb923c; /* orange */
+    font-weight: bold;
+  }
+  .json-null {
+    color: #94a3b8; /* slate gray */
+    font-style: italic;
+  }
+
+  /* Copy Button and Tooltip */
+  .vdl-copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.15s ease-out;
+  }
+  .vdl-copy-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .vdl-copy-btn:active {
+    transform: scale(0.92);
+  }
+  .copy-tooltip {
+    position: absolute;
+    bottom: 34px;
+    right: -6px;
+    background: #76CF1C;
+    color: #0f172a;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translateY(6px);
+    box-shadow: 0 3px 8px rgba(118, 207, 28, 0.3);
+    white-space: nowrap;
+  }
+  .vdl-copy-btn.copied .copy-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Info grid */
+  .tk-modal-info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+  }
+  .tk-modal-info-card {
+      background: #f8fafc;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 14px;
+      text-align: left;
+  }
+  .tk-info-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+  }
+  .tk-info-label i { color: #76CF1C; }
+  .tk-info-val { font-weight: 600; color: #1e293b; font-size: 12px; }
+
+  /* Footer */
+  .tk-modal-footer {
+      padding: 14px 22px;
+      background: #f8fafc;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+  }
+  .tk-btn-close {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      color: #64748b;
+      padding: 7px 18px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+  }
+  .tk-btn-close:hover { border-color: #cbd5e1; background: #f1f5f9; }
+
+  @media (max-width: 600px) {
+      .tk-modal-info-grid { grid-template-columns: 1fr; }
+  }
+
+  .vdl-btn-close-modal:active {
+    transform: scale(0.96);
+  }
+
+  /* Premium Centered Eye Toggle Button in Table */
+  .vdl-tbl-eye-btn {
+    background: rgba(118, 207, 28, 0.12) !important;
+    border: 1px solid rgba(118, 207, 28, 0.3) !important;
+    color: #76CF1C !important;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none !important;
+    padding: 0;
+  }
+  .vdl-tbl-eye-btn:hover {
+    background: #76CF1C !important;
+    color: #1e293b !important;
+    border-color: #76CF1C !important;
+    box-shadow: 0 4px 12px rgba(118, 207, 28, 0.3);
+    transform: translateY(-2px) scale(1.08) rotate(5deg);
+  }
+  .vdl-tbl-eye-btn:active {
+    transform: translateY(0) scale(0.95);
+  }
+

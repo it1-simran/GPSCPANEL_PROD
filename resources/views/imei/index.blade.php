@@ -41,6 +41,9 @@
                         @if(session('success'))
                             <div class="alert alert-success">{{ session('success') }}</div>
                         @endif
+                        @if(session('error'))
+                            <div class="alert alert-danger">{{ session('error') }}</div>
+                        @endif
 
                         @php
                             $activeCount = $devices->where('status', \App\Models\ImeiDevice::STATUS_ON)->count();
@@ -95,9 +98,17 @@
                                             <td><span style="font-weight: 600; font-size: 14px; color: #333;">{{ $device->imei }}</span></td>
                                             <td>
                                                 @if($device->status === \App\Models\ImeiDevice::STATUS_ON)
-                                                    <span class="imei-status-pill on"><i class="fa fa-check-circle"></i> ON</span>
+                                                    @if($device->effective_start_at && $device->effective_start_at->isFuture())
+                                                        <span class="imei-status-pill future" style="background-color: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"><i class="fa fa-clock-o"></i> FUTURE</span>
+                                                    @else
+                                                        <span class="imei-status-pill on"><i class="fa fa-check-circle"></i> ON</span>
+                                                    @endif
                                                 @elseif($device->status === \App\Models\ImeiDevice::STATUS_OFF)
-                                                    <span class="imei-status-pill off"><i class="fa fa-power-off"></i> OFF</span>
+                                                    @if($device->recordingHasExpired())
+                                                        <span class="imei-status-pill expired" style="background-color: #fff1f0; color: #f5222d; border: 1px solid #ffa39e; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"><i class="fa fa-exclamation-circle"></i> EXPIRED</span>
+                                                    @else
+                                                        <span class="imei-status-pill off"><i class="fa fa-power-off"></i> OFF</span>
+                                                    @endif
                                                 @else
                                                     <span class="imei-status-pill close"><i class="fa fa-times-circle"></i> CLOSE</span>
                                                 @endif

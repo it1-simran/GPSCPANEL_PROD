@@ -268,35 +268,48 @@ use App\Helper\CommonHelper;
 
                             <div class="row" id="alertHistorySection" style="margin-top: 20px; {{ !empty($alertValidationEnabled) ? '' : 'display:none;' }}">
                                 <div class="col-md-12">
-                                    <div class="panel panel-danger" style="border: 1px solid #fecaca; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.05);">
-                                        <div class="panel-heading" style="background: #fef2f2; color: #991b1b; padding: 12px 20px; border-bottom: 1px solid #fecaca; display: flex; align-items: center; justify-content: space-between;">
-                                            <h4 style="margin: 0; font-size: 15px; font-weight: 800;"><i class="fa fa-bell"></i> Alert Validation History</h4>
-                                            <span class="badge" id="alertHistoryCount" style="background: #ef4444;">0</span>
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <strong>Alert Validation History</strong>
+                                            <span class="badge pull-right" id="alertHistoryCount">0</span>
                                         </div>
-                                        <div class="panel-body" style="padding: 0; max-height: 400px; overflow-y: auto;">
-                                            <table class="table table-hover" id="alertHistoryTable" style="margin-bottom: 0;">
-                                                <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 10;">
+                                        <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
+                                            <table class="table table-bordered table-striped" id="alertHistoryTable">
+                                                <thead>
                                                     <tr>
-                                                        <th style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 20px;">Alert Name</th>
-                                                        <th style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">Status</th>
-                                                        <th style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Description</th>
-                                                        <th style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 20px;">Date & Time</th>
+                                                        <th>Alert Name</th>
+                                                        <th>Status</th>
+                                                        <th>Description</th>
+                                                        <th>Date & Time</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="alertHistoryBody">
                                                     @forelse($alertHistory as $alert)
-                                                        @php $isFail = ($alert['status'] === 'fail' || $alert['status'] === 'triggered'); @endphp
-                                                        <tr class="alert-entry" style="border-left: 4px solid {{ $isFail ? '#ef4444' : '#10b981' }}; background: {{ $isFail ? '#fff5f5' : '#f0fdf4' }};">
-                                                            <td style="padding: 12px 20px; font-weight: 700; color: #1e293b;">{{ $alert['name'] }}</td>
-                                                            <td style="text-align: center;">
-                                                                <span class="badge" style="background: {{ $isFail ? '#ef4444' : '#10b981' }}; font-size: 10px; text-transform: uppercase;">{{ $isFail ? 'FAIL' : 'PASS' }}</span>
+                                                        @php 
+                                                            $isFail = ($alert['status'] === 'fail' || $alert['status'] === 'triggered');
+                                                        @endphp
+                                                        <tr>
+                                                            <td>{{ $alert['name'] }}</td>
+                                                            <td>
+                                                                @if($isFail)
+                                                                    <span class="label label-danger">FAIL</span>
+                                                                @else
+                                                                    <span class="label label-success">PASS</span>
+                                                                @endif
                                                             </td>
-                                                            <td style="font-size: 12px; color: #475569;">{{ $alert['description'] }}</td>
-                                                            <td style="padding: 12px 20px; color: #64748b; font-family: monospace; font-size: 12px;">{{ $alert['timestamp'] }}</td>
+                                                            <td>
+                                                                @php
+                                                                    $conditions = array_filter(array_map('trim', explode(';', $alert['description'])));
+                                                                @endphp
+                                                                @foreach($conditions as $cond)
+                                                                    <span class="label {{ $isFail ? 'label-danger' : 'label-success' }}" style="margin-right: 3px; display: inline-block;">{{ $cond }}</span>
+                                                                @endforeach
+                                                            </td>
+                                                            <td>{{ $alert['timestamp'] }}</td>
                                                         </tr>
                                                     @empty
                                                         <tr id="noAlertsRow">
-                                                            <td colspan="4" class="text-center" style="padding: 30px; color: #94a3b8; font-style: italic;">No alerts evaluated in the current window.</td>
+                                                            <td colspan="4" class="text-center text-muted">No alerts evaluated in the current window.</td>
                                                         </tr>
                                                     @endforelse
                                                 </tbody>
@@ -480,26 +493,34 @@ $(document).ready(function() {
         alertCount++;
         $('#noAlertsRow').remove();
         
-        const rowBg = isFail ? '#fff5f5' : '#f0fdf4';
-        const rowBorder = isFail ? '#ef4444' : '#10b981';
-        const badgeBg = isFail ? '#ef4444' : '#10b981';
-        const statusLabel = isFail ? 'FAIL' : 'PASS';
+        const rowClass = isFail ? 'alert-row-fail' : 'alert-row-pass';
+        const badgeClass = isFail ? 'alert-badge-fail-premium' : 'alert-badge-pass-premium';
+        const badgeLabel = isFail ? 'FAIL' : 'PASS';
+        const chipClass = isFail ? 'chip-fail' : 'chip-pass';
+
+        const conditions = alert.description.split(';').map(c => c.trim()).filter(Boolean);
+        let chipsHtml = '';
+        conditions.forEach(function(cond) {
+            chipsHtml += `<span class="condition-chip-premium ${chipClass}">${escapeHtml(cond)}</span>`;
+        });
 
         $('#alertHistoryBody').prepend(`
-            <tr class="alert-entry" style="border-left: 4px solid ${rowBorder}; background: ${rowBg};">
-                <td style="padding: 12px 20px; font-weight: 700; color: #1e293b;">${escapeHtml(alert.name)}</td>
-                <td style="text-align: center;">
-                    <span class="badge" style="background: ${badgeBg}; font-size: 10px; text-transform: uppercase;">${statusLabel}</span>
+            <tr class="alert-entry-premium ${rowClass}">
+                <td style="padding: 16px 20px; font-weight: 800; color: #0f172a; font-size: 13px; word-break: break-word; white-space: normal;">${escapeHtml(alert.name)}</td>
+                <td style="padding: 16px 10px; text-align: center;">
+                    <span class="badge ${badgeClass}">${badgeLabel}</span>
                 </td>
-                <td style="font-size: 12px; color: #475569;">${escapeHtml(alert.description)}</td>
-                <td style="padding: 12px 20px; color: #64748b; font-family: monospace; font-size: 12px;">${escapeHtml(alert.timestamp)}</td>
+                <td style="padding: 16px 10px; font-size: 12px; word-break: break-word; white-space: normal;">
+                    ${chipsHtml}
+                </td>
+                <td style="padding: 16px 20px; color: #475569; font-family: 'Consolas', 'Monaco', monospace; font-size: 12.5px; word-break: break-word; white-space: normal;"><i class="fa fa-calendar-o" style="color: #94a3b8; margin-right: 6px;"></i>${escapeHtml(alert.timestamp)}</td>
             </tr>
         `);
         
         $('#alertHistoryCount').text(alertCount);
 
         // Keep table size manageable
-        const rows = $('#alertHistoryBody tr.alert-entry');
+        const rows = $('#alertHistoryBody tr.alert-entry-premium');
         if (rows.length > 100) {
             rows.last().remove();
         }

@@ -26,6 +26,8 @@ class LiveTrackerController extends Controller
 
     public function index(Request $request)
     { 
+        ImeiDevice::syncExpiredStatus();
+
         $imei = $request->query('imei');
         $device = $imei ? ImeiDevice::with(['commands' => function ($query) {
             $query->latest()->limit(15);
@@ -206,6 +208,8 @@ class LiveTrackerController extends Controller
 
     public function fetchLogs(Request $request, $imei)
     {
+        ImeiDevice::syncExpiredStatus();
+
         if (session()->isStarted()) {
             session()->save();
         }

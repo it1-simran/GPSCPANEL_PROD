@@ -13,7 +13,7 @@
 // Configuration
 $baseUrl = "http://127.0.0.1:8000";
 $apiIngestUrl = "$baseUrl/api/packets/ingest";
-$imei = isset($argv[1]) ? $argv[1] : "490154203237518";
+$imei = isset($argv[1]) ? $argv[1] : "866192071233611";
 $trafficIterations = 15;
 $trafficDelay = 1; // Seconds between traffic packets
 

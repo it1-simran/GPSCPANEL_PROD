@@ -15,12 +15,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 <!--main content start-->
 <div class="modal" id="imeiPreviewModal" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content amd-can-modal-content">
+            <div class="modal-header amd-can-modal-header" style="display: flex; align-items: center; justify-content: space-between;">
+                <h4 class="modal-title"><strong>IMEI LIST</strong></h4>
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-                <h4 class="modal-title"><strong>IMEI List</strong></h4>
             </div>
-            <div class="modal-body">
+            <div class="modal-body amd-can-modal-body">
                 <div class="row">
                     <div class="col-md-6">
                         Total New IMEI : <span class="total_new_imei"></span>
@@ -67,8 +67,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         </table>
                     </div>
                 </div>
-                <div class="dup_action_row margin-top-15">
-                    <div class="form-group margin-bottom-5">
+                <div class="dup_action_row">
+                    <div class="form-group">
                         <label class="control-label">
                             <input checked="checked" type="radio" class="selectDupImeiType" value="overwrite" name="dup_type">
                             Overwrite Duplicate IMEI
@@ -82,7 +82,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     </div>
                 </div>
             </div>
-            <div class="modal-footer text-center">
+            <div class="modal-footer amd-can-modal-footer text-center">
                 <button type="button" class="btn btn-primary btn-raised submit_sel_imei"><i class="fa fa-check"></i> Import Selected IMEI Button</button>
             </div>
         </div>
@@ -163,44 +163,71 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 </div>
                             </div>
                             <div class="modal" id="excelFormatModal" tabindex="-1" role="dialog" aria-labelledby="formatModalLabel" aria-hidden="true">
-                                <div class="modal-dialog modal-lg" role="document">
+                                <div class="modal-dialog modal-md" role="document">
                                     <div class="modal-content">
-                                        <div class="modal-header d-flex" style="justify-content: space-between;">
-                                            <h5 class="modal-title" id="formatModalLabel">Excel File Format Instructions</h5>
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="formatModalLabel">
+                                                <i class="fa fa-file-excel-o"></i> EXCEL FILE FORMAT INSTRUCTIONS
+                                            </h5>
                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                 <span>&times;</span>
                                             </button>
                                         </div>
                                         <div class="modal-body">
-                                            <div class="mb-3">
-                                                <p class="mb-2 text-primary font-weight-bold">
-                                                    <i class="fa fa-info-circle"></i> Please ensure your Excel file follows the correct format:
-                                                </p>
-                                                <ul class="list-group list-group-flush">
-                                                    <li class="list-group-item">
-                                                        <strong>SL NO</strong>
-                                                        <span class="badge badge-pill badge-secondary ml-2">e.g. 1, 2, 3...</span>
-                                                        <br><small class="text-muted">Serial number of the record</small>
-                                                    </li>
-                                                    <li class="list-group-item">
-                                                        <strong>Name</strong>
-                                                        <span class="badge badge-pill badge-secondary ml-2">e.g. John Doe, Device X</span>
-                                                        <br><small class="text-muted">Name of the device</small>
-                                                    </li>
-                                                    <li class="list-group-item">
-                                                        <strong>IMEI</strong>
-                                                        <span class="badge badge-pill badge-secondary ml-2">15 digits</span>
-                                                        <br><small class="text-muted">Valid IMEI number (numeric only)</small>
-                                                    </li>
-                                                </ul>
+                                            <div class="instruction-intro">
+                                                <i class="fa fa-info-circle"></i> Please ensure your Excel file follows the correct format:
                                             </div>
 
-                                            <div class="alert alert-warning">
-                                                <i class="fa fa-exclamation-triangle"></i>
-                                                Please save your file as <code>.xlsx</code> or <code>.xls</code> before uploading.
+                                            <div class="format-cards">
+                                                <div class="format-card">
+                                                    <div class="format-icon">
+                                                        <i class="fa fa-list-ol"></i>
+                                                    </div>
+                                                    <div class="format-content">
+                                                        <div class="format-title">
+                                                            SL NO
+                                                            <span class="format-badge">e.g. 1, 2, 3...</span>
+                                                        </div>
+                                                        <p class="format-desc">Serial number of the record to maintain order.</p>
+                                                    </div>
+                                                </div>
+
+                                                <div class="format-card">
+                                                    <div class="format-icon">
+                                                        <i class="fa fa-tag"></i>
+                                                    </div>
+                                                    <div class="format-content">
+                                                        <div class="format-title">
+                                                            Name
+                                                            <span class="format-badge">e.g. John Doe, Device X</span>
+                                                        </div>
+                                                        <p class="format-desc">Assign a unique and recognizable name to each device.</p>
+                                                    </div>
+                                                </div>
+
+                                                <div class="format-card">
+                                                    <div class="format-icon">
+                                                        <i class="fa fa-barcode"></i>
+                                                    </div>
+                                                    <div class="format-content">
+                                                        <div class="format-title">
+                                                            IMEI
+                                                            <span class="format-badge">15 digits</span>
+                                                        </div>
+                                                        <p class="format-desc">Valid IMEI number. Must consist of numeric characters only.</p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="text-right">
-                                                <a href="{{ asset('assets/imeiDocument.xlsx') }}" target="_blank" class="btn btn-sm btn-success">
+
+                                            <div class="premium-alert">
+                                                <i class="fa fa-exclamation-triangle"></i>
+                                                <div>
+                                                    Please ensure to save your file in <code>.xlsx</code> or <code>.xls</code> format before proceeding with the upload.
+                                                </div>
+                                            </div>
+
+                                            <div class="modal-footer-custom">
+                                                <a href="{{ asset('assets/imeiDocument.xlsx') }}" target="_blank" class="btn-download">
                                                     <i class="fa fa-download"></i> Download Sample File
                                                 </a>
                                             </div>

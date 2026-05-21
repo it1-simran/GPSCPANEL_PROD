@@ -249,11 +249,240 @@ table#esim.dataTable tbody > tr > td:first-child {
     border-radius: 7px !important;
     font-weight: 700;
 }
-.tv-modal .btn-primary {
-    background: linear-gradient(135deg, #76CF1C, #5fa816) !important;
+
+/* ==========================================================================
+   Premium Ticket Details Modal Styles
+   ========================================================================== */
+.tv-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 105000; /* Ensure it is above the sidebar and header */
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+  overflow-y: auto; /* Enable modal vertical scrolling */
+  padding: 30px 10px;
+  box-sizing: border-box;
+  outline: 0;
+}
+.tv-details-modal.fade-in {
+  display: flex;
+}
+.tv-details-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.25s ease-out;
+}
+.tv-details-modal.show .tv-details-modal-backdrop {
+  opacity: 1;
+}
+.tv-details-modal-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: auto; /* Centers when viewport is tall, allows top-scrolling when viewport is small */
+  pointer-events: none;
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease-out;
+  z-index: 105001;
+}
+.tv-details-modal.show .tv-details-modal-dialog {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ===== TICKET MODAL SAME TO SAME STYLE ===== */
+.tk-modal-content {
     border: none !important;
-    color: #1e293b !important;
-    border-radius: 7px !important;
-    font-weight: 800;
-    box-shadow: 0 6px 14px rgba(118, 207, 28, 0.25);
+    border-radius: 14px !important;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18) !important;
+}
+.tk-modal-header {
+    background: #1e293b;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.tk-modal-title { display: flex; align-items: center; gap: 14px; }
+.tk-modal-icon {
+    width: 40px; height: 40px;
+    background: rgba(118,207,28,0.15);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #76CF1C; font-size: 18px;
+    border: 1px solid rgba(118,207,28,0.25);
+}
+.tk-modal-title h5 { margin: 0; color: #fff; font-size: 16px; font-weight: 700; line-height: 1.2; }
+.tk-modal-title small { color: #94a3b8; font-size: 12px; font-weight: 400; }
+.tk-modal-close {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff; width: 32px; height: 32px;
+    border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; transition: all 0.2s; padding: 0;
+}
+.tk-modal-close:hover { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #ef4444; }
+
+/* Body - Scrollable to prevent cutoff under the header */
+.tk-modal-body {
+    padding: 22px;
+    background: #fff;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: calc(100vh - 220px);
+}
+
+/* Webkit custom scrollbars for details modal body */
+.tk-modal-body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.tk-modal-body::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.05);
+}
+.tk-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(118, 207, 28, 0.35);
+  border-radius: 3px;
+}
+.tk-modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(118, 207, 28, 0.55);
+}
+
+/* Subject row */
+.tk-modal-subject-row { margin-bottom: 18px; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tk-modal-subject {
+    font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.tk-modal-type-pill {
+    display: inline-block;
+    background: rgba(118,207,28,0.12); color: #5a9e12;
+    border: 1px solid rgba(118,207,28,0.3);
+    padding: 3px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; text-transform: capitalize;
+}
+
+/* Sections */
+.tk-modal-section { margin-bottom: 18px; min-width: 0; text-align: left; }
+.tk-modal-section-title {
+    font-size: 12px; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.tk-modal-section-title i { color: #76CF1C; }
+.tk-modal-desc {
+    background: #f8fafc; border: 1px solid #e9ecef;
+    border-left: 3px solid #76CF1C;
+    border-radius: 6px; padding: 12px 14px;
+    color: #334155; font-size: 13px; line-height: 1.6;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* File buttons */
+.tk-file-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.tk-file-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border: 1px solid #1e293b;
+    border-radius: 6px; color: #1e293b;
+    font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.2s;
+}
+.tk-file-btn:hover { background: #1e293b; color: #76CF1C; text-decoration: none; }
+
+/* Info grid */
+.tk-modal-info-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; margin-top: 18px;
+}
+.tk-modal-info-card {
+    background: #f8fafc; border: 1px solid #e9ecef;
+    border-radius: 8px; padding: 14px;
+    text-align: left;
+}
+.tk-info-label {
+    font-size: 11px; font-weight: 700; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
+}
+.tk-info-label i { color: #76CF1C; }
+.tk-info-val { font-weight: 600; color: #1e293b; font-size: 12px; }
+
+/* Status badges */
+.tk-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+.tk-badge-resolved { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 3px 8px rgba(34,197,94,0.25); }
+.tk-badge-open     { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; box-shadow: 0 3px 8px rgba(245,158,11,0.25); }
+
+/* Footer */
+.tk-modal-footer {
+    padding: 14px 22px; background: #f8fafc;
+    border-top: 1px solid #e9ecef;
+    display: flex; justify-content: flex-end; gap: 10px;
+}
+.tk-btn-close {
+    background: #fff; border: 1px solid #e2e8f0; color: #64748b;
+    padding: 7px 18px; border-radius: 7px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
+}
+.tk-btn-close:hover { border-color: #cbd5e1; background: #f1f5f9; }
+
+@media (max-width: 600px) {
+    .tk-modal-info-grid { grid-template-columns: 1fr; }
+}
+
+/* Premium Centered Eye Toggle Button in Table */
+.tv-tbl-eye-btn {
+  background: rgba(118, 207, 28, 0.12) !important;
+  border: 1px solid rgba(118, 207, 28, 0.3) !important;
+  color: #76CF1C !important;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none !important;
+  padding: 0;
+}
+.tv-tbl-eye-btn:hover {
+  background: #76CF1C !important;
+  color: #1e293b !important;
+  border-color: #76CF1C !important;
+  box-shadow: 0 4px 12px rgba(118, 207, 28, 0.3);
+  transform: translateY(-2px) scale(1.08) rotate(5deg);
+}
+.tv-tbl-eye-btn:active {
+  transform: translateY(0) scale(0.95);
 }

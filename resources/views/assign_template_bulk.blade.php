@@ -300,70 +300,133 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     </section>
 </section>
 
+<style>
+    #canModal .modal-content {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    #canModal .modal-header {
+        background-color: #7bc62d;
+        color: #000;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    #canModal .modal-title {
+        font-weight: 700;
+        font-size: 16px;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+    #canModal .close {
+        color: #fff;
+        opacity: 1;
+        text-shadow: none;
+        font-size: 24px;
+        font-weight: normal;
+        margin-top: -5px;
+    }
+    #canModal .modern-can-label {
+        font-weight: 600;
+        color: #334155;
+        font-size: 14px;
+        margin-bottom: 6px;
+        display: block;
+        text-align: left;
+    }
+    #canModal .modern-input {
+        height: 42px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        box-shadow: none;
+        color: #475569;
+        font-size: 14px;
+        padding: 0 15px;
+        width: 100%;
+        transition: all 0.2s;
+        background-color: #fff;
+    }
+    #canModal .modern-input:focus {
+        border-color: #7bc62d;
+        box-shadow: 0 0 0 3px rgba(123, 198, 45, 0.2);
+        outline: none;
+    }
+    #canModal .require {
+        color: #ef4444;
+        font-weight: bold;
+        margin-left: 3px;
+    }
+    #canModal .modern-col {
+        margin-bottom: 20px;
+    }
+    #canModal .modal-footer {
+        border-top: 1px solid #e2e8f0;
+        padding: 15px 20px;
+        background-color: #f8fafc;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+</style>
+
 <div class="modal" id="canModal" aria-hidden="true">
-    <div class="modal-dialog modal-md">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
-                        class="fa fa-times"></i></button>
-                <h5 class="modal-title">CAN Protocol Configuration</h5>
+                <h5 class="modal-title"><i class="fa fa-cog" style="margin-right: 8px;"></i>CAN PROTOCOL CONFIGURATION</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        <form id="canForm">
-                            <!-- Protocol Selection -->
-                            <div class="isCanEnable" style="display:none;">
-                                <div style="margin:10px 0px;">
-                                    <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                    <select class="form-control" id="can_channel" name="canConfiguration[canChannel]" required>
-                                        <option value="">-- Select CAN Channel --</option>
-                                        <option value="1">CAN 1</option>
-                                        <option value="2">CAN 2</option>
-                                        <option value="3">CAN 3</option>
-                                        <option value="4">CAN 4</option>
-                                    </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                    <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                    <select id="can_baud_rate" name="canConfiguration[can_baud_rate]" class="form-control" required>
-                                        <option value="">-- Select Baud Rate --</option>
-                                        <option value="500">500 kbps</option>
-                                        <option value="250">250 kbps</option>
-                                    </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                    <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                    <select id="can_id_type" name="canConfiguration[can_id_type]" class="form-control" required>
-                                        <option value="">-- Select Can ID --</option>
-                                        <option value="0">Standard</option>
-                                        <option value="1">Extended</option>
-                                    </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                    <label for="curl" class="control-label padding-left-3">Can Protocol<span class="require">*</span></label>
-                                    <select class="" id="can_protocol" name="canConfiguration[can_protocol]" onChange="selectedCanProtocol()" required>
-                                        <option value="">-- Select Can Protocol -- </option>
-                                        <option value="1">J1979</option>
-                                        <option value="2">J1939</option>
-                                        <option value="3">Custom CAN</option>
-                                    </select>
-                                </div>
+            <div class="modal-body" style="padding: 25px;">
+                <form id="canForm">
+                    <!-- Protocol Selection -->
+                    <div class="isCanEnable" style="display:none;">
+                        <div class="row">
+                            <div class="col-md-6 modern-col">
+                                <label class="modern-can-label">Can Channel <span class="require">*</span></label>
+                                <select class="modern-input" id="can_channel" name="canConfiguration[canChannel]" required>
+                                    <option value="">-- Select CAN Channel --</option>
+                                    <option value="1">CAN 1</option>
+                                    <option value="2">CAN 2</option>
+                                    <option value="3">CAN 3</option>
+                                    <option value="4">CAN 4</option>
+                                </select>
                             </div>
-                            <div id="dynamicCanFields"></div>
-                            <!-- Submit -->
-                            <!-- <button type="button" class="btn btn-success mt-4">Generate JSON</button> -->
-                        </form>
+                            <div class="col-md-6 modern-col">
+                                <label class="modern-can-label">Can Baud Rate <span class="require">*</span></label>
+                                <select id="can_baud_rate" name="canConfiguration[can_baud_rate]" class="modern-input" required>
+                                    <option value="">-- Select Baud Rate --</option>
+                                    <option value="500">500 kbps</option>
+                                    <option value="250">250 kbps</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 modern-col">
+                                <label class="modern-can-label">Can ID Type <span class="require">*</span></label>
+                                <select id="can_id_type" name="canConfiguration[can_id_type]" class="modern-input" required>
+                                    <option value="">-- Select Can ID --</option>
+                                    <option value="0">Standard</option>
+                                    <option value="1">Extended</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 modern-col">
+                                <label class="modern-can-label">CAN Protocol <span class="require">*</span></label>
+                                <select class="modern-input" id="can_protocol" name="canConfiguration[can_protocol]" onChange="selectedCanProtocol()" required>
+                                    <option value="">-- Select Can Protocol --</option>
+                                    <option value="1">J1979</option>
+                                    <option value="2">J1939</option>
+                                    <option value="3">Custom CAN</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-12 text-right">
-                        <button type="button" class="btn btn-success mt-4" onclick="generateJSON()">Submit</button>
-                    </div>
-                </div>
-                <!-- Output JSON -->
-                <!-- <div class="mt-4">
-               <label class="form-label">Generated JSON:</label>
-               <textarea class="form-control" id="outputJson" rows="10" readonly></textarea>
-               </div> -->
+                    <div id="dynamicCanFields"></div>
+                </form>
+            </div>
+            <div class="modal-footer text-right">
+                <button type="button" class="btn btn-light" data-dismiss="modal" style="padding: 8px 24px; border-radius: 6px; border: 1px solid #cbd5e1; background: #e2e8f0; color: #334155; font-weight: 600;"><i class="fa fa-times" style="margin-right: 5px;"></i> Cancel</button>
+                <button type="button" class="btn" onclick="generateJSON()" style="padding: 8px 24px; border-radius: 6px; background: #7bc62d; color: #fff; font-weight: 600; margin-left: 10px;"><i class="fa fa-check" style="margin-right: 5px;"></i> Save Configuration</button>
             </div>
         </div>
     </div>
@@ -408,7 +471,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 
                     let inputHtml = `<input type="hidden" name="idCanParameters[${fieldId}]" value="${field.id}" />`;
                     inputHtml += `<input type="hidden" name="CanParametersType[${fieldId}]" value="${inputType}" />`;
-                    let attr = `id="${fieldId}" name="canConfiguration[${fieldId}]" class="form-control ip-url-space"  placeholder="Enter ${field.fieldName}"`;
+                    let attr = `id="${fieldId}" name="canConfiguration[${fieldId}]" class="modern-input" placeholder="Enter ${field.fieldName}"`;
 
                     if (inputType === 'number') {
                         if (validation.numberInput) {
@@ -466,12 +529,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         var maxValue = validation.maxValueInput || 0;
                         inputHtml += "<div id='" + fieldId + "_wrapper' class='text-array-wrapper'>" +
                             values.map(function(val, index) {
-                                return "<div class='text-array-item d-flex align-items-center mb-2'>" +
-                                    "<input type='text' id='" + fieldId + index + "' name='canConfiguration[" + fieldId + "][]' class='form-control text-array-space me-2' placeholder='Enter " + field.fieldName + "' value='" + val.trim() + "' />" +
-                                    "<button type='button' class='btn btn-sm btn-danger remove-text-input'><i class='fa fa-minus'></i></button>" +
+                                return "<div class='text-array-item mb-2' style='display: flex; align-items: center; margin-bottom: 10px;'>" +
+                                    "<input type='text' id='" + fieldId + index + "' name='canConfiguration[" + fieldId + "][]' class='modern-input text-array-space' style='flex: 1;' placeholder='Enter " + field.fieldName + "' value='" + val.trim() + "' />" +
+                                    "<button type='button' class='btn btn-danger remove-text-input' style='margin-left: 10px; min-width: 42px; height: 42px; border-radius: 6px; padding: 0; display: flex; align-items: center; justify-content: center;'><i class='fa fa-minus'></i></button>" +
                                     "</div>";
                             }).join("") +
-                            "<button type='button' class='btn btn-sm btn-primary add-text-input mt-1'><i class='fa fa-plus'></i> Add</button>" +
+                            "<button type='button' class='btn btn-primary add-text-input mt-1' style='border-radius: 6px; font-weight: 600; padding: 6px 16px;'><i class='fa fa-plus' style='margin-right: 5px;'></i> Add</button>" +
                             "</div>";
                         inputHtml += "<input type='hidden' id='" + fieldId + "' name='canConfiguration[" + fieldId + "]' />";
                         setTimeout(function() {
@@ -482,9 +545,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                     alert("You can only add up to " + maxValue + " inputs for " + field.fieldName + ".");
                                     return;
                                 }
-                                var newInput = "<div class='text-array-item d-flex align-items-center mb-2'>" +
-                                    "<input type='text' id='" + fieldId + "_" + count + "' name='canConfiguration[" + fieldId + "][]' class='form-control text-array-space me-2' placeholder='Enter " + field.fieldName + "' />" +
-                                    "<button type='button' class='btn btn-sm btn-danger remove-text-input'><i class='fa fa-minus'></i></button>" +
+                                var newInput = "<div class='text-array-item mb-2' style='display: flex; align-items: center; margin-bottom: 10px;'>" +
+                                    "<input type='text' id='" + fieldId + "_" + count + "' name='canConfiguration[" + fieldId + "][]' class='modern-input text-array-space' style='flex: 1;' placeholder='Enter " + field.fieldName + "' />" +
+                                    "<button type='button' class='btn btn-danger remove-text-input' style='margin-left: 10px; min-width: 42px; height: 42px; border-radius: 6px; padding: 0; display: flex; align-items: center; justify-content: center;'><i class='fa fa-minus'></i></button>" +
                                     "</div>";
                                 $(this).before(newInput);
                             });
@@ -507,7 +570,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                             updateHiddenValue();
                         }, 100);
                     } else if (inputType === 'hex') {
-                        let attr1 = `id="${fieldId}" name="canConfiguration[${fieldId}]" class="form-control text-array-space me-2"`;
+                        let attr1 = `id="${fieldId}" name="canConfiguration[${fieldId}]" class="modern-input text-array-space me-2"`;
                         let maxValue = validation.maxValueInput || 0;
                         if (validation.maxValueInput) {
                             attr1 += `maxlength="${validation.maxValueInput}"`;
@@ -522,16 +585,13 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         inputHtml += `<input type="text" ${attr} />`;
                     }
 
-                    html += `<div class="col-md-12 padding-3 padding-top-10">
-                  <div class="form-group" id="modalInput">
-                      <label for="${fieldId}" class="control-label padding-left-14" required>
+                    html += `<div class="col-md-6 modern-col">
+                      <label for="${fieldId}" class="modern-can-label">
                           ${field.fieldName} <span class="require">*</span>
                       </label>
-                      <div class="col-lg-12">
-                          ${inputHtml}
-                          <div class="col-sm-12 alert alert-danger ${fieldId}_error" role="alert" style="display:none"></div>
-                      </div>
-                  </div></div>`;
+                      ${inputHtml}
+                      <div class="col-sm-12 alert alert-danger ${fieldId}_error" role="alert" style="display:none"></div>
+                  </div>`;
                 });
                 html += '</div>';
                 $('#dynamicCanFields').html(html).show();
@@ -595,9 +655,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         // $('#s2example-2').select2({
         //     // Configuration options
         // });
-        $('#can_protocol').select2({
-            placeholder: "Search and Select",
-        });
+        // $('#can_protocol').select2({
+        //     placeholder: "Search and Select",
+        // });
         $("#user_id").select2({
             placeholder: 'Search and Select'
         });

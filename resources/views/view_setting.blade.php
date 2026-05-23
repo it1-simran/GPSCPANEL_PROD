@@ -87,61 +87,77 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="form-template-configuration" style="display:none;">
+                                            <div class="form-template-configuration" style="display:none; padding: 25px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px;">
                                                 <form class="validator form-horizontal " id="updateDeviceInfoConfiguration" method="post" action="{{ url($url_type . '/update-template-info-configurations/' . $template_info['id']) }}">
                                                     @method('PATCH')
                                                     @csrf
-                                                    <div class="form-group "></div>
-                                                    @if(Auth::user()->user_type!='Support')
-                                                    <div class="form-group ">
-                                                        <label for="curl" class="control-label col-lg-3"><b>Mark as Default Template</b></label>
-                                                        <div class="col-lg-6">
-                                                            <input type="checkbox" name="default_template" id="default_template" {{ $template_info['default_template'] == 1 ? 'checked' : '' }} style="    width: 40px;height: 25px">
-                                                        </div>
-                                                    </div>
-                                                    @endif
-                                                    <div class="form-group ">
-                                                        <label for="curl" class="control-label col-lg-3">Name (optional)<span class="require">*</span></label>
-                                                        <div class="col-lg-6">
-                                                            <input class="form-control" placeholder="Enter Device Name" id="name" type="text" name="template_name" value="{{ $template_info['template_name']}}">
-                                                        </div>
-                                                    </div>
-                                                    @if(Auth::user()->user_type=='Admin')
-                                                    <div class="form-group ">
-                                                        <label for="curl" class="control-label col-lg-3">Ping interval <span class="require">*</span></label>
-                                                        <div class="col-lg-6">
-                                                            <input class="form-control" placeholder="Enter Ping Interval" id="ping_interval" type="Number" name="configuration[ping_interval]" value="{{isset($configurations['ping_interval']['value']) ? $configurations['ping_interval']['value'] :''}}" onkeypress="return blockSpecialCharTransmission(event)" required />
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label for="curl" class="control-label col-lg-3">
-                                                            Template Edit Permission <span class="require">*</span>
-                                                        </label>
-                                                        <div class="col-lg-6">
-                                                            <label>Enable</label>
-                                                            <input
-                                                                {{ isset($configurations['is_editable']['value']) && $configurations['is_editable']['value'] == '1' ? 'checked' : '' }}
-                                                                type="radio"
-                                                                name="configuration[is_editable]"
-                                                                value="1"
-                                                                style="height:20px; width:20px; vertical-align: middle;"
-                                                                required>
-                                                            <label>Disable</label>
-                                                            <input
-                                                                {{ isset($configurations['is_editable']['value']) && $configurations['is_editable']['value'] == '0' ? 'checked' : '' }}
-                                                                type="radio"
-                                                                name="configuration[is_editable]"
-                                                                value="0"
-                                                                style="height:20px; width:20px; vertical-align: middle;"
-                                                                required>
-                                                        </div>
-                                                    </div>
+                                                    
+                                                    <style>
+                                                        .modern-form-group { display: flex; align-items: center; margin-bottom: 20px; }
+                                                        .modern-label { font-weight: 600; color: #334155; text-align: right; padding-right: 20px; font-size: 14px; margin-bottom: 0; }
+                                                        .modern-input { height: 42px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; color: #475569; font-size: 14px; padding: 0 15px; width: 100%; transition: all 0.2s; }
+                                                        .modern-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); outline: none; }
+                                                        .modern-checkbox { width: 22px; height: 22px; cursor: pointer; accent-color: #3b82f6; margin: 0; }
+                                                        .modern-radio-group { display: flex; align-items: center; gap: 20px; height: 42px; }
+                                                        .modern-radio-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: #475569; margin: 0; }
+                                                        .modern-radio { width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6; margin: 0; }
+                                                        .require { color: #ef4444; font-weight: bold; margin-left: 3px; }
+                                                    </style>
 
+                                                    @if(Auth::user()->user_type!='Support')
+                                                    <div class="row modern-form-group">
+                                                        <div class="col-lg-3">
+                                                            <label class="modern-label">Mark as Default Template</label>
+                                                        </div>
+                                                        <div class="col-lg-6 d-flex align-items-center" style="height: 42px;">
+                                                            <input type="checkbox" name="default_template" id="default_template" class="modern-checkbox" {{ $template_info['default_template'] == 1 ? 'checked' : '' }}>
+                                                        </div>
+                                                    </div>
                                                     @endif
-                                                    <div class="col-sm-12 bg-margin-top text-right">
-                                                        <input type="hidden" id="device_id" name="device_id" value="{{$template_info['id']}}">
-                                                        <button type="submit" class="btn btn-primary updateDeviceName">Save</button>
-                                                        <button type="button" class="btn btn-secondary cancel-template-info-btn" data-key="0">Cancel</button>
+                                                    
+                                                    <div class="row modern-form-group">
+                                                        <div class="col-lg-3">
+                                                            <label class="modern-label">Name (optional)<span class="require">*</span></label>
+                                                        </div>
+                                                        <div class="col-lg-6">
+                                                            <input class="modern-input" placeholder="Enter Device Name" id="name" type="text" name="template_name" value="{{ $template_info['template_name']}}">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    @if(Auth::user()->user_type=='Admin')
+                                                    <div class="row modern-form-group">
+                                                        <div class="col-lg-3">
+                                                            <label class="modern-label">Ping interval <span class="require">*</span></label>
+                                                        </div>
+                                                        <div class="col-lg-6">
+                                                            <input class="modern-input" placeholder="Enter Ping Interval" id="ping_interval" type="Number" name="configuration[ping_interval]" value="{{isset($configurations['ping_interval']['value']) ? $configurations['ping_interval']['value'] :''}}" onkeypress="return blockSpecialCharTransmission(event)" required />
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="row modern-form-group">
+                                                        <div class="col-lg-3">
+                                                            <label class="modern-label">Template Edit Permission <span class="require">*</span></label>
+                                                        </div>
+                                                        <div class="col-lg-6">
+                                                            <div class="modern-radio-group">
+                                                                <label class="modern-radio-label">
+                                                                    <input class="modern-radio" {{ isset($configurations['is_editable']['value']) && $configurations['is_editable']['value'] == '1' ? 'checked' : '' }} type="radio" name="configuration[is_editable]" value="1" required>
+                                                                    Enable
+                                                                </label>
+                                                                <label class="modern-radio-label">
+                                                                    <input class="modern-radio" {{ isset($configurations['is_editable']['value']) && $configurations['is_editable']['value'] == '0' ? 'checked' : '' }} type="radio" name="configuration[is_editable]" value="0" required>
+                                                                    Disable
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    @endif
+
+                                                    <div class="row mt-4">
+                                                        <div class="col-lg-9 offset-lg-3 d-flex gap-2">
+                                                            <button type="submit" class="btn btn-primary" style="padding: 8px 24px; border-radius: 6px; font-weight: 500;">Save Changes</button>
+                                                            <button type="button" class="btn btn-light cancel-template-info-btn" data-key="0" style="padding: 8px 24px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 500; margin-left: 10px;">Cancel</button>
+                                                        </div>
                                                     </div>
                                                 </form>
                                             </div>
@@ -229,8 +245,8 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                                 @if(Auth::user()->is_support_active)
                                                                 <div class="row mt-3">
                                                                     <div class="col-lg-12 text-center">
-                                                                        <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')">
-                                                                            <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                                        <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')" style="background-color: #1e293b; border-color: #1e293b; color: white; padding: 8px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.2); transition: all 0.2s;">
+                                                                            <i class="fa fa-pencil-square-o" aria-hidden="true" style="margin-right: 6px;"></i> Edit
                                                                         </button>
                                                                     </div>
                                                                 </div>
@@ -268,8 +284,8 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                         @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
                                         <div class="row mt-3">
                                             <div class="col-lg-12 text-center">
-                                                <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')">
-                                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')" style="background-color: #1e293b; border-color: #1e293b; color: white; padding: 8px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.2); transition: all 0.2s;">
+                                                    <i class="fa fa-pencil-square-o" aria-hidden="true" style="margin-right: 6px;"></i> Edit
                                                 </button>
                                             </div>
                                         </div>
@@ -280,8 +296,8 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                         @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
                                         <div class="row mt-3">
                                             <div class="col-lg-12 text-center">
-                                                <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')">
-                                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')" style="background-color: #1e293b; border-color: #1e293b; color: white; padding: 8px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.2); transition: all 0.2s;">
+                                                    <i class="fa fa-pencil-square-o" aria-hidden="true" style="margin-right: 6px;"></i> Edit
                                                 </button>
                                             </div>
                                         </div>
@@ -290,8 +306,8 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                         @if(Auth::user()->is_support_active)
                                         <div class="row mt-3">
                                             <div class="col-lg-12 text-center">
-                                                <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')">
-                                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')" style="background-color: #1e293b; border-color: #1e293b; color: white; padding: 8px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.2); transition: all 0.2s;">
+                                                    <i class="fa fa-pencil-square-o" aria-hidden="true" style="margin-right: 6px;"></i> Edit
                                                 </button>
                                             </div>
                                         </div>

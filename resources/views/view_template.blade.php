@@ -16,7 +16,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     <div class="vt-breadcrumb-bar">
       <ul class="vt-breadcrumb">
         <li>
-          <a href="{{ url($url_type . '/dashboard') }}" class="home-icon">
+          <a href="{{ url($url_type) }}" class="home-icon">
             <i class="fa fa-home"></i>
           </a>
         </li>

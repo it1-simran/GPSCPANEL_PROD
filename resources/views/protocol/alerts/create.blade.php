@@ -110,7 +110,7 @@
                                             <div class="u-card-header">
                                                 <div class="field-title">
                                                     <div class="dot"></div>
-                                                    {{ $cond->field->name }}
+                                                    {{ optional($cond->field)->name ?? 'Unknown Field' }}
                                                 </div>
                                                 <button type="button" class="u-remove-btn" onclick="unselectField('{{ $cond->packet_field_id }}')">
                                                     <i class="fa fa-times"></i>

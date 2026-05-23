@@ -34,13 +34,16 @@
             flex: 1.05;
             min-height: 42vh;
             overflow: hidden;
-            display: flex;
+            display: none;
             flex-direction: column;
             background: linear-gradient(165deg, #050a14 0%, #0c1526 40%, #0a1628 100%);
         }
 
         @media (min-width: 960px) {
-            .split-left { min-height: 100vh; }
+            .split-left { 
+                display: flex;
+                min-height: 100vh; 
+            }
         }
 
         .split-left__bg {

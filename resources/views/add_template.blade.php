@@ -80,8 +80,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 <label for="curl" class="control-label col-lg-3 ">Device Category <span
                                         class="require">*</span></label>
                                 <div class="col-lg-6">
-                                    <select class="" id="deviceCategory" name="deviceCategory"
-                                        onChange="getSelectedDeviceCategory()">
+                                    <select class="form-control" id="deviceCategory" name="deviceCategory"
+                                        onChange="getSelectedDeviceCategory()" style="display:none;">
                                         <option value=""> </option>
                                         @foreach($getDeviceCategory as $deviceCategory)
                                         <option value="{{$deviceCategory->id}}">
@@ -89,6 +89,104 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                         </option>
                                         @endforeach
                                     </select>
+
+                                    <!-- Custom Single Select UI -->
+                                    <div class="custom-single-select-container" id="custom_deviceCategory_wrapper">
+                                        <div class="custom-single-select-header" id="custom_deviceCategory_header">
+                                            <span class="custom-single-select-placeholder">Search and Select</span>
+                                            <span class="custom-single-select-arrow" style="font-size: 10px; color: #94a3b8;">&#x25BC;</span>
+                                        </div>
+                                        <div class="custom-single-select-dropdown" id="custom_deviceCategory_dropdown" style="display:none;">
+                                            <div style="padding: 8px; border-bottom: 1px solid #cbd5e1;">
+                                                <input type="text" id="custom_deviceCategory_search" class="form-control" autocomplete="off" style="border-radius: 4px; height: 32px; box-shadow: none;" />
+                                            </div>
+                                            <div class="custom-single-select-options" id="custom_deviceCategory_options">
+                                                @foreach($getDeviceCategory as $deviceCategory)
+                                                <div class="custom-single-select-option" data-value="{{$deviceCategory->id}}">
+                                                    {{$deviceCategory->device_category_name}}
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <style>
+                                        .custom-single-select-container { position: relative; width: 100%; font-family: sans-serif; }
+                                        .custom-single-select-header { display: flex; align-items: center; justify-content: space-between; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 12px; height: 38px; background-color: #fff; cursor: pointer; transition: all 0.2s; }
+                                        .custom-single-select-header.active { border-color: #71c21a; box-shadow: 0 0 0 3px rgba(113, 194, 26, 0.2); }
+                                        .custom-single-select-placeholder { color: #64748b; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                                        .custom-single-select-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 4px; z-index: 1050; overflow: hidden; }
+                                        .custom-single-select-options { max-height: 200px; overflow-y: auto; scrollbar-width: thin; }
+                                        .custom-single-select-option { padding: 8px 12px; color: #475569; font-size: 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+                                        .custom-single-select-option:hover { background-color: #eaf5e1; color: #334155; }
+                                        .custom-single-select-option.selected { background-color: #eaf5e1; color: #334155; font-weight: 500; }
+                                    </style>
+                                    <script>
+                                        document.addEventListener("DOMContentLoaded", function() {
+                                            var header = document.getElementById('custom_deviceCategory_header');
+                                            var dropdown = document.getElementById('custom_deviceCategory_dropdown');
+                                            var searchInput = document.getElementById('custom_deviceCategory_search');
+                                            var optionsContainer = document.getElementById('custom_deviceCategory_options');
+                                            var select = document.getElementById('deviceCategory');
+                                            var placeholder = header.querySelector('.custom-single-select-placeholder');
+                                            
+                                            header.addEventListener('click', function(e) {
+                                                e.stopPropagation();
+                                                var isVisible = dropdown.style.display === 'block';
+                                                dropdown.style.display = isVisible ? 'none' : 'block';
+                                                if (!isVisible) {
+                                                    header.classList.add('active');
+                                                    searchInput.focus();
+                                                } else {
+                                                    header.classList.remove('active');
+                                                }
+                                            });
+
+                                            searchInput.addEventListener('input', function() {
+                                                var filter = searchInput.value.toLowerCase();
+                                                var options = optionsContainer.querySelectorAll('.custom-single-select-option');
+                                                options.forEach(function(opt) {
+                                                    if (opt.textContent.toLowerCase().indexOf(filter) > -1) {
+                                                        opt.style.display = 'block';
+                                                    } else {
+                                                        opt.style.display = 'none';
+                                                    }
+                                                });
+                                            });
+
+                                            optionsContainer.addEventListener('click', function(e) {
+                                                var optionEl = e.target.closest('.custom-single-select-option');
+                                                if (optionEl) {
+                                                    var val = optionEl.getAttribute('data-value');
+                                                    var text = optionEl.textContent.trim();
+                                                    
+                                                    placeholder.textContent = text;
+                                                    placeholder.style.color = '#334155';
+                                                    select.value = val;
+                                                    
+                                                    var event = new Event('change');
+                                                    select.dispatchEvent(event);
+                                                    if (typeof getSelectedDeviceCategory === "function") {
+                                                        getSelectedDeviceCategory();
+                                                    }
+                                                    
+                                                    dropdown.style.display = 'none';
+                                                    header.classList.remove('active');
+                                                    
+                                                    var allOpts = optionsContainer.querySelectorAll('.custom-single-select-option');
+                                                    allOpts.forEach(o => o.classList.remove('selected'));
+                                                    optionEl.classList.add('selected');
+                                                }
+                                            });
+
+                                            document.addEventListener('click', function(e) {
+                                                var wrapper = document.getElementById('custom_deviceCategory_wrapper');
+                                                if (wrapper && !wrapper.contains(e.target)) {
+                                                    dropdown.style.display = 'none';
+                                                    header.classList.remove('active');
+                                                }
+                                            });
+                                        });
+                                    </script>
                                 </div>
                             </div>
                             <div class="form-group isCanEnable" style="display:none;">
@@ -185,62 +283,67 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 </section>
 
 <div class="modal" id="canModal" aria-hidden="true">
-    <div class="modal-dialog modal-md">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border: none; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="background-color: #71c21a; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 15px 20px;">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="color: white; opacity: 1; text-shadow: none; margin-top: 2px;"><i
                         class="fa fa-times"></i></button>
-                <h5 class="modal-title">CAN Protocol Configuration</h5>
+                <h5 class="modal-title" style="font-weight: 700; font-size: 16px; letter-spacing: 0.5px;"><i class="fa fa-cog" style="margin-right: 8px;"></i>CAN PROTOCOL CONFIGURATION</h5>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        <form id="canForm">
-                            <!-- Protocol Selection -->
-                            <div class="isCanEnable" style="display:none;">
-                                <div style="margin:10px 0px;">
-                                    <label for="curl" class="control-label padding-left-3">Can Channel<span class="require">*</span></label>
-                                    <select id="can_channel" name="canConfiguration[canChannel]" required>
-                                        <option value="">-- Select CAN Channel --</option>
-                                        <option value="1">CAN 1</option>
-                                        <option value="2">CAN 2</option>
-                                        <option value="3">CAN 3</option>
-                                        <option value="4">CAN 4</option>
-                                    </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                    <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                                    <select id="can_baud_rate" name="canConfiguration[can_baud_rate]" class="form-control" required>
-                                        <option value="">-- Select Baud Rate --</option>
-                                        <option value="500">500 kbps</option>
-                                        <option value="250">250 kbps</option>
-                                    </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                    <label class="control-label">Can ID Type <span class="require">*</span></label>
-                                    <select id="can_id_type" name="canConfiguration[can_id_type]" class="form-control" required>
-                                        <option value="">-- Select Can ID --</option>
-                                        <option value="0">Standard</option>
-                                        <option value="1">Extended</option>
-                                    </select>
-                                </div>
-                                <div style="margin:10px 0px;">
-                                    <label for="curl" class="control-label padding-left-3">Can Protocol<span class="require">*</span></label>
-                                    <select class="" id="can_protocol" name="canConfiguration[can_protocol]" onChange="selectedCanProtocol()" required>
-                                        <option value="">-- Select Can Protocol -- </option>
-                                        <option value="1">J1979</option>
-                                        <option value="2">J1939</option>
-                                        <option value="3">Custom CAN</option>
-                                    </select>
-                                </div>
+            <div class="modal-body" style="padding: 30px 40px;">
+                <form id="canForm">
+                    <!-- Protocol Selection -->
+                    <div class="isCanEnable" style="display:none;">
+                        <div class="row">
+                            <div class="col-md-6" style="margin-bottom: 25px;">
+                                <label for="can_channel" class="control-label" style="font-weight: 700; color: #334155; margin-bottom: 8px; font-size: 14px;">Can Channel <span style="color: #ef4444;">*</span></label>
+                                <select id="can_channel" name="canConfiguration[canChannel]" class="form-control" style="border-radius: 6px; box-shadow: none; border: 1px solid #cbd5e1; height: 42px; color: #64748b;" required>
+                                    <option value="">-- Select CAN Channel --</option>
+                                    <option value="1">CAN 1</option>
+                                    <option value="2">CAN 2</option>
+                                    <option value="3">CAN 3</option>
+                                    <option value="4">CAN 4</option>
+                                </select>
                             </div>
-                            <div id="dynamicCanFields"></div>
-                        </form>
+                            <div class="col-md-6" style="margin-bottom: 25px;">
+                                <label for="can_baud_rate" class="control-label" style="font-weight: 700; color: #334155; margin-bottom: 8px; font-size: 14px;">Can Baud Rate <span style="color: #ef4444;">*</span></label>
+                                <select id="can_baud_rate" name="canConfiguration[can_baud_rate]" class="form-control" style="border-radius: 6px; box-shadow: none; border: 1px solid #cbd5e1; height: 42px; color: #64748b;" required>
+                                    <option value="">-- Select Baud Rate --</option>
+                                    <option value="500">500 kbps</option>
+                                    <option value="250">250 kbps</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6" style="margin-bottom: 25px;">
+                                <label for="can_id_type" class="control-label" style="font-weight: 700; color: #334155; margin-bottom: 8px; font-size: 14px;">Can ID Type <span style="color: #ef4444;">*</span></label>
+                                <select id="can_id_type" name="canConfiguration[can_id_type]" class="form-control" style="border-radius: 6px; box-shadow: none; border: 1px solid #cbd5e1; height: 42px; color: #64748b;" required>
+                                    <option value="">-- Select Can ID --</option>
+                                    <option value="0">Standard</option>
+                                    <option value="1">Extended</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" style="margin-bottom: 25px;">
+                                <label for="can_protocol" class="control-label" style="font-weight: 700; color: #334155; margin-bottom: 8px; font-size: 14px;">CAN Protocol <span style="color: #ef4444;">*</span></label>
+                                <select id="can_protocol" name="canConfiguration[can_protocol]" class="form-control" style="border-radius: 6px; box-shadow: none; border: 1px solid #cbd5e1; height: 42px; color: #64748b;" onChange="selectedCanProtocol()" required>
+                                    <option value="">-- Select Protocol --</option>
+                                    <option value="1">J1979</option>
+                                    <option value="2">J1939</option>
+                                    <option value="3">Custom CAN</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-12 text-right">
-                        <button type="button" class="btn btn-success mt-4" onclick="generateJSON()">Submit</button>
-                    </div>
-                </div>
+                    <div id="dynamicCanFields"></div>
+                </form>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 20px 40px; background-color: #fff; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
+                <button type="button" class="btn btn-default" data-dismiss="modal" style="background-color: #e2e8f0; color: #334155; border: none; font-weight: 600; padding: 10px 24px; border-radius: 6px; margin-right: 12px; transition: all 0.2s ease;">
+                    <i class="fa fa-times" style="margin-right: 5px;"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-success" onclick="generateJSON()" style="background-color: #71c21a; border: none; font-weight: 600; padding: 10px 24px; border-radius: 6px; transition: all 0.2s ease;">
+                    <i class="fa fa-check" style="margin-right: 5px;"></i> Save Configuration
+                </button>
             </div>
         </div>
     </div>
@@ -263,7 +366,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
               _token: '{{ csrf_token() }}'
           },
           success: function(fields) {
-              let html = '<div class="row">';
+              let html = `<style>
+.custom-multiselect-container { position: relative; width: 100%; }
+.custom-multiselect-header { border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 15px; min-height: 42px; background-color: #fff; color: #64748b; cursor: pointer; font-size: 14px; }
+.custom-multiselect-options { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 6px 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-height: 180px; overflow-y: auto; z-index: 1000; scrollbar-width: thin; }
+.custom-option { padding: 10px 15px; border-bottom: 1px solid #f8fafc; color: #475569; font-size: 14px; cursor: pointer; }
+.custom-option:hover { background-color: #f1f5f9; }
+.custom-option.selected { background: #eaf5e1 linear-gradient(0deg, #eaf5e1 0%, #eaf5e1 100%); color: #334155; font-weight: 500; }
+</style><div class="row">`;
    
               fields.forEach(field => {
                   const fieldId = field.fieldName.replace(/\s+/g, '_').toLowerCase();
@@ -276,7 +386,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       console.warn('Invalid JSON in validationConfig for field:', field.fieldName);
                   }
                   let inputHtml = `<input type="hidden" name="idCanParameters[${fieldId}]" value="${field.id}" />`;
-                  let attr = `id="${fieldId}" name="canConfiguration[${fieldId}]" class="form-control ip-url-space"  placeholder="Enter ${field.fieldName}"`;
+                  let attr = `id="${fieldId}" name="canConfiguration[${fieldId}]" class="form-control ip-url-space"  placeholder="Enter ${field.fieldName}" style="border-radius: 6px; box-shadow: none; border: 1px solid #cbd5e1; min-height: 42px; color: #64748b;"`;
                   inputHtml += `<input type="hidden" name="CanParametersType[${fieldId }]" value="${ inputType}" />`;
                   
                     if (inputType === 'number') {
@@ -301,43 +411,74 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       }
                       inputHtml += `</select>`;
                     }  else if (inputType == 'multiselect') {
-                        inputHtml += `<select id="${fieldId}" placeholder="Enter ${field.fieldName}" multiple name="canConfiguration[${fieldId}][]">`;
+                        inputHtml += `<select id="${fieldId}" style="display:none;" multiple name="canConfiguration[${fieldId}][]">`;
                 
+                        let optionsHtml = '';
                         if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
                             validation.selectOptions.forEach((option,index) => {
-                            inputHtml += `<option value="${validation.selectValues[index]}">${option}</option>`;
+                                inputHtml += `<option value="${validation.selectValues[index]}">${option}</option>`;
+                                optionsHtml += `<div class="custom-option" data-value="${validation.selectValues[index]}">${option}</div>`;
                             });
                         } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
                             Object.entries(validation.selectOptions).forEach(([key, value]) => {
-                            inputHtml += `<option value="${key}">${value}</option>`;
+                                inputHtml += `<option value="${key}">${value}</option>`;
+                                optionsHtml += `<div class="custom-option" data-value="${key}">${value}</div>`;
                             });
                         } else {
                             inputHtml += `<option value="">-- Select --</option>`;
+                            optionsHtml += `<div class="custom-option" data-value="">-- Select --</div>`;
                         }
                 
                         inputHtml += `</select>`;
+
+                        // Add custom UI
+                        inputHtml += `
+                        <div class="custom-multiselect-container" id="custom_${fieldId}">
+                            <div class="custom-multiselect-header">Select ${field.fieldName}</div>
+                            <div class="custom-multiselect-options" style="display:none;">
+                                ${optionsHtml}
+                            </div>
+                        </div>`;
                 
-                        // Apply Select2
+                        // Apply custom multiselect logic
                         setTimeout(() => {
                             var $select = $('#' + fieldId);
-                        
-                            if ($select.length) {
-                                // Initialize Select2
-                                $select.select2({
-                                    placeholder: "Select up to 3 options",
-                                    width: "100%"
-                                });
-                        
-                                // Handle selection change
-                                $select.on("change", function () {
-                                    var selected = $(this).val();
-                                    if (selected && selected.length > validation.maxSelectValue) {
-                                        selected.splice(validation.maxSelectValue);
-                                        $(this).select2("val", selected);
+                            var $container = $('#custom_' + fieldId);
+                            var $header = $container.find('.custom-multiselect-header');
+                            var $optionsList = $container.find('.custom-multiselect-options');
+                            
+                            $header.on('click', function(e) {
+                                e.stopPropagation();
+                                $('.custom-multiselect-options').not($optionsList).hide();
+                                $optionsList.toggle();
+                            });
+                            
+                            $optionsList.on('click', '.custom-option', function(e) {
+                                e.stopPropagation();
+                                var val = $(this).data('value');
+                                var $option = $select.find('option[value="' + val + '"]');
+                                
+                                if ($(this).hasClass('selected')) {
+                                    $(this).removeClass('selected');
+                                    $option.prop('selected', false);
+                                } else {
+                                    var currentSelected = $select.val() || [];
+                                    if (currentSelected.length >= validation.maxSelectValue) {
                                         alert("You can only select up to " + validation.maxSelectValue + " options.");
+                                        return;
                                     }
-                                });
-                            }
+                                    $(this).addClass('selected');
+                                    $option.prop('selected', true);
+                                }
+                                $select.trigger('change');
+                            });
+                            
+                            // Close on outside click
+                            $(document).on('click', function(e) {
+                                if (!$(e.target).closest('#custom_' + fieldId).length) {
+                                    $optionsList.hide();
+                                }
+                            });
                         }, 100);
 
                     } else if (inputType === "text_array") {
@@ -401,16 +542,13 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       inputHtml += `<input type="text" ${attr} />`;
                     }
    
-                  html += `<div class="col-md-12 padding-3 padding-top-10">
-                  <div class="form-group" id="modalInput">
-                      <label for="${fieldId}" class="control-label padding-left-14" required>
-                          ${field.fieldName} <span class="require">*</span>
+                  html += `<div class="col-md-12" style="margin-bottom: 25px;">
+                      <label for="${fieldId}" class="control-label" style="font-weight: 700; color: #334155; margin-bottom: 8px; font-size: 14px;">
+                          ${field.fieldName} <span style="color: #ef4444;">*</span>
                       </label>
-                      <div class="col-lg-12">
-                          ${inputHtml}
-                          <div class="col-sm-12 alert alert-danger ${fieldId}_error" role="alert" style="display:none"></div>
-                      </div>
-                  </div></div>`;
+                      ${inputHtml}
+                      <div class="alert alert-danger ${fieldId}_error" role="alert" style="display:none; margin-top: 5px;"></div>
+                  </div>`;
               });
               html += '</div>';
               $('#dynamicCanFields').html(html).show();
@@ -470,12 +608,6 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     }
    $(document).ready(function(){
     
-      $('#can_protocol').select2({
-          placeholder: "Search and Select",
-      });
-      $('#can_channel').select2({
-            placeholder: "Search and Select",
-      });
       $(document).ready(function() {
       $('#protocolSelect').on('change', function() {
           const value = $(this).val();
@@ -773,9 +905,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           var value = $(this).val();
           $(this).val(value.replace(/\s/g, '')); // Remove all spaces
       });
-      $('#deviceCategory').select2({
-          placeholder: "Search and Select",
-      }); 
+      // $('#deviceCategory').select2({
+      //     placeholder: "Search and Select",
+      // }); 
 
       $('#firmware').on('change', function() {
           var userId = $('input[name="user_id"]').length ? $('input[name="user_id"]').val() : null;

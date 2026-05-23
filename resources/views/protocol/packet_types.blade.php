@@ -80,6 +80,7 @@
                             <table id="packet_table" class="table table-bordered table-striped protocol-table">
                                 <thead>
                                     <tr>
+                                        <th style="width: 50px;">Sr. No.</th>
                                         <th>Packet Name</th>
                                         <th class="text-center">Header Identifier</th>
                                         <th class="text-center">Fields Count</th>
@@ -89,6 +90,7 @@
                                 <tbody>
                                     @foreach ($packetTypes as $type) 
                                         <tr class="p-0">
+                                            <td style="vertical-align: middle; text-align: center;">{{ $loop->iteration }}</td>
                                             <td>
                                                 <div class="protocol-name-cell">
                                                     <span class="protocol-row-icon"><i class="fa fa-cube"></i></span>
@@ -157,7 +159,8 @@
             "searching": true,
             "ordering": true,
             "info": true,
-            "autoWidth": false
+            "autoWidth": false,
+            "order": [[1, "asc"]]
         });
         
         // Wrap table in a responsive div to enable simple horizontal scrolling without breaking headers

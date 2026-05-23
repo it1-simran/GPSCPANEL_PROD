@@ -181,7 +181,7 @@ $currentEmail = Auth::user()->email;
           searching: true,
           ordering: true,
           lengthChange: true,
-          pageLength: 10,
+          pageLength: 25,
           scrollX: true,
           scrollY: '500px',
           autoWidth: false,

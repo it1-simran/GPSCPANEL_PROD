@@ -68,6 +68,11 @@
     margin: 0 !important;
   }
 
+  .vdl-page-title-row::before,
+  .vdl-page-title-row::after {
+    display: none !important;
+  }
+
   .vdl-page-title-row > [class*="col-"] {
     display: flex;
     align-items: center;

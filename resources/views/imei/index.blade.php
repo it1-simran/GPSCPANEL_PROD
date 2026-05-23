@@ -82,6 +82,7 @@
                             <table id="imeiTable" class="table">
                                 <thead>
                                     <tr>
+                                        <th>Sr. No.</th>
                                         <th>ID</th>
                                         <th>IMEI</th>
                                         <th>Status</th>
@@ -94,6 +95,7 @@
                                 <tbody>
                                     @foreach($devices as $device)
                                         <tr>
+                                            <td>{{ $loop->iteration }}</td>
                                             <td><span class="imei-id-pill">{{ $device->id }}</span></td>
                                             <td><span style="font-weight: 600; font-size: 14px; color: #333;">{{ $device->imei }}</span></td>
                                             <td>
@@ -157,7 +159,7 @@
 $(function () {
     $('#imeiTable').DataTable({
         pageLength: 25,
-        order: [[0, 'desc']]
+        order: [[1, 'desc']]
     });
 });
 </script>

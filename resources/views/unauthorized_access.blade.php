@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unauthorized Access</title>
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
-    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" href="{{ asset('favicon.svg') . '?v=1.2' }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') . '?v=1.2' }}">
     
     <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('unauthorized-access') }}" />
 </head>

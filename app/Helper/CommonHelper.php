@@ -1092,8 +1092,8 @@ class CommonHelper
     {
 
         $html = '';
-        $html .= '<div class="configuration-item">';
-        $html .= '<h6><b>' . CommonHelper::getDeviceCategoryName($categoryId) . '</b></h6>';
+        $html .= '<div class="configuration-item" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; background-color: #fff; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">';
+        $html .= '<h6 style="font-size: 16px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px;"><b>' . CommonHelper::getDeviceCategoryName($categoryId) . '</b></h6>';
         $html .= '<div class="bgx-configurations">';
         $html .= '<div id="canConfig-' . $key2 . '" class="row">';
 
@@ -1104,14 +1104,13 @@ class CommonHelper
                 if (is_array($value)) $value = implode(', ', $value);
 
                 $html .= '
-            <div class="col-lg-3 mb-3">
-                <div class="bgx-table-container">
-                    <div class="bgx-table-row">
-                        <div class="bgx-table-cell">
-                            <p class="card-text">
-                                <strong>' . self::getDataFieldName($config['id']) . ':</strong> ' . self::getFieldValueById($config['id'], $value) . '
-                            </p>
-                        </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; height: 100%; transition: all 0.2s;">
+                    <div style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                        ' . self::getDataFieldName($config['id']) . '
+                    </div>
+                    <div style="font-size: 15px; color: #1e293b; font-weight: 500; word-break: break-word; line-height: 1.4;">
+                        ' . self::getFieldValueById($config['id'], $value) . '
                     </div>
                 </div>
             </div>';
@@ -1121,16 +1120,25 @@ class CommonHelper
         $html .= '</div>'; // end summary row
 
         // Editable CAN configuration (hidden by default)
-        $html .= '<div id="canConfigForm-' . $key2 . '" style="display:none;">';
+        $html .= '<div id="canConfigForm-' . $key2 . '" style="display:none; padding: 25px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px;">';
+        
+        $html .= '<style>
+            .modern-can-label { font-weight: 600; color: #334155; font-size: 14px; margin-bottom: 6px; display: block; text-align: left; }
+            .modern-input { height: 42px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; color: #475569; font-size: 14px; padding: 0 15px; width: 100%; transition: all 0.2s; background-color: #fff; }
+            .modern-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); outline: none; }
+            .require { color: #ef4444; font-weight: bold; margin-left: 3px; }
+            .modern-col { margin-bottom: 20px; text-align: left; }
+        </style>';
+
         $html .= '<form id="canForm-' . $device['id'] . '" action="/' . $url_type . '/update-canprotocol-temp-configurations/' . $device['id'] . '" method="POST">';
         $html .= csrf_field();
 
         // CAN channel + protocol selection dropdowns
         $html .= '
         <div class="row">
-            <div class="col-md-6">
-                <label class="control-label">CAN Channel <span class="require">*</span></label>
-                <select id="can_channel_' . $device['id'] . '" name="canConfiguration[can_channel]" class="form-control" required>
+            <div class="col-md-6 modern-col">
+                <label class="modern-can-label">CAN Channel <span class="require">*</span></label>
+                <select id="can_channel_' . $device['id'] . '" name="canConfiguration[can_channel]" class="modern-input" required>
                     <option value="">-- Select CAN Channel --</option>
                     <option value="1" ' . (isset($configurations['can_channel']['value']) && $configurations['can_channel']['value'] == '1' ? 'selected' : '') . '>CAN 1</option>
                     <option value="2" ' . (isset($configurations['can_channel']['value']) && $configurations['can_channel']['value'] == '2' ? 'selected' : '') . '>CAN 2</option>
@@ -1138,25 +1146,25 @@ class CommonHelper
                     <option value="4" ' . (isset($configurations['can_channel']['value']) && $configurations['can_channel']['value'] == '4' ? 'selected' : '') . '>CAN 4</option>
                 </select>
             </div>
-            <div class="col-md-6" style="margin:10px 0px;">
-                <label class="control-label">Can Baud Rate <span class="require">*</span></label>
-                <select id="can_baud_rate_' . $device['id'] . '" name="canConfiguration[can_baud_rate]" class="form-control" required>
+            <div class="col-md-6 modern-col">
+                <label class="modern-can-label">Can Baud Rate <span class="require">*</span></label>
+                <select id="can_baud_rate_' . $device['id'] . '" name="canConfiguration[can_baud_rate]" class="modern-input" required>
                     <option value="">-- Select Baud Rate --</option>
                     <option value="500" ' . (isset($configurations['can_baud_rate']['value']) && $configurations['can_baud_rate']['value'] == '500' ? 'selected' : '') . '>500 kbps</option>
                     <option value="250" ' . (isset($configurations['can_baud_rate']['value']) && $configurations['can_baud_rate']['value'] == '250' ? 'selected' : '') . '>250 kbps</option>
                 </select>
             </div>
-            <div class="col-md-6" style="margin:10px 0px;">
-                <label class="control-label">Can ID Type <span class="require">*</span></label>
-                <select id="can_id_type_' . $device['id'] . '" name="canConfiguration[can_id_type]" class="form-control" required>
+            <div class="col-md-6 modern-col">
+                <label class="modern-can-label">Can ID Type <span class="require">*</span></label>
+                <select id="can_id_type_' . $device['id'] . '" name="canConfiguration[can_id_type]" class="modern-input" required>
                     <option value="">-- Select Can ID --</option>
                     <option value="0" ' . (isset($configurations['can_id_type']['value']) && $configurations['can_id_type']['value'] == '0' ? 'selected' : '') . '>Standard</option>
                     <option value="1" ' . (isset($configurations['can_id_type']['value']) && $configurations['can_id_type']['value'] == '1' ? 'selected' : '') . '>Extended</option>
                 </select>
             </div>
-            <div class="col-md-6">
-                <label class="control-label">CAN Protocol <span class="require">*</span></label>
-                <select id="can_protocol_' . $device['id'] . '" name="canConfiguration[can_protocol]" class="form-control" onchange="selectedCanProtocol(' . $device['id'] . ')" required>
+            <div class="col-md-6 modern-col">
+                <label class="modern-can-label">CAN Protocol <span class="require">*</span></label>
+                <select id="can_protocol_' . $device['id'] . '" name="canConfiguration[can_protocol]" class="modern-input" onchange="selectedCanProtocol(' . $device['id'] . ')" required>
                     <option value="">-- Select Protocol --</option>
                     <option value="1" ' . (isset($configurations['can_protocol']['value']) && $configurations['can_protocol']['value'] == '1' ? 'selected' : '') . '>J1979</option>
                     <option value="2" ' . (isset($configurations['can_protocol']['value']) && $configurations['can_protocol']['value'] == '2' ? 'selected' : '') . '>J1939</option>
@@ -1170,10 +1178,12 @@ class CommonHelper
 
         // Form action buttons
         $html .= '
-        <div class="col-sm-12 bg-margin-top text-right mt-3">
-            <input type="hidden" name="device_id" value="' . $device['id'] . '" />
-            <button type="submit" class="btn btn-primary">Save</button>
-            <button type="button" class="btn btn-secondary cancel-config-btn" data-key="' . $key2 . '">Cancel</button>
+        <div class="row mt-4">
+            <div class="col-lg-12 d-flex justify-content-end gap-2">
+                <input type="hidden" name="device_id" value="' . $device['id'] . '" />
+                <button type="submit" class="btn btn-primary" style="padding: 8px 24px; border-radius: 6px; font-weight: 500;">Save</button>
+                <button type="button" class="btn btn-light cancel-config-btn" data-key="' . $key2 . '" style="padding: 8px 24px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 500; margin-left: 10px;">Cancel</button>
+            </div>
         </div>';
 
         $html .= '</form></div></div></div>';
@@ -1367,18 +1377,18 @@ class CommonHelper
                             } else {
                                 const value = savedValue ? savedValue : "";
                                 if (validation.maxValueInput) attr += ` maxlength="${validation.maxValueInput}"`;
-                                inputHtml += `<input type="text" ${attr} value="${value}" />`;
+                                inputHtml += `<input type="text" ${attr.replace("form-control", "modern-input")} value="${value}" />`;
                             }
 
-                            html +="<div class=\'col-md-6 mt-3 mb-2\' style=\'margin: 10px 0px;\'>" +
-                                "<label class=\'control-label\'>" +
+                            html += "<div class=\'col-md-6 modern-col\'>" +
+                                "<label class=\'modern-can-label\'>" +
                                 field.fieldName +
                                 " " +
                                 (inputType === "text_array"
                                     ? "(You can choose up to " + validation.maxValueInput + ")"
                                     : "") +
                                 " <span class=\'require\'>*</span></label>" +
-                                inputHtml +
+                                inputHtml.replace(/form-control/g, "modern-input") +
                             "</div>";
                         });
                         html += "</div>";

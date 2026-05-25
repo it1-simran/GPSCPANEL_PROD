@@ -175,6 +175,10 @@ class FirmwareController extends Controller
     public function createBackend(Request $request)
     {
         if ($request->backendId == '') {
+            $checkExists = backend::where('name', $request->name)->first();
+            if ($checkExists) {
+                return json_encode(['status' => 400, 'status_msg' => 'Backend with this name already exists.']);
+            }
             $backend = [
                 'name' => $request->name,
             ];
@@ -182,6 +186,10 @@ class FirmwareController extends Controller
             $getBackendAll = backend::orderBy('id', 'desc')->get();
             return json_encode(['status' => 200, 'status_msg' => $Backend->name . '- Settings Added Successfully', 'backend' => $getBackendAll]);
         } else {
+            $checkExists = backend::where('name', $request->name)->where('id', '!=', $request->backendId)->first();
+            if ($checkExists) {
+                return json_encode(['status' => 400, 'status_msg' => 'Backend with this name already exists.']);
+            }
             $Backend =  backend::find($request->backendId);
             $Backend->name = $request->name;
             $Backend->save();

@@ -3220,7 +3220,43 @@ class CommonHelper
     {
         $getDeviceCategory = DeviceCategory::where('id', $categoryId)->first();
         $inputFields = json_decode($getDeviceCategory->inputs, true);
-        $firmwares = Firmware::where('device_category_id', $categoryId)->get();
+        
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if ($user && ($user->user_type == 'Admin' || $user->user_type == 'Support')) {
+            $firmwares = Firmware::where('device_category_id', $categoryId)->where('is_deleted', 0)->get();
+        } else {
+            $target_id = $user->id;
+            $target_user = \App\Writer::find($target_id);
+            $search_ids = [$target_id];
+            
+            if ($target_user) {
+                $current_parent = $target_user->created_by;
+                while ($current_parent && $current_parent != "1" && count($search_ids) < 5) {
+                    $search_ids[] = $current_parent;
+                    $p_user = \App\Writer::find($current_parent);
+                    $current_parent = $p_user ? $p_user->created_by : null;
+                }
+            }
+
+            $firmwares = Firmware::where('device_category_id', $categoryId)
+                ->where('is_deleted', 0)
+                ->whereIn('id', function ($query) use ($search_ids) {
+                    $query->select('firmware_id')
+                        ->from('modals')
+                        ->whereIn('user_id', $search_ids);
+                })->get();
+
+            if ($firmwares->isEmpty()) {
+                $l1_reseller_id = end($search_ids);
+                $firmwares = Firmware::where('device_category_id', $categoryId)
+                    ->where('is_deleted', 0)
+                    ->whereIn('id', function ($query) use ($l1_reseller_id) {
+                        $query->select('firmware_id')
+                            ->from('modals')
+                            ->where('user_id', $l1_reseller_id);
+                    })->get();
+            }
+        }
         $html = "";
         $html .= '<div class="form-group">';
         $html .= '<label class="control-label col-lg-5">Firmware</label>';

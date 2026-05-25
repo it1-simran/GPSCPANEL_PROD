@@ -174,7 +174,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     </td>
                   </tr>
 
-                  <div class="modal" id="addModel{{$firmware->id}}" aria-hidden="true">
+                  <div class="modal" id="addModel{{$firmware->id}}" aria-hidden="true" style="z-index: 99999;">
                     <div class="modal-dialog">
                       <div class="modal-content">
                         <div class="modal-header fw-panel-modal-header">
@@ -214,7 +214,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       </div>
                     </div>
                   </div>
-                  <div class="modal fw-firmware-modal fw-firmware-modal--edit" id="editFirmware{{$firmware->id}}" aria-hidden="true">
+                  <div class="modal fw-firmware-modal fw-firmware-modal--edit" id="editFirmware{{$firmware->id}}" aria-hidden="true" style="z-index: 99999;">
                     <div class="modal-dialog modal-dialog-centered">
                       <div class="modal-content">
                         <div class="modal-header fw-panel-modal-header">

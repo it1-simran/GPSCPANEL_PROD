@@ -5,6 +5,138 @@
     $getDeviceCategory = CommonHelper::getDeviceCategory();
     ?>
  @extends('layouts.apps')
+ @push('styles')
+ <style>
+    /* Premium Form Styling */
+    .c_panel {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+        padding: 25px;
+    }
+    .c_title h2 {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 20px;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+    }
+    .control-label {
+        color: #475569;
+        font-weight: 600;
+        font-size: 14px;
+        padding-top: 10px;
+    }
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        padding: 10px 15px;
+        font-size: 14px;
+        color: #1e293b;
+        box-shadow: none;
+        transition: all 0.3s;
+        height: auto;
+    }
+    .form-control:focus {
+        border-color: #7bc62d;
+        box-shadow: 0 0 0 3px rgba(123, 198, 45, 0.15);
+    }
+    .select2-container--default .select2-selection--single {
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        height: 42px;
+        padding: 6px 15px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px;
+    }
+    .btn-primary {
+        background-color: #7bc62d !important;
+        border-color: #7bc62d !important;
+        color: #fff !important;
+        font-weight: 600;
+        padding: 10px 24px;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    .btn-primary:hover, .btn-primary:focus {
+        background-color: #68a825 !important;
+        border-color: #68a825 !important;
+        box-shadow: 0 4px 6px rgba(123, 198, 45, 0.2);
+    }
+    .btn-secondary {
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 10px 24px;
+    }
+    .add-btn-dark {
+        background-color: #1e293b !important;
+        border-color: #1e293b !important;
+        color: white !important;
+        border-radius: 8px;
+        padding: 8px 16px;
+        height: 42px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .add-btn-dark:hover {
+        background-color: #0f172a !important;
+        box-shadow: 0 4px 6px rgba(15, 23, 42, 0.2);
+    }
+    
+    /* Modal Styling */
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        overflow: hidden;
+    }
+    .modal-header {
+        background-color: #7bc62d;
+        color: #000;
+        border-bottom: none;
+        padding: 20px 25px;
+    }
+    .modal-header .modal-title {
+        font-weight: 700;
+        font-size: 18px;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .modal-header .close {
+        color: #000;
+        opacity: 0.7;
+        text-shadow: none;
+        font-size: 24px;
+        margin-top: -4px;
+    }
+    .modal-header .close:hover {
+        opacity: 1;
+    }
+    .modal-body {
+        padding: 25px;
+    }
+    .modal-footer {
+        border-top: 1px solid #f1f5f9;
+        padding: 20px 25px;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 8px;
+        display: block;
+    }
+    .margin-bottom-10 {
+        margin-bottom: 20px;
+    }
+ </style>
+ @endpush
  @section('content')
  <!--main content start-->
  <section id="main-content">
@@ -104,7 +236,7 @@
                                      </select>
                                      </div>
                                      <div class="col-lg-1">
-                                     <button type="button" class="btn btn-primary margin-top-1 " onclick="openModel()">Add</button>
+                                     <button type="button" class="btn add-btn-dark margin-top-1 " onclick="openModel()">Add</button>
                                      </div>
                                  </div>
                              </div>
@@ -119,7 +251,7 @@
                                          </select>
                                      </div>
                                       <div class="col-lg-1">
-                                     <button type="button" class="btn btn-primary margin-top-1 " onclick="openBackendModel()">Add</button>
+                                     <button type="button" class="btn add-btn-dark margin-top-1 " onclick="openBackendModel()">Add</button>
                                      </div>
                                  </div>
                              </div>

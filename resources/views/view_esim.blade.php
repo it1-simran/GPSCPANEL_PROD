@@ -280,12 +280,19 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           contentType: false,
           success: function(response) {
             let result = JSON.parse(response);
-            if (result.status = 200) {
-              alert(result.status_msg);
+            if (result.status == 200) {
+              if (typeof window.showGpsToast === 'function') {
+                window.showGpsToast('success', 'Success', result.status_msg);
+              } else {
+                alert(result.status_msg);
+              }
               $('#addESIMModal').modal('hide');
-              window.location.reload();
+              setTimeout(function() {
+                window.location.reload();
+              }, 1500);
             } else {
-              alert('error Occured');
+              $('.error_msg').show();
+              $('.error_msg').html(result.status_msg || 'error Occured');
             }
           },
           error: function(xhr, status, error) {

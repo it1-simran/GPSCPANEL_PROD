@@ -139,6 +139,44 @@ class DeviceApiController extends Controller
 					if ($matchData->deviceStatus === 'Pending') {
 						$updateData['deviceStatus'] = 'Completed';
 					}
+
+					// Automatic firmware update status validation
+					$deviceFid = $data[40] ?? null;
+					$deviceVersion = $data[41] ?? null;
+
+					$configuredFwId = $configurations['firmware_id']['value'] ?? null;
+					$configuredVersion = null;
+
+					if ($getFirmwareFromConfigurations) {
+						$cf = json_decode($getFirmwareFromConfigurations->configurations, true);
+						$configuredVersion = $cf['version'] ?? null;
+					}
+
+					// Device reports firmware record ID in field 40 — compare directly against configured firmware_id
+					$fidMatches = ($deviceFid !== null && $configuredFwId !== null && trim((string)$deviceFid) === trim((string)$configuredFwId));
+
+					$versionMatches = false;
+					if ($deviceVersion !== null && $configuredVersion !== null) {
+						$devVerClean = str_replace('.', '', trim((string)$deviceVersion));
+						$cfgVerClean = str_replace('.', '', trim((string)$configuredVersion));
+						$versionMatches = ($devVerClean === $cfgVerClean || trim((string)$deviceVersion) === trim((string)$configuredVersion));
+					}
+
+					$newFirmwareStatus = ($fidMatches && $versionMatches) ? 'Completed' : 'Pending';
+					$currentFirmwareStatus = $matchData->firmware_status ?? 'Pending';
+
+					$updateData['firmware_status'] = $newFirmwareStatus;
+
+					if ($currentFirmwareStatus !== $newFirmwareStatus) {
+						Devicelog::create([
+							'device_id' => $matchData->id,
+							'user_id' => $matchData->user_id ?? 0,
+							'log' => "Firmware update status transitioned from {$currentFirmwareStatus} to {$newFirmwareStatus} based on API parameter validation. (Reported FID: {$deviceFid}, Configured FW ID: {$configuredFwId}; Reported Version: {$deviceVersion}, Configured Version: {$configuredVersion})",
+							'action' => 'Firmware Status Sync',
+							'is_active' => 1
+						]);
+					}
+
 					DB::table('devices')
 						->where('id', $matchData->id)
 						->update($updateData);
@@ -197,6 +235,44 @@ class DeviceApiController extends Controller
 					if ($matchData->deviceStatus === 'Pending') {
 						$updateData['deviceStatus'] = 'Completed';
 					}
+
+					// Automatic firmware update status validation
+					$deviceFid = $data[40] ?? null;
+					$deviceVersion = $data[41] ?? null;
+
+					$configuredFwId = $configurations['firmware_id']['value'] ?? null;
+					$configuredVersion = null;
+
+					if ($getFirmwareFromConfigurations) {
+						$cf = json_decode($getFirmwareFromConfigurations->configurations, true);
+						$configuredVersion = $cf['version'] ?? null;
+					}
+
+					// Device reports firmware record ID in field 40 — compare directly against configured firmware_id
+					$fidMatches = ($deviceFid !== null && $configuredFwId !== null && trim((string)$deviceFid) === trim((string)$configuredFwId));
+
+					$versionMatches = false;
+					if ($deviceVersion !== null && $configuredVersion !== null) {
+						$devVerClean = str_replace('.', '', trim((string)$deviceVersion));
+						$cfgVerClean = str_replace('.', '', trim((string)$configuredVersion));
+						$versionMatches = ($devVerClean === $cfgVerClean || trim((string)$deviceVersion) === trim((string)$configuredVersion));
+					}
+
+					$newFirmwareStatus = ($fidMatches && $versionMatches) ? 'Completed' : 'Pending';
+					$currentFirmwareStatus = $matchData->firmware_status ?? 'Pending';
+
+					$updateData['firmware_status'] = $newFirmwareStatus;
+
+					if ($currentFirmwareStatus !== $newFirmwareStatus) {
+						Devicelog::create([
+							'device_id' => $matchData->id,
+							'user_id' => $matchData->user_id ?? 0,
+							'log' => "Firmware update status transitioned from {$currentFirmwareStatus} to {$newFirmwareStatus} based on API parameter validation. (Reported FID: {$deviceFid}, Configured FW ID: {$configuredFwId}; Reported Version: {$deviceVersion}, Configured Version: {$configuredVersion})",
+							'action' => 'Firmware Status Sync',
+							'is_active' => 1
+						]);
+					}
+
 					DB::table('devices')
 						->where('id', $matchData->id)
 						->update($updateData);
@@ -489,7 +565,7 @@ class DeviceApiController extends Controller
 		Devicelog::create([
 			'device_id' => $device->id,
 			'user_id' => $device->user_id ?? 0,
-			'log' => "Firmware Download Request. Filename: $filename, Path: $filePath. Exists: Yes",
+			'log' => "Firmware Download Request. Firmware ID: {$firmware->id}, File Size: {$fileSize} bytes.",
 			'action' => 'FirmwareDownload',
 			'is_active' => 1
 		]);

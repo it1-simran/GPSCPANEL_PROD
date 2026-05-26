@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use App\Mail\OtpMail;
 use App\Mail\TwoFactorTokenMail;
 use App\Models\User;
+use App\Models\UserLogin;
 use App\Writer;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cache;
@@ -212,6 +213,14 @@ class LoginController extends Controller
 
             if (Auth::attempt($credentials, $request->filled('remember'))) {
                 $user = Auth::user();
+// Log login details and clean old logs
+UserLogin::where('logged_at', '<', now()->subDays(30))->delete();
+UserLogin::create([
+    'user_id' => $user->id,
+    'ip_address' => $request->ip(),
+    'user_agent' => $request->userAgent(),
+    'logged_at' => now(),
+]);
                 // dd($user);
                 // ✅ TWO FACTOR AUTHENTICATION
                 if ($user->twoFactorAuthentication) {
@@ -454,25 +463,34 @@ class LoginController extends Controller
         }
         try {
         $validator  = $this->validate($request, [
-            'email'   => 'required|email',
-            'password' => 'required',
-            'remember' =>  'required|in:on',
-        ], [
-            'remember.required' => 'checkbox must be checked.'
-        ]);
+    'email' => 'required|email',
+    'password' => 'required',
+    'remember' => 'required|in:on',
+], [
+    'remember.required' => 'checkbox must be checked.',
+]);
 
         if (Auth::guard('admin')->attempt(['email' => $request->email, 'password' => $request->password, 'user_type' => 'Admin'], $request->get('remember'))) {
+            // Log login details and clean old logs
+            UserLogin::where('logged_at', '<', now()->subDays(30))->delete();
+            UserLogin::create([
+                'user_id' => Auth::guard('admin')->id(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'logged_at' => now(),
+            ]);
+            // Reset today_pings if outdated
             $todatPingsDate = DB::table('writers')->get();
-
-            foreach ($todatPingsDate as $key => $value) {
+            foreach ($todatPingsDate as $value) {
                 if ($value->pings_date != Carbon::today()->toDateString()) {
-                    DB::table('writers')->Where('pings_date', '!=', Carbon::today()->toDateString())->update([
-                        'today_pings' => '0'
-                    ]);
+                    DB::table('writers')
+                        ->where('pings_date', '!=', Carbon::today()->toDateString())
+                        ->update(['today_pings' => '0']);
                 }
             }
             return redirect()->intended('/admin');
         }
+// extra closing brace removed
 
         return back()->withErrors([
             'password' => 'The provided credentials do not match our records.'

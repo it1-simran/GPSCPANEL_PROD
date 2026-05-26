@@ -113,21 +113,24 @@
                 <thead>
                   <tr>
                     <th>Sr. No.</th>
-                    <th>Account Type</th>
-                    <th>Name</th>
-                    <th>Mobile</th>
-                    <th>Email</th>
-                    <th>Login Password</th>
-                    <th>Total Devices</th>
-                    <th>Total Pings</th>
-                    <th>Today Pings</th>
-                    <th>Default Configurations</th>
-                    <th>Assign devices</th>
-                    @if(Auth::user()->user_type !='User' )
-                    <th>Edit</th>
-                    @endif
-                    <th>Delete</th>
-                    <th>Link Account</th>
+<th>Account Type</th>
+<th>Name</th>
+<th>Mobile</th>
+<th>Email</th>
+<th>Login Password</th>
+<th>Total Devices</th>
+<th>Total Pings</th>
+<th>Today Pings</th>
+<th>Login IP</th>
+<th>Device</th>
+<th>Default Configurations</th>
+<th>Assign devices</th>
+@if(Auth::user()->user_type !='User' )
+<th>Edit</th>
+@endif
+<th>Delete</th>
+<th>Link Account</th>
+                    
                     </tr>
                 </thead>
                 <tbody>
@@ -160,13 +163,14 @@
                       </div>
                     </td>
                     <td>{{$contact['device_count']}}</td>
-                    <td>{{$contact['total_pings']}}</td>
-                    <td>{{$contact['today_pings']}}</td>
-                    <td>
-                      <a href="/{{strtolower(Auth::user()->user_type)}}/view-configurations/{{$contact['id']}}" class="vu-btn-view" onclick="openConfigurations({{$contact['id']}})"><i class="fa fa-eye"></i> View Config</a>
-                    </td>
-                    <td><button style="margin-top:1px" class="vu-btn-assign" onclick="open_asign({{$contact['id']}})"><i class="fa fa-link"></i> Assign</button>
-
+<td>{{$contact['total_pings']}}</td>
+<td>{{$contact['today_pings']}}</td>
+<td>{{$contact['last_ip'] ?? 'N/A'}}</td>
+<td>{{$contact['last_device'] ?? 'N/A'}}</td>
+<td>
+  <a href="/{{strtolower(Auth::user()->user_type)}}/view-configurations/{{$contact['id']}}" class="vu-btn-view" onclick="openConfigurations({{$contact['id']}})"><i class="fa fa-eye"></i> View Config</a>
+</td>
+<td><button style="margin-top:1px" class="vu-btn-assign" onclick="open_asign({{$contact['id']}})"><i class="fa fa-link"></i> Assign</button></td>
 
                     </td>
                     @if(Auth::user()->user_type !='User' )

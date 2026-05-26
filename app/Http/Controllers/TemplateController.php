@@ -73,7 +73,29 @@ class TemplateController extends Controller
             'deviceCategory' => 'required',
         ]);
 
-        $config = $request->configuration;
+        $config = $request->configuration ?? [];
+        if (in_array($userType, ['Reseller', 'User'])) {
+            $firmwareId = $config['firmware_id'] ?? null;
+            $assignedFirmwareUserId = $this->getFirmwareAssignmentAccountId(Auth::user());
+            $firmwareAssignedToAccount = $firmwareId
+                ? Firmware::where('id', $firmwareId)
+                    ->where('device_category_id', $request->deviceCategory)
+                    ->where('is_deleted', 0)
+                    ->whereIn('id', function ($query) use ($assignedFirmwareUserId) {
+                        $query->select('firmware_id')
+                            ->from('modals')
+                            ->where('user_id', $assignedFirmwareUserId)
+                            ->whereNotNull('firmware_id');
+                    })
+                    ->exists()
+                : false;
+
+            if (!$firmwareAssignedToAccount) {
+                return response()->json([
+                    'errors' => 'Please select a firmware assigned to this account.'
+                ], 422);
+            }
+        }
 
         // dd($config);
         $idParameters = $request->idParameters;
@@ -91,7 +113,12 @@ class TemplateController extends Controller
         foreach ($commonFields as $index => $value) {
             $key = strtolower(str_replace(' ', '_', $value->fieldName));
             // if (isset($config[$key])) {
-            if ($key == 'ping_interval' || $key == 'is_editable') {
+            if ($key == 'firmware_id' && isset($config[$key])) {
+                $converted[$key] = [
+                    'id' => $value->id,
+                    'value' => $config[$key] ?? ''
+                ];
+            } else if ($key == 'ping_interval' || $key == 'is_editable') {
                 $converted[$key] = [
                     'id' => $value->id,
                     'value' => $config[$key] ?? ''
@@ -242,13 +269,7 @@ class TemplateController extends Controller
         $devices = Device::whereIn('id', $request->input('devices'))->get();
 
         $templateConfig = json_decode($template->configurations, true) ?? [];
-        $firmwareId = null;
-        if (isset($templateConfig['firmware_id']['value'])) {
-            $firmwareId = $templateConfig['firmware_id']['value'];
-        } elseif (isset($templateConfig['firmware_id'])) {
-            $raw = $templateConfig['firmware_id'];
-            $firmwareId = is_array($raw) ? ($raw['value'] ?? $raw['id'] ?? null) : $raw;
-        }
+        $firmwareId = $this->getTemplateFirmwareId($template);
 
         if ($firmwareId === null || $firmwareId === '') {
             return redirect($url_type . '/view-template')->with([
@@ -325,6 +346,11 @@ class TemplateController extends Controller
             }
 
             $mergedConfig = array_merge($deviceConfig, $templateConfig);
+            foreach (['firmware_id', 'firmware_file', 'firmware_version', 'firmwareFileSize', 'modelName', 'vendorId'] as $resolvedKey) {
+                if (isset($deviceConfig[$resolvedKey])) {
+                    $mergedConfig[$resolvedKey] = $deviceConfig[$resolvedKey];
+                }
+            }
             $device->configurations = json_encode($mergedConfig);
             $device->save();
 
@@ -487,7 +513,13 @@ class TemplateController extends Controller
     {
         $template_info = Template::find($id);
         $url_type = self::getURLType();
-        return view('view_setting', ['template_info' => $template_info, 'url_type' => $url_type]);
+        $displayFirmwareId = $this->getTemplateFirmwareId($template_info);
+
+        return view('view_setting', [
+            'template_info' => $template_info,
+            'url_type' => $url_type,
+            'displayFirmwareId' => $displayFirmwareId
+        ]);
     }
 
     public function updateConfigurations(Request $request, $id)

@@ -3225,37 +3225,21 @@ class CommonHelper
         if ($user && ($user->user_type == 'Admin' || $user->user_type == 'Support')) {
             $firmwares = Firmware::where('device_category_id', $categoryId)->where('is_deleted', 0)->get();
         } else {
-            $target_id = $user->id;
-            $target_user = \App\Writer::find($target_id);
-            $search_ids = [$target_id];
-            
-            if ($target_user) {
-                $current_parent = $target_user->created_by;
-                while ($current_parent && $current_parent != "1" && count($search_ids) < 5) {
-                    $search_ids[] = $current_parent;
-                    $p_user = \App\Writer::find($current_parent);
-                    $current_parent = $p_user ? $p_user->created_by : null;
-                }
-            }
-
+            $parent = $user && $user->created_by ? \App\Writer::find($user->created_by) : null;
+            $assignedFirmwareUserId = ($parent && $parent->user_type != 'Admin') ? $parent->id : $user->id;
             $firmwares = Firmware::where('device_category_id', $categoryId)
                 ->where('is_deleted', 0)
-                ->whereIn('id', function ($query) use ($search_ids) {
+                ->whereIn('id', function ($query) use ($assignedFirmwareUserId) {
                     $query->select('firmware_id')
                         ->from('modals')
-                        ->whereIn('user_id', $search_ids);
+                        ->where('user_id', $assignedFirmwareUserId)
+                        ->whereNotNull('firmware_id');
                 })->get();
-
-            if ($firmwares->isEmpty()) {
-                $l1_reseller_id = end($search_ids);
-                $firmwares = Firmware::where('device_category_id', $categoryId)
-                    ->where('is_deleted', 0)
-                    ->whereIn('id', function ($query) use ($l1_reseller_id) {
-                        $query->select('firmware_id')
-                            ->from('modals')
-                            ->where('user_id', $l1_reseller_id);
-                    })->get();
-            }
+        }
+        $selectedFirmwareId = '';
+        if (isset($configurations['firmware_id'])) {
+            $firmwareConfig = $configurations['firmware_id'];
+            $selectedFirmwareId = is_array($firmwareConfig) ? ($firmwareConfig['value'] ?? '') : $firmwareConfig;
         }
         $html = "";
         $html .= '<div class="form-group">';
@@ -3263,7 +3247,7 @@ class CommonHelper
         $html .= '<div class="col-lg-6">';
         $html .= '<select id="firmware" name="configuration[firmware_id]" class="form-control" placeholder="Search and Select">';
         foreach ($firmwares as $firmware) {
-            $selected = (isset($configurations['firmware_id']) && $configurations['firmware_id'] == $firmware->id) ? 'selected' : '';
+            $selected = ($selectedFirmwareId !== '' && $selectedFirmwareId == $firmware->id) ? 'selected' : '';
             $html .= '<option ' . $selected . ' value="' . $firmware->id . '">' . $firmware->name . '</option>';
         }
         $html .= '</select>';
@@ -3499,6 +3483,5 @@ class CommonHelper
             ->first();
     }
 }
-
 
 

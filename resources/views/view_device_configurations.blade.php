@@ -132,102 +132,95 @@ $errors = json_decode($device['errors'], true);
                                             <div class='row  bgx-configurations view-device-configuration'>
                                                 <div class='col-lg-5'>
                                                     <div class="bgx-table-container">
-                                                        <div class="bgx-table-row">
-                                                            <div class="bgx-table-cell"><strong>Device
-                                                                    Name:</strong>{{ $device['name'] ?? '' }} </div>
-                                                            <div class="bgx-table-cell"><strong>Device
-                                                                    Model:</strong>{{ $configurations['modelName']['value'] ?? '' }}
-                                                            </div>
+                                                        <div class="bgx-table-cell"><strong>Device
+                                                                Name:</strong>{{ $device['name'] ?? '' }} </div>
+                                                        <div class="bgx-table-cell"><strong>Device
+                                                                Model:</strong>{{ $configurations['modelName']['value'] ?? '' }}
                                                         </div>
-                                                        <div class="bgx-table-row">
-                                                            <div class="bgx-table-cell"><strong>Vendor ID:</strong>
-                                                                {{ $configurations['vendorId']['value'] ?? '' }}</div>
-                                                            <div class="bgx-table-cell"><strong>Device
-                                                                    Category:</strong>{{ CommonHelper::getDeviceCategoryName($device['device_category_id']) ?? '' }}
-                                                            </div>
+                                                        <div class="bgx-table-cell"><strong>Vendor ID:</strong>
+                                                            {{ $configurations['vendorId']['value'] ?? '' }}</div>
+                                                        <div class="bgx-table-cell"><strong>Device
+                                                                Category:</strong>{{ CommonHelper::getDeviceCategoryName($device['device_category_id']) ?? '' }}
                                                         </div>
-                                                        <div class="bgx-table-row">
-                                                            <div class="bgx-table-cell">
-                                                                <strong>Account Assigned: </strong>
-                                                                {{ isset($nextId) && $nextId != null ? CommonHelper::getDeviceUserName($nextId) : 'Unassigned' }}
-                                                            </div>
-                                                            <div class="bgx-table-cell">
-                                                                <strong>IMEI:</strong>{{$device['imei'] ?? ''}}</div>
+                                                        <div class="bgx-table-cell">
+                                                            <strong>Account Assigned: </strong>
+                                                            {{ isset($nextId) && $nextId != null ? CommonHelper::getDeviceUserName($nextId) : 'Unassigned' }}
+                                                        </div>
+                                                        <div class="bgx-table-cell">
+                                                            <strong>IMEI:</strong>{{$device['imei'] ?? ''}}</div>
+                                                        <div class="bgx-table-cell">
+                                                            <strong>Firmware ID:</strong>
+                                                            {{ isset($configurations['firmware_id']) ? $configurations['firmware_id']['value'] : 'Not Available' }}
+                                                        </div>
+                                                        <div class="bgx-table-cell">
+                                                            <strong>Firmware Name:</strong>
+                                                            {{$firmwareName ?? "--"}}
+                                                        </div>
+                                                        <div class="bgx-table-cell">
+                                                            <strong>Firmware Version:</strong>
+                                                            {{$fileVersion ?? "--"}}
                                                         </div>
                                                         @if(Auth::user()->user_type == 'Admin' || Auth::user()->user_type == "Support")
-                                                            <div class="bgx-table-row">
-                                                                <div class="bgx-table-cell">
-                                                                    <strong>Firmware ID:</strong>
-                                                                    {{ isset($configurations['firmware_id']) ? $configurations['firmware_id']['value'] : 'Not Available' }}
-                                                                </div>
-                                                                <div class="bgx-table-cell">
-                                                                    <strong>Firmware Name:</strong>
-                                                                    {{$firmwareName ?? "--"}}
-                                                                    <!--{{ isset($configurations['firmware_id']) ? CommonHelper::getFirmwareName($configurations['firmware_id']['value']) : 'Not Available' }}-->
-                                                                </div>
-                                                            </div>
-                                                            <div class="bgx-table-row">
-                                                                @if(Auth::user()->user_type == 'Admin')
-                                                                    <div class="bgx-table-cell"><strong>Firmware File:</strong>
-                                                                        @if(isset($filename))
-                                                                            @if(Auth::user()->user_type == 'Admin')
-                                                                                <a href="{{ asset('fw/' . $filename) }}"
-                                                                                    target="_blank">{{$filename}}</a>
-                                                                            @else
-                                                                                {{$filename}}
-                                                                            @endif
-                                                                        @else
-                                                                            Not Available
-                                                                        @endif
-                                                                    </div>
+                                                            <div class="bgx-table-cell"><strong>Firmware File:</strong>
+                                                                @if(isset($filename))
+                                                                    @if(Auth::user()->user_type == 'Admin')
+                                                                        <a href="{{ asset('fw/' . $filename) }}"
+                                                                            target="_blank">{{$filename}}</a>
+                                                                    @else
+                                                                        {{$filename}}
+                                                                    @endif
+                                                                @else
+                                                                    Not Available
                                                                 @endif
-                                                                <div class="bgx-table-cell">
-                                                                    <strong>Firmware Version:</strong>
-                                                                    {{$fileVersion ?? "--"}}
-                                                                    <!--{{ isset($configurations['firmware_version']) ? $configurations['firmware_version']['value'] : 'Not Available' }}-->
-                                                                </div>
                                                             </div>
                                                         @endif
-                                                        <div class="bgx-table-row">
-                                                            @if(Auth::user()->user_type == 'Admin')
-                                                                <div class="bgx-table-cell">
-                                                                    <strong>Firmware Filesize:</strong>
-                                                                    {{$fileSize ?? "--"}}
-                                                                    <!--{{ isset($configurations['firmware_version']) ? $configurations['firmware_version']['value'] : 'Not Available' }}-->
-                                                                </div>
-                                                            @endif
+                                                        @if(Auth::user()->user_type == 'Admin')
                                                             <div class="bgx-table-cell">
-                                                                <strong>Configuration Status:</strong>
-                                                                @php
-                                                                    $status = $device['deviceStatus'] ?? '';
-                                                                    $color = match ($status) {
-                                                                        'Pending' => 'text-warning font-bold',
-                                                                        'Completed' => 'text-success font-bold',
-                                                                        default => 'text-gray-600',
-                                                                    };
-                                                                @endphp
-                                                                <span class="{{ $color }}">
-                                                                    @if($status == 'Completed')
-                                                                        {{ $status }} on
-                                                                        {{ CommonHelper::getDateAsTimeZone($device->api_updated_at) }}
-                                                                    @else
-                                                                        {{ $status }}
-                                                                    @endif
-                                                                </span>
+                                                                <strong>Firmware Filesize:</strong>
+                                                                {{$fileSize ?? "--"}}
                                                             </div>
+                                                        @endif
+                                                        <div class="bgx-table-cell">
+                                                            <strong>Configuration Status:</strong>
+                                                            @php
+                                                                $status = $device['deviceStatus'] ?? '';
+                                                                $color = match ($status) {
+                                                                    'Pending' => 'text-warning font-bold',
+                                                                    'Completed' => 'text-success font-bold',
+                                                                    default => 'text-gray-600',
+                                                                };
+                                                            @endphp
+                                                            <span class="{{ $color }}">
+                                                                @if($status == 'Completed')
+                                                                    {{ $status }} on
+                                                                    {{ CommonHelper::getDateAsTimeZone($device->api_updated_at) }}
+                                                                @else
+                                                                    {{ $status }}
+                                                                @endif
+                                                            </span>
                                                         </div>
-                                                        <div class="bgx-table-row">
-                                                            <div class="bgx-table-cell"><strong>Activation Date:</strong>
-                                                                {{ isset($configurations['activationDate']) ? CommonHelper::getDateAsTimeZone($configurations['activationDate']) : '' }}
-                                                            </div>
-                                                            <div class="bgx-table-cell"><strong>Created at:</strong>
-                                                                {{ isset($device['created_at']) ? CommonHelper::getDateAsTimeZone($device['created_at']) : '' }}
-                                                            </div>
+                                                        <div class="bgx-table-cell">
+                                                            <strong>Firmware Update Status:</strong>
+                                                            @php
+                                                                $fwStatus = $device['firmware_status'] ?? 'Pending';
+                                                                $fwColor = match ($fwStatus) {
+                                                                    'Pending' => 'text-warning font-bold',
+                                                                    'Completed' => 'text-success font-bold',
+                                                                    default => 'text-gray-600',
+                                                                };
+                                                            @endphp
+                                                            <span class="{{ $fwColor }}">
+                                                                {{ $fwStatus }}
+                                                            </span>
                                                         </div>
-                                                        <div class="bgx-table-row">
-                                                            <div class="bgx-table-cell"><strong>Last Edit:</strong>
-                                                                {{ isset($device['updated_at']) ? CommonHelper::getDateAsTimeZone($device['updated_at']) : '' }}
-                                                            </div>
+                                                        <div class="bgx-table-cell"><strong>Activation Date:</strong>
+                                                            {{ isset($configurations['activationDate']) ? CommonHelper::getDateAsTimeZone($configurations['activationDate']) : '' }}
+                                                        </div>
+                                                        <div class="bgx-table-cell"><strong>Created at:</strong>
+                                                            {{ isset($device['created_at']) ? CommonHelper::getDateAsTimeZone($device['created_at']) : '' }}
+                                                        </div>
+                                                        <div class="bgx-table-cell"><strong>Last Edit:</strong>
+                                                            {{ isset($device['updated_at']) ? CommonHelper::getDateAsTimeZone($device['updated_at']) : '' }}
                                                         </div>
                                                     </div>
                                                 </div>

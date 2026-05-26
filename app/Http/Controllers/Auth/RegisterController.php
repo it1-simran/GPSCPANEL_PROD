@@ -340,26 +340,17 @@ class RegisterController extends Controller
     // Step 2: Get all writer records
     $contacts = Writer::where($where)->get();
 
-    // Step 3: Attach device count
+    // Attach device count and last login details
     foreach ($contacts as $contact) {
       $contact->device_count = $deviceCounts[$contact->id] ?? 0;
+      $lastLogin = DB::table('user_logins')
+        ->where('user_id', $contact->id)
+        ->orderBy('logged_at', 'desc')
+        ->first();
+      $contact->last_ip = $lastLogin->ip_address ?? 'N/A';
+      $contact->last_device = $lastLogin->user_agent ?? 'N/A';
     }
-    // $contacts = Writer::leftJoin('devices', 'writers.id', '=', 'devices.user_id')
-    // ->where($where)
-    // ->selectRaw('writers.id',
-    //     'writers.name',
-    //     'writers.email',
-    //     'writers.mobile',
-    //     'writers.device_category_id',
-    //     'writers.user_type',
-    //     'writers.created_by',
-    //     'writers.total_pings',
-    //     'writers.is_deleted',
-    //     'writers.configurations', 'COUNT(devices.id) as device_count')
-    // ->groupBy('writers.id', 'writers.name')
-    // ->get();
-    // $contacts = Writer::leftJoin('devices', 'writers.id', '=', 'devices.user_id')->where($where)->select('writers.*', DB::raw('COUNT(devices.id) as device_count'))
-    // ->groupBy('writers.id')->get();
+
     $admins = Admin::all();
     $c_uid = Auth::user()->id;
     $totalDevices = 0;
@@ -393,7 +384,6 @@ class RegisterController extends Controller
     $url_type = self::getURLType();
     return view('view_user', ['contacts' => $contacts, 'unassign_device' => $unassign_device, 'totalUsers' => $totalUsers, 'totalDevices' => $totalDevices, 'totalPings' => $totalPings, 'url_type' => $url_type]);
   }
-  // update the code
   public function editWriter($userType, $id)
   {
     $currentUser = Auth::user();

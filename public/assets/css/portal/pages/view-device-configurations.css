@@ -762,13 +762,10 @@
     padding: 12px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-}
-
-.vdc-main-card .view-device-configuration .bgx-table-row {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: dense;
     gap: 10px !important;
-    margin-bottom: 10px !important;
 }
 
 .vdc-main-card .view-device-configuration .bgx-table-cell {
@@ -783,9 +780,20 @@
     box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
 }
 
+/* Hide empty cells */
+.bgx-table-cell:empty {display:none;}
+
 .vdc-main-card .view-device-configuration .bgx-table-cell strong {
     font-size: 11px;
     margin-bottom: 4px;
+}
+
+.vdc-main-card .view-device-configuration .bgx-table-cell span.text-warning {
+    color: #d97706 !important;
+}
+
+.vdc-main-card .view-device-configuration .bgx-table-cell span.text-success {
+    color: #16a34a !important;
 }
 
 /* Map area: keep balanced with table height */
@@ -831,8 +839,8 @@
         min-height: 64px;
     }
 
-    .vdc-main-card .view-device-configuration .bgx-table-row {
-        grid-template-columns: 1fr;
+    .vdc-main-card .view-device-configuration .bgx-table-container {
+        grid-template-columns: 1fr !important;
     }
 }
 

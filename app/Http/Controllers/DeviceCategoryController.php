@@ -667,41 +667,22 @@ class DeviceCategoryController extends Controller
     public function getDeviceCategory(Request $request)
     {
         $device_category = DeviceCategory::find($request->id);
-        $target_id = ($request->has('user_id') && $request->user_id != "" && $request->user_id != "No User Found") ? $request->user_id : Auth::id();
-        $target_user = Writer::find($target_id);
-
-        $search_ids = [$target_id];
-        if ($target_user) {
-            $current_parent = $target_user->created_by;
-            while ($current_parent && $current_parent != "1" && count($search_ids) < 5) {
-                $search_ids[] = $current_parent;
-                $p_user = Writer::find($current_parent);
-                $current_parent = $p_user ? $p_user->created_by : null;
-            }
-        }
+        $authUser = Auth::user();
 
         $firmwareQuery = Firmware::query()
             ->where('device_category_id', $request->id)
             ->where('is_deleted', 0);
 
-        if (Auth::user()->user_type === 'Admin' || Auth::user()->user_type === 'Support') {
+        if ($authUser->user_type === 'Admin' || $authUser->user_type === 'Support') {
             $firmware = $firmwareQuery->get();
         } else {
+            $assignedFirmwareUserId = $this->getFirmwareAssignmentAccountId($authUser);
             $firmwareIds = DB::table('modals')
-                ->whereIn('user_id', $search_ids)
+                ->where('user_id', $assignedFirmwareUserId)
+                ->whereNotNull('firmware_id')
                 ->pluck('firmware_id')
                 ->unique()
                 ->filter();
-
-            if ($firmwareIds->isEmpty()) {
-                // If it's a reseller/user and still empty, check if Admin has defined models for the direct Reseller (L1)
-                $l1_reseller_id = end($search_ids);
-                $firmwareIds = DB::table('modals')
-                    ->where('user_id', $l1_reseller_id)
-                    ->pluck('firmware_id')
-                    ->unique()
-                    ->filter();
-            }
 
             $firmware = $firmwareIds->isEmpty()
                 ? $firmwareQuery->whereRaw('1 = 0')->get()

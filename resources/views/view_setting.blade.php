@@ -4,6 +4,11 @@ use App\Helper\CommonHelper;
 use App\DeviceCategory;
 
 $configurations = json_decode($template_info['configurations'], true) ?: [];
+$firmwareConfig = $configurations['firmware_id'] ?? null;
+$firmwareValue = is_array($firmwareConfig) ? ($firmwareConfig['value'] ?? null) : $firmwareConfig;
+if (($firmwareValue === null || $firmwareValue === '') && !empty($displayFirmwareId)) {
+    $configurations['firmware_id'] = ['id' => 84, 'value' => $displayFirmwareId];
+}
 $getCanEnableByDeviceCategory = !empty($template_info['device_category_id'])
     ? DeviceCategory::select('is_can_protocol')->where('id', $template_info['device_category_id'])->first()
     : null;
@@ -209,8 +214,8 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                             <div class='row d-flex'>
                                                                 <div class="col-lg-9">
                                                                     <p><strong>Firmware:</strong>
-                                                                        {{ isset($configurations['firmware_id']) 
-                                                                            ? CommonHelper::getFirmwareName($configurations['firmware_id']['value']) 
+                                                                        {{ !empty($displayFirmwareId)
+                                                                            ? CommonHelper::getFirmwareName($displayFirmwareId)
                                                                             : 'No firmware available' }}
                                                                     </p>
                                                                     @foreach ($input ?? [] as $field => $value)

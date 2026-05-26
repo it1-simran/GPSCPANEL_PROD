@@ -46,6 +46,51 @@ class Controller extends BaseController
         return $url_type;
     }
 
+    protected function getFirmwareAssignmentAccountId($user)
+    {
+        if (!$user) {
+            return null;
+        }
+
+        $parent = $user->created_by ? Writer::find($user->created_by) : null;
+
+        return ($parent && $parent->user_type != 'Admin') ? $parent->id : $user->id;
+    }
+
+    protected function getTemplateFirmwareId($template)
+    {
+        if (!$template) {
+            return null;
+        }
+
+        $configurations = json_decode($template->configurations, true) ?: [];
+        $firmwareConfig = $configurations['firmware_id'] ?? null;
+        $firmwareId = is_array($firmwareConfig) ? ($firmwareConfig['value'] ?? null) : $firmwareConfig;
+
+        if ($firmwareId !== null && $firmwareId !== '') {
+            return $firmwareId;
+        }
+
+        if (!$template->id_user) {
+            return null;
+        }
+
+        $templateOwner = Writer::find($template->id_user);
+        $assignedFirmwareUserId = $this->getFirmwareAssignmentAccountId($templateOwner);
+        $assignedFirmwareIds = DB::table('modals')
+            ->join('firmware', 'firmware.id', '=', 'modals.firmware_id')
+            ->where('modals.user_id', $assignedFirmwareUserId)
+            ->where('firmware.device_category_id', $template->device_category_id)
+            ->where('firmware.is_deleted', 0)
+            ->whereNotNull('modals.firmware_id')
+            ->pluck('modals.firmware_id')
+            ->unique()
+            ->filter()
+            ->values();
+
+        return $assignedFirmwareIds->count() === 1 ? $assignedFirmwareIds->first() : null;
+    }
+
     public function getAssignedUserIdForDevice($device_id)
     {
         $master_id = Auth::user()->id;

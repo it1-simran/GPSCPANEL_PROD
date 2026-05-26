@@ -1321,11 +1321,33 @@ class DeviceController extends Controller
             return response()->json(['error' => 'Template not found.'], 404);
         }
         $templateConfig = json_decode($template->configurations, true);
-
-        $templateConfig['template'] = $templateId;
         if (!$templateConfig) {
             return response()->json(['error' => 'Invalid template configurations.'], 400);
         }
+        $firmwareId = $this->getTemplateFirmwareId($template);
+        if ($firmwareId === null || $firmwareId === '') {
+            return response()->json([
+                'error' => "Firmware not Assigned to " . $template->template_name . " template .please assign firmware first.",
+            ]);
+        }
+
+        $templateConfig['firmware_id'] = [
+            'id' => $templateConfig['firmware_id']['id'] ?? 84,
+            'value' => $firmwareId
+        ];
+        $templateConfig['template'] = $templateId;
+
+        $firmware = Firmware::where('id', $firmwareId)->first();
+        if (!$firmware) {
+            return response()->json([
+                'error' => "Firmware with ID {$firmwareId} not found for template " . $template->template_name . ".",
+            ]);
+        }
+        $firmwareConfig = json_decode($firmware->configurations ?? '{}');
+        if (!$firmwareConfig) {
+            $firmwareConfig = (object) [];
+        }
+
         $devices = Device::whereIn('id', $deviceIds)->get();
         $errors = [];
         $successfulUpdates = [];
@@ -1335,52 +1357,57 @@ class DeviceController extends Controller
             if (!$deviceConfig) {
                 continue;
             }
-            if (isset($templateConfig['firmware_id']['value'])) {
-                $firmware = Firmware::where('id', $templateConfig['firmware_id']['value'])->first();
-                if (!$firmware) {
-                    $errors[] = "Device ID {$device->id}: Firmware not found.";
-                    continue;
-                } else {
-                    $firmwareConfig = json_decode($firmware['configurations']);
-
-                    $deviceConfig['firmware_id']['value'] = $firmware->id;
-                    $deviceConfig['firmware_file']['value'] = $firmwareConfig->filename;
-                    $deviceConfig['firmware_version']['value'] = $firmwareConfig->version;
-                }
-
-
-                if ($device->user_id === null) {
-                    $deviceConfig['modelName']['value'] = CommonHelper::getDeviceCategoryName($device->device_category_id);
-                } else {
-                    $assign_to_ids = explode(",", $device->assign_to_ids);
-                    if (isset($assign_to_ids[1])) {
-                        $models = Modal::where(['user_id' => $assign_to_ids[1], 'firmware_id' => $templateConfig['firmware_id']['value']])->first();
-                        if ($models) {
-                            $deviceConfig['modelName']['value'] = $models->name;
-                        } else {
-                            $errors[] = $device->imei;
-                            continue;
-                        }
-                    }
-                }
-                $mergedConfig = array_merge($deviceConfig, $templateConfig);
-                $device->configurations = json_encode($mergedConfig);
-                $device->save();
-
-                Devicelog::create([
-                    'device_id' => $device->id,
-                    'user_id' => auth()->id(),
-                    'log' => 'Device with IMEI no ' . $device->imei . ' Assigned a New Templaten ' . $template->template_name,
-                    'action' => 'Updated Template',
-                    'is_active' => 1
-                ]);
-                $successfulUpdates[] = $device->imei;
-                $updatedConfigurations[$device->imei] = $mergedConfig;
-            } else {
-                return response()->json([
-                    'error' => "Firmware not Assigned to " . $template->template_name . " template .please assign firmware first.",
-                ]);
+            if (!isset($deviceConfig['firmware_id']) || !is_array($deviceConfig['firmware_id'])) {
+                $deviceConfig['firmware_id'] = ['id' => 84, 'value' => ''];
             }
+            if (!isset($deviceConfig['firmware_file']) || !is_array($deviceConfig['firmware_file'])) {
+                $deviceConfig['firmware_file'] = ['id' => 85, 'value' => ''];
+            }
+            if (!isset($deviceConfig['firmware_version']) || !is_array($deviceConfig['firmware_version'])) {
+                $deviceConfig['firmware_version'] = ['id' => 86, 'value' => ''];
+            }
+            if (!isset($deviceConfig['modelName']) || !is_array($deviceConfig['modelName'])) {
+                $deviceConfig['modelName'] = ['id' => null, 'value' => $deviceConfig['modelName'] ?? ''];
+            }
+            if (!isset($deviceConfig['vendorId']) || !is_array($deviceConfig['vendorId'])) {
+                $deviceConfig['vendorId'] = ['id' => null, 'value' => $deviceConfig['vendorId'] ?? ''];
+            }
+
+            $deviceConfig['firmware_id']['value'] = $firmware->id;
+            $deviceConfig['firmware_file']['value'] = $firmwareConfig->filename ?? '';
+            $deviceConfig['firmware_version']['value'] = $firmwareConfig->version ?? '';
+            $deviceConfig['firmwareFileSize']['value'] = $firmwareConfig->fileSize ?? '';
+
+            if ($device->user_id === null) {
+                $deviceConfig['modelName']['value'] = CommonHelper::getDeviceCategoryName($device->device_category_id);
+            } else {
+                $models = CommonHelper::getModelByHierarchy($device, $firmwareId, Auth::id(), $device->device_category_id);
+                if ($models) {
+                    $deviceConfig['modelName']['value'] = $models->name;
+                    $deviceConfig['vendorId']['value'] = $models->vendorId ?? ($deviceConfig['vendorId']['value'] ?? 'JSD');
+                } else {
+                    $errors[] = $device->imei;
+                    continue;
+                }
+            }
+            $mergedConfig = array_merge($deviceConfig, $templateConfig);
+            foreach (['firmware_id', 'firmware_file', 'firmware_version', 'firmwareFileSize', 'modelName', 'vendorId'] as $resolvedKey) {
+                if (isset($deviceConfig[$resolvedKey])) {
+                    $mergedConfig[$resolvedKey] = $deviceConfig[$resolvedKey];
+                }
+            }
+            $device->configurations = json_encode($mergedConfig);
+            $device->save();
+
+            Devicelog::create([
+                'device_id' => $device->id,
+                'user_id' => auth()->id(),
+                'log' => 'Device with IMEI no ' . $device->imei . ' Assigned a New Template ' . $template->template_name,
+                'action' => 'Updated Template',
+                'is_active' => 1
+            ]);
+            $successfulUpdates[] = $device->imei;
+            $updatedConfigurations[$device->imei] = $mergedConfig;
         }
 
 
@@ -1401,7 +1428,7 @@ class DeviceController extends Controller
             foreach ($errors as $error) {
                 $errorMessage .= "$error" . ',';
             }
-            $errorMessage .= "Model name is not assigned to this " . CommonHelper::getFirmwareName($templateConfig['firmware_id']) . " firmware. Please contact the administrator.";
+            $errorMessage .= "Model name is not assigned to this " . CommonHelper::getFirmwareName($firmwareId) . " firmware. Please contact the administrator.";
         }
 
 
@@ -2375,6 +2402,7 @@ class DeviceController extends Controller
             $oldFirmwareId = (int)($oldChanges['firmware_id']['value'] ?? 0);
             
             if ($newFirmwareId && $newFirmwareId != $oldFirmwareId) {
+                $device->firmware_status = 'Pending';
                 // Firmware changed: update model and vendor from hierarchy
                 $hierarchyModel = \App\Helper\CommonHelper::getModelByHierarchy($device, $newFirmwareId, auth()->id());
                 
@@ -2642,6 +2670,11 @@ class DeviceController extends Controller
             if ($newChanges) {
                 $contact->deviceStatus = 'Pending';
             }
+            $newFwId = (int)($request->configuration['firmware_id'] ?? 0);
+            $oldFwId = (int)($oldChanges['firmware_id']['value'] ?? 0);
+            if ($newFwId && $newFwId != $oldFwId) {
+                $contact->firmware_status = 'Pending';
+            }
             $result = array_replace($oldChanges, $newChanges);
 
 
@@ -2744,6 +2777,11 @@ class DeviceController extends Controller
 
             if ($newChanges) {
                 $contact->deviceStatus = 'Pending';
+            }
+            $newFwId = (int)($request->configuration['firmware_id'] ?? 0);
+            $oldFwId = (int)($oldChanges['firmware_id']['value'] ?? 0);
+            if ($newFwId && $newFwId != $oldFwId) {
+                $contact->firmware_status = 'Pending';
             }
             $result = array_replace($oldChanges, $newChanges);
 

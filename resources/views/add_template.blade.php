@@ -776,13 +776,31 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       let firmwares = JSON.parse(result.firmware);
                       let dataFields = JSON.parse(result.dataFields);
                       let canEnable = result.canEnable == 1 ? true : false;
+                      let firmwareSelect = $('#firmware');
+                      firmwareSelect.empty();
+                      $('#modelName').val('');
+                      $('#VendorId').val('0');
+                      $('#modalInput').hide();
+                      $('#VendorID').hide();
+                      $('.modelName_error').hide().empty();
+                      $('.vendor_error').hide().empty();
                       if (canEnable) {
                           $('.isCanEnable').show();
+                      } else {
+                          $('.isCanEnable').hide();
                       }
-                      firmwares.forEach(firmware => {
-                          var option = new Option(firmware.name, firmware.id, firmware.is_default == 1, firmware.is_default == 1);
-                          $('#firmware').append(option);
-                      });
+                      if (firmwares.length > 0) {
+                          firmwareSelect.prop('disabled', false);
+                          firmwares.forEach(firmware => {
+                              var option = new Option(firmware.name, firmware.id, firmware.is_default == 1, firmware.is_default == 1);
+                              firmwareSelect.append(option);
+                          });
+                          firmwareSelect.trigger('change');
+                      } else {
+                          firmwareSelect.prop('disabled', true);
+                          firmwareSelect.append(new Option('Not Found', ''));
+                          $('.btn-disable-after-submit').attr('disabled', true);
+                      }
                   inputFields.forEach((input, index) => {
                        htmlContent += '<input class="form-control" type="hidden"  name="idParameters[' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="'+input.id+'">';
                       if (input.type == 'select') {

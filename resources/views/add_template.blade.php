@@ -165,9 +165,6 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                                     
                                                     var event = new Event('change');
                                                     select.dispatchEvent(event);
-                                                    if (typeof getSelectedDeviceCategory === "function") {
-                                                        getSelectedDeviceCategory();
-                                                    }
                                                     
                                                     dropdown.style.display = 'none';
                                                     header.classList.remove('active');

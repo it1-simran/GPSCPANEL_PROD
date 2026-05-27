@@ -462,6 +462,7 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::post('/store-template', [TemplateController::class, 'create'])->name('template.store');
     Route::get('/view-template', [TemplateController::class, 'show'])->name('template.view');
     Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->name('template.edit');
+    Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->name('template.delete');
     // Template Configuration
     Route::post('/submit-assign-device', [DeviceController::class, 'submitImeiSheetSupport']);
     Route::post('/submit-Multipledevice', [DeviceController::class, 'submitMultipleDeviceSupport']);

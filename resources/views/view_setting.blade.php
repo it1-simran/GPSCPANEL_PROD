@@ -176,16 +176,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                 </div>
                                             </div>
                                             @endif
-                                            @else
-                                            @if(Auth::user()->is_support_active)
-                                            <div class="row mt-3">
-                                                <div class="col-lg-12 text-center">
-                                                    <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')">
-                                                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            @endif
+
                                             @endif
                                         </div>
                 </div>
@@ -246,16 +237,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                                     </button>
                                                                 </div>
                                                                 @endif
-                                                                @else
-                                                                @if(Auth::user()->is_support_active)
-                                                                <div class="row mt-3">
-                                                                    <div class="col-lg-12 text-center">
-                                                                        <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')" style="background-color: #1e293b; border-color: #1e293b; color: white; padding: 8px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.2); transition: all 0.2s;">
-                                                                            <i class="fa fa-pencil-square-o" aria-hidden="true" style="margin-right: 6px;"></i> Edit
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                                @endif
+
                                                                 @endif
                                                             </div>
                                                         </div>
@@ -307,16 +289,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                             </div>
                                         </div>
                                         @endif
-                                        @else
-                                        @if(Auth::user()->is_support_active)
-                                        <div class="row mt-3">
-                                            <div class="col-lg-12 text-center">
-                                                <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')" style="background-color: #1e293b; border-color: #1e293b; color: white; padding: 8px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.2); transition: all 0.2s;">
-                                                    <i class="fa fa-pencil-square-o" aria-hidden="true" style="margin-right: 6px;"></i> Edit
-                                                </button>
-                                            </div>
-                                        </div>
-                                        @endif
+
                                         @endif
                                         @endempty
                 </div>

@@ -498,13 +498,11 @@ class TemplateController extends Controller
             }
             $template_data->is_deleted = '1';
             $template_data->save();
-            if (Auth::user()->user_type == 'Admin') {
-                return redirect('admin/view-template')->with(['error' => $template_data->template_name . '-Settings deleted Successfully', 'device_category_id' => $template_data->device_category_id]);
-            } else if (Auth::user()->user_type == 'Reseller') {
-                return redirect('reseller/view-template')->with(['error' => $template_data->template_name . '-Settings deleted Successfully', 'device_category_id' => $template_data->device_category_id]);
-            } else {
-                return redirect('user/view-template')->with(['error' => $template_data->template_name . '-Settings deleted Successfully', 'device_category_id' => $template_data->device_category_id]);
-            }
+            $url_type = self::getURLType();
+            return redirect($url_type . '/view-template')->with([
+                'error' => $template_data->template_name . '-Settings deleted Successfully', 
+                'device_category_id' => $template_data->device_category_id
+            ]);
         } catch (QueryException $e) {
             return redirect()->back()->with('error', 'This template cannot be deleted because devices or other data still reference it.');
         }

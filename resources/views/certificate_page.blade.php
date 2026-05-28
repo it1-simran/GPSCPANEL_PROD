@@ -18,7 +18,7 @@
           <div class="c_title">
             <div class="row bgx-title-container">
               <div class="col-lg-6">
-                <h2>Certificate</h2>
+                <h2><i class="fa fa-certificate" style="color:#76CF1C;margin-right:10px;"></i>Certificate Details</h2>
               </div>
             </div>
             <div class="clearfix"></div>
@@ -26,18 +26,18 @@
           <div class="c_content">
             @if ($errors->any())
               <div class="row">
-                <div class="col-sm-12 alert alert-danger" role="alert">
-                  {{ $errors->first() }}
+                <div class="col-sm-12">
+                  <div class="alert alert-danger alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                    <strong>Error!</strong> {{ $errors->first() }}
+                  </div>
                 </div>
               </div>
             @endif
             @if($saved && empty($edit_mode))
               <div class="row">
-                <!-- <div class="col-lg-12 text-right margin-bottom-10">
-                  <a href="/user/device/{{ $device->id }}/certificate?edit=1" class="btn btn-default">Edit Details</a>
-                </div> -->
                 <div class="col-md-12" style="height:80vh;">
-                  <iframe src="/user/device/{{ $device->id }}/certificate/view" style="width:100%;height:100%;border:1px solid #ccc;"></iframe>
+                  <iframe src="/user/device/{{ $device->id }}/certificate/view" style="width:100%;height:100%;border:1px solid #ccc;border-radius:4px;"></iframe>
                 </div>
               </div>
             @else
@@ -46,30 +46,133 @@
                   @php
                     $formData = is_array($saved) ? $saved : [];
                   @endphp
-                  <div class="alert alert-info alert-dismissible" role="alert" id="rc-upload-info" style="display:none;">
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <strong>RC Uploaded Successfully!</strong> The vehicle details have been auto-populated from your RC document. Please review and edit if needed.
+                  <div class="alert alert-success alert-dismissible" role="alert" id="rc-upload-info" style="display:none;">
+                    <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                    <i class="fa fa-check-circle"></i> <strong>Success!</strong> RC details have been extracted and auto-populated. Please review and edit if needed.
                   </div>
-                  <form class="validator form-horizontal" id="certificate-details-form" method="post" action="/user/device/{{ $device->id }}/certificate/save">
-                    @csrf
-                    <div class="form-group">
-                      <label class="control-label col-lg-3">Upload RC Document (Optional)</label>
-                      <div class="col-lg-6">
-                        <div class="input-group">
-                          <input type="file" id="rc_file" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" class="form-control" />
-                          <span class="input-group-btn">
-                            <button class="btn btn-info" type="button" id="upload-rc-btn">Upload & Extract</button>
-                          </span>
-                        </div>
-                        <small class="form-text text-muted">Supported: PDF, JPG, PNG, BMP, GIF (Max 5MB). Upload your vehicle RC to auto-populate the form.</small>
-                        <div id="rc-upload-progress" style="display:none; margin-top:10px;">
-                          <div class="progress">
-                            <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%">
-                              <span id="rc-progress-text">Processing RC document...</span>
-                            </div>
+
+                  <!-- RC Upload Card -->
+                  <div class="rc-upload-card" style="background: linear-gradient(135deg, #76CF1C15 0%, #76CF1C08 100%); border: 2px dashed #76CF1C; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <h4 style="color:#333; margin-bottom:15px; font-weight:600;">
+                          <i class="fa fa-file-pdf-o" style="color:#76CF1C;margin-right:8px;"></i>Upload Registration Certificate (RC)
+                        </h4>
+                        <p style="color:#666; font-size:13px; margin-bottom:15px;">Automatically extract vehicle details from your RC document. Supported formats: PDF, JPG, PNG, BMP, GIF (Max 5MB)</p>
+
+                        <div class="file-upload-wrapper">
+                          <div class="form-group" style="margin-bottom:0;">
+                            <input type="file" id="rc_file" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" class="form-control" style="padding:10px; border: 1px solid #ddd; cursor:pointer;" />
                           </div>
                         </div>
-                        <div id="rc-upload-error" class="alert alert-danger" style="display:none; margin-top:10px;"></div>
+
+                        <button class="btn btn-success" type="button" id="upload-rc-btn" style="margin-top:10px; background-color:#76CF1C; border-color:#76CF1C; color:#fff; padding:10px 30px; font-weight:500;">
+                          <i class="fa fa-upload"></i> Upload & Extract Details
+                        </button>
+
+                        <div id="rc-upload-progress" style="display:none; margin-top:15px;">
+                          <p style="font-size:12px; color:#666; margin-bottom:8px;">Processing RC document...</p>
+                          <div class="progress" style="height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden;">
+                            <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%; background-color:#76CF1C; border-radius:3px;"></div>
+                          </div>
+                        </div>
+                        <div id="rc-upload-error" style="display:none; margin-top:15px;">
+                          <div class="alert alert-danger alert-dismissible" style="margin:0;">
+                            <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                            <i class="fa fa-exclamation-circle"></i> <span id="error-message"></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <form class="validator form-horizontal" id="certificate-details-form" method="post" action="/user/device/{{ $device->id }}/certificate/save">
+                    @csrf
+                    <!-- Certificate Holder Section -->
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:20px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-user" style="color:#76CF1C;margin-right:8px;"></i>Holder Information
+                      </h4>
+
+                      <div class="form-group" style="margin-bottom:20px;">
+                        <label class="control-label col-lg-3" style="font-weight:500; color:#333;">Certificate Holder Name & Address <span class="require" style="color:#d32f2f;">*</span></label>
+                        <div class="col-lg-9">
+                          <textarea class="form-control" name="holder_name" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; min-height:80px;">{{ old('holder_name', $formData['holder_name'] ?? '') }}</textarea>
+                          <small class="form-text text-muted">Enter name and complete address of certificate holder</small>
+                        </div>
+                      </div>
+
+                      <div class="form-group" style="margin-bottom:20px;">
+                        <label class="control-label col-lg-3" style="font-weight:500; color:#333;">Authority City <span class="require" style="color:#d32f2f;">*</span></label>
+                        <div class="col-lg-9">
+                          <input class="form-control" type="text" name="authority_city" placeholder="e.g., Jaipur" value="{{ old('authority_city', $formData['authority_city'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          <small class="form-text text-muted">City of the registering authority</small>
+                        </div>
+                      </div>
+
+                      <div class="form-group" style="margin-bottom:20px;">
+                        <label class="control-label col-lg-3" style="font-weight:500; color:#333;">Fitment Date <span class="require" style="color:#d32f2f;">*</span></label>
+                        <div class="col-lg-9">
+                          <input class="form-control" type="date" name="fitment_date_display" value="{{ date('Y-m-d') }}" disabled style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          <input type="hidden" name="fitment_date" value="{{ date('Y-m-d') }}" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Vehicle Details Section -->
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-car" style="color:#76CF1C;margin-right:8px;"></i>Vehicle Information
+                      </h4>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Registration No <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vehicle_registration_no" placeholder="e.g., RJ18GB8351" value="{{ old('vehicle_registration_no', $formData['vehicle_registration_no'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Chassis No <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="chassis_no" placeholder="Enter chassis number" value="{{ old('chassis_no', $formData['chassis_no'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Engine No <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="engine_no" placeholder="Enter engine number" value="{{ old('engine_no', $formData['engine_no'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Color <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="color" placeholder="e.g., White, Black" value="{{ old('color', $formData['color'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Model <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vehicle_model" placeholder="Enter vehicle model" value="{{ old('vehicle_model', $formData['vehicle_model'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Class</label>
+                            <input class="form-control" type="text" name="vehicle_class" placeholder="e.g., Truck, Bus" value="{{ old('vehicle_class', $formData['vehicle_class'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="form-group" style="margin-bottom:20px;">
+                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fuel Type</label>
+                        <input class="form-control" type="text" name="fuel_type" placeholder="Petrol/Diesel/CNG/Electric" value="{{ old('fuel_type', $formData['fuel_type'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
                       </div>
                     </div>
                     <div class="form-group">
@@ -97,30 +200,41 @@
                         <input class="form-control" type="text" name="vehicle_registration_no" value="{{ old('vehicle_registration_no', $formData['vehicle_registration_no'] ?? '') }}" required />
                       </div>
                     </div>
-                    <div class="form-group">
-                      <label class="control-label col-lg-3">VLTD Serial No <span class="require">*</span></label>
-                      <div class="col-lg-6">
-                        <input class="form-control" type="text" name="vltd_serial_no" value="{{ old('vltd_serial_no', $formData['vltd_serial_no'] ?? '') }}" required />
+                    <!-- VLTD Details Section -->
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-cogs" style="color:#76CF1C;margin-right:8px;"></i>VLTD Device Information
+                      </h4>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">VLTD Serial No <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vltd_serial_no" placeholder="VLTD Serial Number" value="{{ old('vltd_serial_no', $formData['vltd_serial_no'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">VLTD Make <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vltd_make" value="{{ old('vltd_make', 'JSD Electronics India Pvt Ltd') }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div class="form-group">
-                      <label class="control-label col-lg-3">VLTD Make <span class="require">*</span></label>
-                      <div class="col-lg-6">
-                        <input class="form-control" type="text" name="vltd_make" value="{{ old('vltd_make', 'JSD Electronics India Pvt Ltd') }}" required readonly />
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">VLTD Model <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vltd_model" value="{{ old('vltd_model', $formData['vltd_model'] ?? ($vltd_model ?? $category_name)) }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">VLTD ICCID</label>
+                            <input class="form-control" type="text" name="vltd_icc_id" placeholder="ICCID (optional)" value="{{ old('vltd_icc_id', $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? '')) }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div class="form-group">
-                      <label class="control-label col-lg-3">VLTD Model <span class="require">*</span></label>
-                      <div class="col-lg-6">
-                        <input class="form-control" type="text" name="vltd_model" value="{{ old('vltd_model', $formData['vltd_model'] ?? ($vltd_model ?? $category_name)) }}" required readonly />
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label class="control-label col-lg-3">VLTD ICCID</label>
-                      <div class="col-lg-6">
-                        <input class="form-control" type="text" name="vltd_icc_id" value="{{ old('vltd_icc_id', $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? '')) }}" />
-                      </div>
-                    </div>
                     <div class="form-group">
                       <label class="control-label col-lg-3">Chassis No <span class="require">*</span></label>
                       <div class="col-lg-6">
@@ -157,23 +271,38 @@
                         <input class="form-control" type="text" name="fuel_type" value="{{ old('fuel_type', $formData['fuel_type'] ?? '') }}" />
                       </div>
                     </div>
+                    <!-- Certification & Compliance Section -->
                     @if(!empty($is_certification_enable))
-                    <div class="form-group">
-                      <label class="control-label col-lg-3">ARAI TAC/COP No <span class="require">*</span></label>
-                      <div class="col-lg-6">
-                        <input class="form-control" type="text" name="arai_tac" value="{{ $arai_tac }}" required readonly />
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label class="control-label col-lg-3">ARAI Date <span class="require">*</span></label>
-                      <div class="col-lg-6">
-                        <input class="form-control" type="date" name="arai_date" value="{{ $arai_date }}" required readonly />
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-shield" style="color:#76CF1C;margin-right:8px;"></i>Certification & Compliance
+                      </h4>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">ARAI TAC/COP No <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="arai_tac" value="{{ $arai_tac }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">ARAI Date <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="date" name="arai_date" value="{{ $arai_date }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
+                        </div>
                       </div>
                     </div>
                     @endif
-                    <div class="form-group">
-                      <label class="control-label col-lg-3">Service Provider <span class="require">*</span></label>
-                      <div class="col-lg-6">
+
+                    <!-- Service Provider Section -->
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-building" style="color:#76CF1C;margin-right:8px;"></i>Service Provider
+                      </h4>
+
+                      <div class="form-group" style="margin-bottom:30px;">
+                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Select Service Provider <span class="require" style="color:#d32f2f;">*</span></label>
                         @php
                           $savedProvider = $formData['service_provider'] ?? null;
                           if (!$savedProvider && isset($formData['service_providers'])) {
@@ -185,18 +314,28 @@
                           }
                           $selectedProvider = old('service_provider', $savedProvider);
                         @endphp
-                        <select name="service_provider" id="serviceProvidersSelect" required>
+                        <select name="service_provider" id="serviceProvidersSelect" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%;">
                           @php
                             $savedProviders = $selectedProvider ? [$selectedProvider] : [];
                           @endphp
+                          <option value="">-- Select a Provider --</option>
                           <option value="Taisys" {{ in_array('Taisys', $savedProviders) ? 'selected' : '' }}>Taisys</option>
                           <option value="Growspace" {{ in_array('Growspace', $savedProviders) ? 'selected' : '' }}>Growspace</option>
                         </select>
                       </div>
                     </div>
-                    <div class="form-group">
-                      <div class="col-lg-12 text-right">
-                        <button class="btn btn-primary btn-flat" type="submit">Save & View</button>
+
+                    <!-- Action Buttons -->
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <div class="form-group" style="margin-bottom:0;">
+                        <div class="col-lg-12 text-right">
+                          <button class="btn btn-default" type="reset" style="margin-right:10px; border-radius:4px; padding:10px 30px;">
+                            <i class="fa fa-times"></i> Reset
+                          </button>
+                          <button class="btn btn-primary" type="submit" style="background-color:#76CF1C; border-color:#76CF1C; color:#fff; border-radius:4px; padding:10px 30px; font-weight:500;">
+                            <i class="fa fa-save"></i> Save & View Certificate
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </form>
@@ -238,15 +377,20 @@
 
     function showTesseractWarning(instructions) {
       const warningHtml = `
-        <div class="alert alert-warning alert-dismissible" role="alert" style="margin-bottom: 20px;">
+        <div class="alert alert-warning alert-dismissible" role="alert" style="margin-bottom: 25px; border-left:4px solid #ffc107; background-color:#fffbf0; border-radius:4px; padding:15px;">
           <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <strong>Note:</strong> OCR feature is not available. You can still upload RC documents for storage, but automatic text extraction requires <strong>Tesseract-OCR</strong> to be installed.
-          <br><br>
-          <small>
+          <i class="fa fa-info-circle" style="color:#ff9800; margin-right:8px;"></i>
+          <strong style="color:#333;">OCR Feature Not Available</strong>
+          <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
+            You can upload RC documents, but automatic text extraction is not available. Tesseract-OCR needs to be installed on the server.
+          </p>
+          <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
             <strong>For your OS (${instructions.os}):</strong><br>
-            ${instructions.steps.map(step => `<div>${step}</div>`).join('')}
-            <br>Or enter RC details manually in the form below.
-          </small>
+            ${instructions.steps.map(step => `<div style="margin:5px 0; padding-left:15px;">• ${step}</div>`).join('')}
+          </p>
+          <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
+            <em>Or simply enter RC details manually in the form below.</em>
+          </p>
         </div>
       `;
 
@@ -315,7 +459,7 @@
             errorMsg = xhr.statusText;
           }
 
-          uploadError.html('<strong>Error:</strong> ' + errorMsg);
+          $('#error-message').text(errorMsg);
         }
       });
     }

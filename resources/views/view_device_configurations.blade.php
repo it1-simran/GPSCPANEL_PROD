@@ -202,7 +202,22 @@ $errors = json_decode($device['errors'], true);
                                                         <div class="bgx-table-cell">
                                                             <strong>Firmware Update Status:</strong>
                                                             @php
-                                                                $fwStatus = $device['firmware_status'] ?? 'Pending';
+                                                                $configuredFwId = $configurations['firmware_id']['value'] ?? null;
+                                                                $configuredVersion = $fileVersion ?? null;
+
+                                                                $deviceFid = $parameters['fid']['value'] ?? null;
+                                                                $deviceVersion = $parameters['firmware_version']['value'] ?? null;
+
+                                                                $fidMatches = ($deviceFid !== null && $configuredFwId !== null && trim((string)$deviceFid) === trim((string)$configuredFwId));
+                                                                $versionMatches = false;
+                                                                if ($deviceVersion !== null && $configuredVersion !== null) {
+                                                                    $devVerClean = str_replace('.', '', trim((string)$deviceVersion));
+                                                                    $cfgVerClean = str_replace('.', '', trim((string)$configuredVersion));
+                                                                    $versionMatches = ($devVerClean === $cfgVerClean || trim((string)$deviceVersion) === trim((string)$configuredVersion));
+                                                                }
+
+                                                                $fwStatus = ($fidMatches && $versionMatches) ? 'Completed' : 'Pending';
+
                                                                 $fwColor = match ($fwStatus) {
                                                                     'Pending' => 'text-warning font-bold',
                                                                     'Completed' => 'text-success font-bold',

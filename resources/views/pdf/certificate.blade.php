@@ -137,6 +137,13 @@
       Our retro-fitment center is approved by JSD Electronics India Pvt LTD for fitment of Vehicle Location Tracking Device.<br>
       According to ARAI TAC/COP No : <span class="bold">{{ $arai_tac ?? 'AS9076' }}</span> Dated <span class="bold">{{ $arai_date ?? '08-12-2025' }}</span> .The details of VLTD shown below :<br>
     </div>
+    @if(!empty($vehicle_class) || !empty($fuel_type))
+    <div class="details">
+      <span class="bold">Additional Vehicle Information (from Registration Certificate):</span><br>
+      @if(!empty($vehicle_class))Vehicle Class: <span class="bold">{{ $vehicle_class }}</span><br>@endif
+      @if(!empty($fuel_type))Fuel Type: <span class="bold">{{ $fuel_type }}</span><br>@endif
+    </div>
+    @endif
     <div class="details">
       VLTD Serial No: <span class="bold">{{ $vltd_serial_no }}</span><br>
       VLTD IMEI No: <span class="bold">{{ $imei }}</span><br>

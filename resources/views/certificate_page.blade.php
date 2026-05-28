@@ -46,8 +46,32 @@
                   @php
                     $formData = is_array($saved) ? $saved : [];
                   @endphp
+                  <div class="alert alert-info alert-dismissible" role="alert" id="rc-upload-info" style="display:none;">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <strong>RC Uploaded Successfully!</strong> The vehicle details have been auto-populated from your RC document. Please review and edit if needed.
+                  </div>
                   <form class="validator form-horizontal" id="certificate-details-form" method="post" action="/user/device/{{ $device->id }}/certificate/save">
                     @csrf
+                    <div class="form-group">
+                      <label class="control-label col-lg-3">Upload RC Document (Optional)</label>
+                      <div class="col-lg-6">
+                        <div class="input-group">
+                          <input type="file" id="rc_file" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" class="form-control" />
+                          <span class="input-group-btn">
+                            <button class="btn btn-info" type="button" id="upload-rc-btn">Upload & Extract</button>
+                          </span>
+                        </div>
+                        <small class="form-text text-muted">Supported: PDF, JPG, PNG, BMP, GIF (Max 5MB). Upload your vehicle RC to auto-populate the form.</small>
+                        <div id="rc-upload-progress" style="display:none; margin-top:10px;">
+                          <div class="progress">
+                            <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%">
+                              <span id="rc-progress-text">Processing RC document...</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div id="rc-upload-error" class="alert alert-danger" style="display:none; margin-top:10px;"></div>
+                      </div>
+                    </div>
                     <div class="form-group">
                       <label class="control-label col-lg-3">Certificate Holder Name & Address<span class="require">*</span></label>
                       <div class="col-lg-6">
@@ -121,6 +145,18 @@
                         <input class="form-control" type="text" name="vehicle_model" value="{{ old('vehicle_model', $formData['vehicle_model'] ?? '') }}" required />
                       </div>
                     </div>
+                    <div class="form-group">
+                      <label class="control-label col-lg-3">Vehicle Class</label>
+                      <div class="col-lg-6">
+                        <input class="form-control" type="text" name="vehicle_class" value="{{ old('vehicle_class', $formData['vehicle_class'] ?? '') }}" />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="control-label col-lg-3">Fuel Type</label>
+                      <div class="col-lg-6">
+                        <input class="form-control" type="text" name="fuel_type" value="{{ old('fuel_type', $formData['fuel_type'] ?? '') }}" />
+                      </div>
+                    </div>
                     @if(!empty($is_certification_enable))
                     <div class="form-group">
                       <label class="control-label col-lg-3">ARAI TAC/COP No <span class="require">*</span></label>
@@ -184,5 +220,125 @@
       allowClear: true,
       width: '100%'
     });
+
+    // Check RC feature status on page load
+    checkRCStatus();
+
+    function checkRCStatus() {
+      $.ajax({
+        url: '/user/device/{{ $device->id }}/certificate/rc-status',
+        method: 'GET',
+        success: function(response) {
+          if (!response.tesseract_available) {
+            showTesseractWarning(response.instructions);
+          }
+        }
+      });
+    }
+
+    function showTesseractWarning(instructions) {
+      const warningHtml = `
+        <div class="alert alert-warning alert-dismissible" role="alert" style="margin-bottom: 20px;">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <strong>Note:</strong> OCR feature is not available. You can still upload RC documents for storage, but automatic text extraction requires <strong>Tesseract-OCR</strong> to be installed.
+          <br><br>
+          <small>
+            <strong>For your OS (${instructions.os}):</strong><br>
+            ${instructions.steps.map(step => `<div>${step}</div>`).join('')}
+            <br>Or enter RC details manually in the form below.
+          </small>
+        </div>
+      `;
+
+      $('#certificate-details-form').before(warningHtml);
+    }
+
+    // RC Upload Handler
+    $('#upload-rc-btn').on('click', function() {
+      const fileInput = document.getElementById('rc_file');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select an RC file first');
+        return;
+      }
+
+      uploadRCDocument(fileInput.files[0]);
+    });
+
+    // Allow upload on file selection
+    $('#rc_file').on('change', function() {
+      if (this.files && this.files.length > 0) {
+        uploadRCDocument(this.files[0]);
+      }
+    });
+
+    function uploadRCDocument(file) {
+      const formData = new FormData();
+      formData.append('rc_file', file);
+
+      const uploadProgress = $('#rc-upload-progress');
+      const uploadError = $('#rc-upload-error');
+      const uploadInfo = $('#rc-upload-info');
+
+      uploadProgress.show();
+      uploadError.hide();
+      uploadInfo.hide();
+
+      $.ajax({
+        url: '/user/device/{{ $device->id }}/certificate/upload-rc',
+        method: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        headers: {
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val()
+        },
+        success: function(response) {
+          uploadProgress.hide();
+          uploadInfo.show();
+
+          if (response.data) {
+            populateFormFields(response.data);
+          }
+
+          setTimeout(() => {
+            uploadInfo.fadeOut();
+          }, 5000);
+        },
+        error: function(xhr) {
+          uploadProgress.hide();
+          uploadError.show();
+
+          let errorMsg = 'Error uploading RC document';
+          if (xhr.responseJSON && xhr.responseJSON.error) {
+            errorMsg = xhr.responseJSON.error;
+          } else if (xhr.statusText) {
+            errorMsg = xhr.statusText;
+          }
+
+          uploadError.html('<strong>Error:</strong> ' + errorMsg);
+        }
+      });
+    }
+
+    function populateFormFields(data) {
+      const fieldMappings = {
+        'vehicle_registration_no': '#certificate-details-form input[name="vehicle_registration_no"]',
+        'holder_name': '#certificate-details-form textarea[name="holder_name"]',
+        'fitment_date': '#certificate-details-form input[name="fitment_date"]',
+        'chassis_no': '#certificate-details-form input[name="chassis_no"]',
+        'engine_no': '#certificate-details-form input[name="engine_no"]',
+        'vehicle_model': '#certificate-details-form input[name="vehicle_model"]',
+        'color': '#certificate-details-form input[name="color"]',
+      };
+
+      Object.keys(fieldMappings).forEach(dataKey => {
+        const selector = fieldMappings[dataKey];
+        const value = data[dataKey];
+
+        if (value && $(selector).length) {
+          $(selector).val(value).change();
+        }
+      });
+    }
   });
 </script>

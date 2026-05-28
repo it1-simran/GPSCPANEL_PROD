@@ -650,6 +650,8 @@ class DeviceController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
+            'vehicle_class' => $request->vehicle_class ?? null,
+            'fuel_type' => $request->fuel_type ?? null,
             'vltd_icc_id' => $request->vltd_icc_id,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
@@ -663,6 +665,99 @@ class DeviceController extends Controller
         // $device->certificate_engine_no = $request->engine_no;
         $device->update();
         return redirect('/user/device/' . $device->id . '/certificate/view');
+    }
+
+    public function uploadRC($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'rc_file' => 'required|file|mimes:pdf,jpg,jpeg,png,bmp,gif|max:5120',
+        ]);
+
+        try {
+            $file = $request->file('rc_file');
+            $filePath = $file->store('rc_uploads', 'local');
+            $fullPath = storage_path('app/' . $filePath);
+
+            $rcService = new \App\Services\RCExtractionService();
+            $extractedData = $rcService->extractFromFile($fullPath);
+            $rcService->validateRCDocument($extractedData);
+            $mappedData = $rcService->mapRCToFormFields($extractedData);
+
+            // Store RC file path in device config
+            $config = json_decode($device->configurations, true) ?: [];
+            $config['rc_details'] = array_merge(
+                $extractedData,
+                ['file_path' => $filePath, 'uploaded_at' => now()]
+            );
+            $device->configurations = json_encode($config);
+            $device->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'RC document processed successfully',
+                'data' => $mappedData,
+                'raw_data' => $extractedData,
+            ]);
+        } catch (\Exception $e) {
+            // Clean up uploaded file on error
+            if (isset($filePath) && file_exists(storage_path('app/' . $filePath))) {
+                unlink(storage_path('app/' . $filePath));
+            }
+
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function getRCData($id)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $config = json_decode($device->configurations, true) ?: [];
+        $rcDetails = $config['rc_details'] ?? null;
+
+        if (!$rcDetails) {
+            return response()->json(['data' => null]);
+        }
+
+        // Don't return file path in API response
+        $rcData = array_diff_key($rcDetails, array_flip(['file_path']));
+
+        return response()->json(['data' => $rcData]);
+    }
+
+    public function getRCStatus($id)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $fallbackService = new \App\Services\RCFallbackService();
+        $tesseractAvailable = $fallbackService->isTesseractAvailable();
+
+        $response = [
+            'tesseract_available' => $tesseractAvailable,
+        ];
+
+        if (!$tesseractAvailable) {
+            $response['instructions'] = $fallbackService->getInstallationInstructions();
+            $response['message'] = 'OCR feature is not configured. Please install Tesseract-OCR or enter RC details manually.';
+        }
+
+        return response()->json($response);
     }
 
     public function viewCertificate($id)

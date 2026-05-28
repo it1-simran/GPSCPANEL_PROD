@@ -376,6 +376,9 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::get('/device/{id}/certificate', [DeviceController::class, 'certificatePage']);
     Route::post('/device/{id}/certificate/save', [DeviceController::class, 'saveCertificateDetails']);
     Route::get('/device/{id}/certificate/view', [DeviceController::class, 'viewCertificate']);
+    Route::post('/device/{id}/certificate/upload-rc', [DeviceController::class, 'uploadRC']);
+    Route::get('/device/{id}/certificate/rc-data', [DeviceController::class, 'getRCData']);
+    Route::get('/device/{id}/certificate/rc-status', [DeviceController::class, 'getRCStatus']);
     Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations']);
     Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations']);
     Route::post('/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations']);

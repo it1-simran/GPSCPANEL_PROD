@@ -186,7 +186,7 @@ class RCExtractionService
         $lines = array_filter(array_map('trim', explode("\n", $text)));
 
         // Extract registration number
-        $data['vehicle_registration_no'] = $this->extractField($text, ['REG.*?NO', 'REGISTRATION.*?NO', 'REG.*?MARK'], 10);
+        $data['vehicle_registration_no'] = $this->extractField($text, ['REGISTRATION\s+NUMBER', 'REG.*?NO', 'REGISTRATION.*?NO', 'REG.*?MARK'], 15);
 
         // Extract owner/holder name
         $data['holder_name'] = $this->extractField($text, ['OWNER.*?NAME', 'REGISTERED.*?TO', 'NAME.*?OF.*?OWNER'], 50);

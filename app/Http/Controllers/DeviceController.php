@@ -746,15 +746,26 @@ class DeviceController extends Controller
         }
 
         $fallbackService = new \App\Services\RCFallbackService();
+        $googleVisionConfigured = \App\Services\GoogleVisionRCService::isConfigured();
         $tesseractAvailable = $fallbackService->isTesseractAvailable();
 
         $response = [
+            'google_vision_available' => $googleVisionConfigured,
             'tesseract_available' => $tesseractAvailable,
+            'ocr_available' => $googleVisionConfigured || $tesseractAvailable,
         ];
 
-        if (!$tesseractAvailable) {
-            $response['instructions'] = $fallbackService->getInstallationInstructions();
-            $response['message'] = 'OCR feature is not configured. Please install Tesseract-OCR or enter RC details manually.';
+        if (!$googleVisionConfigured && !$tesseractAvailable) {
+            $instructions = $fallbackService->getInstallationInstructions();
+            $response['instructions'] = $instructions;
+            $response['message'] = 'OCR feature is not configured. Please set up either Google Cloud Vision API (recommended) or Tesseract-OCR.';
+        } else {
+            $response['message'] = 'OCR feature is available and ready to use.';
+            if ($googleVisionConfigured) {
+                $response['active_ocr'] = 'Google Cloud Vision API';
+            } elseif ($tesseractAvailable) {
+                $response['active_ocr'] = 'Tesseract-OCR';
+            }
         }
 
         return response()->json($response);

@@ -48,20 +48,39 @@ class RCExtractionService
                 throw new Exception('File not found: ' . $filePath);
             }
 
-            // Get file extension
-            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-
-            // Handle PDF files
-            if ($ext === 'pdf') {
-                return $this->extractFromPDF($filePath);
+            // Try Google Vision API first if configured
+            if (\App\Services\GoogleVisionRCService::isConfigured()) {
+                try {
+                    $googleService = new \App\Services\GoogleVisionRCService();
+                    return $googleService->extractFromFile($filePath);
+                } catch (Exception $e) {
+                    // Fall back to Tesseract if Google Vision fails
+                    if ($this->isTesseractAvailable()) {
+                        // Continue with Tesseract
+                    } else {
+                        throw $e;
+                    }
+                }
             }
 
-            // Handle image files
-            if (in_array($ext, ['jpg', 'jpeg', 'png', 'bmp', 'gif'])) {
-                return $this->extractFromImage($filePath);
+            // Fall back to Tesseract if Google Vision not configured
+            if ($this->isTesseractAvailable()) {
+                $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+                if ($ext === 'pdf') {
+                    return $this->extractFromPDF($filePath);
+                }
+
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'bmp', 'gif'])) {
+                    return $this->extractFromImage($filePath);
+                }
             }
 
-            throw new Exception('Unsupported file format. Please upload a PDF or image file.');
+            // No OCR available
+            throw new Exception(
+                'OCR feature is not available. Please configure Google Cloud Vision API or install Tesseract-OCR. ' .
+                'See documentation for setup instructions.'
+            );
         } catch (Exception $e) {
             throw new Exception('Error extracting RC data: ' . $e->getMessage());
         }

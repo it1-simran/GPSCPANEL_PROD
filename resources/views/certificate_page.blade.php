@@ -376,25 +376,90 @@
     }
 
     function showTesseractWarning(instructions) {
-      const warningHtml = `
-        <div class="alert alert-warning alert-dismissible" role="alert" style="margin-bottom: 25px; border-left:4px solid #ffc107; background-color:#fffbf0; border-radius:4px; padding:15px;">
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <i class="fa fa-info-circle" style="color:#ff9800; margin-right:8px;"></i>
-          <strong style="color:#333;">OCR Feature Not Available</strong>
-          <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
-            You can upload RC documents, but automatic text extraction is not available. Tesseract-OCR needs to be installed on the server.
-          </p>
-          <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
-            <strong>For your OS (${instructions.os}):</strong><br>
-            ${instructions.steps.map(step => `<div style="margin:5px 0; padding-left:15px;">• ${step}</div>`).join('')}
-          </p>
-          <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
-            <em>Or simply enter RC details manually in the form below.</em>
-          </p>
-        </div>
-      `;
+      if (instructions.options) {
+        // Show multi-option setup instructions
+        const googleInstructions = instructions.options.google_vision;
+        const tesseractInstructions = instructions.options.tesseract;
 
-      $('#certificate-details-form').before(warningHtml);
+        const warningHtml = `
+          <div class="alert alert-warning alert-dismissible" role="alert" style="margin-bottom: 25px; border-left:4px solid #ffc107; background-color:#fffbf0; border-radius:4px; padding:15px;">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <i class="fa fa-info-circle" style="color:#ff9800; margin-right:8px;"></i>
+            <strong style="color:#333;">OCR Feature Not Configured</strong>
+            <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
+              Automatic text extraction requires setup. Choose one of the options below:
+            </p>
+
+            <!-- Google Vision Option -->
+            <div style="margin:15px 0; padding:12px; background-color:#e8f5e9; border-left:3px solid #4caf50; border-radius:3px;">
+              <h5 style="margin:0 0 10px 0; color:#2e7d32; font-size:13px;">
+                <i class="fa fa-cloud" style="margin-right:5px;"></i>
+                <strong>${googleInstructions.name}</strong> <span style="color:#666; font-size:11px;">(Recommended)</span>
+              </h5>
+              <p style="color:#555; font-size:11px; margin:5px 0;">
+                ${googleInstructions.description}
+              </p>
+              <p style="color:#666; font-size:11px; margin:5px 0;"><strong>Benefits:</strong></p>
+              <ul style="margin:5px 0; padding-left:20px; color:#666; font-size:11px;">
+                ${googleInstructions.benefits.map(b => `<li>${b}</li>`).join('')}
+              </ul>
+              <p style="color:#666; font-size:11px; margin:10px 0 0 0;">
+                <strong>Setup:</strong><br>
+                ${googleInstructions.steps.map(step => `<div style="margin:3px 0; padding-left:15px;">• ${step}</div>`).join('')}
+              </p>
+              <a href="https://console.cloud.google.com" target="_blank" style="color:#1976d2; text-decoration:none; font-size:11px;">
+                <i class="fa fa-external-link"></i> Go to Google Cloud Console
+              </a>
+            </div>
+
+            <!-- Tesseract Option -->
+            <div style="margin:15px 0; padding:12px; background-color:#f3e5f5; border-left:3px solid #9c27b0; border-radius:3px;">
+              <h5 style="margin:0 0 10px 0; color:#6a1b9a; font-size:13px;">
+                <i class="fa fa-server" style="margin-right:5px;"></i>
+                <strong>${tesseractInstructions.name}</strong> <span style="color:#666; font-size:11px;">(Alternative)</span>
+              </h5>
+              <p style="color:#666; font-size:11px; margin:5px 0;">
+                <strong>Setup steps:</strong><br>
+                ${tesseractInstructions.steps.map(step => `<div style="margin:3px 0; padding-left:15px;">• ${step}</div>`).join('')}
+              </p>
+            </div>
+
+            <!-- Manual Entry Option -->
+            <div style="margin:15px 0; padding:12px; background-color:#fce4ec; border-left:3px solid #e91e63; border-radius:3px;">
+              <h5 style="margin:0 0 10px 0; color:#880e4f; font-size:13px;">
+                <i class="fa fa-keyboard-o" style="margin-right:5px;"></i>
+                <strong>Manual Entry</strong>
+              </h5>
+              <p style="color:#666; font-size:11px; margin:0;">
+                You can always enter RC details manually in the form below without any setup required.
+              </p>
+            </div>
+          </div>
+        `;
+
+        $('#certificate-details-form').before(warningHtml);
+      } else {
+        // Legacy single-option warning
+        const warningHtml = `
+          <div class="alert alert-warning alert-dismissible" role="alert" style="margin-bottom: 25px; border-left:4px solid #ffc107; background-color:#fffbf0; border-radius:4px; padding:15px;">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <i class="fa fa-info-circle" style="color:#ff9800; margin-right:8px;"></i>
+            <strong style="color:#333;">OCR Feature Not Available</strong>
+            <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
+              You can upload RC documents, but automatic text extraction is not available.
+            </p>
+            <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
+              <strong>For your OS (${instructions.os}):</strong><br>
+              ${instructions.steps.map(step => `<div style="margin:5px 0; padding-left:15px;">• ${step}</div>`).join('')}
+            </p>
+            <p style="color:#666; margin:10px 0 0 0; font-size:12px;">
+              <em>Or simply enter RC details manually in the form below.</em>
+            </p>
+          </div>
+        `;
+
+        $('#certificate-details-form').before(warningHtml);
+      }
     }
 
     // RC Upload Handler

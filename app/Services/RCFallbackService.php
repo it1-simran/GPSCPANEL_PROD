@@ -62,21 +62,55 @@ class RCFallbackService
     }
 
     /**
-     * Get installation instructions for Tesseract
+     * Get installation instructions for OCR solutions
      */
     public function getInstallationInstructions()
+    {
+        return [
+            'options' => [
+                'google_vision' => $this->getGoogleVisionInstructions(),
+                'tesseract' => $this->getTesseractInstructions(),
+            ],
+        ];
+    }
+
+    protected function getGoogleVisionInstructions()
+    {
+        return [
+            'name' => 'Google Cloud Vision API (Recommended)',
+            'description' => 'Cloud-based OCR - more accurate, no local installation needed',
+            'steps' => [
+                '1. Create a Google Cloud Project at: https://console.cloud.google.com',
+                '2. Enable Vision API: https://console.cloud.google.com/apis/library/vision.googleapis.com',
+                '3. Create a Service Account at: https://console.cloud.google.com/iam-admin/serviceaccounts',
+                '4. Download JSON key file from service account',
+                '5. Copy the JSON file to your project (e.g., storage/google-vision-key.json)',
+                '6. Add to .env file:',
+                '   GOOGLE_APPLICATION_CREDENTIALS=storage/google-vision-key.json',
+                '7. Restart your web server',
+            ],
+            'benefits' => [
+                'More accurate OCR results',
+                'No local installation required',
+                'Works on any server',
+                'Handles scanned and digital documents',
+            ],
+        ];
+    }
+
+    protected function getTesseractInstructions()
     {
         $osType = strtoupper(substr(PHP_OS, 0, 3));
 
         if ($osType === 'WIN') {
-            return $this->getWindowsInstructions();
+            return array_merge(['name' => 'Tesseract-OCR (Windows)'], $this->getWindowsInstructions());
         } elseif ($osType === 'LIN') {
-            return $this->getLinuxInstructions();
+            return array_merge(['name' => 'Tesseract-OCR (Linux)'], $this->getLinuxInstructions());
         } elseif ($osType === 'DAR') {
-            return $this->getMacInstructions();
+            return array_merge(['name' => 'Tesseract-OCR (macOS)'], $this->getMacInstructions());
         }
 
-        return $this->getGenericInstructions();
+        return array_merge(['name' => 'Tesseract-OCR'], $this->getGenericInstructions());
     }
 
     protected function getWindowsInstructions()

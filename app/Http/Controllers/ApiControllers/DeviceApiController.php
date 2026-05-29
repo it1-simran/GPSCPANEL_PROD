@@ -487,10 +487,10 @@ class DeviceApiController extends Controller
 		// 	}
 		// }
 
-		// Normalize any remaining nulls or empty strings to "0"
+		// Normalize any remaining nulls, 0s, or empty strings to ""
 		foreach ($response as $k => $v) {
-			if ($v === null || $v === "") {
-				$response[$k] = "0";
+			if ($v === null || $v === "" || $v === "0" || $v === 0) {
+				$response[$k] = "";
 			}
 		}
 

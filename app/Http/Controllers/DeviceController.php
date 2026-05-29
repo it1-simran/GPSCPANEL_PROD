@@ -650,6 +650,8 @@ class DeviceController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
+            'vehicle_class' => $request->vehicle_class ?? null,
+            'fuel_type' => $request->fuel_type ?? null,
             'vltd_icc_id' => $request->vltd_icc_id,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
@@ -663,6 +665,272 @@ class DeviceController extends Controller
         // $device->certificate_engine_no = $request->engine_no;
         $device->update();
         return redirect('/user/device/' . $device->id . '/certificate/view');
+    }
+
+    public function uploadRC($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'rc_file' => 'required|file|mimes:pdf,jpg,jpeg,png,bmp,gif|max:5120',
+        ]);
+
+        try {
+            $file = $request->file('rc_file');
+            $filePath = $file->store('rc_uploads', 'local');
+            $fullPath = storage_path('app/' . $filePath);
+
+            $rcService = new \App\Services\RCExtractionService();
+            $extractedData = $rcService->extractFromFile($fullPath);
+            $mappedData = $rcService->mapRCToFormFields($extractedData);
+
+            // Detect which required fields are missing (warn but don't block)
+            $requiredFields = ['vehicle_registration_no', 'chassis_no', 'engine_no'];
+            $missingFields = array_filter($requiredFields, fn($f) => empty($extractedData[$f]));
+            $warning = !empty($missingFields)
+                ? 'Some fields could not be auto-extracted (' . implode(', ', $missingFields) . '). Please fill them in manually.'
+                : null;
+
+            // Store RC file path in device config
+            $config = json_decode($device->configurations, true) ?: [];
+            $config['rc_details'] = array_merge(
+                $extractedData,
+                ['file_path' => $filePath, 'uploaded_at' => now()]
+            );
+            $device->configurations = json_encode($config);
+            $device->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => $warning ?? 'RC document processed successfully',
+                'warning' => $warning,
+                'data' => $mappedData,
+                'raw_data' => $extractedData,
+            ]);
+        } catch (\Exception $e) {
+            // Clean up uploaded file on error
+            if (isset($filePath) && file_exists(storage_path('app/' . $filePath))) {
+                unlink(storage_path('app/' . $filePath));
+            }
+
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Verify uploaded number plate image against expected registration number
+     */
+    public function verifyNumberPlate($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'plate_file'      => 'required|file|mimes:jpg,jpeg,png,bmp,gif|max:5120',
+            'expected_reg_no' => 'required|string|max:20',
+        ]);
+
+        $filePath = null;
+        try {
+            $expected = \App\Services\GoogleVisionRCService::normalizePlateNumber(
+                $request->input('expected_reg_no')
+            );
+            if ($expected === '') {
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Please fill in Vehicle Registration No (from RC) before verifying the plate.',
+                ], 422);
+            }
+
+            $file     = $request->file('plate_file');
+            $filePath = $file->store('plate_uploads', 'local');
+            $fullPath = storage_path('app/' . $filePath);
+
+            if (!\App\Services\GoogleVisionRCService::isConfigured()) {
+                throw new \Exception('Google Vision OCR is not configured.');
+            }
+
+            $service  = new \App\Services\GoogleVisionRCService();
+            $detected = $service->extractPlateNumber($fullPath);
+            $detectedNormalized = \App\Services\GoogleVisionRCService::normalizePlateNumber($detected);
+
+            if (file_exists($fullPath)) unlink($fullPath);
+
+            if (!$detectedNormalized) {
+                return response()->json([
+                    'success'  => false,
+                    'matched'  => false,
+                    'expected' => $expected,
+                    'detected' => null,
+                    'error'    => 'Could not detect a valid number plate in the uploaded image. Please upload a clearer photo.',
+                ], 422);
+            }
+
+            $matched = ($detectedNormalized === $expected);
+
+            return response()->json([
+                'success'  => $matched,
+                'matched'  => $matched,
+                'expected' => $expected,
+                'detected' => $detectedNormalized,
+                'message'  => $matched
+                    ? 'Number plate verified successfully — matches the RC registration number.'
+                    : 'Number plate does NOT match the RC. Expected: ' . $expected . ', Detected: ' . $detectedNormalized,
+            ], $matched ? 200 : 422);
+
+        } catch (\Exception $e) {
+            if ($filePath && file_exists(storage_path('app/' . $filePath))) {
+                @unlink(storage_path('app/' . $filePath));
+            }
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Extract IMEI and ICCID from a device image
+     */
+    public function extractDeviceInfo($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'device_file' => 'required|file|mimes:jpg,jpeg,png,bmp,gif|max:5120',
+        ]);
+
+        $filePath = null;
+        try {
+            $file     = $request->file('device_file');
+            $filePath = $file->store('device_uploads', 'local');
+            $fullPath = storage_path('app/' . $filePath);
+
+            if (!\App\Services\GoogleVisionRCService::isConfigured()) {
+                throw new \Exception('Google Vision OCR is not configured.');
+            }
+
+            $service = new \App\Services\GoogleVisionRCService();
+            $info    = $service->extractDeviceInfo($fullPath);
+
+            if (file_exists($fullPath)) unlink($fullPath);
+
+            if (empty($info['imei']) && empty($info['iccid'])) {
+                return response()->json([
+                    'success' => false,
+                    'imei'    => null,
+                    'iccid'   => null,
+                    'error'   => 'Could not detect IMEI or ICCID in the image. Please upload a clearer photo of the device label.',
+                ], 422);
+            }
+
+            $deviceImei  = $device->imei ?? null;
+            $imeiMatches = null;
+            if ($info['imei'] && $deviceImei) {
+                $imeiMatches = (trim($info['imei']) === trim($deviceImei));
+            }
+
+            // Enrich ICCID with SIM info from GrowSpace API
+            $simData = ['sims' => [], 'plan_status' => null, 'organization' => null];
+            if (!empty($info['iccid'])) {
+                $growService = new \App\Services\GrowSpaceSimService();
+                $simData     = $growService->lookupByIccid($info['iccid']);
+            }
+
+            return response()->json([
+                'success'      => true,
+                'imei'         => $info['imei'],
+                'iccid'        => $info['iccid'],
+                'device_imei'  => $deviceImei,
+                'imei_matches' => $imeiMatches,
+                'sims'         => $simData['sims'],
+                'plan_status'  => $simData['plan_status'],
+                'organization' => $simData['organization'],
+                'message'      => 'Device info extracted: '
+                    . ($info['imei']  ? 'IMEI ' . $info['imei']  : 'IMEI not found')
+                    . ', '
+                    . ($info['iccid'] ? 'ICCID ' . $info['iccid'] : 'ICCID not found'),
+            ]);
+
+        } catch (\Exception $e) {
+            if ($filePath && file_exists(storage_path('app/' . $filePath))) {
+                @unlink(storage_path('app/' . $filePath));
+            }
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getRCData($id)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $config = json_decode($device->configurations, true) ?: [];
+        $rcDetails = $config['rc_details'] ?? null;
+
+        if (!$rcDetails) {
+            return response()->json(['data' => null]);
+        }
+
+        // Don't return file path in API response
+        $rcData = array_diff_key($rcDetails, array_flip(['file_path']));
+
+        return response()->json(['data' => $rcData]);
+    }
+
+    public function getRCStatus($id)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $fallbackService = new \App\Services\RCFallbackService();
+        $googleVisionConfigured = \App\Services\GoogleVisionRCService::isConfigured();
+        $tesseractAvailable = $fallbackService->isTesseractAvailable();
+
+        $response = [
+            'google_vision_available' => $googleVisionConfigured,
+            'tesseract_available' => $tesseractAvailable,
+            'ocr_available' => $googleVisionConfigured || $tesseractAvailable,
+        ];
+
+        if (!$googleVisionConfigured && !$tesseractAvailable) {
+            $instructions = $fallbackService->getInstallationInstructions();
+            $response['instructions'] = $instructions;
+            $response['message'] = 'OCR feature is not configured. Please set up either Google Cloud Vision API (recommended) or Tesseract-OCR.';
+        } else {
+            $response['message'] = 'OCR feature is available and ready to use.';
+            if ($googleVisionConfigured) {
+                $response['active_ocr'] = 'Google Cloud Vision API';
+            } elseif ($tesseractAvailable) {
+                $response['active_ocr'] = 'Tesseract-OCR';
+            }
+        }
+
+        return response()->json($response);
     }
 
     public function viewCertificate($id)

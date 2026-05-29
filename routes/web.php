@@ -5,12 +5,14 @@ use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\FirmwareController;
 use App\Http\Controllers\DeviceCategoryController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\DeviceLogsController;
 use App\Http\Controllers\GuestUserController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\PermissionManagementController;
 use App\Exports\BackendExport;
 use App\Exports\UsersExport;
 use App\Exports\DevicesExports;
@@ -226,6 +228,20 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::delete('/admin/delete-category-fields/{id}', [DeviceController::class, 'destroyDataField']);
     Route::post('/admin/check-modal-name', [DeviceController::class, 'checkModalName']);
 
+    /* ======================= Certificate Management Routes ======================= */
+    Route::get('/admin/certificates', [CertificateController::class, 'index'])->name('certificate.index');
+    Route::get('/admin/certificate/{id}', [CertificateController::class, 'certificatePage'])->name('certificate.page');
+    Route::post('/admin/certificate/{id}', [CertificateController::class, 'generateCertificate'])->name('certificate.generate');
+    Route::post('/admin/certificate/{id}/preview', [CertificateController::class, 'previewCertificate'])->name('certificate.preview');
+    Route::post('/admin/certificate/{id}/save', [CertificateController::class, 'saveCertificateDetails'])->name('certificate.save');
+    Route::get('/admin/certificate/{id}/view', [CertificateController::class, 'viewCertificate'])->name('certificate.view');
+    Route::post('/admin/certificate/{id}/upload-rc', [CertificateController::class, 'uploadRC'])->name('certificate.upload-rc');
+    Route::post('/admin/certificate/{id}/verify-plate', [CertificateController::class, 'verifyNumberPlate'])->name('certificate.verify-plate');
+    Route::post('/admin/certificate/{id}/extract-device', [CertificateController::class, 'extractDeviceInfo'])->name('certificate.extract-device');
+    Route::post('/admin/certificate/{id}/lookup-iccid', [CertificateController::class, 'lookupIccid'])->name('certificate.lookup-iccid');
+    Route::get('/admin/certificate/{id}/rc-data', [CertificateController::class, 'getRCData'])->name('certificate.rc-data');
+    Route::get('/admin/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->name('certificate.rc-status');
+
     /* ======================= Template Management Routes ======================= */
     Route::post('/admin/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations']);
     Route::get('/admin/add-template', [TemplateController::class, 'index'])->name('template.add');
@@ -292,6 +308,16 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/admin/packet-alerts/{alert}/edit', [App\Http\Controllers\PacketAlertController::class, 'edit'])->name('protocols.packet-alerts.edit');
     Route::put('/admin/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'update'])->name('protocols.packet-alerts.update');
     Route::delete('/admin/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'destroy'])->name('protocols.packet-alerts.destroy');
+
+    /* ======================= Permission Management Routes ======================= */
+    Route::middleware('auth')->group(function () {
+        Route::get('/admin/manage-permissions', [PermissionManagementController::class, 'adminManagePermissions'])->name('admin.manage-permissions');
+        Route::get('/admin/permissions/{resellerId}', [PermissionManagementController::class, 'getResellerPermissions']);
+        Route::post('/admin/permissions/{resellerId}/update', [PermissionManagementController::class, 'updateResellerPermissions']);
+        Route::get('/admin/manage-user-permissions', [PermissionManagementController::class, 'adminManageUserPermissions'])->name('admin.manage-user-permissions');
+        Route::get('/admin/permissions/user/{userId}', [PermissionManagementController::class, 'getUserPermissions']);
+        Route::post('/admin/permissions/user/{userId}/update', [PermissionManagementController::class, 'updateUserPermissions']);
+    });
 });
 
 Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function () {
@@ -358,6 +384,27 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::post('/get-can-protocol-fields', [DeviceController::class, 'getCanProtoColFields']);
     Route::post('/get-firmware-with-models', [FirmwareController::class, 'getFirmwareWithModel']);
     Route::post('/get-firmware', [FirmwareController::class, 'getFirmware']);
+
+    // Certificate Management Routes for Reseller
+    Route::get('/certificates', [CertificateController::class, 'index'])->name('certificate.index');
+    Route::get('/certificate/{id}', [CertificateController::class, 'certificatePage'])->name('certificate.page');
+    Route::post('/certificate/{id}', [CertificateController::class, 'generateCertificate'])->name('certificate.generate');
+    Route::post('/certificate/{id}/preview', [CertificateController::class, 'previewCertificate'])->name('certificate.preview');
+    Route::post('/certificate/{id}/save', [CertificateController::class, 'saveCertificateDetails'])->name('certificate.save');
+    Route::get('/certificate/{id}/view', [CertificateController::class, 'viewCertificate'])->name('certificate.view');
+    Route::post('/certificate/{id}/upload-rc', [CertificateController::class, 'uploadRC'])->name('certificate.upload-rc');
+    Route::post('/certificate/{id}/verify-plate', [CertificateController::class, 'verifyNumberPlate'])->name('certificate.verify-plate');
+    Route::post('/certificate/{id}/extract-device', [CertificateController::class, 'extractDeviceInfo'])->name('certificate.extract-device');
+    Route::post('/certificate/{id}/lookup-iccid', [CertificateController::class, 'lookupIccid'])->name('certificate.lookup-iccid');
+    Route::get('/certificate/{id}/rc-data', [CertificateController::class, 'getRCData'])->name('certificate.rc-data');
+    Route::get('/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->name('certificate.rc-status');
+
+    /* ======================= Permission Management Routes ======================= */
+    Route::middleware('auth')->group(function () {
+        Route::get('/manage-child-permissions', [PermissionManagementController::class, 'resellerManageChildPermissions'])->name('reseller.manage-child-permissions');
+        Route::get('/permissions/child/{userId}', [PermissionManagementController::class, 'getChildUserPermissions']);
+        Route::post('/permissions/child/{userId}/update', [PermissionManagementController::class, 'updateChildUserPermissions']);
+    });
 });
 
 
@@ -371,11 +418,33 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->name('device.edit');
     Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->name('device.update');
     Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);
+
+    // Certificate Management Routes
+    Route::get('/certificates', [CertificateController::class, 'index'])->name('certificate.index');
+    Route::get('/certificate/{id}', [CertificateController::class, 'certificatePage'])->name('certificate.page');
+    Route::post('/certificate/{id}', [CertificateController::class, 'generateCertificate'])->name('certificate.generate');
+    Route::post('/certificate/{id}/preview', [CertificateController::class, 'previewCertificate'])->name('certificate.preview');
+    Route::post('/certificate/{id}/save', [CertificateController::class, 'saveCertificateDetails'])->name('certificate.save');
+    Route::get('/certificate/{id}/view', [CertificateController::class, 'viewCertificate'])->name('certificate.view');
+    Route::post('/certificate/{id}/upload-rc', [CertificateController::class, 'uploadRC'])->name('certificate.upload-rc');
+    Route::post('/certificate/{id}/verify-plate', [CertificateController::class, 'verifyNumberPlate'])->name('certificate.verify-plate');
+    Route::post('/certificate/{id}/extract-device', [CertificateController::class, 'extractDeviceInfo'])->name('certificate.extract-device');
+    Route::post('/certificate/{id}/lookup-iccid', [CertificateController::class, 'lookupIccid'])->name('certificate.lookup-iccid');
+    Route::get('/certificate/{id}/rc-data', [CertificateController::class, 'getRCData'])->name('certificate.rc-data');
+    Route::get('/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->name('certificate.rc-status');
+
+    // Legacy Device Certificate Routes (kept for backward compatibility)
     Route::post('/device/{id}/certificate', [DeviceController::class, 'generateCertificate']);
     Route::post('/device/{id}/certificate/preview', [DeviceController::class, 'previewCertificate']);
     Route::get('/device/{id}/certificate', [DeviceController::class, 'certificatePage']);
     Route::post('/device/{id}/certificate/save', [DeviceController::class, 'saveCertificateDetails']);
     Route::get('/device/{id}/certificate/view', [DeviceController::class, 'viewCertificate']);
+    Route::post('/device/{id}/certificate/upload-rc', [DeviceController::class, 'uploadRC']);
+    Route::post('/device/{id}/certificate/verify-plate', [DeviceController::class, 'verifyNumberPlate']);
+    Route::post('/device/{id}/certificate/extract-device', [DeviceController::class, 'extractDeviceInfo']);
+    Route::get('/device/{id}/certificate/rc-data', [DeviceController::class, 'getRCData']);
+    Route::get('/device/{id}/certificate/rc-status', [DeviceController::class, 'getRCStatus']);
+
     Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations']);
     Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations']);
     Route::post('/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations']);

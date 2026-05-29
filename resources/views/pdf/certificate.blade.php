@@ -158,6 +158,37 @@
         @endphp
         <span class="bold">{{ $provider }}</span>
       </div>
+
+      @if(!empty($sim1_operator) || !empty($sim1_msisdn) || !empty($sim2_operator) || !empty($sim2_msisdn))
+      <div style="margin-top:10px;">
+        <span class="bold">SIM Profile Details:</span>
+        <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:11px;">
+          <thead>
+            <tr style="background:#f0f0f0;">
+              <th style="border:1px solid #000; padding:5px; text-align:left;">Slot</th>
+              <th style="border:1px solid #000; padding:5px; text-align:left;">Operator</th>
+              <th style="border:1px solid #000; padding:5px; text-align:left;">MSISDN</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if(!empty($sim1_operator) || !empty($sim1_msisdn))
+            <tr>
+              <td style="border:1px solid #000; padding:5px;"><span class="bold">SIM 1</span></td>
+              <td style="border:1px solid #000; padding:5px;"><span class="bold">{{ $sim1_operator ?? '—' }}</span></td>
+              <td style="border:1px solid #000; padding:5px;"><span class="bold">{{ $sim1_msisdn ?? '—' }}</span></td>
+            </tr>
+            @endif
+            @if(!empty($sim2_operator) || !empty($sim2_msisdn))
+            <tr>
+              <td style="border:1px solid #000; padding:5px;"><span class="bold">SIM 2</span></td>
+              <td style="border:1px solid #000; padding:5px;"><span class="bold">{{ $sim2_operator ?? '—' }}</span></td>
+              <td style="border:1px solid #000; padding:5px;"><span class="bold">{{ $sim2_msisdn ?? '—' }}</span></td>
+            </tr>
+            @endif
+          </tbody>
+        </table>
+      </div>
+      @endif
     </div>
 
     <div class="footer">

@@ -180,62 +180,109 @@ class RCExtractionService
     protected function parseRCData($text)
     {
         $data = [];
-
-        // Clean and normalize text
         $text = strtoupper($text);
-        $lines = array_filter(array_map('trim', explode("\n", $text)));
 
-        // Extract registration number
-        $data['vehicle_registration_no'] = $this->extractField($text, ['REGISTRATION\s+NUMBER', 'REG.*?NO', 'REGISTRATION.*?NO', 'REG.*?MARK'], 15);
+        // Indian RC document labels: REG NO, CH NO, E SNO, MODEL, VHE CL, FUEL, COLOR, NAME, REGD DT, MFR
 
-        // Extract owner/holder name
-        $data['holder_name'] = $this->extractField($text, ['OWNER.*?NAME', 'REGISTERED.*?TO', 'NAME.*?OF.*?OWNER'], 50);
+        // Registration Number
+        $data['vehicle_registration_no'] = $this->extractField($text, [
+            'REG\s*NO\b',
+            'REGN?\.?\s*NO\b',
+            'REGISTRATION\s*N(?:O|UMBER)',
+            'REG\s+MARK',
+        ], 20);
 
-        // Extract registration date
-        $data['registration_date'] = $this->extractField($text, ['REGISTRATION.*?DATE', 'DATE.*?OF.*?REGISTRATION'], 10);
+        // Chassis Number (CH NO)
+        $data['chassis_no'] = $this->extractField($text, [
+            'CH\s*NO\b',
+            'CHASS?IS\s*N(?:O|UMBER)',
+            'CHS\s*NO\b',
+        ], 25);
 
-        // Extract chassis number
-        $data['chassis_no'] = $this->extractField($text, ['CHASSIS.*?NO', 'CHASSIS.*?NUMBER', 'CHASIS'], 20);
+        // Engine Number (E SNO)
+        $data['engine_no'] = $this->extractField($text, [
+            'E\s*SNO\b',
+            'E\s*S\s*NO\b',
+            'ENGINE\s*N(?:O|UMBER)',
+            'ENG\s*NO\b',
+        ], 25);
 
-        // Extract engine number
-        $data['engine_no'] = $this->extractField($text, ['ENGINE.*?NO', 'ENGINE.*?NUMBER'], 20);
+        // Vehicle Model (MODEL)
+        $data['vehicle_model'] = $this->extractField($text, [
+            '\bMODEL\b(?!\s*(?:NAME|NO))',
+            'VEHICLE\s+MODEL',
+            'MAKE(?:R)?(?:\'S)?\s*MODEL',
+        ], 60);
 
-        // Extract vehicle make/model
-        $data['vehicle_model'] = $this->extractField($text, ['MAKE.*?MODEL', 'VEHICLE.*?MODEL', 'MODEL'], 50);
+        // Vehicle Class (VHE CL)
+        $data['vehicle_class'] = $this->extractField($text, [
+            'VHE\s*CL\b',
+            'V\.?\s*H\.?\s*CL\b',
+            'VEHICLE\s+CLASS',
+            'CLASS\s+OF\s+VEHICLE',
+            'CATEGORY\s+OF\s+VEH',
+        ], 35);
 
-        // Extract vehicle category/class
-        $data['vehicle_class'] = $this->extractField($text, ['CATEGORY.*?OF.*?VEHICLE', 'VEHICLE.*?CLASS', 'CLASS.*?TYPE'], 30);
+        // Fuel Type (FUEL)
+        $data['fuel_type'] = $this->extractField($text, [
+            '\bFUEL\b(?!\s*(?:USED|TYPE))',
+            'FUEL\s+(?:USED|TYPE)',
+            'TYPE\s+OF\s+FUEL',
+        ], 20);
 
-        // Extract fuel type
-        $data['fuel_type'] = $this->extractField($text, ['FUEL.*?TYPE', 'TYPE.*?OF.*?FUEL', 'FUEL'], 20);
+        // Color
+        $data['color'] = $this->extractField($text, [
+            'COLO(?:U)?R\b',
+        ], 20);
 
-        // Extract color
-        $data['color'] = $this->extractField($text, ['COLOUR', 'COLOR'], 20);
+        // Owner Name (NAME)
+        $data['holder_name'] = $this->extractField($text, [
+            'OWNER(?:\'S)?\s*NAME',
+            'REGISTERED\s+OWNER',
+            'NAME\s+OF\s+OWNER',
+            '\bNAME\b(?!\s+OF)',
+        ], 60);
 
-        // Extract permit details if available
-        $data['permit_details'] = $this->extractField($text, ['PERMIT', 'PERMIT.*?VALID'], 100);
+        // Registration Date (REGD DT)
+        $data['registration_date'] = $this->extractField($text, [
+            'REGD\s*DT\b',
+            'REGD\.?\s*DATE',
+            'REG\s*DT\b',
+            'DATE\s+OF\s+REG',
+            'REG(?:ISTRATION|N)?\s+DATE',
+        ], 15);
 
-        // Extract validity information
-        $data['validity'] = $this->extractField($text, ['VALID.*?UPTO', 'VALIDITY', 'VALID.*?TILL'], 20);
+        // Manufacturer (MFR)
+        $data['manufacturer'] = $this->extractField($text, [
+            '\bMFR\b',
+            'MANUFACTURER',
+        ], 50);
 
-        // Clean up extracted data
-        $data = array_map(function ($value) {
-            return !empty($value) ? trim($value) : null;
-        }, $data);
+        // Validity (REGD UPTO)
+        $data['validity'] = $this->extractField($text, [
+            'REGD\s*UPTO\b',
+            'VALID\s+(?:UPTO|TILL|THROUGH)',
+            'VALIDITY',
+        ], 20);
 
-        return array_filter($data, function ($value) {
-            return !is_null($value);
-        });
+        // Clean up
+        return array_filter(array_map('trim', $data));
     }
 
     protected function extractField($text, $patterns, $maxLength = 100)
     {
         foreach ($patterns as $pattern) {
-            // Try to find pattern and extract value
-            if (preg_match("/$pattern\s*[:\-]?\s*([^\n]+)/i", $text, $matches)) {
-                $value = trim($matches[1]);
-                $value = preg_replace('/\s+/', ' ', $value);
-                return substr($value, 0, $maxLength);
+            // Use ~ as delimiter — safe, never appears in RC document text
+            $regex = '~' . $pattern . '[\s:\-/\.]*([^\n]{1,' . $maxLength . '})~i';
+            try {
+                if (preg_match($regex, $text, $matches)) {
+                    $value = trim(preg_replace('~\s+~', ' ', $matches[1]));
+                    if (!empty($value) && strlen($value) > 1) {
+                        return substr($value, 0, $maxLength);
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::debug('RC extractField bad pattern: ' . $pattern . ' — ' . $e->getMessage());
             }
         }
         return null;

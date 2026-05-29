@@ -1,225 +1,353 @@
 @extends('layouts.apps')
+
+@push('styles')
+<link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-device') }}">
+@endpush
+
 @section('content')
+<?php
+
+use Illuminate\Support\Facades\Auth;
+use App\Helper\CommonHelper;
+
+$currentEmail = Auth::user()->email;
+?>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
 <section id="main-content">
   <section class="wrapper">
-    <div class="top-page-header">
-      <div class="page-breadcrumb">
-        <nav class="c_breadcrumbs">
-          <ul>
-            <li><a href="#">Management</a></li>
-            <li class="active"><a href="#">Certificate Management</a></li>
-          </ul>
-        </nav>
-      </div>
+    <!--======== Page Title and Breadcrumbs Start ========-->
+    <div class="vd-breadcrumb-wrap">
+      <nav class="vd-breadcrumb">
+        <a href="{{ url('admin') }}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
+        <a href="{{ url('admin') }}" class="bc-item">Home</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-item">Certificate Management</span>
+      </nav>
     </div>
+
     <div class="row">
       <div class="col-md-12">
         <div class="c_panel">
-          <div class="c_title">
+          <div class="c_title" style="margin-bottom: 10px;">
             <div class="row bgx-title-container">
-              <div class="col-lg-6">
-                <h2><i class="fa fa-certificate" style="color:#76CF1C;margin-right:10px;"></i>Certificate Management</h2>
+              <div class="col-lg-12">
+                <h2><i class="fa fa-certificate" style="color:#76CF1C; margin-right:10px;"></i>Certificate Management</h2>
               </div>
             </div>
             <div class="clearfix"></div>
-          </div>
-          <div class="c_content">
-            @if ($errors->any())
-              <div class="row">
-                <div class="col-sm-12">
-                  <div class="alert alert-danger alert-dismissible" role="alert">
-                    <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
-                    <strong>Error!</strong> {{ $errors->first() }}
-                  </div>
-                </div>
+          </div><!--/.c_title-->
+
+          <div class="c_content tabs">
+            <div class="row" id="alert_msg">
+              <div class="col-sm-12 alert alert-success alert-success-error" role="alert" style="display:none;"></div>
+              <div class="col-sm-12 alert alert-danger alert-danger-error" role="alert" style="display:none;"></div>
+              <div class="col-sm-12 alert alert-success" id="demo" role="alert" style="display: none"></div>
+              @if ($message = Session::get('success'))
+              <div class="col-sm-12 alert alert-success" role="alert">
+                {{ $message }}
               </div>
-            @endif
+              @endif
+              @if ($message = Session::get('error'))
+              <div class="col-sm-12 alert alert-danger" role="alert">
+                {{ $message }}
+              </div>
+              @endif
+              @if ($errors->any())
+              <div class="col-sm-12 alert alert-danger" role="alert">
+                {{ $errors->first() }}
+              </div>
+              @endif
+            </div>
 
-            @if (count($devices) > 0)
-              <div class="row">
-                <div class="col-md-12">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div>
-                      <label>Show <select style="width: 50px; padding: 5px; border: 1px solid #ddd; border-radius: 3px;" class="entries-select">
-                        <option value="10">10</option>
-                        <option value="25" selected>25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                      </select> entries</label>
-                    </div>
-                    <div>
-                      <input type="text" placeholder="Search..." class="search-input" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 3px; width: 250px;">
-                    </div>
-                  </div>
+            <div class="tabs">
+              @if(count($device) > 0)
+                <!-- Category Tabs -->
+                <div style="margin-bottom: 10px;">
+                  @php
+                    $tabIndex = 0;
+                    $selectedCategoryId = Session::get('device_category_id');
+                  @endphp
 
-                  <table id="certificate-table" class="example table table-striped" cellspacing="0" style="width:100%;">
-                    <thead>
-                      <tr style="background-color: #2c3e50; color: white;">
-                        <th style="padding: 12px; text-align: center; width: 8%;">
-                          <input type="checkbox" id="check-all" style="cursor: pointer;">
-                        </th>
-                        <th style="padding: 12px; text-align: center; width: 8%;">SR. NO</th>
-                        <th style="padding: 12px; width: 25%;">DEVICE NAME</th>
-                        <th style="padding: 12px; width: 20%;">IMEI</th>
-                        <th style="padding: 12px; text-align: center; width: 15%;">CERTIFICATE</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @foreach ($devices as $device)
+                  @foreach($device as $categoryId => $categoryDevices)
+                    @php
+                      $categoryName = CommonHelper::getDeviceCategoryName($categoryId);
+                      if(!$categoryName) $categoryName = 'Category ' . $categoryId;
+                      $isActive = ($selectedCategoryId == $categoryId) || ($tabIndex === 0 && !$selectedCategoryId);
+                      $tabIndex++;
+                    @endphp
+
+                    <button class="tablinks {{ $isActive ? 'active' : '' }}"
+                            onclick="openCertificateTab(event, 'cert-tab-{{ $categoryId }}')"
+                            style="cursor: pointer;">
+                      {{ $categoryName }}
+                    </button>
+                  @endforeach
+                </div>
+
+                <!-- Category Content Tabs -->
+                @foreach($device as $categoryId => $categoryDevices)
+                  @php
+                    $selectedCategoryId = Session::get('device_category_id');
+                    $isActive = ($selectedCategoryId == $categoryId) || (!$selectedCategoryId && $loop->first);
+                  @endphp
+
+                  <div id="cert-tab-{{ $categoryId }}" class="tabcontent" style="display: {{ $isActive ? 'block' : 'none' }};">
+                    <!-- Certificate Table -->
+                    <table id="certificate-table-{{ $categoryId }}" class="example table table-striped" cellspacing="0" style="width:100%;">
+                      <thead>
                         <tr>
-                          <td style="padding: 12px; text-align: center;">
-                            <input type="checkbox" class="device-checkbox" value="{{ $device->id }}">
-                          </td>
-                          <td style="padding: 12px; text-align: center;">{{ $loop->iteration }}</td>
-                          <td style="padding: 12px;">{{ $device->name }}</td>
-                          <td style="padding: 12px;">{{ $device->imei }}</td>
-                          <td style="padding: 12px; text-align: center;">
-                            <a href="{{ url('/' . $url_type . '/certificate/' . $device->id) }}"
-                               class="btn btn-sm btn-certificate"
-                               title="Manage Certificate">
-                              <i class="fa fa-certificate"></i> Certificate
-                            </a>
-                          </td>
+                          <th style="text-align: center;">
+                            <input type="checkbox" class="check-all-{{ $categoryId }}" onchange="checkAll(this, '{{ $categoryId }}')">
+                          </th>
+                          <th style="text-align: center;">SR. NO</th>
+                          <th>DEVICE NAME</th>
+                          <th>IMEI</th>
+                          <th style="text-align: center;">CERTIFICATE</th>
                         </tr>
-                      @endforeach
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            @else
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="alert alert-info alert-dismissible" role="alert">
-                    <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
-                    <i class="fa fa-info-circle"></i> <strong>No Devices Found!</strong> You don't have access to any devices yet.
+                      </thead>
+                      <tbody>
+                        @if(count($categoryDevices) > 0)
+                          @foreach($categoryDevices as $dev)
+                            <tr>
+                              <td style="text-align: center;">
+                                <input type="checkbox" class="device-checkbox-{{ $categoryId }}" value="{{ $dev->id }}" onchange="updateCheckAll(this, '{{ $categoryId }}')">
+                              </td>
+                              <td style="text-align: center;">{{ $loop->iteration }}</td>
+                              <td>{{ $dev->name ?? 'N/A' }}</td>
+                              <td>{{ $dev->imei ?? 'N/A' }}</td>
+                              <td style="text-align: center;">
+                                <a href="{{ url('/' . $url_type . '/certificate/' . $dev->id) }}"
+                                   class="btn btn-sm {{ $dev->has_certificate ? 'btn-success' : 'btn-warning' }}"
+                                   title="Manage Certificate"
+                                   style="position: relative;">
+                                  <i class="fa fa-certificate"></i> Certificate
+                                  <span style="display: inline-block; margin-left: 5px; font-size: 10px; padding: 2px 6px; border-radius: 3px; background-color: rgba(255,255,255,0.3);">
+                                    {{ $dev->has_certificate ? 'Completed' : 'Pending' }}
+                                  </span>
+                                </a>
+                              </td>
+                            </tr>
+                          @endforeach
+                        @else
+                          <tr>
+                            <td colspan="5" style="text-align: center; padding: 20px; color: #666;">
+                              No devices found in this category.
+                            </td>
+                          </tr>
+                        @endif
+                      </tbody>
+                    </table>
+                  </div>
+                @endforeach
+              @else
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="alert alert-info alert-dismissible" role="alert">
+                      <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                      <i class="fa fa-info-circle"></i> <strong>No Devices Found!</strong> You don't have access to any devices yet.
+                    </div>
                   </div>
                 </div>
+              @endif
+
+              <div id="loading" class="bgx-loading" style="display:none;">
+                <img src="/assets/icons/loader.gif" alt="Loading..." />
               </div>
-            @endif
-          </div>
-        </div>
-      </div>
-    </div>
+            </div>
+            <div style="text-align: center;"></div>
+          </div><!--/.c_content-->
+        </div><!--/.c_panels-->
+      </div><!--/col-md-12-->
+    </div><!--/row-->
   </section>
 </section>
 
+@stop
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<div class="gps-toast-container" id="gpsToastContainer"></div>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize DataTable
-  var table = $('#certificate-table').DataTable({
-    "paging": true,
-    "pageLength": 25,
-    "lengthMenu": [10, 25, 50, 100],
-    "searching": true,
-    "ordering": true,
-    "info": true,
-    "autoWidth": false,
-    "responsive": false,
-    "dom": '<"top"lf>rt<"bottom"ip>'
-  });
+  function showToast(msg, type, title) {
+    type = type || 'warning';
+    if (typeof window.showGpsToast === 'function') {
+      var map = { warning: 'warning', success: 'success', error: 'error', danger: 'error', info: 'info' };
+      var t = map[type] || 'warning';
+      var titles = { warning: 'Warning', success: 'Success', error: 'Error', info: 'Information' };
+      var resolvedTitle = title || titles[type] || titles[t] || 'Notice';
+      window.showGpsToast(t, resolvedTitle, msg, { durationMs: 5000 });
+      return;
+    }
+    var icons = { warning: 'fa-exclamation-triangle', success: 'fa-check-circle', error: 'fa-times-circle' };
+    var titles = { warning: 'Warning', success: 'Success', error: 'Error' };
+    title = title || titles[type];
+    var container = document.getElementById('gpsToastContainer');
+    var toast = document.createElement('div');
+    toast.className = 'gps-toast toast-' + type;
+    toast.innerHTML =
+      '<div class="gps-toast-icon"><i class="fa ' + icons[type] + '"></i></div>' +
+      '<div class="gps-toast-body"><p class="gps-toast-title">' + title + '</p><p class="gps-toast-msg">' + msg + '</p></div>' +
+      '<button class="gps-toast-close">&times;</button>' +
+      '<div class="gps-toast-progress"></div>';
+    toast.querySelector('.gps-toast-close').addEventListener('click', function() {
+      toast.classList.add('removing');
+      setTimeout(function() { toast.remove(); }, 300);
+    });
+    container.appendChild(toast);
+    setTimeout(function() {
+      if (toast.parentNode) {
+        toast.classList.add('removing');
+        setTimeout(function() { toast.remove(); }, 300);
+      }
+    }, 3000);
+  }
 
-  // Handle check all
-  document.getElementById('check-all').addEventListener('change', function() {
-    var isChecked = this.checked;
-    document.querySelectorAll('.device-checkbox').forEach(function(checkbox) {
-      checkbox.checked = isChecked;
+  function openCertificateTab(evt, tabName) {
+    if (evt && typeof evt.preventDefault === 'function') {
+      evt.preventDefault();
+    }
+
+    $('.tabcontent').hide();
+    $('.tablinks').removeClass('active');
+    $('#' + tabName).show();
+
+    if (evt && evt.currentTarget) {
+      $(evt.currentTarget).addClass('active');
+    }
+
+    return false;
+  }
+
+  function checkAll(checkbox, categoryId) {
+    var isChecked = checkbox.checked;
+    $('.device-checkbox-' + categoryId).prop('checked', isChecked);
+  }
+
+  function updateCheckAll(checkbox, categoryId) {
+    var total = $('.device-checkbox-' + categoryId).length;
+    var checked = $('.device-checkbox-' + categoryId + ':checked').length;
+    $('.check-all-' + categoryId).prop('checked', total === checked);
+  }
+
+  $(document).ready(function() {
+    function initializeDataTables() {
+      $('.example').each(function() {
+        var elementId = $(this).attr('id');
+        if ($.fn.DataTable.isDataTable("#" + elementId)) {
+          $("#" + elementId).DataTable().destroy();
+        }
+        $("#" + elementId).DataTable({
+          paging: true,
+          searching: true,
+          ordering: true,
+          lengthChange: true,
+          pageLength: 25,
+          scrollX: true,
+          scrollY: '500px',
+          autoWidth: false,
+          scrollCollapse: true,
+          "aLengthMenu": [
+            [10, 25, 50, 100, -1],
+            [10, 25, 50, 100, "All"]
+          ],
+          "iDisplayLength": 25,
+          "dom": '<"vdc-tab-toolbar"<"vdc-tab-toolbar-left"l><"vdc-tab-toolbar-right"f>>rt<"bottom"p>'
+        });
+      });
+      $('#loading').hide();
+    }
+
+    // Initialize tabs: hide all, show first
+    $('.tabcontent').hide();
+    let firstTab = $('.tablinks').first();
+    let activeTab = $('.tablinks.active').first();
+    if(activeTab.length == 0 && firstTab.length) {
+        firstTab.addClass('active');
+        activeTab = firstTab;
+    }
+    if (activeTab.length) {
+        let onclick = activeTab.attr('onclick');
+        if(onclick) {
+            let tabMatch = onclick.match(/'([^']+)'/);
+            if(tabMatch) {
+                $('#' + tabMatch[1]).show();
+            }
+        }
+    }
+
+    // Initialize datatables AFTER making the active tab visible
+    initializeDataTables();
+
+    // Explicitly adjust columns just in case
+    setTimeout(function() {
+        if ($.fn.DataTable) {
+            var dtTables = $.fn.dataTable.tables({ visible: true, api: true });
+            if (dtTables && dtTables.columns && typeof dtTables.columns.adjust === 'function') {
+              dtTables.columns.adjust();
+            } else if (dtTables && typeof dtTables.columns === 'function') {
+              dtTables.columns().adjust();
+            }
+        }
+    }, 100);
+
+    $('.dataTables_filter input').attr("placeholder", "Zoeken...");
+    $('.dataTables_length select').each(function() {
+      if (!$(this).val()) {
+        $(this).val('25');
+      }
+      this.style.color = '#1e293b';
+      this.style.backgroundColor = '#fff';
     });
   });
-
-  // Handle individual checkbox changes
-  document.querySelectorAll('.device-checkbox').forEach(function(checkbox) {
-    checkbox.addEventListener('change', function() {
-      var allChecked = document.querySelectorAll('.device-checkbox:checked').length === document.querySelectorAll('.device-checkbox').length;
-      document.getElementById('check-all').checked = allChecked;
-    });
-  });
-
-  // Handle entries dropdown
-  document.querySelector('.entries-select').addEventListener('change', function() {
-    table.page.len(parseInt(this.value)).draw();
-  });
-
-  // Handle search input
-  document.querySelector('.search-input').addEventListener('keyup', function() {
-    table.search(this.value).draw();
-  });
-});
 </script>
 
 <style>
-#certificate-table {
-  background-color: white;
-  border-collapse: collapse;
-  width: 100%;
-}
+  #main-content .tabs .vdc-tab-toolbar {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 12px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
 
-#certificate-table thead tr {
-  background-color: #2c3e50;
-  color: white;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
+  #main-content .tabs .vdc-tab-toolbar-left {
+    display: flex !important;
+    align-items: center !important;
+  }
 
-#certificate-table tbody tr {
-  border-bottom: 1px solid #e8e8e8;
-  background-color: #fff;
-}
+  #main-content .tabs .vdc-tab-toolbar-right {
+    display: flex !important;
+    align-items: center !important;
+  }
 
-#certificate-table tbody tr:hover {
-  background-color: #f8f9fa;
-}
+  #main-content .tabs .vdc-tab-toolbar-right .dataTables_filter {
+    display: flex !important;
+    align-items: center !important;
+  }
 
-#certificate-table td {
-  vertical-align: middle;
-  color: #333;
-}
+  #main-content .tabs .vdc-tab-toolbar-right .dataTables_filter label {
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
 
-#certificate-table th {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
+  #main-content .tabs .vdc-tab-toolbar-right .dataTables_filter input {
+    margin-left: 8px !important;
+  }
 
-.btn-certificate {
-  display: inline-block;
-  padding: 6px 12px;
-  background-color: #76CF1C;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+  #main-content .tabs .dataTables_wrapper .dataTables_length {
+    margin: 0 !important;
+  }
 
-.btn-certificate:hover {
-  background-color: #5fb815;
-  text-decoration: none;
-  color: white;
-}
+  #main-content .tabs .dataTables_wrapper .dataTables_length label {
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
 
-.btn-certificate i {
-  margin-right: 4px;
-}
-
-.entries-select {
-  padding: 6px 10px;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-  font-size: 13px;
-}
-
-.search-input {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-  font-size: 13px;
-}
-
-input[type="checkbox"] {
-  cursor: pointer;
-}
+  #main-content .tabs .dataTables_wrapper .dataTables_length select {
+    margin: 0 8px !important;
+  }
 </style>
-@endsection

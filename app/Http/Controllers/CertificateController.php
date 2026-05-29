@@ -23,19 +23,17 @@ class CertificateController extends Controller
     {
         $user = Auth::user();
 
-        $devicesQuery = DB::table('devices')
-            ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
-            ->select('devices.*', 'writers.name as username')
-            ->where('devices.is_deleted', '0');
+        // Use Device model for better data handling
+        $devicesQuery = Device::where('is_deleted', 0);
 
         if ($user->user_type == 'Admin') {
             // Admin: show all devices with user_id != null
-            $devicesQuery->where('devices.user_id', '!=', null);
+            $devicesQuery->where('user_id', '!=', null);
         } elseif ($user->user_type == 'Reseller') {
             // Reseller: show devices created by them + devices assigned to them
             $devicesQuery->where(function ($q) use ($user) {
-                $q->where('devices.user_id', $user->id)
-                  ->orWhereIn('devices.user_id', function ($subquery) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereIn('user_id', function ($subquery) use ($user) {
                       $subquery->select('id')
                                ->from('writers')
                                ->where('created_by', $user->id)
@@ -44,22 +42,32 @@ class CertificateController extends Controller
             });
         } else {
             // User: show only own devices
-            $devicesQuery->where('devices.user_id', $user->id);
+            $devicesQuery->where('user_id', $user->id);
         }
 
-        $devices = $devicesQuery->get();
+        $devices = $devicesQuery->orderBy('device_category_id')->get();
 
-        // Enrich devices with certificate status
+        // Group devices by category
+        $devicesByCategory = [];
         foreach ($devices as $device) {
+            $categoryId = $device->device_category_id;
+            if (!isset($devicesByCategory[$categoryId])) {
+                $devicesByCategory[$categoryId] = [];
+            }
+
             $config = json_decode($device->configurations, true) ?: [];
             $device->certificate_status = !empty($config['certificate_details']) ? 'Saved' : 'Draft';
             $device->has_certificate = !empty($config['certificate_details']);
+
+            $devicesByCategory[$categoryId][] = $device;
         }
 
         $url_type = $this->getURLType();
+        $show_acc_wise = true;
 
         return view('certificate_management', [
-            'devices' => $devices,
+            'device' => $devicesByCategory,
+            'show_acc_wise' => $show_acc_wise,
             'url_type' => $url_type
         ]);
     }
@@ -186,6 +194,11 @@ class CertificateController extends Controller
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
             'service_provider' => $serviceProvider,
+            // SIM details auto-captured via device label scan (GrowSpace API)
+            'sim1_operator' => $request->sim1_operator ?? null,
+            'sim1_msisdn'   => $request->sim1_msisdn ?? null,
+            'sim2_operator' => $request->sim2_operator ?? null,
+            'sim2_msisdn'   => $request->sim2_msisdn ?? null,
         ];
 
         $device->configurations = json_encode($config);
@@ -249,6 +262,9 @@ class CertificateController extends Controller
         $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
         $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
 
+        // Pull saved SIM/extra details from device config (captured via device label scan)
+        $savedCert = is_array($config) ? ($config['certificate_details'] ?? []) : [];
+
         $data = [
             'holder_name' => $request->holder_name,
             'authority_city' => $request->authority_city,
@@ -261,14 +277,21 @@ class CertificateController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
+            'vehicle_class' => $request->vehicle_class ?? ($savedCert['vehicle_class'] ?? null),
+            'fuel_type' => $request->fuel_type ?? ($savedCert['fuel_type'] ?? null),
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
-            'vltd_icc_id' => $iccId,
+            'vltd_icc_id' => $iccId ?: ($request->vltd_icc_id ?? ($savedCert['vltd_icc_id'] ?? '')),
             'service_provider' => $provider,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
+            // SIM details — prefer request, fall back to saved config
+            'sim1_operator' => $request->sim1_operator ?? ($savedCert['sim1_operator'] ?? null),
+            'sim1_msisdn'   => $request->sim1_msisdn   ?? ($savedCert['sim1_msisdn']   ?? null),
+            'sim2_operator' => $request->sim2_operator ?? ($savedCert['sim2_operator'] ?? null),
+            'sim2_msisdn'   => $request->sim2_msisdn   ?? ($savedCert['sim2_msisdn']   ?? null),
         ];
 
         $pdfLink = url('/AS9076.pdf');
@@ -353,6 +376,9 @@ class CertificateController extends Controller
         $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
         $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
 
+        // Pull saved SIM/extra details from device config (captured via device label scan)
+        $savedCert = is_array($config) ? ($config['certificate_details'] ?? []) : [];
+
         $data = [
             'holder_name' => $request->holder_name,
             'authority_city' => $request->authority_city,
@@ -365,14 +391,21 @@ class CertificateController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
+            'vehicle_class' => $request->vehicle_class ?? ($savedCert['vehicle_class'] ?? null),
+            'fuel_type' => $request->fuel_type ?? ($savedCert['fuel_type'] ?? null),
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
-            'vltd_icc_id' => $iccId,
+            'vltd_icc_id' => $iccId ?: ($request->vltd_icc_id ?? ($savedCert['vltd_icc_id'] ?? '')),
             'service_provider' => $provider,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
+            // SIM details — prefer request, fall back to saved config
+            'sim1_operator' => $request->sim1_operator ?? ($savedCert['sim1_operator'] ?? null),
+            'sim1_msisdn'   => $request->sim1_msisdn   ?? ($savedCert['sim1_msisdn']   ?? null),
+            'sim2_operator' => $request->sim2_operator ?? ($savedCert['sim2_operator'] ?? null),
+            'sim2_msisdn'   => $request->sim2_msisdn   ?? ($savedCert['sim2_msisdn']   ?? null),
         ];
 
         $pdfLink = url('/AS9076.pdf');
@@ -517,8 +550,14 @@ class CertificateController extends Controller
 
             $rcService = new \App\Services\RCExtractionService();
             $extractedData = $rcService->extractFromFile($fullPath);
-            $rcService->validateRCDocument($extractedData);
             $mappedData = $rcService->mapRCToFormFields($extractedData);
+
+            // Detect which required fields are missing (warn but don't block)
+            $requiredFields = ['vehicle_registration_no', 'chassis_no', 'engine_no'];
+            $missingFields = array_filter($requiredFields, fn($f) => empty($extractedData[$f]));
+            $warning = !empty($missingFields)
+                ? 'Some fields could not be auto-extracted (' . implode(', ', $missingFields) . '). Please fill them in manually.'
+                : null;
 
             // Store RC file path in device config
             $config = json_decode($device->configurations, true) ?: [];
@@ -531,7 +570,8 @@ class CertificateController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'RC document processed successfully',
+                'message' => $warning ?? 'RC document processed successfully',
+                'warning' => $warning,
                 'data' => $mappedData,
                 'raw_data' => $extractedData,
             ]);
@@ -544,6 +584,221 @@ class CertificateController extends Controller
             return response()->json([
                 'error' => $e->getMessage(),
             ], 422);
+        }
+    }
+
+    /**
+     * Verify uploaded number plate image against expected registration number
+     *
+     * Request: multipart/form-data
+     *   - plate_file: image of number plate
+     *   - expected_reg_no: registration number from RC (e.g. "PB10EM1318")
+     */
+    public function verifyNumberPlate($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'plate_file'      => 'required|file|mimes:jpg,jpeg,png,bmp,gif|max:5120',
+            'expected_reg_no' => 'required|string|max:20',
+        ]);
+
+        $filePath = null;
+        try {
+            $expected = \App\Services\GoogleVisionRCService::normalizePlateNumber(
+                $request->input('expected_reg_no')
+            );
+            if ($expected === '') {
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Please fill in Vehicle Registration No (from RC) before verifying the plate.',
+                ], 422);
+            }
+
+            $file     = $request->file('plate_file');
+            $filePath = $file->store('plate_uploads', 'local');
+            $fullPath = storage_path('app/' . $filePath);
+
+            if (!\App\Services\GoogleVisionRCService::isConfigured()) {
+                throw new \Exception('Google Vision OCR is not configured.');
+            }
+
+            $service  = new \App\Services\GoogleVisionRCService();
+            $detected = $service->extractPlateNumber($fullPath);
+            $detectedNormalized = \App\Services\GoogleVisionRCService::normalizePlateNumber($detected);
+
+            // Clean up upload after extraction
+            if (file_exists($fullPath)) unlink($fullPath);
+
+            if (!$detectedNormalized) {
+                return response()->json([
+                    'success'  => false,
+                    'matched'  => false,
+                    'expected' => $expected,
+                    'detected' => null,
+                    'error'    => 'Could not detect a valid number plate in the uploaded image. Please upload a clearer photo.',
+                ], 422);
+            }
+
+            $matched = ($detectedNormalized === $expected);
+
+            return response()->json([
+                'success'  => $matched,
+                'matched'  => $matched,
+                'expected' => $expected,
+                'detected' => $detectedNormalized,
+                'message'  => $matched
+                    ? 'Number plate verified successfully — matches the RC registration number.'
+                    : 'Number plate does NOT match the RC. Expected: ' . $expected . ', Detected: ' . $detectedNormalized,
+            ], $matched ? 200 : 422);
+
+        } catch (\Exception $e) {
+            if ($filePath && file_exists(storage_path('app/' . $filePath))) {
+                @unlink(storage_path('app/' . $filePath));
+            }
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Extract IMEI and ICCID from a device image (label/sticker photo)
+     */
+    public function extractDeviceInfo($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'device_file' => 'required|file|mimes:jpg,jpeg,png,bmp,gif|max:5120',
+        ]);
+
+        $filePath = null;
+        try {
+            $file     = $request->file('device_file');
+            $filePath = $file->store('device_uploads', 'local');
+            $fullPath = storage_path('app/' . $filePath);
+
+            if (!\App\Services\GoogleVisionRCService::isConfigured()) {
+                throw new \Exception('Google Vision OCR is not configured.');
+            }
+
+            $service = new \App\Services\GoogleVisionRCService();
+            $info    = $service->extractDeviceInfo($fullPath);
+
+            // Cleanup uploaded file
+            if (file_exists($fullPath)) unlink($fullPath);
+
+            if (empty($info['imei']) && empty($info['iccid'])) {
+                return response()->json([
+                    'success' => false,
+                    'imei'    => null,
+                    'iccid'   => null,
+                    'error'   => 'Could not detect IMEI or ICCID in the image. Please upload a clearer photo of the device label.',
+                ], 422);
+            }
+
+            // Optionally check if extracted IMEI matches device's stored IMEI
+            $deviceImei  = $device->imei ?? null;
+            $imeiMatches = null;
+            if ($info['imei'] && $deviceImei) {
+                $imeiMatches = (trim($info['imei']) === trim($deviceImei));
+            }
+
+            // If ICCID detected, enrich with SIM info from GrowSpace API
+            $simData = ['sims' => [], 'plan_status' => null, 'organization' => null];
+            if (!empty($info['iccid'])) {
+                $growService = new \App\Services\GrowSpaceSimService();
+                $simData     = $growService->lookupByIccid($info['iccid']);
+            }
+
+            return response()->json([
+                'success'      => true,
+                'imei'         => $info['imei'],
+                'iccid'        => $info['iccid'],
+                'device_imei'  => $deviceImei,
+                'imei_matches' => $imeiMatches,
+                'sims'         => $simData['sims'],
+                'plan_status'  => $simData['plan_status'],
+                'organization' => $simData['organization'],
+                'message'      => 'Device info extracted: '
+                    . ($info['imei']  ? 'IMEI ' . $info['imei']  : 'IMEI not found')
+                    . ', '
+                    . ($info['iccid'] ? 'ICCID ' . $info['iccid'] : 'ICCID not found'),
+            ]);
+
+        } catch (\Exception $e) {
+            if ($filePath && file_exists(storage_path('app/' . $filePath))) {
+                @unlink(storage_path('app/' . $filePath));
+            }
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Look up SIM details for a given ICCID via GrowSpace API.
+     * Used when the user types/pastes an ICCID manually into the form
+     * (rather than via device label scan).
+     */
+    public function lookupIccid($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        $currentUser = Auth::user();
+
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'iccid' => 'required|string|min:18|max:25',
+        ]);
+
+        try {
+            $iccid = preg_replace('~[\s\-]~', '', trim($request->input('iccid')));
+
+            $service = new \App\Services\GrowSpaceSimService();
+            $simData = $service->lookupByIccid($iccid);
+
+            if (empty($simData['sims'])) {
+                return response()->json([
+                    'success'      => false,
+                    'iccid'        => $iccid,
+                    'sims'         => [],
+                    'plan_status'  => $simData['plan_status'],
+                    'organization' => $simData['organization'],
+                    'message'      => 'No SIM details found in GrowSpace for ICCID ' . $iccid
+                                    . '. The ICCID may not be registered with GrowSpace, or may belong to a different provider.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success'      => true,
+                'iccid'        => $iccid,
+                'sims'         => $simData['sims'],
+                'plan_status'  => $simData['plan_status'],
+                'organization' => $simData['organization'],
+                'message'      => count($simData['sims']) . ' SIM profile(s) found for ICCID ' . $iccid,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], 500);
         }
     }
 

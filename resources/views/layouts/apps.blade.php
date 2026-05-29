@@ -565,6 +565,13 @@ if ($userType === 'admin') {
                             </ul>
                         </li>
 
+                        <li class="{{ request()->is('admin/manage-permissions') ? 'active' : '' }}">
+                            <a href="{{ url('/admin/manage-permissions') }}"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/manage-permissions') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-lock fa-2x'></span><span>Manage Permissions</span>
+                            </a>
+                        </li>
+
                         @elseif (Auth::user()->user_type == 'Reseller')
 
                         <li class="{{ request()->is('reseller') ? 'active' : '' }}">
@@ -574,6 +581,7 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
+                        @if (\App\Helpers\PermissionHelper::canViewModule('account_management'))
                         <li
                             class='sub-menu {{ request()->is('reseller/add-user', 'reseller/view-user') ? 'active' : '' }}'>
                             <a href="#"
@@ -595,7 +603,9 @@ if ($userType === 'admin') {
                                 </li>
                             </ul>
                         </li>
+                        @endif
 
+                        @if (\App\Helpers\PermissionHelper::canViewModule('device_management'))
                         <li
                             class='sub-menu {{ request()->is('reseller/view-device-assign', 'reseller/view-device-unassign') ? 'active' : '' }}'>
                             <a href="#"
@@ -617,7 +627,9 @@ if ($userType === 'admin') {
                                 </li>
                             </ul>
                         </li>
+                        @endif
 
+                        @if (\App\Helpers\PermissionHelper::canViewModule('certificate_management'))
                         <li
                             class='sub-menu {{ request()->is('reseller/certificates') ? 'active' : '' }}'>
                             <a href="#"
@@ -631,7 +643,9 @@ if ($userType === 'admin') {
                                 </li>
                             </ul>
                         </li>
+                        @endif
 
+                        @if (\App\Helpers\PermissionHelper::canViewModule('settings_management'))
                         <li
                             class='sub-menu {{ request()->is('reseller/add-template', 'reseller/view-template', 'reseller/assign-setting-bulk') ? 'active' : '' }}'>
                             <a href="#"
@@ -659,11 +673,19 @@ if ($userType === 'admin') {
                                 </li>
                             </ul>
                         </li>
+                        @endif
 
                         <li class="{{ request()->is('reseller/view-device-category') ? 'active' : '' }}">
                             <a href="{{ url('reseller/view-device-category') }}"
                                 class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/view-device-category') ? 'active' : '' }}">
                                 <span class='icon-sidebar icon-home fa-2x'></span><span>View Device Category</span>
+                            </a>
+                        </li>
+
+                        <li class="{{ request()->is('reseller/manage-child-permissions') ? 'active' : '' }}">
+                            <a href="{{ url('/reseller/manage-child-permissions') }}"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/manage-child-permissions') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-lock fa-2x'></span><span>Manage Permissions</span>
                             </a>
                         </li>
                         @else
@@ -676,17 +698,7 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
-                        <!-- <li class='sub-menu {{ request()->is('user/*') ? 'active' : '' }}'>
-                                            <a href="#" class="hvr-bounce-to-right-sidebar-parent">
-                                                <span class='icon-sidebar pe-7s-albums fa-2x'></span><span>Device Management</span>
-                                            </a>
-                                            <ul class='sub'>
-                                                <li class="{{ request()->is('user/view-device') ? 'active' : '' }}">
-                                                    <a href="{{ url('user/view-device') }}">View Device</a>
-                                                </li>
-                                            </ul>
-                                        </li> -->
-
+                        @if (\App\Helpers\PermissionHelper::canViewModule('device_management'))
                         <li class='sub-menu {{ request()->is('user/view-device') ? 'active' : '' }}'>
                             <a href="#"
                                 class="hvr-bounce-to-right-sidebar-parent {{ request()->is('user/view-device') ? 'active' : '' }}">
@@ -701,7 +713,9 @@ if ($userType === 'admin') {
                                 </li>
                             </ul>
                         </li>
+                        @endif
 
+                        @if (\App\Helpers\PermissionHelper::canViewModule('certificate_management'))
                         <li
                             class='sub-menu {{ request()->is('user/certificates') ? 'active' : '' }}'>
                             <a href="#"
@@ -715,23 +729,9 @@ if ($userType === 'admin') {
                                 </li>
                             </ul>
                         </li>
+                        @endif
 
-                        <!-- <li class='sub-menu {{ request()->is('user/add-template*', 'user/view-template*') ? 'active' : '' }}'>
-                                            <a href="#" class="hvr-bounce-to-right-sidebar-parent">
-                                                <span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span>
-                                            </a>
-                                            <ul class='sub'>
-                                                <li class="{{ request()->is('user/add-template') ? 'active' : '' }}">
-                                                    <a href="{{ url('user/add-template') }}">Add Settings</a>
-                                                </li>
-                                                <li class="{{ request()->is('user/view-template') ? 'active' : '' }}">
-                                                    <a href="{{ url('user/view-template') }}">View Settings</a>
-                                                </li>
-                                                <li class="{{ request()->is('user/assign-setting-bulk') ? 'active' : '' }}">
-                                                    <a href="{{ url('user/assign-setting-bulk') }}">Assign Settings Bulk</a>
-                                                </li>
-                                            </ul>
-                                        </li> -->
+                        @if (\App\Helpers\PermissionHelper::canViewModule('settings_management'))
                         <li
                             class='sub-menu {{ request()->is('user/add-template', 'user/view-template', 'user/assign-setting-bulk') ? 'active' : '' }}'>
                             <a href="#"
@@ -759,6 +759,7 @@ if ($userType === 'admin') {
                                 </li>
                             </ul>
                         </li>
+                        @endif
 
                         @endif
                         @if (Auth::user()->user_type == 'Support')

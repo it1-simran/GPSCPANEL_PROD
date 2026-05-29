@@ -130,9 +130,6 @@
 @endif
 <th>Delete</th>
 <th>Link Account</th>
-@if(Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller')
-<th>Manage Permissions</th>
-@endif
                     
                     </tr>
                 </thead>
@@ -189,17 +186,6 @@
                       <button style="margin-top:1px" data-uid="{{$contact['id']}}" data-cutype="{{$url_type}}" class="vu-btn-link linkReseller" type="button"><i class="fa fa-chain"></i> Link</button>
                       @endif
                     </td>
-                    @if(Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller')
-                    <td>
-                      @if(Auth::user()->user_type == 'Admin' && $contact['user_type'] == 'Reseller')
-                        <a href="/admin/manage-permissions?reseller_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
-                      @elseif(Auth::user()->user_type == 'Admin' && $contact['user_type'] == 'User')
-                        <a href="/admin/manage-user-permissions?user_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
-                      @elseif(Auth::user()->user_type == 'Reseller' && $contact['user_type'] == 'User')
-                        <a href="/reseller/manage-child-permissions?user_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
-                      @endif
-                    </td>
-                    @endif
                   </tr>
                   <?php $i++; ?>
                   @endforeach

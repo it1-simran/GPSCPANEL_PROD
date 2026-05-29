@@ -86,7 +86,23 @@ use App\Helper\CommonHelper;
                   @foreach ($deviceLogs as $logs)
                   @php
                     $logFull = isset($logs->log) ? (string) $logs->log : '';
-                    $logFull = str_replace('N/A', '0', $logFull);
+                    if ($logFull === '0' || $logFull === 'N/A') {
+                        $logFull = '';
+                    } else {
+                        $decoded = json_decode($logFull, true);
+                        if (is_array($decoded)) {
+                            array_walk_recursive($decoded, function(&$item) {
+                                if ($item === 0 || $item === '0' || $item === 'N/A') {
+                                    $item = '';
+                                }
+                            });
+                            $logFull = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                        } else {
+                            $logFull = preg_replace('/:\s*"0"/', ':""', $logFull);
+                            $logFull = preg_replace('/:\s*0(,|})/', ':""$1', $logFull);
+                            $logFull = preg_replace('/:\s*"N\/A"/', ':""', $logFull);
+                        }
+                    }
                   @endphp
                   <tr>
                       <td>{{$i}}</td>

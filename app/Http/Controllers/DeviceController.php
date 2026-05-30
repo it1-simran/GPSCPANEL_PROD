@@ -57,6 +57,28 @@ class DeviceController extends Controller
         return null;
     }
 
+    /**
+     * Normalize configuration array: convert null values to empty strings
+     */
+    private function normalizeConfiguration($config)
+    {
+        if (!is_array($config)) {
+            return $config;
+        }
+
+        foreach ($config as $key => $value) {
+            if (is_array($value) && isset($value['value'])) {
+                if ($value['value'] === null || $value['value'] === "" || strtolower((string)$value['value']) === 'null') {
+                    $config[$key]['value'] = "";
+                }
+            } elseif ($value === null || $value === "" || strtolower((string)$value) === 'null') {
+                $config[$key] = "";
+            }
+        }
+
+        return $config;
+    }
+
     public function index()
     {
         $users = DB::table('writers')
@@ -162,8 +184,8 @@ class DeviceController extends Controller
             'name' => $request->name,
             'imei' => $request->imei,
             'device_category_id' => $request->deviceCategory,
-            'configurations' => json_encode($device_array),
-            'can_configurations' => json_encode($canConverted)
+            'configurations' => json_encode($this->normalizeConfiguration($device_array)),
+            'can_configurations' => json_encode($this->normalizeConfiguration($canConverted))
         ]);
         $log = Devicelog::create([
             'device_id' => $data->id,
@@ -1075,7 +1097,7 @@ class DeviceController extends Controller
                     }
                 }
             }
-            $contact->configurations = json_encode($request->get('configuration'));
+            $contact->configurations = json_encode($this->normalizeConfiguration($request->get('configuration')));
             $contact->update();
         } elseif (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
             $contact = Device::find($contact_id);
@@ -1104,7 +1126,7 @@ class DeviceController extends Controller
                     $contact->assign_to_ids = '';
                 }
             }
-            $contact->configurations = json_encode($request->get('configuration'));
+            $contact->configurations = json_encode($this->normalizeConfiguration($request->get('configuration')));
             if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
                 $contact->is_editable = $request->get('is_editable');
             }
@@ -2072,9 +2094,9 @@ class DeviceController extends Controller
                     $oldConfig = [];
                 }
                 $newConfig = array_merge($oldConfig, $converted);
-                $arr['configurations'] = json_encode($newConfig);
+                $arr['configurations'] = json_encode($this->normalizeConfiguration($newConfig));
                 $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
-                $arr['can_configurations'] = json_encode($canConverted);
+                $arr['can_configurations'] = json_encode($this->normalizeConfiguration($canConverted));
                 $master_id = Auth::user()->id;
                 if (in_array($imei, $new_imei_list)) {
                     $mid = null;
@@ -2210,9 +2232,9 @@ class DeviceController extends Controller
                     $oldConfig = [];
                 }
                 $newConfig = array_merge($oldConfig, $converted);
-                $arr['configurations'] = json_encode($newConfig);
+                $arr['configurations'] = json_encode($this->normalizeConfiguration($newConfig));
                 $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
-                $arr['can_configurations'] = json_encode($canConverted);
+                $arr['can_configurations'] = json_encode($this->normalizeConfiguration($canConverted));
                 $master_id = Auth::user()->id;
                 if (in_array($imei, $new_imei_list)) {
                     $mid = null;
@@ -2364,6 +2386,7 @@ class DeviceController extends Controller
     }
     public function updateDeviceConfigurations(Request $request, $id)
     {
+
         $params = $request->configuration[0];
         $keys = array_keys($params);
         // print_r($keys);
@@ -2431,12 +2454,12 @@ class DeviceController extends Controller
         foreach ($newChanges as $key => $value) {
             $newValue = $value['value'] ?? null;
             if ($newValue === null || $newValue === "" || strtolower((string)$newValue) === 'null') {
-                $newValue = "0";
-                $newChanges[$key]['value'] = "0";
+                $newValue = "";
+                $newChanges[$key]['value'] = "";
             }
-            $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? null) : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '0');
+            $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? null) : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '');
             if ($oldValue === null || $oldValue === "" || strtolower((string)$oldValue) === 'null' || $oldValue === 'N/A') {
-                $oldValue = "0";
+                $oldValue = "";
             }
             if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $newValue) {
                 $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
@@ -2445,9 +2468,12 @@ class DeviceController extends Controller
         if ($newChanges) {
             $device->deviceStatus = "Pending";
         }
+        
         $result = array_replace($oldChanges, $newChanges);
-        $device->configurations = json_encode($result);
+    //    $device->configurations = json_encode($result);
+        $device->configurations = json_encode($this->normalizeConfiguration($result));
         $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
+        // dd($device->configurations);
         $device->timestamps = false; // disable auto timestamps temporarily
         $device->updated_at = $utcTime;
         $device->save();
@@ -2521,7 +2547,7 @@ class DeviceController extends Controller
             $device->deviceStatus = "Pending";
         }
 
-        $device->can_configurations = json_encode($newChanges);
+        $device->can_configurations = json_encode($this->normalizeConfiguration($newChanges));
         $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
         $device->timestamps = false; // disable auto timestamps temporarily
         $device->updated_at = $utcTime;

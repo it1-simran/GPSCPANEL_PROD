@@ -50,3 +50,12 @@ Route::post('/tracker/packets/store', [TrackerPacketController::class, 'store'])
 Route::post('/commands/execute', [\App\Http\Controllers\LiveTrackerController::class, 'executeCommand']);
 Route::get('/commands/status', [\App\Http\Controllers\LiveTrackerController::class, 'getCommandStatus']);
 
+// Device Configuration Update API Route
+Route::middleware('check.auth.token')->post('/update-device-configuration', [DeviceApiController::class, 'updateDeviceConfiguration']);
+
+// Normalize All Device Configurations API Route
+Route::post('/normalize-all-device-configurations', [DeviceApiController::class, 'normalizeAllDeviceConfigurations']);
+
+// Debug Device Configurations API Route (Optional: for troubleshooting)
+Route::get('/debug-device-configurations', [DeviceApiController::class, 'debugDeviceConfigurations']);
+

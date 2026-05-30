@@ -488,11 +488,11 @@ class DeviceApiController extends Controller
 		// }
 
 		// Normalize any remaining nulls, 0s, or empty strings to ""
-		foreach ($response as $k => $v) {
-			if ($v === null || $v === "" || $v === "0" || $v === 0) {
-				$response[$k] = "";
-			}
-		}
+		// foreach ($response as $k => $v) {
+		// 	if ($v === null || $v === "" || $v === "0" || $v === 0) {
+		// 		$response[$k] = "";
+		// 	}
+		// }
 
 		// Return clean JSON
 		return json_encode($response);
@@ -743,6 +743,353 @@ class DeviceApiController extends Controller
 			return response()->json([
 				'status' => 'FAIL',
 				'message' => 'Error fetching pending commands',
+				'error' => $e->getMessage()
+			], 500)->header('Content-Type', 'application/json');
+		}
+	}
+
+	/**
+	 * Update device configuration via API
+	 * Converts null values to empty strings and returns normalized response with IMEI
+	 */
+	public function updateDeviceConfiguration(Request $request)
+	{
+		try {
+			$data = json_decode($request->getContent(), true);
+
+			// Validate required fields
+			if (!isset($data['imei']) || empty($data['imei'])) {
+				return response()->json([
+					'status' => 'FAIL',
+					'message' => 'IMEI is required'
+				], 400)->header('Content-Type', 'application/json');
+			}
+
+			if (!isset($data['configuration']) || !is_array($data['configuration'])) {
+				return response()->json([
+					'status' => 'FAIL',
+					'message' => 'Configuration data is required and must be an array'
+				], 400)->header('Content-Type', 'application/json');
+			}
+
+			$imei = $data['imei'];
+			$configurationData = $data['configuration'];
+
+			// Find device by IMEI
+			$device = Device::where('imei', $imei)->first();
+
+			if (!$device) {
+				return response()->json([
+					'status' => 'FAIL',
+					'message' => 'Device not found with IMEI: ' . $imei
+				], 404)->header('Content-Type', 'application/json');
+			}
+
+			// Normalize the configuration data (convert null to empty string)
+			$normalizedConfig = $this->normalizeConfigurationResponse($configurationData);
+
+			// Get existing configuration
+			$existingConfig = json_decode($device->configurations, true);
+			if (!is_array($existingConfig)) {
+				$existingConfig = [];
+			}
+
+			// Merge with existing configuration
+			$mergedConfig = array_merge($existingConfig, $normalizedConfig);
+
+			// Store in database
+			$device->configurations = json_encode($mergedConfig);
+			$device->updated_at = Carbon::now('UTC')->toDateTimeString();
+			$device->save();
+
+			// Log the configuration update
+			Devicelog::create([
+				'device_id' => $device->id,
+				'user_id' => 0,
+				'log' => 'Device configuration updated via API for IMEI: ' . $imei,
+				'action' => 'API Configuration Update',
+				'is_active' => 1
+			]);
+
+			// Return normalized response with IMEI
+			return response()->json([
+				'status' => 'SUCCESS',
+				'imei' => $imei,
+				'message' => 'Device configuration updated successfully',
+				'configuration' => $normalizedConfig
+			], 200)->header('Content-Type', 'application/json');
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'status' => 'FAIL',
+				'message' => 'Error updating device configuration',
+				'error' => $e->getMessage()
+			], 500)->header('Content-Type', 'application/json');
+		}
+	}
+
+	/**
+	 * Normalize configuration response: convert null values to empty strings
+	 * Keep empty strings and valid values unchanged
+	 */
+	private function normalizeConfigurationResponse($config)
+	{
+		if (!is_array($config)) {
+			return $config;
+		}
+
+		$normalized = [];
+
+		foreach ($config as $key => $value) {
+			// Convert null to empty string
+			if ($value === null || strtolower((string)$value) === 'null') {
+				$normalized[$key] = "";
+			}
+			// Keep empty strings and valid values as-is
+			else {
+				$normalized[$key] = $value;
+			}
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Normalize all device configurations in database
+	 * Converts null values to empty strings for all devices
+	 */
+	public function normalizeAllDeviceConfigurations(Request $request)
+	{
+		try {
+			$startTime = microtime(true);
+			$processedCount = 0;
+			$updatedCount = 0;
+			$errorCount = 0;
+			$totalNullFields = 0;
+			$errorDevices = [];
+			$updatedDevices = [];
+
+			// Get all devices
+			$devices = Device::where('is_deleted', 0)->get();
+
+			if ($devices->isEmpty()) {
+				return response()->json([
+					'status' => 'FAIL',
+					'message' => 'No devices found'
+				], 404)->header('Content-Type', 'application/json');
+			}
+
+			// Process each device
+			foreach ($devices as $device) {
+				try {
+					// Decode configuration
+					$configuration = json_decode($device->configurations, true);
+
+					if (!is_array($configuration)) {
+						$configuration = [];
+					}
+
+					// Normalize configuration
+					$originalConfig = $configuration;
+					$configuration = $this->normalizeAllConfigurations($configuration);
+
+					// Check if changes were made
+					if ($originalConfig !== $configuration) {
+						// Count null fields that were converted
+						$nullCount = $this->countNullFields($originalConfig);
+						$totalNullFields += $nullCount;
+
+						// Update device
+						$device->configurations = json_encode($configuration);
+						$device->updated_at = Carbon::now('UTC')->toDateTimeString();
+						$device->save();
+
+						// Log the update
+						Devicelog::create([
+							'device_id' => $device->id,
+							'user_id' => 0,
+							'log' => "Configuration normalized via API. {$nullCount} null values converted to empty strings.",
+							'action' => 'Batch Configuration Normalization',
+							'is_active' => 1
+						]);
+
+						// Add to updated devices list
+						$updatedDevices[] = [
+							'id' => $device->id,
+							'imei' => $device->imei,
+							'null_fields_converted' => $nullCount,
+							'updated_at' => $device->updated_at
+						];
+
+						$updatedCount++;
+					}
+
+					$processedCount++;
+
+				} catch (\Exception $e) {
+					$errorCount++;
+					$processedCount++;
+					$errorDevices[] = [
+						'id' => $device->id,
+						'imei' => $device->imei,
+						'error' => $e->getMessage()
+					];
+				}
+			}
+
+			$endTime = microtime(true);
+			$duration = round($endTime - $startTime, 2);
+
+			$response = [
+				'status' => $errorCount === 0 ? 'SUCCESS' : 'PARTIAL',
+				'message' => $errorCount === 0 ?
+					'All device configurations normalized successfully' :
+					"{$errorCount} devices had errors during normalization",
+				'summary' => [
+					'total_devices' => count($devices),
+					'processed' => $processedCount,
+					'updated' => $updatedCount,
+					'skipped' => $processedCount - $updatedCount - $errorCount,
+					'errors' => $errorCount,
+					'null_fields_converted' => $totalNullFields,
+					'execution_time_seconds' => $duration
+				]
+			];
+
+			// Add updated devices list if any
+			if (!empty($updatedDevices)) {
+				$response['updated_devices'] = $updatedDevices;
+			}
+
+			// Add error devices if any
+			if (!empty($errorDevices)) {
+				$response['error_devices'] = $errorDevices;
+			}
+
+			return response()->json($response, 200)->header('Content-Type', 'application/json');
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'status' => 'FAIL',
+				'message' => 'Error normalizing all device configurations',
+				'error' => $e->getMessage()
+			], 500)->header('Content-Type', 'application/json');
+		}
+	}
+
+	/**
+	 * Normalize all configurations recursively
+	 */
+	private function normalizeAllConfigurations($config)
+	{
+		if (!is_array($config)) {
+			return $config;
+		}
+
+		$normalized = [];
+
+		foreach ($config as $key => $value) {
+			if (is_array($value) && isset($value['value'])) {
+				// Nested structure with 'value' key
+				$valueToCheck = $value['value'];
+
+				// Handle if value itself is an array (convert to empty string)
+				if (is_array($valueToCheck)) {
+					$normalized[$key] = [
+						'id' => $value['id'] ?? null,
+						'value' => ""
+					];
+				} elseif ($valueToCheck === null || $valueToCheck === "" || strtolower((string)$valueToCheck) === 'null') {
+					$normalized[$key] = [
+						'id' => $value['id'] ?? null,
+						'value' => ""
+					];
+				} else {
+					$normalized[$key] = $value;
+				}
+			} elseif (is_array($value)) {
+				// Nested array, recurse
+				$normalized[$key] = $this->normalizeAllConfigurations($value);
+			} else {
+				// Simple value
+				if ($value === null || $value === "" || (is_string($value) && strtolower($value) === 'null')) {
+					$normalized[$key] = "";
+				} else {
+					$normalized[$key] = $value;
+				}
+			}
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Count null fields in configuration
+	 */
+	private function countNullFields($config)
+	{
+		$count = 0;
+
+		if (!is_array($config)) {
+			return $count;
+		}
+
+		foreach ($config as $value) {
+			if (is_array($value) && isset($value['value'])) {
+				$valueToCheck = $value['value'];
+				if (is_array($valueToCheck) || $valueToCheck === null || (is_string($valueToCheck) && strtolower($valueToCheck) === 'null')) {
+					$count++;
+				}
+			} elseif ($value === null || (is_string($value) && strtolower($value) === 'null')) {
+				$count++;
+			}
+		}
+
+		return $count;
+	}
+
+	/**
+	 * Debug endpoint to check device configurations
+	 */
+	public function debugDeviceConfigurations(Request $request)
+	{
+		try {
+			$limit = $request->input('limit', 10);
+			$devices = Device::where('is_deleted', 0)->limit($limit)->get();
+
+			$deviceInfo = [];
+
+			foreach ($devices as $device) {
+				$config = json_decode($device->configurations, true);
+				$errorMsg = null;
+
+				if (!is_array($config)) {
+					$errorMsg = "Configuration is not a valid array. Type: " . gettype($config);
+					if (is_string($config)) {
+						$errorMsg .= ". Value: " . substr($config, 0, 100);
+					}
+				}
+
+				$deviceInfo[] = [
+					'id' => $device->id,
+					'imei' => $device->imei,
+					'config_type' => gettype(json_decode($device->configurations, true)),
+					'config_is_array' => is_array(json_decode($device->configurations, true)),
+					'config_sample' => is_array($config) ? array_slice($config, 0, 3) : $config,
+					'error' => $errorMsg
+				];
+			}
+
+			return response()->json([
+				'status' => 'SUCCESS',
+				'message' => 'Device configuration debug info',
+				'devices' => $deviceInfo
+			], 200)->header('Content-Type', 'application/json');
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'status' => 'FAIL',
+				'message' => 'Error getting device configurations',
 				'error' => $e->getMessage()
 			], 500)->header('Content-Type', 'application/json');
 		}

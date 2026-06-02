@@ -63,8 +63,15 @@
                         @endif
 
                         <div class="info-box">
-                            <i class="fa fa-info-circle"></i> You can only assign permissions that you have access to. Child users cannot receive permissions beyond your level.
+                            <i class="fa fa-info-circle"></i> <strong>Permission Inheritance:</strong> Child users can only receive permissions that you (the parent) have assigned. You can only assign a subset of your own permissions.
                         </div>
+
+                        @if(!empty($availablePermissions))
+                            <div style="margin-bottom: 20px; padding: 10px; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 4px; color: #92400e;">
+                                <i class="fa fa-key" style="margin-right: 5px;"></i>
+                                <strong>Your Available Permissions:</strong> {{ $availablePermissions->count() }} permission(s)
+                            </div>
+                        @endif
 
                         @if(request()->query('user_id'))
                             {{-- Display selected user info when passed via URL --}}

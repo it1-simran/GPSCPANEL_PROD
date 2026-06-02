@@ -240,7 +240,10 @@ class PermissionManagementController extends Controller
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
             // Validate Reseller is not assigning beyond their permissions
-            $this->validatePermissionHierarchy($user, $childUser, $request->input('permissions', []));
+            $hierarchyError = $this->validatePermissionHierarchy($user, $childUser, $request->input('permissions', []));
+            if ($hierarchyError) {
+                return response()->json(['error' => $hierarchyError], 422);
+            }
         } elseif ($user->user_type !== 'Admin') {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
@@ -308,6 +311,7 @@ class PermissionManagementController extends Controller
 
     /**
      * Validate that child permissions don't exceed parent permissions
+     * @return string|null Error message if validation fails, null if valid
      */
     private function validatePermissionHierarchy($parentUser, $childUser, $requestedPermissions)
     {
@@ -320,9 +324,13 @@ class PermissionManagementController extends Controller
         // Check if all requested permissions are accessible to parent
         foreach ($requestedPermissions as $permId) {
             if (!in_array($permId, $parentAccessiblePermissions)) {
-                throw new \Exception("Cannot assign permission beyond your access level");
+                $permission = DB::table('permissions')->find($permId);
+                $permName = $permission ? $permission->label : "Permission #$permId";
+                return "Cannot assign '$permName' - this permission is beyond your access level";
             }
         }
+
+        return null; // Valid
     }
 
     /**

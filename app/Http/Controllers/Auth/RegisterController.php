@@ -273,14 +273,21 @@ class RegisterController extends Controller
       $format->ping_interval = ["id" => 77, "value" => 4];
       $format->is_editable = ["id" => 78, "value" => 1];
 
-      $deviceCatId = $device_category[$key] ?? null; // prevent undefined index
+      $deviceCatId = $device_category[$key] ?? null;
+
+      // Skip template creation if no device category matched this configuration row
+      // (templates.device_category_id is NOT NULL — see migration).
+      if (empty($deviceCatId)) {
+        \Log::warning('Skipped template creation for writer ' . $writer->id . ' row ' . $key . ' — no matching device category');
+        continue;
+      }
 
       $temp = [
         'id_user' => $writer->id,
         'template_name' => 'default',
         'device_category_id' => $deviceCatId,
         'configurations' => json_encode($format),
-        'can_configurations' => ($deviceCatId && isset($canConfiguration[$deviceCatId]))
+        'can_configurations' => isset($canConfiguration[$deviceCatId])
           ? json_encode($canConfiguration[$deviceCatId])
           : null,
         'default_template' => 1,

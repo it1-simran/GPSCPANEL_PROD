@@ -66,19 +66,30 @@ class PermissionManagementController extends Controller
             return response()->json(['error' => 'Reseller not found'], 404);
         }
 
-        // Get reseller's permissions
-        $rolePermissions = $reseller->role ?
-            $reseller->role->permissions()->pluck('id')->toArray() : [];
+        // Direct database query - get reseller's permissions from user_permissions table
+        $userPermissions = DB::table('user_permissions')
+            ->where('user_id', $resellerId)
+            ->pluck('permission_id')
+            ->toArray();
 
-        $userPermissions = $reseller->permissions()->pluck('permission_id')->toArray();
+        // Get role permissions if reseller has a role
+        $rolePermissions = [];
+        if ($reseller->role_id) {
+            $rolePermissions = DB::table('role_permissions')
+                ->where('role_id', $reseller->role_id)
+                ->pluck('permission_id')
+                ->toArray();
+        }
 
-        $allPermissions = array_unique(array_merge($rolePermissions, $userPermissions));
+        $allPermissions = array_values(array_unique(array_merge($rolePermissions, $userPermissions)));
 
         return response()->json([
             'permissions' => $allPermissions,
-            'rolePermissions' => $rolePermissions,
-            'userPermissions' => $userPermissions
-        ]);
+            'rolePermissions' => array_values($rolePermissions),
+            'userPermissions' => array_values($userPermissions)
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+          ->header('Pragma', 'no-cache')
+          ->header('Expires', '0');
     }
 
     /**
@@ -99,19 +110,107 @@ class PermissionManagementController extends Controller
 
         $permissions = $request->input('permissions', []);
 
-        // Sync permissions
-        $reseller->permissions()->sync($permissions);
+        // Debug logging
+        \Log::info('Permission Update Request', [
+            'reseller_id' => $resellerId,
+            'reseller_name' => $reseller->name,
+            'requested_permissions' => $permissions,
+            'permission_count' => count($permissions)
+        ]);
+
+        // Get current permissions before update (both user and role)
+        $beforeUserPerms = DB::table('user_permissions')
+            ->where('user_id', $resellerId)
+            ->pluck('permission_id')
+            ->toArray();
+        $beforeRolePerms = [];
+        if ($reseller->role_id) {
+            $beforeRolePerms = DB::table('role_permissions')
+                ->where('role_id', $reseller->role_id)
+                ->pluck('permission_id')
+                ->toArray();
+        }
+        $beforeAll = array_unique(array_merge($beforeUserPerms, $beforeRolePerms));
+
+        \Log::info('Permissions Before Sync', [
+            'user_permissions' => $beforeUserPerms,
+            'role_permissions' => $beforeRolePerms,
+            'combined' => $beforeAll
+        ]);
+
+        // Sync permissions - replaces all user permissions with the provided array
+        // If reseller has role, we need to sync role permissions instead
+        if ($reseller->role_id) {
+            // Clear user permissions and sync role permissions
+            DB::table('user_permissions')->where('user_id', $resellerId)->delete();
+
+            // Update role permissions
+            $result = DB::table('role_permissions')
+                ->where('role_id', $reseller->role_id)
+                ->delete();
+
+            // Insert new role permissions
+            foreach ($permissions as $permId) {
+                DB::table('role_permissions')->insert([
+                    'role_id' => $reseller->role_id,
+                    'permission_id' => $permId
+                ]);
+            }
+
+            \Log::info('Sync Result', ['action' => 'role_sync', 'role_id' => $reseller->role_id]);
+        } else {
+            // No role, just sync user permissions
+            $result = $reseller->permissions()->sync($permissions);
+
+            \Log::info('Sync Result', [
+                'attached' => $result['attached'] ?? [],
+                'detached' => $result['detached'] ?? [],
+                'updated' => $result['updated'] ?? []
+            ]);
+        }
+
+        // Get updated permissions after sync
+        $afterUserPerms = DB::table('user_permissions')
+            ->where('user_id', $resellerId)
+            ->pluck('permission_id')
+            ->toArray();
+        $afterRolePerms = [];
+        if ($reseller->role_id) {
+            $afterRolePerms = DB::table('role_permissions')
+                ->where('role_id', $reseller->role_id)
+                ->pluck('permission_id')
+                ->toArray();
+        }
+        $afterAll = array_unique(array_merge($afterUserPerms, $afterRolePerms));
+
+        \Log::info('Permissions After Sync', [
+            'user_permissions' => $afterUserPerms,
+            'role_permissions' => $afterRolePerms,
+            'combined' => $afterAll
+        ]);
+
+        // Clear the permission cache so updated permissions take effect immediately
+        \App\Helpers\PermissionHelper::flushCache();
 
         // Log the action
         \Log::info('Admin assigned permissions to Reseller', [
             'admin_id' => $user->id,
             'reseller_id' => $resellerId,
-            'permissions_count' => count($permissions)
+            'permissions_count' => count($permissions),
+            'before' => count($beforeAll),
+            'after' => count($afterAll),
+            'has_role' => $reseller->role_id ? 'yes' : 'no'
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Permissions updated successfully'
+            'message' => 'Permissions updated successfully',
+            'debug' => [
+                'before_count' => count($beforeAll),
+                'after_count' => count($afterAll),
+                'requested_count' => count($permissions),
+                'has_role' => $reseller->role_id ? 'yes' : 'no'
+            ]
         ]);
     }
 
@@ -205,20 +304,70 @@ class PermissionManagementController extends Controller
 
         $permissions = $request->input('permissions', []);
 
-        // Sync permissions
-        $childUser->permissions()->sync($permissions);
+        // Get current permissions before update
+        $beforeUserPerms = DB::table('user_permissions')
+            ->where('user_id', $userId)
+            ->pluck('permission_id')
+            ->toArray();
+        $beforeRolePerms = [];
+        if ($childUser->role_id) {
+            $beforeRolePerms = DB::table('role_permissions')
+                ->where('role_id', $childUser->role_id)
+                ->pluck('permission_id')
+                ->toArray();
+        }
+        $beforeAll = array_unique(array_merge($beforeUserPerms, $beforeRolePerms));
+
+        // Sync permissions - if user has role, also update role permissions
+        if ($childUser->role_id) {
+            DB::table('user_permissions')->where('user_id', $userId)->delete();
+            DB::table('role_permissions')->where('role_id', $childUser->role_id)->delete();
+
+            foreach ($permissions as $permId) {
+                DB::table('role_permissions')->insert([
+                    'role_id' => $childUser->role_id,
+                    'permission_id' => $permId
+                ]);
+            }
+        } else {
+            $childUser->permissions()->sync($permissions);
+        }
+
+        // Get updated permissions
+        $afterUserPerms = DB::table('user_permissions')
+            ->where('user_id', $userId)
+            ->pluck('permission_id')
+            ->toArray();
+        $afterRolePerms = [];
+        if ($childUser->role_id) {
+            $afterRolePerms = DB::table('role_permissions')
+                ->where('role_id', $childUser->role_id)
+                ->pluck('permission_id')
+                ->toArray();
+        }
+        $afterAll = array_unique(array_merge($afterUserPerms, $afterRolePerms));
+
+        // Clear the permission cache so updated permissions take effect immediately
+        \App\Helpers\PermissionHelper::flushCache();
 
         // Log the action
         \Log::info('Permission updated for user', [
             'updated_by' => $user->id,
             'updated_by_type' => $user->user_type,
             'user_id' => $userId,
-            'permissions_count' => count($permissions)
+            'permissions_count' => count($permissions),
+            'before' => count($beforeAll),
+            'after' => count($afterAll)
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'User permissions updated successfully'
+            'message' => 'User permissions updated successfully',
+            'debug' => [
+                'before_count' => count($beforeAll),
+                'after_count' => count($afterAll),
+                'requested_count' => count($permissions)
+            ]
         ]);
     }
 
@@ -318,19 +467,69 @@ class PermissionManagementController extends Controller
 
         $permissions = $request->input('permissions', []);
 
-        // Sync permissions
-        $targetUser->permissions()->sync($permissions);
+        // Get current permissions before update (both user and role)
+        $beforeUserPerms = DB::table('user_permissions')
+            ->where('user_id', $userId)
+            ->pluck('permission_id')
+            ->toArray();
+        $beforeRolePerms = [];
+        if ($targetUser->role_id) {
+            $beforeRolePerms = DB::table('role_permissions')
+                ->where('role_id', $targetUser->role_id)
+                ->pluck('permission_id')
+                ->toArray();
+        }
+        $beforeAll = array_unique(array_merge($beforeUserPerms, $beforeRolePerms));
+
+        // Sync permissions - if user has role, also clear role permissions
+        if ($targetUser->role_id) {
+            DB::table('user_permissions')->where('user_id', $userId)->delete();
+            DB::table('role_permissions')->where('role_id', $targetUser->role_id)->delete();
+
+            foreach ($permissions as $permId) {
+                DB::table('role_permissions')->insert([
+                    'role_id' => $targetUser->role_id,
+                    'permission_id' => $permId
+                ]);
+            }
+        } else {
+            $targetUser->permissions()->sync($permissions);
+        }
+
+        // Get updated permissions
+        $afterUserPerms = DB::table('user_permissions')
+            ->where('user_id', $userId)
+            ->pluck('permission_id')
+            ->toArray();
+        $afterRolePerms = [];
+        if ($targetUser->role_id) {
+            $afterRolePerms = DB::table('role_permissions')
+                ->where('role_id', $targetUser->role_id)
+                ->pluck('permission_id')
+                ->toArray();
+        }
+        $afterAll = array_unique(array_merge($afterUserPerms, $afterRolePerms));
+
+        // Clear the permission cache so updated permissions take effect immediately
+        \App\Helpers\PermissionHelper::flushCache();
 
         // Log the action
         \Log::info('Admin assigned permissions to User', [
             'admin_id' => $user->id,
             'user_id' => $userId,
-            'permissions_count' => count($permissions)
+            'permissions_count' => count($permissions),
+            'before' => count($beforeAll),
+            'after' => count($afterAll)
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Permissions updated successfully'
+            'message' => 'Permissions updated successfully',
+            'debug' => [
+                'before_count' => count($beforeAll),
+                'after_count' => count($afterAll),
+                'requested_count' => count($permissions)
+            ]
         ]);
     }
 

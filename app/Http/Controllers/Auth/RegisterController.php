@@ -261,6 +261,14 @@ class RegisterController extends Controller
       'is_support_active' => $request->has('is_support_active') && $request->get('is_support_active') === 'on' ? 1 : 0,
       'timezone' => $request->timezone,
     ]);
+
+    // Assign default permissions to new users (all except certificate.view)
+    $defaultPermissions = \App\Permission::where('is_active', 1)
+      ->where('key', '!=', 'certificate_management.view')
+      ->pluck('id')
+      ->toArray();
+    $writer->permissions()->sync($defaultPermissions);
+
     foreach ($formatted as $key => $format) {
       $format->ping_interval = ["id" => 77, "value" => 4];
       $format->is_editable = ["id" => 78, "value" => 1];

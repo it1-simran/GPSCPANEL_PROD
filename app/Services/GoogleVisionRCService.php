@@ -10,6 +10,7 @@ use Google\Cloud\Vision\V1\Feature\Type;
 use Google\Cloud\Vision\V1\Image;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use App\Exceptions\ImageQualityException;
 use Exception;
 
 class GoogleVisionRCService
@@ -76,6 +77,8 @@ class GoogleVisionRCService
             }
 
             throw new Exception('Unsupported file format. Please upload a PDF or image file.');
+        } catch (ImageQualityException $e) {
+            throw $e;
         } catch (Exception $e) {
             throw new Exception('Error extracting RC data: ' . $e->getMessage());
         }
@@ -138,18 +141,26 @@ class GoogleVisionRCService
                 $extractedText = $texts[0]->getDescription();
             }
 
-            if (empty(trim($extractedText))) {
-                throw new Exception('No text could be extracted. Please ensure the RC document image is clear and readable.');
+            // ── Image quality gate ───────────────────────────────────────
+            // Reject blurry / cropped / tilted / unreadable images before any
+            // field extraction is attempted.
+            $confidence = $this->averageConfidence($fullTextAnnotation);
+            if (!OcrQualityHelper::isReadable($extractedText, $confidence)) {
+                throw new ImageQualityException(OcrQualityHelper::QUALITY_ERROR);
             }
 
             // Log extracted OCR text for debugging
             \Log::info('Google Vision OCR extracted text', [
                 'text' => $extractedText,
                 'length' => strlen($extractedText),
+                'confidence' => $confidence,
             ]);
 
             return $this->parseRCData($extractedText);
 
+        } catch (ImageQualityException $e) {
+            // Bubble up unwrapped so the controller can show the exact message.
+            throw $e;
         } catch (Exception $e) {
             $msg = $e->getMessage();
             // Parse common Google API errors into friendly messages
@@ -189,8 +200,37 @@ class GoogleVisionRCService
             }
 
             throw new Exception('Failed to convert PDF to image. Please ensure ImageMagick is installed, or upload a JPG/PNG instead.');
+        } catch (ImageQualityException $e) {
+            throw $e;
         } catch (Exception $e) {
             throw new Exception('Error processing PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Compute the average page-level confidence (0-1) from a Vision
+     * full-text annotation. Returns null when the provider reports no
+     * usable confidence values.
+     */
+    protected function averageConfidence($fullTextAnnotation): ?float
+    {
+        if (!$fullTextAnnotation) {
+            return null;
+        }
+
+        try {
+            $sum = 0.0;
+            $count = 0;
+            foreach ($fullTextAnnotation->getPages() as $page) {
+                $c = (float) $page->getConfidence();
+                if ($c > 0) {
+                    $sum += $c;
+                    $count++;
+                }
+            }
+            return $count > 0 ? ($sum / $count) : null;
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 
@@ -318,6 +358,43 @@ class GoogleVisionRCService
                 'REGD\s*UPTO\b', 'VALID\s+(?:UPTO|TILL|THROUGH|UP\s+TO)',
                 'VALIDITY', 'VALID\s+DATE',
             ], 20);
+        }
+
+        // ── Owner Address ────────────────────────────────────────────────
+        if (empty($data['owner_address'])) {
+            $ownerAddress = null;
+
+            // Try multiple patterns to find the address
+            // Patterns handle both inline and multi-line address formats
+            $patterns = [
+                'ADDRESS\s+OF\s+OWNER[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+                'OWNER(?:\'S)?\s*ADDRESS[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+                'REGISTERED\s+ADDRESS[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+                'ADDRESS\s+OF\s+APPLICANT[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+                '\bADDRESS[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+            ];
+
+            foreach ($patterns as $pattern) {
+                $regex = '~' . $pattern . '~i';
+                if (preg_match($regex, $text, $matches)) {
+                    $value = trim(preg_replace('~\s+~', ' ', $matches[1] ?? ''));
+                    // Clean up the value - remove leading labels if any
+                    $value = preg_replace('~^(?:ADDRESS\s+OF\s+OWNER|OWNER.*?ADDRESS|ADDRESS|ADDR)[\s:\-\.]*~i', '', $value);
+                    $value = trim(preg_replace('~\s+~', ' ', $value));
+
+                    if (!empty($value) && strlen($value) > 5) {
+                        $ownerAddress = substr($value, 0, 300);
+                        break;
+                    }
+                }
+            }
+
+            if ($ownerAddress) {
+                $data['owner_address'] = $ownerAddress;
+                \Log::info('RC Address Extraction (Google Vision): Found address: ' . $ownerAddress);
+            } else {
+                \Log::info('RC Address Extraction (Google Vision): No address found. Text preview: ' . substr($text, 0, 500));
+            }
         }
 
         // Clean up empty / null values
@@ -869,7 +946,20 @@ class GoogleVisionRCService
      */
     public function extractPlateNumber(string $imagePath): ?string
     {
+        return $this->extractPlateData($imagePath)['plate'] ?? null;
+    }
+
+    /**
+     * Analyze a number-plate image: returns the detected plate (if any) plus
+     * the raw OCR text and average confidence so callers can distinguish
+     * "poor image quality" from "readable image, no plate visible".
+     *
+     * @return array{plate: ?string, text: string, confidence: ?float}
+     */
+    public function extractPlateData(string $imagePath): array
+    {
         $client = null;
+        $result = ['plate' => null, 'text' => '', 'confidence' => null];
         try {
             if (!file_exists($imagePath)) {
                 throw new Exception('Plate image not found: ' . $imagePath);
@@ -897,7 +987,7 @@ class GoogleVisionRCService
             $batchResponse = $client->batchAnnotateImages($batchRequest);
             $responses = $batchResponse->getResponses();
 
-            if (empty($responses)) return null;
+            if (empty($responses)) return $result;
             $response = $responses[0];
 
             // Combine full text + individual annotations for max coverage
@@ -910,25 +1000,29 @@ class GoogleVisionRCService
                 $candidates[] = $annotation->getDescription();
             }
 
-            // Search for the best Indian plate pattern
             $combined = strtoupper(implode("\n", $candidates));
+            $result['text'] = $combined;
+            $result['confidence'] = $this->averageConfidence($fullAnnotation);
+
             // Remove any whitespace, dashes, dots between plate parts
             $compact = preg_replace('~[\s\-\.]+~', '', $combined);
 
             // Indian plate format: 2 letters + 1-2 digits + 1-3 letters + 1-4 digits
             if (preg_match('~([A-Z]{2}\d{1,2}[A-Z]{1,3}\d{1,4})~', $compact, $m)) {
-                return $m[1];
+                $result['plate'] = $m[1];
+                return $result;
             }
 
             // Fallback: try with spaces allowed
             if (preg_match('~([A-Z]{2}\s*\d{1,2}\s*[A-Z]{1,3}\s*\d{1,4})~', $combined, $m)) {
-                return preg_replace('~\s+~', '', $m[1]);
+                $result['plate'] = preg_replace('~\s+~', '', $m[1]);
+                return $result;
             }
 
-            return null;
+            return $result;
         } catch (Exception $e) {
             \Log::error('Plate extraction failed: ' . $e->getMessage());
-            return null;
+            return $result;
         } finally {
             if ($client) {
                 $client->close();
@@ -999,13 +1093,14 @@ class GoogleVisionRCService
             }
 
             return [
-                'imei'  => $this->extractImei($text),
-                'iccid' => $this->extractIccid($text),
-                'raw'   => $text,
+                'imei'       => $this->extractImei($text),
+                'iccid'      => $this->extractIccid($text),
+                'raw'        => $text,
+                'confidence' => $this->averageConfidence($fullAnnotation),
             ];
         } catch (Exception $e) {
             \Log::error('Device info extraction failed: ' . $e->getMessage());
-            return ['imei' => null, 'iccid' => null, 'raw' => '', 'error' => $e->getMessage()];
+            return ['imei' => null, 'iccid' => null, 'raw' => '', 'confidence' => null, 'error' => $e->getMessage()];
         } finally {
             if ($client) {
                 $client->close();

@@ -172,6 +172,14 @@ class GuestUserController extends Controller
     }
     public function deleteRequest($id)
     {
+        // Permission check - only admin/support can delete requests
+        if (Auth::user()->user_type !== 'Admin' && !Auth::user()->hasPermission('account_management.delete')) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You do not have permission to delete requests.'
+            ], 403);
+        }
+
         $guest = GuestApprovalUser::find($id);
         if (!$guest) {
             return response()->json([
@@ -185,6 +193,11 @@ class GuestUserController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
+        // Permission check - only admin/support can update approval status
+        if (Auth::user()->user_type !== 'Admin' && Auth::user()->user_type !== 'Support' && !Auth::user()->hasPermission('account_management.edit')) {
+            abort(403, 'You do not have permission to update approval status');
+        }
+
         $user = GuestApprovalUser::findOrFail($id);
         $userConfiguration = json_decode($user->configurations, true);
 

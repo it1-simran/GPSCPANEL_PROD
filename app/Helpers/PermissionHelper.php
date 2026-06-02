@@ -186,4 +186,114 @@ class PermissionHelper
     {
         return self::getGrantedKeys($user);
     }
+
+    /**
+     * Check if parent can assign a permission to child
+     * Child cannot have more permissions than parent
+     *
+     * @param  string  $permissionKey
+     * @param  mixed|null  $parentUser
+     * @return bool
+     */
+    public static function canParentAssignPermission(string $permissionKey, $parentUser = null): bool
+    {
+        if (!$parentUser) {
+            $parentUser = Auth::user();
+        }
+
+        // Admin can assign any permission
+        if ($parentUser->user_type === 'Admin') {
+            return true;
+        }
+
+        // Parent must have the permission to assign it
+        return self::hasPermission($permissionKey, $parentUser);
+    }
+
+    /**
+     * Check if user can access account management
+     * Only Admin and Reseller can access, not User/Dealer
+     *
+     * @param  mixed|null  $user
+     * @return bool
+     */
+    public static function canAccessAccountManagement($user = null): bool
+    {
+        if (!$user) {
+            $user = Auth::user();
+        }
+
+        if (!$user) {
+            return false;
+        }
+
+        // Only Admin and Reseller can access
+        return in_array($user->user_type, ['Admin', 'Reseller']);
+    }
+
+    /**
+     * Get permissions a user can assign to their children
+     * Only their own permissions can be assigned
+     *
+     * @param  mixed|null  $user
+     * @return array
+     */
+    public static function getAssignablePermissionKeys($user = null): array
+    {
+        if (!$user) {
+            $user = Auth::user();
+        }
+
+        if (!$user) {
+            return [];
+        }
+
+        // Admin can assign all permissions
+        if ($user->user_type === 'Admin') {
+            return \App\Permission::where('is_active', 1)->pluck('key')->toArray();
+        }
+
+        // Others can only assign their own permissions
+        return self::getGrantedKeys($user);
+    }
+
+    /**
+     * Validate permission assignment (child cannot exceed parent)
+     *
+     * @param  string  $permissionKey
+     * @param  mixed  $targetUser  The user getting the permission
+     * @param  mixed|null  $assigningUser  The user assigning it (defaults to Auth::user())
+     * @return array  ['valid' => bool, 'message' => string]
+     */
+    public static function validatePermissionAssignment(
+        string $permissionKey,
+        $targetUser,
+        $assigningUser = null
+    ): array {
+        if (!$assigningUser) {
+            $assigningUser = Auth::user();
+        }
+
+        // Check if assigning user can manage target user
+        if (!$assigningUser->canManage($targetUser)) {
+            return [
+                'valid' => false,
+                'message' => 'You cannot assign permissions to this user.'
+            ];
+        }
+
+        // Check if assigning user has the permission
+        if (!self::canParentAssignPermission($permissionKey, $assigningUser)) {
+            return [
+                'valid' => false,
+                'message' => "You don't have permission to assign '{$permissionKey}'."
+            ];
+        }
+
+        // All validations passed
+        return [
+            'valid' => true,
+            'message' => 'Permission assignment is valid.'
+        ];
+    }
 }

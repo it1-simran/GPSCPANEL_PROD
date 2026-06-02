@@ -64,5 +64,16 @@ class Writer extends Authenticatable{
     {
         return $this->hasMany(Writer::class, 'parent_user_id');
     }
+
+    /**
+     * Check if user has a specific permission
+     *
+     * @param string $permissionKey
+     * @return bool
+     */
+    public function hasPermission($permissionKey)
+    {
+        return \App\Helpers\PermissionHelper::hasPermission($permissionKey, $this);
+    }
 }
 

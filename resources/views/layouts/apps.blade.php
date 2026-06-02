@@ -585,7 +585,7 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
-                        @if (\App\Helpers\PermissionHelper::hasAnyModulePermission('account_management'))
+                        @if (\App\Helpers\PermissionHelper::canAccessAccountManagement() && \App\Helpers\PermissionHelper::hasAnyModulePermission('account_management'))
                         <li
                             class='sub-menu {{ request()->is('reseller/add-user', 'reseller/view-user') ? 'active' : '' }}'>
                             <a href="#"

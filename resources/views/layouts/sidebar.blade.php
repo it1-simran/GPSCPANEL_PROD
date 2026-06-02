@@ -35,8 +35,10 @@
                         <li class='sub-menu '>
                             <a href="1" class="hvr-bounce-to-right-sidebar-parent {{($child_uri=='add-template' || $child_uri=='view-template') ? 'active' : '' }}"><span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span></a>
                             <ul class='sub'>
+                                @if(auth()->user()->hasPermission('settings_management.create') || auth()->user()->user_type == 'Admin')
                                 <li class="{{($child_uri=='add-template') ? 'active' : '' }}"><a href="<?php echo url('admin/add-template'); ?>">Add Settings </a>
                                 </li>
+                                @endif
                                 <li class="{{($child_uri=='view-template') ? 'active' : '' }}"><a href="<?php echo url('admin/view-template'); ?>">View Settings</a>
                                 </li>
                             </ul>
@@ -67,8 +69,10 @@
                         <li class='sub-menu '>
                             <a href="1" class="hvr-bounce-to-right-sidebar-parent {{($child_uri=='add-template' || $child_uri=='view-template') ? 'active' : '' }}"><span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span></a>
                             <ul class='sub'>
+                                @if(auth()->user()->hasPermission('settings_management.create') || auth()->user()->user_type == 'Admin')
                                 <li class="{{($child_uri=='add-template') ? 'active' : '' }}"><a href="<?php echo url('reseller/add-template'); ?>">Add Settings </a>
                                 </li>
+                                @endif
                                 <li class="{{($child_uri=='view-template') ? 'active' : '' }}"><a href="<?php echo url('reseller/view-template'); ?>">View Settings</a>
                                 </li>
                             </ul>
@@ -90,8 +94,10 @@
                         <li class='sub-menu '>
                             <a href="1" class="hvr-bounce-to-right-sidebar-parent {{($child_uri=='add-template' || $child_uri=='view-template') ? 'active' : '' }}"><span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span></a>
                             <ul class='sub'>
+                                @if(auth()->user()->hasPermission('settings_management.create') || auth()->user()->user_type == 'Admin')
                                 <li class="{{($child_uri=='add-template') ? 'active' : '' }}"><a href="{{route('template.add')}}">Add Settings </a>
                                 </li>
+                                @endif
                                 <li class="{{($child_uri=='view-template') ? 'active' : '' }}"><a href="{{route('template.view')}}">View Settings</a>
                                 </li>
                             </ul>

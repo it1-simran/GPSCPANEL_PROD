@@ -21,6 +21,11 @@ class CertificateController extends Controller
      */
     public function index()
     {
+        // Permission check
+        if (!Auth::user()->hasPermission('certificate_management.view')) {
+            abort(403, 'You do not have permission to view certificates');
+        }
+
         $user = Auth::user();
 
         // Use Device model for better data handling
@@ -77,11 +82,30 @@ class CertificateController extends Controller
      */
     public function certificatePage($id, Request $request)
     {
+        // Permission check
+        if (!Auth::user()->hasPermission('certificate_management.view')) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "You do not have permission to view certificates"]);
+        }
+
         $device = Device::findOrFail($id);
         $currentUser = Auth::user();
 
+        // Ownership validation: ensure user owns the device
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
+        }
+
+        // Reseller can only access devices they own or that belong to their child users
+        if ($currentUser->user_type == 'Reseller') {
+            $isOwnDevice = $device->user_id == $currentUser->id;
+            $isChildUserDevice = \DB::table('writers')
+                ->where('id', $device->user_id)
+                ->where('created_by', $currentUser->id)
+                ->exists();
+
+            if (!$isOwnDevice && !$isChildUserDevice) {
+                return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
+            }
         }
 
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
@@ -120,11 +144,30 @@ class CertificateController extends Controller
      */
     public function saveCertificateDetails($id, Request $request)
     {
+        // Permission check - require view permission as a baseline
+        if (!Auth::user()->hasPermission('certificate_management.view')) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "You do not have permission to manage certificates"]);
+        }
+
         $device = Device::findOrFail($id);
         $currentUser = Auth::user();
 
+        // Ownership validation: ensure user owns the device
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
+        }
+
+        // Reseller can only access devices they own or that belong to their child users
+        if ($currentUser->user_type == 'Reseller') {
+            $isOwnDevice = $device->user_id == $currentUser->id;
+            $isChildUserDevice = \DB::table('writers')
+                ->where('id', $device->user_id)
+                ->where('created_by', $currentUser->id)
+                ->exists();
+
+            if (!$isOwnDevice && !$isChildUserDevice) {
+                return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
+            }
         }
 
         $uniqueIgnoreId = $device->id;
@@ -147,14 +190,25 @@ class CertificateController extends Controller
         }
 
         $request->validate([
-            'holder_name' => 'required|string|max:255',
-            'authority_city' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
+            'owner_address' => 'required|string|max:500',
             'fitment_date' => 'required|date',
             'vltd_make' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'vehicle_model' => 'required|string|max:255',
+            'fitter_company' => 'required|string|max:255',
+            'fitter_contact' => 'required|string|max:20',
+            'fitter_address' => 'required|string|max:500',
+            'fitter_email' => 'required|email|max:255',
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
+        ], [
+            'owner_name.required' => 'The owner name field is required.',
+            'owner_address.required' => 'The owner address field is required.',
+            'fitter_company.required' => 'The fitter company name is required.',
+            'fitter_contact.required' => 'The fitter contact number is required.',
+            'fitter_address.required' => 'The fitter address is required.',
+            'fitter_email.required' => 'The fitter email is required.',
         ]);
 
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
@@ -176,9 +230,16 @@ class CertificateController extends Controller
         }
 
         $config = json_decode($device->configurations, true) ?: [];
+
+        // Extract city from owner_address (last part after comma) for authority_city
+        $ownerAddress = $request->owner_address;
+        $addressParts = explode(',', $ownerAddress);
+        $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+
         $config['certificate_details'] = [
-            'holder_name' => $request->holder_name,
-            'authority_city' => $request->authority_city,
+            'holder_name' => $request->owner_name,
+            'authority_city' => $authorityCity,
+            'owner_address' => $request->owner_address,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -194,11 +255,19 @@ class CertificateController extends Controller
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
             'service_provider' => $serviceProvider,
+            'fitter_company' => $request->fitter_company,
+            'fitter_contact' => $request->fitter_contact,
+            'fitter_address' => $request->fitter_address,
+            'fitter_email' => $request->fitter_email,
             // SIM details auto-captured via device label scan (GrowSpace API)
             'sim1_operator' => $request->sim1_operator ?? null,
             'sim1_msisdn'   => $request->sim1_msisdn ?? null,
+            'sim1_activation_date' => $request->sim1_activation_date ?? null,
+            'sim1_expiry_date' => $request->sim1_expiry_date ?? null,
             'sim2_operator' => $request->sim2_operator ?? null,
             'sim2_msisdn'   => $request->sim2_msisdn ?? null,
+            'sim2_activation_date' => $request->sim2_activation_date ?? null,
+            'sim2_expiry_date' => $request->sim2_expiry_date ?? null,
         ];
 
         $device->configurations = json_encode($config);
@@ -213,8 +282,8 @@ class CertificateController extends Controller
     public function generateCertificate($id, Request $request)
     {
         $request->validate([
-            'holder_name' => 'required|string|max:255',
-            'authority_city' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
+            'owner_address' => 'required|string|max:500',
             'fitment_date' => 'required|date',
             'vehicle_registration_no' => 'required|string|max:255',
             'vltd_serial_no' => 'required|string|max:255',
@@ -224,10 +293,21 @@ class CertificateController extends Controller
             'engine_no' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'vehicle_model' => 'required|string|max:255',
+            'fitter_company' => 'required|string|max:255',
+            'fitter_contact' => 'required|string|max:20',
+            'fitter_address' => 'required|string|max:500',
+            'fitter_email' => 'required|email|max:255',
             'arai_tac' => 'nullable|string|max:255',
             'arai_date' => 'nullable|date',
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
+        ], [
+            'owner_name.required' => 'The owner name field is required.',
+            'owner_address.required' => 'The owner address field is required.',
+            'fitter_company.required' => 'The fitter company name is required.',
+            'fitter_contact.required' => 'The fitter contact number is required.',
+            'fitter_address.required' => 'The fitter address is required.',
+            'fitter_email.required' => 'The fitter email is required.',
         ]);
 
         $device = Device::findOrFail($id);
@@ -265,9 +345,15 @@ class CertificateController extends Controller
         // Pull saved SIM/extra details from device config (captured via device label scan)
         $savedCert = is_array($config) ? ($config['certificate_details'] ?? []) : [];
 
+        // Extract city from owner_address (last part after comma) for authority_city
+        $ownerAddress = $request->owner_address;
+        $addressParts = explode(',', $ownerAddress);
+        $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+
         $data = [
-            'holder_name' => $request->holder_name,
-            'authority_city' => $request->authority_city,
+            'holder_name' => $request->owner_name,
+            'authority_city' => $authorityCity,
+            'owner_address' => $request->owner_address,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -283,6 +369,10 @@ class CertificateController extends Controller
             'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId ?: ($request->vltd_icc_id ?? ($savedCert['vltd_icc_id'] ?? '')),
             'service_provider' => $provider,
+            'fitter_company' => $request->fitter_company ?? ($savedCert['fitter_company'] ?? null),
+            'fitter_contact' => $request->fitter_contact ?? ($savedCert['fitter_contact'] ?? null),
+            'fitter_address' => $request->fitter_address ?? ($savedCert['fitter_address'] ?? null),
+            'fitter_email' => $request->fitter_email ?? ($savedCert['fitter_email'] ?? null),
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
@@ -327,8 +417,8 @@ class CertificateController extends Controller
     public function previewCertificate($id, Request $request)
     {
         $request->validate([
-            'holder_name' => 'required|string|max:255',
-            'authority_city' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
+            'owner_address' => 'required|string|max:500',
             'fitment_date' => 'required|date',
             'vehicle_registration_no' => 'required|string|max:255',
             'vltd_serial_no' => 'required|string|max:255',
@@ -338,10 +428,21 @@ class CertificateController extends Controller
             'engine_no' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'vehicle_model' => 'required|string|max:255',
+            'fitter_company' => 'required|string|max:255',
+            'fitter_contact' => 'required|string|max:20',
+            'fitter_address' => 'required|string|max:500',
+            'fitter_email' => 'required|email|max:255',
             'arai_tac' => 'nullable|string|max:255',
             'arai_date' => 'nullable|date',
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
+        ], [
+            'owner_name.required' => 'The owner name field is required.',
+            'owner_address.required' => 'The owner address field is required.',
+            'fitter_company.required' => 'The fitter company name is required.',
+            'fitter_contact.required' => 'The fitter contact number is required.',
+            'fitter_address.required' => 'The fitter address is required.',
+            'fitter_email.required' => 'The fitter email is required.',
         ]);
 
         $device = Device::findOrFail($id);
@@ -379,9 +480,15 @@ class CertificateController extends Controller
         // Pull saved SIM/extra details from device config (captured via device label scan)
         $savedCert = is_array($config) ? ($config['certificate_details'] ?? []) : [];
 
+        // Extract city from owner_address (last part after comma) for authority_city
+        $ownerAddress = $request->owner_address;
+        $addressParts = explode(',', $ownerAddress);
+        $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+
         $data = [
-            'holder_name' => $request->holder_name,
-            'authority_city' => $request->authority_city,
+            'holder_name' => $request->owner_name,
+            'authority_city' => $authorityCity,
+            'owner_address' => $request->owner_address,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -397,6 +504,10 @@ class CertificateController extends Controller
             'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId ?: ($request->vltd_icc_id ?? ($savedCert['vltd_icc_id'] ?? '')),
             'service_provider' => $provider,
+            'fitter_company' => $request->fitter_company ?? ($savedCert['fitter_company'] ?? null),
+            'fitter_contact' => $request->fitter_contact ?? ($savedCert['fitter_contact'] ?? null),
+            'fitter_address' => $request->fitter_address ?? ($savedCert['fitter_address'] ?? null),
+            'fitter_email' => $request->fitter_email ?? ($savedCert['fitter_email'] ?? null),
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
@@ -552,12 +663,13 @@ class CertificateController extends Controller
             $extractedData = $rcService->extractFromFile($fullPath);
             $mappedData = $rcService->mapRCToFormFields($extractedData);
 
-            // Detect which required fields are missing (warn but don't block)
-            $requiredFields = ['vehicle_registration_no', 'chassis_no', 'engine_no'];
-            $missingFields = array_filter($requiredFields, fn($f) => empty($extractedData[$f]));
-            $warning = !empty($missingFields)
-                ? 'Some fields could not be auto-extracted (' . implode(', ', $missingFields) . '). Please fill them in manually.'
-                : null;
+            // ── Data extraction validation ───────────────────────────────
+            // Detect which mandatory RC fields are missing. Because the form
+            // supports separate front + back uploads (merged on the client),
+            // completeness is enforced on the MERGED result in the browser —
+            // here we just report which required fields this file yielded.
+            $requiredFields = ['vehicle_registration_no', 'chassis_no', 'engine_no', 'color', 'vehicle_model'];
+            $missingLabels = \App\Services\OcrQualityHelper::missingFieldLabels($requiredFields, $extractedData);
 
             // Store RC file path in device config
             $config = json_decode($device->configurations, true) ?: [];
@@ -570,11 +682,22 @@ class CertificateController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $warning ?? 'RC document processed successfully',
-                'warning' => $warning,
+                'message' => 'RC document processed successfully',
                 'data' => $mappedData,
                 'raw_data' => $extractedData,
+                'required_fields' => $requiredFields,
+                'missing_required' => $missingLabels,
             ]);
+        } catch (\App\Exceptions\ImageQualityException $e) {
+            // Image is blurry / cropped / tilted / unreadable.
+            if (isset($filePath) && file_exists(storage_path('app/' . $filePath))) {
+                unlink(storage_path('app/' . $filePath));
+            }
+            return response()->json([
+                'success'       => false,
+                'quality_error' => true,
+                'error'         => $e->getMessage(),
+            ], 422);
         } catch (\Exception $e) {
             // Clean up uploaded file on error
             if (isset($filePath) && file_exists(storage_path('app/' . $filePath))) {
@@ -585,6 +708,26 @@ class CertificateController extends Controller
                 'error' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /**
+     * Persist an OCR-uploaded image so it can be reused on the certificate.
+     * Stores the relative path under config->ocr_images->{slot} and removes
+     * any previously kept image for that slot.
+     */
+    private function persistOcrImage(Device $device, string $slot, string $relPath): void
+    {
+        $config = json_decode($device->configurations, true) ?: [];
+        $old = $config['ocr_images'][$slot] ?? null;
+        if ($old && $old !== $relPath) {
+            $oldFull = storage_path('app/' . $old);
+            if (is_file($oldFull)) {
+                @unlink($oldFull);
+            }
+        }
+        $config['ocr_images'][$slot] = $relPath;
+        $device->configurations = json_encode($config);
+        $device->save();
     }
 
     /**
@@ -629,21 +772,40 @@ class CertificateController extends Controller
             }
 
             $service  = new \App\Services\GoogleVisionRCService();
-            $detected = $service->extractPlateNumber($fullPath);
+            $plateData = $service->extractPlateData($fullPath);
+            $detected  = $plateData['plate'] ?? null;
             $detectedNormalized = \App\Services\GoogleVisionRCService::normalizePlateNumber($detected);
 
-            // Clean up upload after extraction
-            if (file_exists($fullPath)) unlink($fullPath);
+            // ── Image quality gate ───────────────────────────────────────
+            // If the OCR returned essentially nothing / low confidence, the
+            // image itself is the problem (blurry, cropped, tilted).
+            if (!\App\Services\OcrQualityHelper::isReadable($plateData['text'] ?? '', $plateData['confidence'] ?? null)) {
+                if (file_exists($fullPath)) @unlink($fullPath);
+                return response()->json([
+                    'success'       => false,
+                    'matched'       => false,
+                    'quality_error' => true,
+                    'expected'      => $expected,
+                    'detected'      => null,
+                    'error'         => \App\Services\OcrQualityHelper::QUALITY_ERROR,
+                ], 422);
+            }
 
+            // ── Data extraction validation ───────────────────────────────
+            // Image is readable, but no valid number plate could be found.
             if (!$detectedNormalized) {
+                if (file_exists($fullPath)) @unlink($fullPath);
                 return response()->json([
                     'success'  => false,
                     'matched'  => false,
                     'expected' => $expected,
                     'detected' => null,
-                    'error'    => 'Could not detect a valid number plate in the uploaded image. Please upload a clearer photo.',
+                    'error'    => \App\Services\OcrQualityHelper::missingFieldsMessage('the number plate image', ['Number Plate']),
                 ], 422);
             }
+
+            // Keep the uploaded plate image for use on the certificate.
+            $this->persistOcrImage($device, 'plate', $filePath);
 
             $matched = ($detectedNormalized === $expected);
 
@@ -697,17 +859,36 @@ class CertificateController extends Controller
             $service = new \App\Services\GoogleVisionRCService();
             $info    = $service->extractDeviceInfo($fullPath);
 
-            // Cleanup uploaded file
-            if (file_exists($fullPath)) unlink($fullPath);
-
-            if (empty($info['imei']) && empty($info['iccid'])) {
+            // ── Image quality gate ───────────────────────────────────────
+            // Reject blurry / cropped / tilted / unreadable label photos.
+            if (!\App\Services\OcrQualityHelper::isReadable($info['raw'] ?? '', $info['confidence'] ?? null)) {
+                if (file_exists($fullPath)) @unlink($fullPath);
                 return response()->json([
-                    'success' => false,
-                    'imei'    => null,
-                    'iccid'   => null,
-                    'error'   => 'Could not detect IMEI or ICCID in the image. Please upload a clearer photo of the device label.',
+                    'success'       => false,
+                    'quality_error' => true,
+                    'imei'          => null,
+                    'iccid'         => null,
+                    'error'         => \App\Services\OcrQualityHelper::QUALITY_ERROR,
                 ], 422);
             }
+
+            // ── Data extraction validation ───────────────────────────────
+            // Image is readable; both IMEI and ICCID are mandatory for the
+            // device label scan. Report exactly which one(s) are missing.
+            $missingLabels = \App\Services\OcrQualityHelper::missingFieldLabels(['imei', 'iccid'], $info);
+            if (!empty($missingLabels)) {
+                if (file_exists($fullPath)) @unlink($fullPath);
+                return response()->json([
+                    'success'        => false,
+                    'imei'           => $info['imei'] ?? null,
+                    'iccid'          => $info['iccid'] ?? null,
+                    'missing_fields' => $missingLabels,
+                    'error'          => \App\Services\OcrQualityHelper::missingFieldsMessage('the device label', $missingLabels),
+                ], 422);
+            }
+
+            // Keep the uploaded device label image for use on the certificate.
+            $this->persistOcrImage($device, 'device', $filePath);
 
             // Optionally check if extracted IMEI matches device's stored IMEI
             $deviceImei  = $device->imei ?? null;

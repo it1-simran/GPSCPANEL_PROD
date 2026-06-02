@@ -163,9 +163,12 @@
         $('#loading').addClass('active');
 
         $.ajax({
-            url: '/admin/permissions/' + resellerId,
+            url: '/admin/permissions/' + resellerId + '?t=' + new Date().getTime(),
             type: 'GET',
+            cache: false,
             success: function(response) {
+                console.log('Loaded permissions:', response);
+
                 // Uncheck all checkboxes first
                 $('.permission-checkbox').prop('checked', false);
 
@@ -204,22 +207,95 @@
             permissions.push($(this).val());
         });
 
+        console.log('Sending permissions:', permissions);
+        console.log('Total permissions count:', permissions.length);
+        console.log('Reseller ID:', currentResellerId);
+        console.log('Sending to URL: /admin/permissions/' + currentResellerId + '/update');
+
+        // Show loading state
+        const saveBtn = $('button[onclick="savePermissions()"]');
+        const originalText = saveBtn.html();
+        saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+
         $.ajax({
             url: '/admin/permissions/' + currentResellerId + '/update',
             type: 'POST',
             headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded'
             },
             data: {
                 permissions: permissions
             },
             success: function(response) {
-                alert('Permissions saved successfully!');
+                console.log('Response received:', response);
+
+                // Show success message
+                showSuccessAlert('Permissions saved successfully! (' + response.debug.after_count + ' permissions now enabled)');
+                saveBtn.prop('disabled', false).html(originalText);
+
+                // Reload permissions to confirm changes
+                setTimeout(function() {
+                    loadResellerPermissions(currentResellerId);
+                }, 1500);
             },
-            error: function(error) {
-                alert('Error saving permissions: ' + error.responseJSON.error);
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    error: error
+                });
+
+                let errorMsg = 'Error saving permissions';
+                if (xhr.status === 0) {
+                    errorMsg = 'Network error - check your connection';
+                } else if (xhr.status === 404) {
+                    errorMsg = 'Route not found (404)';
+                } else if (xhr.status === 403) {
+                    errorMsg = 'Unauthorized access (403)';
+                } else if (xhr.status === 422) {
+                    errorMsg = 'Validation failed (422)';
+                } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                } else if (xhr.responseText) {
+                    errorMsg = 'Error: ' + xhr.responseText.substring(0, 100);
+                }
+
+                showErrorAlert(errorMsg);
+                saveBtn.prop('disabled', false).html(originalText);
             }
         });
+    }
+
+    function showSuccessAlert(message) {
+        const alertHtml = '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+            '<i class="fa fa-check-circle" style="margin-right: 8px;"></i>' + message +
+            '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
+            '</div>';
+
+        if ($('#alert_container').length) {
+            $('#alert_container').html(alertHtml);
+        } else {
+            $('#permissionsContainer').before('<div id="alert_container">' + alertHtml + '</div>');
+        }
+
+        // Auto-close after 5 seconds
+        setTimeout(() => $('.alert').fadeOut(), 5000);
+    }
+
+    function showErrorAlert(message) {
+        const alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+            '<i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i>' + message +
+            '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
+            '</div>';
+
+        if ($('#alert_container').length) {
+            $('#alert_container').html(alertHtml);
+        } else {
+            $('#permissionsContainer').before('<div id="alert_container">' + alertHtml + '</div>');
+        }
     }
 </script>
 

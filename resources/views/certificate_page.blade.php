@@ -383,9 +383,6 @@
                   <a href="?edit=1" class="btn btn-warning" style="background-color:#f59e0b; border-color:#f59e0b; color:#fff; padding:8px 20px; font-weight:600; text-decoration:none; border-radius:6px;">
                     <i class="fa fa-edit"></i> Edit Certificate
                   </a>
-                  <a href="/user/device/{{ $device->id }}/certificate/view" target="_blank" class="btn btn-info" style="background-color:#0891b2; border-color:#0891b2; color:#fff; padding:8px 20px; font-weight:600; text-decoration:none; border-radius:6px;">
-                    <i class="fa fa-download"></i> Download Certificate
-                  </a>
                 </div>
               </div>
               <div class="row">
@@ -398,6 +395,13 @@
                 <div class="col-md-12">
                   @php
                     $formData = is_array($saved) ? $saved : [];
+                    // Auto-fill helpers sourced from existing device data.
+                    $deviceCfg    = json_decode($device->configurations ?? '', true) ?: [];
+                    $autoImei     = $device->imei ?? '';
+                    $autoIccid    = $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? ($deviceCfg['ccid']['value'] ?? ($deviceCfg['iccid']['value'] ?? '')));
+                    $autoModel    = $formData['vltd_model'] ?? ($vltd_model ?? ($category_name ?? ''));
+                    $autoFirmware = $formData['firmware_version'] ?? ($deviceCfg['firmware_version']['value'] ?? ($deviceCfg['firmwareVersion']['value'] ?? ''));
+                    $autoVendorId = $formData['vendor_id'] ?? ($deviceCfg['vendorId']['value'] ?? ($deviceCfg['vendor_id'] ?? ''));
                   @endphp
                   <div class="alert alert-success alert-dismissible" role="alert" id="rc-upload-info" style="display:none;">
                     <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
@@ -422,7 +426,7 @@
                           <label style="font-weight:600; color:#333; display:block; margin-bottom:8px; font-size:13px;">
                             <i class="fa fa-id-card" style="color:#76CF1C;margin-right:6px;"></i>RC Front Page <span style="color:#d32f2f;">*</span>
                           </label>
-                          <input type="file" id="rc_file_front" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" class="form-control" style="padding:10px; border: 1px solid #ddd; cursor:pointer; background:#fff;" />
+                          <input type="file" id="rc_file_front" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
                           <small style="color:#666; font-size:11px; display:block; margin-top:4px;">Main RC page with vehicle details</small>
                           <div id="rc-front-preview" style="display:none; margin-top:8px;">
                             <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#76CF1C20; color:#166534; border-radius:4px; font-size:12px; font-weight:500;">
@@ -438,7 +442,7 @@
                           <label style="font-weight:600; color:#333; display:block; margin-bottom:8px; font-size:13px;">
                             <i class="fa fa-id-card-o" style="color:#76CF1C;margin-right:6px;"></i>RC Back Page <span style="color:#888; font-weight:400;">(optional)</span>
                           </label>
-                          <input type="file" id="rc_file_back" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" class="form-control" style="padding:10px; border: 1px solid #ddd; cursor:pointer; background:#fff;" />
+                          <input type="file" id="rc_file_back" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
                           <small style="color:#666; font-size:11px; display:block; margin-top:4px;">Optional: back page (address, owner photo)</small>
                           <div id="rc-back-preview" style="display:none; margin-top:8px;">
                             <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#76CF1C20; color:#166534; border-radius:4px; font-size:12px; font-weight:500;">
@@ -485,7 +489,7 @@
 
                         <div class="file-upload-wrapper">
                           <div class="form-group" style="margin-bottom:0;">
-                            <input type="file" id="plate_file" accept=".jpg,.jpeg,.png,.bmp,.gif" class="form-control" style="padding:10px; border: 1px solid #ddd; cursor:pointer;" />
+                            <input type="file" id="plate_file" accept=".jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
                           </div>
                         </div>
 
@@ -531,7 +535,7 @@
 
                         <div class="file-upload-wrapper">
                           <div class="form-group" style="margin-bottom:0;">
-                            <input type="file" id="device_file" accept=".jpg,.jpeg,.png,.bmp,.gif" class="form-control" style="padding:10px; border: 1px solid #ddd; cursor:pointer;" />
+                            <input type="file" id="device_file" accept=".jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
                           </div>
                         </div>
 
@@ -567,6 +571,8 @@
                                 <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">MSISDN</th>
                                 <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">IMSI</th>
                                 <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Status</th>
+                                <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Activation Date</th>
+                                <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Expiry Date</th>
                               </tr>
                             </thead>
                             <tbody id="sim-profiles-tbody"></tbody>
@@ -583,35 +589,137 @@
                     </div>
                   </div>
 
-                  <form class="validator form-horizontal" id="certificate-details-form" method="post" action="/user/device/{{ $device->id }}/certificate/save">
+                  <form class="validator form-horizontal" id="certificate-details-form" method="post" action="/user/device/{{ $device->id }}/certificate/save" enctype="multipart/form-data">
                     @csrf
-                    <!-- Certificate Holder Section -->
+                    <!-- Certificate Details Section -->
                     <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:20px;">
                       <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
-                        <i class="fa fa-user" style="color:#76CF1C;margin-right:8px;"></i>Holder Information
+                        <i class="fa fa-calendar" style="color:#76CF1C;margin-right:8px;"></i>Certificate Details
                       </h4>
 
                       <div class="form-group" style="margin-bottom:20px;">
-                        <label class="control-label col-lg-3" style="font-weight:500; color:#333;">Certificate Holder Name & Address <span class="require" style="color:#d32f2f;">*</span></label>
-                        <div class="col-lg-9">
-                          <textarea class="form-control" name="holder_name" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; min-height:80px;">{{ old('holder_name', $formData['holder_name'] ?? '') }}</textarea>
-                          <small class="form-text text-muted">Enter name and complete address of certificate holder</small>
+                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fitment Date <span class="require" style="color:#d32f2f;">*</span></label>
+                        <input class="form-control" type="date" name="fitment_date" value="{{ old('fitment_date', date('Y-m-d')) }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; max-width:300px;" />
+                      </div>
+                    </div>
+
+                    <!-- Vendor Details Section -->
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-building" style="color:#76CF1C;margin-right:8px;"></i>Vendor Details
+                      </h4>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vendor Name <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vendor_name" placeholder="Enter vendor name" value="{{ old('vendor_name', $formData['vendor_name'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vendor Contact Number <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vendor_contact" placeholder="e.g., 9876543210" value="{{ old('vendor_contact', $formData['vendor_contact'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
                         </div>
                       </div>
 
                       <div class="form-group" style="margin-bottom:20px;">
-                        <label class="control-label col-lg-3" style="font-weight:500; color:#333;">Authority City <span class="require" style="color:#d32f2f;">*</span></label>
-                        <div class="col-lg-9">
-                          <input class="form-control" type="text" name="authority_city" placeholder="e.g., Jaipur" value="{{ old('authority_city', $formData['authority_city'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
-                          <small class="form-text text-muted">City of the registering authority</small>
+                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vendor Address <span class="require" style="color:#d32f2f;">*</span></label>
+                        <textarea class="form-control" name="vendor_address" placeholder="Enter complete vendor address" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; min-height:70px;">{{ old('vendor_address', $formData['vendor_address'] ?? '') }}</textarea>
+                      </div>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vendor Email <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="email" name="vendor_email" placeholder="e.g., vendor@example.com" value="{{ old('vendor_email', $formData['vendor_email'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vendor GST Number <span style="font-weight:400; color:#94a3b8; font-size:11px;">(Optional)</span></label>
+                            <input class="form-control" type="text" name="vendor_gst" placeholder="e.g., 22AAAAA0000A1Z5" value="{{ old('vendor_gst', $formData['vendor_gst'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Fitter Details Section -->
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-wrench" style="color:#76CF1C;margin-right:8px;"></i>Fitter Details
+                      </h4>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fitter Company Name <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="fitter_company" placeholder="Enter fitter company name" value="{{ old('fitter_company', $formData['fitter_company'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fitter Contact Number <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="fitter_contact" placeholder="e.g., 9876543210" value="{{ old('fitter_contact', $formData['fitter_contact'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
                         </div>
                       </div>
 
                       <div class="form-group" style="margin-bottom:20px;">
-                        <label class="control-label col-lg-3" style="font-weight:500; color:#333;">Fitment Date <span class="require" style="color:#d32f2f;">*</span></label>
-                        <div class="col-lg-9">
-                          <input class="form-control" type="date" name="fitment_date_display" value="{{ date('Y-m-d') }}" disabled style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
-                          <input type="hidden" name="fitment_date" value="{{ date('Y-m-d') }}" />
+                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fitter Address <span class="require" style="color:#d32f2f;">*</span></label>
+                        <textarea class="form-control" name="fitter_address" placeholder="Enter complete fitter address" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; min-height:70px;">{{ old('fitter_address', $formData['fitter_address'] ?? '') }}</textarea>
+                      </div>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fitter Email <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="email" name="fitter_email" placeholder="e.g., fitter@example.com" value="{{ old('fitter_email', $formData['fitter_email'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Owner Details Section -->
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-user-circle" style="color:#76CF1C;margin-right:8px;"></i>Owner Details
+                      </h4>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Owner Name <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="owner_name" placeholder="Enter owner name" value="{{ old('owner_name', $formData['owner_name'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Owner Mobile Number <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="owner_mobile" placeholder="e.g., 9876543210" value="{{ old('owner_mobile', $formData['owner_mobile'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="form-group" style="margin-bottom:20px;">
+                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Owner Address <span class="require" style="color:#d32f2f;">*</span></label>
+                        <textarea class="form-control" name="owner_address" placeholder="Enter complete owner address" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; min-height:70px;">{{ old('owner_address', $formData['owner_address'] ?? '') }}</textarea>
+                      </div>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Owner Email <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="email" name="owner_email" placeholder="e.g., owner@example.com" value="{{ old('owner_email', $formData['owner_email'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Registration Number <span class="require" style="color:#d32f2f;">*</span></label>
+                            {{-- Mirrors the canonical Vehicle Registration No (kept in sync via JS); display-only to avoid a duplicate submit field. --}}
+                            <input class="form-control" type="text" id="owner_vehicle_reg_display" placeholder="Auto-filled from Vehicle Information" value="{{ old('vehicle_registration_no', $formData['vehicle_registration_no'] ?? '') }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -692,13 +800,11 @@
                           }
                           $selectedProvider = old('service_provider', $savedProvider);
                         @endphp
-                        <select name="service_provider" id="serviceProvidersSelect" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%;">
-                          @php
-                            $savedProviders = $selectedProvider ? [$selectedProvider] : [];
-                          @endphp
-                          <option value="">-- Select a Provider --</option>
-                          <option value="Taisys" {{ in_array('Taisys', $savedProviders) ? 'selected' : '' }}>Taisys</option>
-                          <option value="Growspace" {{ in_array('Growspace', $savedProviders) ? 'selected' : '' }}>Growspace</option>
+                        {{-- Service provider is locked to Growspace for now: pre-selected and not changeable. --}}
+                        {{-- The disabled <select> below is for display only; the hidden input carries the value on submit. --}}
+                        <input type="hidden" name="service_provider" value="Growspace">
+                        <select id="serviceProvidersSelect" disabled style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f5f5f5; cursor:not-allowed;">
+                          <option value="Growspace" selected>Growspace</option>
                         </select>
                       </div>
                     </div>
@@ -784,7 +890,85 @@
                             <input class="form-control" type="text" name="sim2_msisdn" placeholder="Phone number" value="{{ old('sim2_msisdn', $formData['sim2_msisdn'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
                           </div>
                         </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                              <i class="fa fa-calendar" style="color:#76CF1C;margin-right:6px;"></i>SIM 1 Activation Date <span style="font-weight:400; color:#94a3b8; font-size:11px;">(from API)</span>
+                            </label>
+                            <input class="form-control" type="text" name="sim1_activation_date" placeholder="Auto-fetched from SIM API" value="{{ old('sim1_activation_date', $formData['sim1_activation_date'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8fafc;" readonly />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                              <i class="fa fa-calendar" style="color:#76CF1C;margin-right:6px;"></i>SIM 1 Expiry Date <span style="font-weight:400; color:#94a3b8; font-size:11px;">(from API)</span>
+                            </label>
+                            <input class="form-control" type="text" name="sim1_expiry_date" placeholder="Auto-fetched from SIM API" value="{{ old('sim1_expiry_date', $formData['sim1_expiry_date'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8fafc;" readonly />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                              <i class="fa fa-calendar" style="color:#76CF1C;margin-right:6px;"></i>SIM 2 Activation Date <span style="font-weight:400; color:#94a3b8; font-size:11px;">(from API)</span>
+                            </label>
+                            <input class="form-control" type="text" name="sim2_activation_date" placeholder="Auto-fetched from SIM API" value="{{ old('sim2_activation_date', $formData['sim2_activation_date'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8fafc;" readonly />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                              <i class="fa fa-calendar" style="color:#76CF1C;margin-right:6px;"></i>SIM 2 Expiry Date <span style="font-weight:400; color:#94a3b8; font-size:11px;">(from API)</span>
+                            </label>
+                            <input class="form-control" type="text" name="sim2_expiry_date" placeholder="Auto-fetched from SIM API" value="{{ old('sim2_expiry_date', $formData['sim2_expiry_date'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8fafc;" readonly />
+                          </div>
+                        </div>
                       </div>
+                    <!-- Device Details Section -->
+                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-microchip" style="color:#76CF1C;margin-right:8px;"></i>Device Details
+                      </h4>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">IMEI Number <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="device_imei" value="{{ old('device_imei', $formData['device_imei'] ?? $autoImei) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">ICCID Number <span class="require" style="color:#d32f2f;">*</span></label>
+                            {{-- Mirrors the canonical VLTD ICCID field (kept in sync via JS). --}}
+                            <input class="form-control" type="text" name="device_iccid" id="device_iccid_display" value="{{ old('device_iccid', $formData['device_iccid'] ?? $autoIccid) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Device Model <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="device_model" value="{{ old('device_model', $formData['device_model'] ?? $autoModel) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vendor ID <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vendor_id" value="{{ old('vendor_id', $autoVendorId) }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                            <small class="form-text text-muted" style="color:#94a3b8;">
+                              <i class="fa fa-info-circle"></i> Auto-populated from device configuration.
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="form-group" style="margin-bottom:20px;">
+                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Firmware Version <span style="font-weight:400; color:#94a3b8; font-size:11px;">(if applicable)</span></label>
+                        <input class="form-control" type="text" name="firmware_version" placeholder="e.g., v1.2.3" value="{{ old('firmware_version', $autoFirmware) }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                      </div>
+                    </div>
+
                     <!-- Certification & Compliance Section -->
                     @if(!empty($is_certification_enable))
                     <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
@@ -816,8 +1000,11 @@
                           <button class="btn btn-default" type="reset" style="margin-right:10px; border-radius:4px; padding:10px 30px;">
                             <i class="fa fa-times"></i> Reset
                           </button>
+                          <button class="btn btn-info" type="button" id="preview-cert-btn" style="margin-right:10px; background-color:#0891b2; border-color:#0891b2; color:#fff; border-radius:4px; padding:10px 30px; font-weight:500;">
+                            <i class="fa fa-eye"></i> Preview Certificate
+                          </button>
                           <button class="btn btn-primary" type="submit" style="background-color:#76CF1C; border-color:#76CF1C; color:#fff; border-radius:4px; padding:10px 30px; font-weight:500;">
-                            <i class="fa fa-save"></i> Save & View Certificate
+                            <i class="fa fa-save"></i> Save &amp; View Certificate
                           </button>
                         </div>
                       </div>
@@ -840,9 +1027,11 @@
   $(document).ready(function() {
     $('#serviceProvidersSelect').select2({
       placeholder: 'Select providers',
-      allowClear: true,
+      allowClear: false,
       width: '100%'
     });
+    // Lock service provider to Growspace (pre-selected, not changeable for now)
+    $('#serviceProvidersSelect').val('Growspace').prop('disabled', true).trigger('change.select2');
 
     // ═══════════════════════════════════════════════════════════════════
     // VERIFICATION STATE — tracks the result of each verification step
@@ -851,6 +1040,7 @@
     window.verificationState = {
       plate_verified:   null,   // number plate matches RC
       device_verified:  null,   // device IMEI matches stored
+      rc_extracted:     null,   // all mandatory RC fields extracted from the document
     };
 
     /**
@@ -876,18 +1066,32 @@
     }
 
     /**
-     * Block form submission if any verification has failed.
+     * Block form submission if any verification has failed or required RC fields are missing.
      * Plate / Device checks are OPTIONAL — but if attempted and FAILED, must block.
+     * Owner Name and Owner Address MUST be populated (from Owner Details section).
      */
     $('#certificate-details-form').on('submit', function(e) {
       const issues = [];
       const state = window.verificationState;
+      const ownerName = $('input[name="owner_name"]').val() || '';
+      const ownerAddress = $('textarea[name="owner_address"]').val() || '';
 
       if (state.plate_verified === false) {
         issues.push('Number plate verification <strong>failed</strong> — the plate photo does not match the RC registration number. Re-upload the correct plate photo or fix the registration number.');
       }
       if (state.device_verified === false) {
         issues.push('Device IMEI verification <strong>failed</strong> — the IMEI extracted from the device label does not match the device\'s stored IMEI. Upload the correct device label or contact your administrator.');
+      }
+      if (state.rc_extracted === false) {
+        issues.push('RC document is <strong>incomplete</strong> — one or more mandatory fields could not be extracted. Please upload a clear and readable RC image until all required fields are detected.');
+      }
+
+      // Validate Owner Name and Owner Address are filled (required for certificate)
+      if (!ownerName.trim()) {
+        issues.push('Owner Name is <strong>required</strong> — used as the certificate holder. Please enter the owner name in the Owner Details section.');
+      }
+      if (!ownerAddress.trim()) {
+        issues.push('Owner Address is <strong>required</strong> — used for the certificate. Please enter the owner address in the Owner Details section.');
       }
 
       if (issues.length > 0) {
@@ -1048,11 +1252,11 @@
       uploadInfo.hide();
       $('#rc-progress-detail').text(' (front page)');
 
-      uploadSingleRC(frontFile).then(function(frontData) {
+      uploadSingleRC(frontFile, 'front').then(function(frontData) {
         // If back is also provided, extract from it and merge in MISSING fields
         if (backFile) {
           $('#rc-progress-detail').text(' (back page)');
-          return uploadSingleRC(backFile).then(function(backData) {
+          return uploadSingleRC(backFile, 'back').then(function(backData) {
             // Merge: front-priority — only fill blanks from back
             const merged = Object.assign({}, backData || {}, frontData || {});
             // Use back values for fields where front returned empty
@@ -1067,11 +1271,41 @@
         return frontData;
       }).then(function(finalData) {
         uploadProgress.hide();
-        uploadInfo.show();
+        console.log('RC extracted data:', finalData);
         if (finalData) populateFormFields(finalData);
-        setTimeout(function() { uploadInfo.fadeOut(); }, 5000);
+
+        // ── Data extraction validation (on the merged front+back result) ──
+        // Every mandatory RC field (marked * on the form) must be present
+        // before the user can proceed.
+        const requiredRC = {
+          'vehicle_registration_no': 'Vehicle Registration No',
+          'chassis_no':              'Chassis No',
+          'engine_no':               'Engine No',
+          'color':                   'Color',
+          'vehicle_model':           'Vehicle Model',
+        };
+        const missing = Object.keys(requiredRC).filter(function(k) {
+          return !finalData || !finalData[k] || String(finalData[k]).trim() === '';
+        }).map(function(k) { return requiredRC[k]; });
+
+        if (missing.length > 0) {
+          window.verificationState.rc_extracted = false;
+          uploadInfo.hide();
+          uploadError.show();
+          $('#error-message').text(
+            'Could not extract the following required field(s) from the RC: '
+            + missing.join(', ')
+            + '. Please upload a clear and readable image until all required fields are detected.'
+          );
+        } else {
+          window.verificationState.rc_extracted = true;
+          uploadError.hide();
+          uploadInfo.show();
+          setTimeout(function() { uploadInfo.fadeOut(); }, 5000);
+        }
       }).catch(function(err) {
         uploadProgress.hide();
+        window.verificationState.rc_extracted = false;
         uploadError.show();
         $('#error-message').text(err || 'Error uploading RC document');
       });
@@ -1079,11 +1313,14 @@
 
     /**
      * Sends a single RC image to backend; resolves with extracted data map.
+     * @param {File} file - The RC image file
+     * @param {string} rcType - 'front' or 'back' to indicate which page
      */
-    function uploadSingleRC(file) {
+    function uploadSingleRC(file, rcType) {
       return new Promise(function(resolve, reject) {
         const formData = new FormData();
         formData.append('rc_file', file);
+        if (rcType) formData.append('rc_type', rcType);
 
         $.ajax({
           url: '/user/device/{{ $device->id }}/certificate/upload-rc',
@@ -1110,7 +1347,6 @@
     function populateFormFields(data) {
       const fieldMappings = {
         'vehicle_registration_no': '#certificate-details-form input[name="vehicle_registration_no"]',
-        'holder_name':             '#certificate-details-form textarea[name="holder_name"]',
         'fitment_date':            '#certificate-details-form input[name="fitment_date"]',
         'chassis_no':              '#certificate-details-form input[name="chassis_no"]',
         'engine_no':               '#certificate-details-form input[name="engine_no"]',
@@ -1128,6 +1364,20 @@
           $(selector).val(value).change();
         }
       });
+
+      // Auto-populate Owner Name and Owner Address from RC data
+      if (data.holder_name) {
+        $('input[name="owner_name"]').val(data.holder_name).change();
+      }
+
+      // Auto-populate Owner Address from extracted address
+      console.log('Checking owner_address:', data.owner_address);
+      if (data.owner_address) {
+        console.log('Setting owner_address to:', data.owner_address);
+        $('textarea[name="owner_address"]').val(data.owner_address).change();
+      } else {
+        console.log('Owner address is empty or undefined');
+      }
     }
 
     // ─── Manual ICCID Lookup (Fetch SIM Data button) ──────────────────
@@ -1307,14 +1557,16 @@
           if (sims.length > 0) {
             const $tbody = $('#sim-profiles-tbody');
             sims.forEach(function(sim, idx) {
-              const slot     = sim.profile_slot || (idx + 1);
-              const operator = sim.operator     || '—';
-              const msisdn   = sim.msisdn       || '—';
-              const imsi     = sim.imsi         || '—';
-              const status   = sim.status       || '—';
-              const statusColor = (status.toLowerCase() === 'active') ? '#16a34a'
-                              : (status.toLowerCase() === 'provisioned') ? '#0891b2'
-                              : '#64748b';
+              const slot           = sim.profile_slot || (idx + 1);
+              const operator       = sim.operator     || '—';
+              const msisdn         = sim.msisdn       || '—';
+              const imsi           = sim.imsi         || '—';
+              const status         = sim.status       || '—';
+              const activationDate = sim.activation_date || '—';
+              const expiryDate     = sim.expiry_date  || '—';
+              const statusColor    = (status.toLowerCase() === 'active') ? '#16a34a'
+                                  : (status.toLowerCase() === 'provisioned') ? '#0891b2'
+                                  : '#64748b';
 
               $tbody.append(
                 '<tr style="border-bottom:1px solid #fef3c7;">' +
@@ -1323,15 +1575,22 @@
                   '<td style="padding:10px; font-family:monospace;">' + msisdn + '</td>' +
                   '<td style="padding:10px; font-family:monospace; color:#64748b;">' + imsi + '</td>' +
                   '<td style="padding:10px;"><span style="background:' + statusColor + '20; color:' + statusColor + '; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:600;">' + status + '</span></td>' +
+                  '<td style="padding:10px; color:#64748b;">' + activationDate + '</td>' +
+                  '<td style="padding:10px; color:#64748b;">' + expiryDate + '</td>' +
                 '</tr>'
               );
 
               // Auto-fill SIM form fields so values get saved with the certificate
               if (idx < 2) {
-                const opField  = $('#certificate-details-form input[name="sim' + (idx + 1) + '_operator"]');
-                const msField  = $('#certificate-details-form input[name="sim' + (idx + 1) + '_msisdn"]');
+                const opField       = $('#certificate-details-form input[name="sim' + (idx + 1) + '_operator"]');
+                const msField       = $('#certificate-details-form input[name="sim' + (idx + 1) + '_msisdn"]');
+                const activationField = $('#certificate-details-form input[name="sim' + (idx + 1) + '_activation_date"]');
+                const expiryField   = $('#certificate-details-form input[name="sim' + (idx + 1) + '_expiry_date"]');
+
                 if (opField.length && sim.operator) opField.val(sim.operator).change();
                 if (msField.length && sim.msisdn)   msField.val(sim.msisdn).change();
+                if (activationField.length && sim.activation_date) activationField.val(sim.activation_date).change();
+                if (expiryField.length && sim.expiry_date)   expiryField.val(sim.expiry_date).change();
               }
             });
 
@@ -1347,6 +1606,8 @@
         },
         error: function(xhr) {
           $('#device-extract-progress').hide();
+          // A poor-quality image or missing IMEI/ICCID blocks the process.
+          window.verificationState.device_verified = false;
           let errorMsg = 'Failed to scan device label.';
           if (xhr.responseJSON && xhr.responseJSON.error) errorMsg = xhr.responseJSON.error;
           $('#device-error-message').text(errorMsg);
@@ -1420,6 +1681,40 @@
           $('#plate-verify-error').show();
         }
       });
+    });
+
+    // ─── Keep new-section mirror fields in sync with their canonical inputs ──
+    function syncOwnerRegMirror() {
+      var v = $('#certificate-details-form input[name="vehicle_registration_no"]').val() || '';
+      $('#owner_vehicle_reg_display').val(v);
+    }
+    function syncDeviceIccidMirror() {
+      var v = $('#vltd_icc_id_input').val() || '';
+      $('#device_iccid_display').val(v);
+    }
+    $('#certificate-details-form input[name="vehicle_registration_no"]')
+      .on('input change', syncOwnerRegMirror);
+    $('#vltd_icc_id_input').on('input change', syncDeviceIccidMirror);
+    // Initial sync on load
+    syncOwnerRegMirror();
+    syncDeviceIccidMirror();
+
+    // ─── Preview Certificate (opens generated PDF in a new tab) ─────────────
+    $('#preview-cert-btn').on('click', function() {
+      var form = document.getElementById('certificate-details-form');
+      // Use the browser's native required-field validation before previewing.
+      if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+        return;
+      }
+      var originalAction = form.getAttribute('action');
+      var originalTarget = form.getAttribute('target');
+      form.setAttribute('action', '/user/device/{{ $device->id }}/certificate/preview');
+      form.setAttribute('target', '_blank');
+      form.submit();
+      // Restore so the normal Save flow is unaffected.
+      form.setAttribute('action', originalAction);
+      if (originalTarget) { form.setAttribute('target', originalTarget); }
+      else { form.removeAttribute('target'); }
     });
   });
 </script>

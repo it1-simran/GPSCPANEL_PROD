@@ -5,6 +5,7 @@ namespace App\Services;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use thiagoalessio\TesseractOCR\TesseractOCR;
+use App\Exceptions\ImageQualityException;
 use Illuminate\Support\Str;
 use Exception;
 
@@ -53,6 +54,10 @@ class RCExtractionService
                 try {
                     $googleService = new \App\Services\GoogleVisionRCService();
                     return $googleService->extractFromFile($filePath);
+                } catch (ImageQualityException $e) {
+                    // Poor image quality is a definitive result — do NOT fall back
+                    // to Tesseract; surface the quality error to the user.
+                    throw $e;
                 } catch (Exception $e) {
                     // Fall back to Tesseract if Google Vision fails
                     if ($this->isTesseractAvailable()) {
@@ -81,6 +86,9 @@ class RCExtractionService
                 'OCR feature is not available. Please configure Google Cloud Vision API or install Tesseract-OCR. ' .
                 'See documentation for setup instructions.'
             );
+        } catch (ImageQualityException $e) {
+            // Bubble up unwrapped so the controller can show the exact message.
+            throw $e;
         } catch (Exception $e) {
             throw new Exception('Error extracting RC data: ' . $e->getMessage());
         }
@@ -121,11 +129,13 @@ class RCExtractionService
                 unlink($tempPath);
             }
 
-            if (empty($extractedText)) {
-                throw new Exception('No text could be extracted from the image. Please ensure the RC document image is clear and readable.');
+            if (!OcrQualityHelper::isReadable($extractedText)) {
+                throw new ImageQualityException(OcrQualityHelper::QUALITY_ERROR);
             }
 
             return $this->parseRCData($extractedText);
+        } catch (ImageQualityException $e) {
+            throw $e;
         } catch (Exception $e) {
             throw new Exception('Error processing image: ' . $e->getMessage());
         }
@@ -243,6 +253,42 @@ class RCExtractionService
             '\bNAME\b(?!\s+OF)',
         ], 60);
 
+        // Owner Address (ADDRESS) - Extract from RC document
+        $ownerAddress = null;
+
+        // Try multiple patterns to find the address
+        $patterns = [
+            'ADDRESS\s+OF\s+OWNER[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+            'OWNER(?:\'S)?\s*ADDRESS[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+            'REGISTERED\s+ADDRESS[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+            'ADDRESS\s+OF\s+APPLICANT[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+            'ADDR\.?[\s:\-/\.]*([^\n]+(?:\n[^\n]{1,80})*)',
+        ];
+
+        foreach ($patterns as $pattern) {
+            $regex = '~' . $pattern . '~i';
+            if (preg_match($regex, $text, $matches)) {
+                $value = trim(preg_replace('~\s+~', ' ', $matches[1] ?? $matches[0]));
+                // Clean up the value - remove leading labels if any
+                $value = preg_replace('~^(?:ADDRESS\s+OF\s+OWNER|OWNER.*?ADDRESS|ADDRESS)[:\s-\.]*~i', '', $value);
+                $value = trim(preg_replace('~\s+~', ' ', $value));
+
+                if (!empty($value) && strlen($value) > 5) {
+                    $ownerAddress = substr($value, 0, 300);
+                    break;
+                }
+            }
+        }
+
+        $data['owner_address'] = $ownerAddress;
+
+        // Log address extraction for debugging
+        if (!$ownerAddress) {
+            \Log::info('RC Address Extraction: No address found. Text preview: ' . substr($text, 0, 500));
+        } else {
+            \Log::info('RC Address Extraction: Found address: ' . $ownerAddress);
+        }
+
         // Registration Date (REGD DT)
         $data['registration_date'] = $this->extractField($text, [
             'REGD\s*DT\b',
@@ -311,6 +357,7 @@ class RCExtractionService
         $mapping = [
             'vehicle_registration_no' => 'vehicle_registration_no',
             'holder_name' => 'holder_name',
+            'owner_address' => 'owner_address',
             'registration_date' => 'fitment_date',
             'chassis_no' => 'chassis_no',
             'engine_no' => 'engine_no',

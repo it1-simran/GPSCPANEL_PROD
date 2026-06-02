@@ -33,9 +33,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           <div class="vt-card-header">
             <h4><i class="fa fa-table"></i> Show Settings</h4>
             <div class="vt-card-header-actions">
-              <a href="{{ url($url_type . '/add-template') }}" class="btn vt-btn-add">
-                <i class="fa fa-plus"></i> Add Setting
-              </a>
+              @if(auth()->user()->hasPermission('settings_management.create') || auth()->user()->user_type == 'Admin')
+                <a href="{{ url($url_type . '/add-template') }}" class="btn vt-btn-add">
+                  <i class="fa fa-plus"></i> Add Setting
+                </a>
+              @endif
             </div>
           </div>
           <div class="vt-card-body">
@@ -189,17 +191,19 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                           @endif
                                         </td> -->
                                           <td>
-                                            <form id="delete-form-{{$contactValue->id}}"
-                                              action="/{{$url_type}}/delete-template/{{$contactValue->id}}" method="post">
-                                              @csrf
-                                              @method('DELETE')
-                                              @if($contactValue->default_template == '0')
-                                                <button class="btn vt-btn-delete swal-confirm" type="button"
-                                                  data-form-id="delete-form-{{$contactValue->id}}"
-                                                  data-confirm-msg="Are you sure you want to delete this template?"><i
-                                                    class="fa fa-trash"></i> Delete</button>
-                                              @endif
-                                            </form>
+                                            @if(auth()->user()->hasPermission('settings_management.edit') || auth()->user()->user_type == 'Admin')
+                                              <form id="delete-form-{{$contactValue->id}}"
+                                                action="/{{$url_type}}/delete-template/{{$contactValue->id}}" method="post">
+                                                @csrf
+                                                @method('DELETE')
+                                                @if($contactValue->default_template == '0')
+                                                  <button class="btn vt-btn-delete swal-confirm" type="button"
+                                                    data-form-id="delete-form-{{$contactValue->id}}"
+                                                    data-confirm-msg="Are you sure you want to delete this template?"><i
+                                                      class="fa fa-trash"></i> Delete</button>
+                                                @endif
+                                              </form>
+                                            @endif
                                           </td>
                                         </tr>
                                         <?php

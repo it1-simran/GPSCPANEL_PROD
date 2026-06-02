@@ -72,7 +72,7 @@
                 <a href="{{ route('writers.excel') }}" class="vu-btn-excel"><i class="fa fa-download"></i> Excel</a>
                 <a href="{{ route('writers.csv') }}" class="vu-btn-csv"><i class="fa fa-download"></i> CSV</a>
                 @endif
-                @if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller')
+                @if ((Auth::user()->user_type == 'Admin') || (Auth::user()->user_type == 'Reseller' && Auth::user()->hasPermission('account_management.create')))
                 <a href="/{{$url_type}}/add-user" class="vu-btn-primary"><i class="fa fa-plus"></i> Add Account</a>
                 @endif
               </div>
@@ -125,10 +125,12 @@
 <th>Device</th>
 <th>Default Configurations</th>
 <th>Assign devices</th>
-@if(Auth::user()->user_type !='User' )
+@if(Auth::user()->user_type !='User' && (Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit')))
 <th>Edit</th>
 @endif
+@if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.delete'))
 <th>Delete</th>
+@endif
 <th>Link Account</th>
 @if(Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller')
 <th>Manage Permissions</th>
@@ -171,19 +173,27 @@
 <td>{{$contact['last_ip'] ?? 'N/A'}}</td>
 <td>{{$contact['last_device'] ?? 'N/A'}}</td>
 <td>
-  <a href="/{{strtolower(Auth::user()->user_type)}}/view-configurations/{{$contact['id']}}" class="vu-btn-view" onclick="openConfigurations({{$contact['id']}})"><i class="fa fa-eye"></i> View Config</a>
+  @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit'))
+    <a href="/{{strtolower(Auth::user()->user_type)}}/view-configurations/{{$contact['id']}}" class="vu-btn-view" onclick="openConfigurations({{$contact['id']}})"><i class="fa fa-eye"></i> View Config</a>
+  @endif
 </td>
-<td><button style="margin-top:1px" class="vu-btn-assign" onclick="open_asign({{$contact['id']}})"><i class="fa fa-link"></i> Assign</button></td>
+<td>
+  @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit'))
+    <button style="margin-top:1px" class="vu-btn-assign" onclick="open_asign({{$contact['id']}})"><i class="fa fa-link"></i> Assign</button>
+  @endif
+</td>
 
                     </td>
-                    @if(Auth::user()->user_type !='User' )
+                    @if(Auth::user()->user_type !='User' && (Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit')))
                     <td>
                       <a href="/{{$url_type}}/edit-user/{{$contact['user_type']}}/{{$contact['id']}}" class="vu-btn-edit"><i class="fa fa-edit"></i> Edit</a>
                     </td>
                     @endif
+                    @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.delete'))
                     <td>
                       <button style="margin-top:1px" data-uid="{{$contact['id']}}" data-utype="{{$contact['user_type']}}" class="vu-btn-delete delUserReseller" type="button"><i class="fa fa-trash"></i> Delete</button>
                     </td>
+                    @endif
                     <td>
                       @if($contact['user_type']=='Reseller' )
                       <button style="margin-top:1px" data-uid="{{$contact['id']}}" data-cutype="{{$url_type}}" class="vu-btn-link linkReseller" type="button"><i class="fa fa-chain"></i> Link</button>

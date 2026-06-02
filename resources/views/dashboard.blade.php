@@ -118,7 +118,7 @@
         };
       @endphp
 
-      @if(Auth::user()->user_type=='Admin')
+      @if(Auth::user()->user_type=='Admin' || auth()->user()->hasPermission('account_management.view'))
       {{-- Users Registered --}}
       <div class="stat-card green-accent">
         <div class="card-icon"><i class="fa fa-users"></i></div>
@@ -129,7 +129,9 @@
         <a href="{{ $__va }}" class="stat-link">View All <i class="fa fa-arrow-right"></i></a>
         @endif
       </div>
+      @endif
 
+      @if(Auth::user()->user_type=='Admin' || auth()->user()->hasPermission('device_management.view'))
       {{-- Assigned Device --}}
       <div class="stat-card dark-accent">
         <div class="card-icon"><i class="fa fa-link"></i></div>

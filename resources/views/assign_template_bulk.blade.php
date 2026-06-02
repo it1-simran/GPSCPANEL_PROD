@@ -136,6 +136,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         <!--======== Form Validation Content Start End ========-->
         <div class="row">
             <div class="col-md-12">
+                @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('settings_management.assign_bulk'))
                 <!--=========== START TAGS INPUT ===========-->
                 <div class="c_panel">
                     <div class="c_title">
@@ -294,6 +295,21 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         <hr>
                     </div><!--/.c_content-->
                 </div><!--/.c_panels-->
+                @else
+                <div class="c_panel">
+                    <div class="c_title">
+                        <h2>Add Setting Bulk</h2>
+                        <div class="clearfix"></div>
+                    </div><!--/.c_title-->
+                    <div class="c_content">
+                        <div class="row" id="alert_msg">
+                            <div class="col-sm-12 alert alert-warning" role="alert">
+                                <i class="fa fa-lock"></i> You do not have permission to assign settings. Please contact your administrator.
+                            </div>
+                        </div>
+                    </div><!--/.c_content-->
+                </div><!--/.c_panels-->
+                @endif
             </div>
         </div>
         <!--======== Form Validation Content Start End ========-->

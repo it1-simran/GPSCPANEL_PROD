@@ -207,10 +207,10 @@
             permissions.push($(this).val());
         });
 
-        console.log('Sending permissions:', permissions);
-        console.log('Total permissions count:', permissions.length);
+        console.log('=== SAVING PERMISSIONS ===');
         console.log('Reseller ID:', currentResellerId);
-        console.log('Sending to URL: /admin/permissions/' + currentResellerId + '/update');
+        console.log('Permissions to save:', permissions);
+        console.log('Total permissions count:', permissions.length);
 
         // Show loading state
         const saveBtn = $('button[onclick="savePermissions()"]');
@@ -222,14 +222,14 @@
             type: 'POST',
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            data: {
+            data: JSON.stringify({
                 permissions: permissions
-            },
+            }),
+            contentType: 'application/json',
             success: function(response) {
-                console.log('Response received:', response);
+                console.log('✓ SUCCESS - Response received:', response);
 
                 // Show success message
                 const message = 'Permissions saved successfully! ' +
@@ -239,16 +239,18 @@
                 saveBtn.prop('disabled', false).html(originalText);
 
                 // Reload permissions to confirm changes
+                console.log('Reloading permissions after 1.5 seconds...');
                 setTimeout(function() {
                     loadResellerPermissions(currentResellerId);
                 }, 1500);
             },
             error: function(xhr, status, error) {
-                console.error('AJAX Error:', {
+                console.error('✗ ERROR - AJAX Error:', {
                     status: xhr.status,
                     statusText: xhr.statusText,
                     responseText: xhr.responseText,
-                    error: error
+                    error: error,
+                    response: xhr.responseJSON
                 });
 
                 let errorMsg = 'Error saving permissions';
@@ -259,11 +261,12 @@
                 } else if (xhr.status === 403) {
                     errorMsg = 'Unauthorized access (403)';
                 } else if (xhr.status === 422) {
-                    errorMsg = 'Validation failed (422)';
+                    errorMsg = xhr.responseJSON && xhr.responseJSON.error ?
+                        xhr.responseJSON.error : 'Validation failed (422)';
                 } else if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMsg = xhr.responseJSON.error;
                 } else if (xhr.responseText) {
-                    errorMsg = 'Error: ' + xhr.responseText.substring(0, 100);
+                    errorMsg = 'Error: ' + xhr.responseText.substring(0, 200);
                 }
 
                 showErrorAlert(errorMsg);

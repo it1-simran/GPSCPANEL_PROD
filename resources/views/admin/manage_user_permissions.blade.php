@@ -211,8 +211,9 @@
             permissions.push($(this).val());
         });
 
-        console.log('Sending permissions:', permissions);
+        console.log('=== SAVING PERMISSIONS ===');
         console.log('User ID:', currentUserId);
+        console.log('Permissions to save:', permissions);
 
         // Show loading state
         const saveBtn = $('button[onclick="savePermissions()"]');
@@ -226,11 +227,12 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            data: {
+            data: JSON.stringify({
                 permissions: permissions
-            },
+            }),
+            contentType: 'application/json',
             success: function(response) {
-                console.log('Response:', response);
+                console.log('✓ SUCCESS - Response:', response);
 
                 // Show success message
                 const message = 'Permissions saved successfully! ' +
@@ -245,21 +247,28 @@
                 }, 1500);
             },
             error: function(xhr, status, error) {
-                console.error('AJAX Error:', {
+                console.error('✗ ERROR - AJAX Error:', {
                     status: xhr.status,
+                    statusText: xhr.statusText,
                     responseText: xhr.responseText,
-                    error: error
+                    error: error,
+                    response: xhr.responseJSON
                 });
 
                 let errorMsg = 'Error saving permissions';
                 if (xhr.status === 0) {
-                    errorMsg = 'Network error';
+                    errorMsg = 'Network error - check your connection';
                 } else if (xhr.status === 404) {
                     errorMsg = 'Route not found (404)';
                 } else if (xhr.status === 403) {
-                    errorMsg = 'Unauthorized (403)';
+                    errorMsg = 'Unauthorized access (403)';
+                } else if (xhr.status === 422) {
+                    errorMsg = xhr.responseJSON && xhr.responseJSON.error ?
+                        xhr.responseJSON.error : 'Validation failed (422)';
                 } else if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMsg = xhr.responseJSON.error;
+                } else if (xhr.responseText) {
+                    errorMsg = 'Error: ' + xhr.responseText.substring(0, 200);
                 }
 
                 showErrorAlert(errorMsg);

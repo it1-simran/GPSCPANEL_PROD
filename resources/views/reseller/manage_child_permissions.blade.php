@@ -237,7 +237,10 @@
                 console.log('Response:', response);
 
                 // Show success message
-                showSuccessAlert('Permissions saved successfully! (' + response.debug.after_count + ' permissions now enabled)');
+                const message = 'Permissions saved successfully! ' +
+                    '(Added: ' + (response.debug.added || 0) + ', ' +
+                    'Removed: ' + (response.debug.removed || 0) + ')';
+                showSuccessAlert(message);
                 saveBtn.prop('disabled', false).html(originalText);
 
                 // Reload permissions to confirm changes

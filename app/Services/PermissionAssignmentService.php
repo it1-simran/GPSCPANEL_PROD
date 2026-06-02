@@ -293,23 +293,55 @@ class PermissionAssignmentService
             // Permissions to remove
             $toRemove = array_diff($currentPermIds, $permissionIds);
 
-            // Add new permissions
+            // Add new permissions directly (without nested transaction)
             foreach ($toAdd as $permId) {
                 $permission = Permission::find($permId);
                 if ($permission) {
-                    $this->assignPermission($targetUser, $permission, $assigningUser, 'Bulk sync');
+                    DB::table('user_permissions')->insertOrIgnore([
+                        'user_id' => $targetUser->id,
+                        'permission_id' => $permId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    // Log the assignment
+                    PermissionAuditLog::log(
+                        $targetUser,
+                        $permission,
+                        'assigned',
+                        $assigningUser,
+                        'Bulk sync'
+                    );
                 }
             }
 
-            // Remove old permissions
+            // Remove old permissions directly (without nested transaction)
             foreach ($toRemove as $permId) {
                 $permission = Permission::find($permId);
                 if ($permission) {
-                    $this->revokePermission($targetUser, $permission, $assigningUser, 'Bulk sync');
+                    DB::table('user_permissions')
+                        ->where('user_id', $targetUser->id)
+                        ->where('permission_id', $permId)
+                        ->delete();
+
+                    // Log the revocation
+                    PermissionAuditLog::log(
+                        $targetUser,
+                        $permission,
+                        'revoked',
+                        $assigningUser,
+                        'Bulk sync'
+                    );
+
+                    // Cascade revocation to all descendants
+                    $this->cascadeRevoke($targetUser, $permission, $assigningUser);
                 }
             }
 
             DB::commit();
+
+            // Clear permission cache after successful sync
+            \App\Helpers\PermissionHelper::flushCache();
 
             return [
                 'success' => true,

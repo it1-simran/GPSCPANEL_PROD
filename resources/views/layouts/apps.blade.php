@@ -468,24 +468,28 @@ if ($userType === 'admin') {
                                 <span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span>
                             </a>
                             <ul class='sub'>
+                                @if (\App\Helpers\PermissionHelper::hasPermission('settings_management.create'))
                                 <li class="{{ request()->is('admin/add-template') ? 'active' : '' }}">
                                     <a href="{{ url('admin/add-template') }}"
                                         class="{{ request()->is('admin/add-template') ? 'active' : '' }}">
                                         Add Settings
                                     </a>
                                 </li>
+                                @endif
                                 <li class="{{ request()->is('admin/view-template') ? 'active' : '' }}">
                                     <a href="{{ url('admin/view-template') }}"
                                         class="{{ request()->is('admin/view-template') ? 'active' : '' }}">
                                         View Settings
                                     </a>
                                 </li>
+                                @if(auth()->user()->hasPermission('settings_management.assign_bulk'))
                                 <li class="{{ request()->is('admin/assign-setting-bulk') ? 'active' : '' }}">
                                     <a href="<?php echo url('admin/assign-setting-bulk'); ?>"
                                         class="{{ request()->is('admin/assign-setting-bulk') ? 'active' : '' }}">
                                         Assign Settings Bulk
                                     </a>
                                 </li>
+                                @endif
                             </ul>
                         </li>
 
@@ -823,12 +827,14 @@ if ($userType === 'admin') {
                                 <span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span>
                             </a>
                             <ul class='sub'>
+                                @if (\App\Helpers\PermissionHelper::hasPermission('settings_management.create'))
                                 <li class="{{ request()->is('support/add-template') ? 'active' : '' }}">
                                     <a href="{{ route('template.add') }}"
                                         class="{{ request()->is('support/add-template') ? 'active' : '' }}">
                                         Add Settings
                                     </a>
                                 </li>
+                                @endif
                                 <li class="{{ request()->is('support/view-template') ? 'active' : '' }}">
                                     <a href="{{ route('template.view') }}"
                                         class="{{ request()->is('support/view-template') ? 'active' : '' }}">

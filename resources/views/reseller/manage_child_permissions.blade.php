@@ -187,30 +187,11 @@
             success: function(response) {
                 console.log('Loaded child permissions:', response);
 
-                // Reset all rows/modules to visible
-                $('.permission-row, .module-section').show();
+                // Server already filtered permissions to only assignable ones —
+                // all rendered .permission-row elements ARE assignable.
+                // Just need to set the checkbox state for permissions the child currently has.
                 $('.permission-checkbox').prop('checked', false);
 
-                // Filter rows: only show ones in assignable_permissions
-                if (response.assignable_permissions && response.assignable_permissions.length) {
-                    const allowed = response.assignable_permissions.map(function(id) { return String(id); });
-                    $('.permission-row').each(function() {
-                        var rowId = String($(this).attr('data-permission-id'));
-                        if (allowed.indexOf(rowId) === -1) {
-                            $(this).hide();
-                        } else {
-                            $(this).show();
-                        }
-                    });
-
-                    // Hide empty module sections
-                    $('.module-section').each(function() {
-                        var visibleRows = $(this).find('.permission-row:visible').length;
-                        $(this).toggle(visibleRows > 0);
-                    });
-                }
-
-                // Check the permissions this child user has
                 if (response.permissions && response.permissions.length) {
                     response.permissions.forEach(function(permId) {
                         $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);

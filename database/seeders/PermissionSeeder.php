@@ -28,7 +28,7 @@ class PermissionSeeder extends Seeder
         );
 
         // ---------------------------------------------------------------
-        // Master permission list — 15 permissions across 4 modules
+        // Master permission list — 12 permissions across 4 modules
         // ---------------------------------------------------------------
         $permissions = [
             // Account Management (4)
@@ -41,11 +41,8 @@ class PermissionSeeder extends Seeder
             ['key' => 'device_management.view',    'module' => 'device_management',    'action' => 'view',        'label' => 'View Device Management',  'order' => 1],
             ['key' => 'device_management.edit',    'module' => 'device_management',    'action' => 'edit',        'label' => 'Edit Device',             'order' => 2],
 
-            // Certificate Management (4)
+            // Certificate Management (1 — view only)
             ['key' => 'certificate_management.view',   'module' => 'certificate_management', 'action' => 'view',   'label' => 'View Certificate',   'order' => 1],
-            ['key' => 'certificate_management.create', 'module' => 'certificate_management', 'action' => 'create', 'label' => 'Create Certificate', 'order' => 2],
-            ['key' => 'certificate_management.edit',   'module' => 'certificate_management', 'action' => 'edit',   'label' => 'Edit Certificate',   'order' => 3],
-            ['key' => 'certificate_management.delete', 'module' => 'certificate_management', 'action' => 'delete', 'label' => 'Delete Certificate', 'order' => 4],
 
             // Settings Management (5)
             ['key' => 'settings_management.view',        'module' => 'settings_management', 'action' => 'view',        'label' => 'View Settings',          'order' => 1],
@@ -71,19 +68,18 @@ class PermissionSeeder extends Seeder
         $allPerms = Permission::where('is_active', 1)->pluck('id', 'key');
 
         // ---------------------------------------------------------------
-        // Admin role — all 15 permissions
+        // Admin role — all 12 permissions
         // ---------------------------------------------------------------
         $adminRole->permissions()->sync($allPerms->values());
 
         // ---------------------------------------------------------------
-        // Reseller role — Account + Device + Certificate + Settings (all)
+        // Reseller role — Account + Device + Certificate (view) + Settings
         // ---------------------------------------------------------------
         $resellerKeys = [
             'account_management.view', 'account_management.create',
             'account_management.edit', 'account_management.delete',
             'device_management.view', 'device_management.edit',
-            'certificate_management.view', 'certificate_management.create',
-            'certificate_management.edit', 'certificate_management.delete',
+            'certificate_management.view',
             'settings_management.view', 'settings_management.create',
             'settings_management.edit', 'settings_management.delete',
             'settings_management.assign_bulk',
@@ -93,12 +89,11 @@ class PermissionSeeder extends Seeder
         );
 
         // ---------------------------------------------------------------
-        // User role — Device + Certificate + Settings (no account_management)
+        // User role — Device + Certificate (view) + Settings (no account_management)
         // ---------------------------------------------------------------
         $userKeys = [
             'device_management.view', 'device_management.edit',
-            'certificate_management.view', 'certificate_management.create',
-            'certificate_management.edit', 'certificate_management.delete',
+            'certificate_management.view',
             'settings_management.view', 'settings_management.create',
             'settings_management.edit', 'settings_management.delete',
             'settings_management.assign_bulk',

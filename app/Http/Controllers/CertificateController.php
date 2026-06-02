@@ -1058,4 +1058,43 @@ class CertificateController extends Controller
             })
             ->exists();
     }
+
+    /**
+     * Generate a unique VLTD serial number in the format JSDE14Axxxxxxx
+     *   - Prefix: JSDE14A (fixed)
+     *   - Suffix: 7 chars from [A-Z0-9] randomly generated
+     * Retries up to 20 times to find a value not already used by another device.
+     * Returns JSON: { serial: 'JSDE14A1234567' }
+     */
+    public function generateVltdSerial($id)
+    {
+        if (!Auth::user()->hasPermission('certificate_management.view')) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $device = Device::find($id);
+        if (!$device) {
+            return response()->json(['error' => 'Device not found'], 404);
+        }
+
+        $prefix = 'JSDE14A';
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // omits 0/O/1/I for readability
+        $maxAttempts = 20;
+
+        for ($i = 0; $i < $maxAttempts; $i++) {
+            $suffix = '';
+            for ($j = 0; $j < 7; $j++) {
+                $suffix .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+            }
+            $candidate = $prefix . $suffix;
+
+            if (self::uniqueJson($device, 'vltd_serial_no', $candidate)) {
+                return response()->json(['serial' => $candidate]);
+            }
+        }
+
+        return response()->json([
+            'error' => 'Could not generate a unique serial after ' . $maxAttempts . ' attempts'
+        ], 500);
+    }
 }

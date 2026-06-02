@@ -818,8 +818,22 @@
                       <div class="row">
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">VLTD Serial No <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="vltd_serial_no" placeholder="VLTD Serial Number" value="{{ old('vltd_serial_no', $formData['vltd_serial_no'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                              VLTD Serial No <span class="require" style="color:#d32f2f;">*</span>
+                              <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— auto-generated, unique</span>
+                            </label>
+                            <table style="width:100%; border-collapse:collapse;">
+                              <tr>
+                                <td style="padding-right:6px;">
+                                  <input class="form-control" type="text" name="vltd_serial_no" id="vltd_serial_no_input" placeholder="Click Generate to create serial" value="{{ old('vltd_serial_no', $formData['vltd_serial_no'] ?? '') }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f8f8f8; font-family: monospace; letter-spacing: 1px;" />
+                                </td>
+                                <td style="width:1%; vertical-align:middle;">
+                                  <button type="button" id="generate-vltd-serial-btn" style="background:#76CF1C; color:#fff; border:none; padding:10px 14px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap;">
+                                    <i class="fa fa-refresh"></i> Generate
+                                  </button>
+                                </td>
+                              </tr>
+                            </table>
                           </div>
                         </div>
                         <div class="col-lg-6">
@@ -1032,6 +1046,51 @@
     });
     // Lock service provider to Growspace (pre-selected, not changeable for now)
     $('#serviceProvidersSelect').val('Growspace').prop('disabled', true).trigger('change.select2');
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VLTD SERIAL AUTO-GENERATION
+    // Format: JSDE14A + 7 random alphanumerics. Server checks uniqueness.
+    // ═══════════════════════════════════════════════════════════════════
+    function generateVltdSerial() {
+      var deviceId = {{ (int)($device->id ?? 0) }};
+      if (!deviceId) return;
+
+      var $input = $('#vltd_serial_no_input');
+      var $btn = $('#generate-vltd-serial-btn');
+      var originalBtn = $btn.html();
+      $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Generating...');
+
+      $.ajax({
+        url: window.location.pathname.replace(/\/\d+$/, '/' + deviceId) + '/generate-vltd-serial?t=' + new Date().getTime(),
+        type: 'GET',
+        cache: false,
+        success: function(response) {
+          if (response.serial) {
+            $input.val(response.serial);
+          } else {
+            alert('Could not generate serial: ' + (response.error || 'unknown error'));
+          }
+        },
+        error: function(xhr) {
+          var msg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : ('HTTP ' + xhr.status);
+          alert('Failed to generate VLTD serial: ' + msg);
+        },
+        complete: function() {
+          $btn.prop('disabled', false).html(originalBtn);
+        }
+      });
+    }
+
+    // Auto-generate on page load only if input is empty
+    if (!$('#vltd_serial_no_input').val()) {
+      generateVltdSerial();
+    }
+
+    // Manual regenerate on button click
+    $('#generate-vltd-serial-btn').on('click', function(e) {
+      e.preventDefault();
+      generateVltdSerial();
+    });
 
     // ═══════════════════════════════════════════════════════════════════
     // VERIFICATION STATE — tracks the result of each verification step

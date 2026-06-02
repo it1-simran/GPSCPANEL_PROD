@@ -244,6 +244,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::post('/admin/certificate/{id}/lookup-iccid', [CertificateController::class, 'lookupIccid'])->middleware('check.permission:certificate_management.create')->name('certificate.lookup-iccid');
     Route::get('/admin/certificate/{id}/rc-data', [CertificateController::class, 'getRCData'])->middleware('check.permission:certificate_management.view')->name('certificate.rc-data');
     Route::get('/admin/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->middleware('check.permission:certificate_management.view')->name('certificate.rc-status');
+    Route::get('/admin/certificate/{id}/generate-vltd-serial', [CertificateController::class, 'generateVltdSerial'])->middleware('check.permission:certificate_management.view')->name('certificate.generate-vltd-serial');
 
     /* ======================= Template Management Routes ======================= */
     Route::post('/admin/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations']);
@@ -405,6 +406,7 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::post('/certificate/{id}/lookup-iccid', [CertificateController::class, 'lookupIccid'])->name('certificate.lookup-iccid');
     Route::get('/certificate/{id}/rc-data', [CertificateController::class, 'getRCData'])->name('certificate.rc-data');
     Route::get('/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->name('certificate.rc-status');
+    Route::get('/certificate/{id}/generate-vltd-serial', [CertificateController::class, 'generateVltdSerial'])->name('certificate.generate-vltd-serial');
 
     /* ======================= Permission Management Routes ======================= */
     Route::middleware(['auth', 'account.management'])->group(function () {
@@ -439,6 +441,7 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::post('/certificate/{id}/lookup-iccid', [CertificateController::class, 'lookupIccid'])->name('certificate.lookup-iccid');
     Route::get('/certificate/{id}/rc-data', [CertificateController::class, 'getRCData'])->name('certificate.rc-data');
     Route::get('/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->name('certificate.rc-status');
+    Route::get('/certificate/{id}/generate-vltd-serial', [CertificateController::class, 'generateVltdSerial'])->name('certificate.generate-vltd-serial');
 
     // Legacy Device Certificate Routes (kept for backward compatibility)
     Route::post('/device/{id}/certificate', [DeviceController::class, 'generateCertificate']);

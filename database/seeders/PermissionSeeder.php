@@ -64,29 +64,41 @@ class PermissionSeeder extends Seeder
         $adminPermissions = Permission::where('is_active', 1)->get();
         $adminRole->permissions()->syncWithoutDetaching($adminPermissions->pluck('id'));
 
-        // Assign comprehensive permissions to Reseller role
+        // Assign default permissions to Reseller role
+        // Reseller has: Account Management (all), Device Management (all), Settings Management (all)
         $resellerPermissions = Permission::whereIn('key', [
+            // Account Management
             'account_management.view',
             'account_management.create',
             'account_management.edit',
             'account_management.delete',
+            // Device Management
             'device_management.view',
             'device_management.edit',
-            'certificate_management.view',
+            // Settings Management
             'settings_management.view',
             'settings_management.create',
             'settings_management.edit',
             'settings_management.delete',
             'settings_management.assign_bulk',
         ])->get();
-        $resellerRole->permissions()->syncWithoutDetaching($resellerPermissions->pluck('id'));
+        $resellerRole->permissions()->sync($resellerPermissions->pluck('id'));
 
-        // Assign basic permissions to User role
+        // Assign default permissions to User role
+        // User has: Device Management (all), Settings Management (all), Certificate Management (view only)
         $userPermissions = Permission::whereIn('key', [
+            // Device Management
             'device_management.view',
-            'certificate_management.view',
+            'device_management.edit',
+            // Settings Management
             'settings_management.view',
+            'settings_management.create',
+            'settings_management.edit',
+            'settings_management.delete',
+            'settings_management.assign_bulk',
+            // Certificate Management (view only)
+            'certificate_management.view',
         ])->get();
-        $userRole->permissions()->syncWithoutDetaching($userPermissions->pluck('id'));
+        $userRole->permissions()->sync($userPermissions->pluck('id'));
     }
 }

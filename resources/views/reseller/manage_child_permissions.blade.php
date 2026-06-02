@@ -181,29 +181,41 @@
         $('#loading').addClass('active');
 
         $.ajax({
-            url: '/reseller/permissions/child/' + userId,
+            url: '/reseller/permissions/child/' + userId + '?t=' + new Date().getTime(),
             type: 'GET',
+            cache: false,
             success: function(response) {
-                // Uncheck all checkboxes first
-                $('.permission-checkbox').prop('checked', false);
-                $('.permission-row, .module-section').show();
+                console.log('Loaded child permissions:', response);
 
-                if (response.assignable_permissions) {
-                    const allowedPermissions = response.assignable_permissions.map(String);
+                // Reset all rows/modules to visible
+                $('.permission-row, .module-section').show();
+                $('.permission-checkbox').prop('checked', false);
+
+                // Filter rows: only show ones in assignable_permissions
+                if (response.assignable_permissions && response.assignable_permissions.length) {
+                    const allowed = response.assignable_permissions.map(function(id) { return String(id); });
                     $('.permission-row').each(function() {
-                        const permissionId = String($(this).data('permission-id'));
-                        $(this).toggle(allowedPermissions.includes(permissionId));
+                        var rowId = String($(this).attr('data-permission-id'));
+                        if (allowed.indexOf(rowId) === -1) {
+                            $(this).hide();
+                        } else {
+                            $(this).show();
+                        }
                     });
 
+                    // Hide empty module sections
                     $('.module-section').each(function() {
-                        $(this).toggle($(this).find('.permission-row:visible').length > 0);
+                        var visibleRows = $(this).find('.permission-row:visible').length;
+                        $(this).toggle(visibleRows > 0);
                     });
                 }
 
                 // Check the permissions this child user has
-                response.permissions.forEach(function(permId) {
-                    $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);
-                });
+                if (response.permissions && response.permissions.length) {
+                    response.permissions.forEach(function(permId) {
+                        $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);
+                    });
+                }
 
                 $('#loading').removeClass('active');
                 $('#permissionsContainer').show();

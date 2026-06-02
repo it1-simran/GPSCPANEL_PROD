@@ -25,8 +25,9 @@ class PermissionHelper
             return [];
         }
 
-        // Admin always has everything — no DB lookup needed.
-        if ($user->user_type === 'Admin') {
+        // Admin and Support are staff accounts — always have everything,
+        // no DB lookup needed. Permission gating only applies to Reseller/User.
+        if (in_array($user->user_type, ['Admin', 'Support'], true)) {
             return ['*'];
         }
 
@@ -234,7 +235,7 @@ class PermissionHelper
 
     /**
      * Check if user can access account management
-     * Only Admin and Reseller can access, not User/Dealer
+     * Admin, Support, and Reseller can access — not User/Dealer
      *
      * @param  mixed|null  $user
      * @return bool
@@ -249,8 +250,8 @@ class PermissionHelper
             return false;
         }
 
-        // Only Admin and Reseller can access
-        return in_array($user->user_type, ['Admin', 'Reseller']);
+        // Admin/Support are staff; Reseller has account management by default
+        return in_array($user->user_type, ['Admin', 'Support', 'Reseller']);
     }
 
     /**

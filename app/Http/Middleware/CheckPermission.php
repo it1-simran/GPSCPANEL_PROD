@@ -31,7 +31,14 @@ class CheckPermission
             ]);
         }
 
-        if (!Auth::user()->hasPermission($permissionKey)) {
+        // Admin and Support always bypass permission checks — staff accounts
+        // have full access; permission gating only applies to Reseller and User.
+        $user = Auth::user();
+        if (in_array($user->user_type, ['Admin', 'Support'], true)) {
+            return $next($request);
+        }
+
+        if (!$user->hasPermission($permissionKey)) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'success' => false,

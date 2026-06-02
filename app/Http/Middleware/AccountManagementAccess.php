@@ -30,8 +30,9 @@ class AccountManagementAccess
 
         $user = Auth::user();
 
-        // Only Admin and Reseller can access Account Management
-        if (!in_array($user->user_type, ['Admin', 'Reseller'])) {
+        // Admin, Support, and Reseller can access Account Management.
+        // User/Dealer accounts are blocked.
+        if (!in_array($user->user_type, ['Admin', 'Support', 'Reseller'])) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'success' => false,

@@ -4,11 +4,17 @@ namespace App;
 
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, HasFactory;
     protected $table = 'writers';
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\WriterFactory::new();
+    }
     /**
      * The attributes that are mass assignable.
      *

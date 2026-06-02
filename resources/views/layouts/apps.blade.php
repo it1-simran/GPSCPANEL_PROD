@@ -585,7 +585,7 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
-                        @if (\App\Helpers\PermissionHelper::canViewModule('account_management'))
+                        @if (\App\Helpers\PermissionHelper::hasAnyModulePermission('account_management'))
                         <li
                             class='sub-menu {{ request()->is('reseller/add-user', 'reseller/view-user') ? 'active' : '' }}'>
                             <a href="#"
@@ -609,7 +609,7 @@ if ($userType === 'admin') {
                         </li>
                         @endif
 
-                        @if (\App\Helpers\PermissionHelper::canViewModule('device_management'))
+                        @if (\App\Helpers\PermissionHelper::hasAnyModulePermission('device_management'))
                         <li
                             class='sub-menu {{ request()->is('reseller/view-device-assign', 'reseller/view-device-unassign') ? 'active' : '' }}'>
                             <a href="#"
@@ -649,7 +649,7 @@ if ($userType === 'admin') {
                         </li>
                         @endif
 
-                        @if (\App\Helpers\PermissionHelper::canViewModule('settings_management'))
+                        @if (\App\Helpers\PermissionHelper::hasAnyModulePermission('settings_management'))
                         <li
                             class='sub-menu {{ request()->is('reseller/add-template', 'reseller/view-template', 'reseller/assign-setting-bulk') ? 'active' : '' }}'>
                             <a href="#"
@@ -708,7 +708,7 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
-                        @if (\App\Helpers\PermissionHelper::canViewModule('device_management'))
+                        @if (\App\Helpers\PermissionHelper::hasAnyModulePermission('device_management'))
                         <li class='sub-menu {{ request()->is('user/view-device') ? 'active' : '' }}'>
                             <a href="#"
                                 class="hvr-bounce-to-right-sidebar-parent {{ request()->is('user/view-device') ? 'active' : '' }}">
@@ -741,7 +741,7 @@ if ($userType === 'admin') {
                         </li>
                         @endif
 
-                        @if (\App\Helpers\PermissionHelper::canViewModule('settings_management'))
+                        @if (\App\Helpers\PermissionHelper::hasAnyModulePermission('settings_management'))
                         <li
                             class='sub-menu {{ request()->is('user/add-template', 'user/view-template', 'user/assign-setting-bulk') ? 'active' : '' }}'>
                             <a href="#"

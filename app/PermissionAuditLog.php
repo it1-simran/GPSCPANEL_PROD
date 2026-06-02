@@ -41,7 +41,7 @@ class PermissionAuditLog extends Model
     /**
      * Get the admin/reseller who made the change
      */
-    public function assignedBy()
+    public function assigner()
     {
         return $this->belongsTo(User::class, 'assigned_by');
     }

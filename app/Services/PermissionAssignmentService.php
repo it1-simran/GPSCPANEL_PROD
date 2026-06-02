@@ -158,39 +158,50 @@ class PermissionAssignmentService
     }
 
     /**
-     * Revoke permission from all descendants recursively
-     *
-     * @param User $parentUser
-     * @param Permission $permission
-     * @param User $revokingUser
-     * @return int - Number of users affected
+     * Cascade permission removal by ID through all descendants (no audit log — called inside tx)
+     */
+    private function cascadeRevokeById(int $parentUserId, int $permissionId): void
+    {
+        $childIds = DB::table('writers')
+            ->where('parent_user_id', $parentUserId)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($childIds)) return;
+
+        // Remove permission from all direct children
+        DB::table('user_permissions')
+            ->whereIn('user_id', $childIds)
+            ->where('permission_id', $permissionId)
+            ->delete();
+
+        // Recurse into grandchildren
+        foreach ($childIds as $childId) {
+            $this->cascadeRevokeById($childId, $permissionId);
+        }
+    }
+
+    /**
+     * Revoke permission from all descendants recursively (with audit logging — call outside tx)
      */
     private function cascadeRevoke(User $parentUser, Permission $permission, User $revokingUser): int
     {
         $affectedCount = 0;
-
-        // Get all direct children
         $children = User::where('parent_user_id', $parentUser->id)->get();
 
         foreach ($children as $child) {
-            // Remove permission from child
             DB::table('user_permissions')
                 ->where('user_id', $child->id)
                 ->where('permission_id', $permission->id)
                 ->delete();
 
-            // Log the cascading revocation
-            PermissionAuditLog::log(
-                $child,
-                $permission,
-                'revoked',
-                $revokingUser,
-                'Cascaded from parent: ' . $parentUser->name
-            );
+            try {
+                PermissionAuditLog::log($child, $permission, 'revoked', $revokingUser, 'Cascaded from parent: ' . $parentUser->name);
+            } catch (\Exception $e) {
+                Log::warning('Cascade audit log failed', ['error' => $e->getMessage()]);
+            }
 
             $affectedCount++;
-
-            // Recursively cascade to grandchildren
             $affectedCount += $this->cascadeRevoke($child, $permission, $revokingUser);
         }
 
@@ -278,85 +289,82 @@ class PermissionAssignmentService
             }
         }
 
+        // Get current permissions before any changes
+        $currentPermIds = DB::table('user_permissions')
+            ->where('user_id', $targetUser->id)
+            ->pluck('permission_id')
+            ->map(fn($id) => (int) $id)
+            ->toArray();
+
+        $permissionIds = array_map('intval', $permissionIds);
+
+        // Permissions to add and remove
+        $toAdd    = array_values(array_diff($permissionIds, $currentPermIds));
+        $toRemove = array_values(array_diff($currentPermIds, $permissionIds));
+
         try {
+            // --- Single atomic sync: delete removed, insert added ---
             DB::beginTransaction();
 
-            // Get current permissions
-            $currentPermIds = DB::table('user_permissions')
-                ->where('user_id', $targetUser->id)
-                ->pluck('permission_id')
-                ->toArray();
+            if (!empty($toRemove)) {
+                DB::table('user_permissions')
+                    ->where('user_id', $targetUser->id)
+                    ->whereIn('permission_id', $toRemove)
+                    ->delete();
 
-            // Permissions to add
-            $toAdd = array_diff($permissionIds, $currentPermIds);
-
-            // Permissions to remove
-            $toRemove = array_diff($currentPermIds, $permissionIds);
-
-            // Add new permissions directly (without nested transaction)
-            foreach ($toAdd as $permId) {
-                $permission = Permission::find($permId);
-                if ($permission) {
-                    DB::table('user_permissions')->insertOrIgnore([
-                        'user_id' => $targetUser->id,
-                        'permission_id' => $permId,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    // Log the assignment
-                    PermissionAuditLog::log(
-                        $targetUser,
-                        $permission,
-                        'assigned',
-                        $assigningUser,
-                        'Bulk sync'
-                    );
+                // Cascade removal to ALL descendants for each revoked permission
+                foreach ($toRemove as $permId) {
+                    $this->cascadeRevokeById($targetUser->id, $permId);
                 }
             }
 
-            // Remove old permissions directly (without nested transaction)
-            foreach ($toRemove as $permId) {
-                $permission = Permission::find($permId);
-                if ($permission) {
-                    DB::table('user_permissions')
-                        ->where('user_id', $targetUser->id)
-                        ->where('permission_id', $permId)
-                        ->delete();
-
-                    // Log the revocation
-                    PermissionAuditLog::log(
-                        $targetUser,
-                        $permission,
-                        'revoked',
-                        $assigningUser,
-                        'Bulk sync'
-                    );
-
-                    // Cascade revocation to all descendants
-                    $this->cascadeRevoke($targetUser, $permission, $assigningUser);
+            if (!empty($toAdd)) {
+                $insertRows = [];
+                foreach ($toAdd as $permId) {
+                    $insertRows[] = [
+                        'user_id'      => $targetUser->id,
+                        'permission_id' => $permId,
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                    ];
                 }
+                DB::table('user_permissions')->insertOrIgnore($insertRows);
             }
 
             DB::commit();
-
-            // Clear permission cache after successful sync
-            \App\Helpers\PermissionHelper::flushCache();
-
-            return [
-                'success' => true,
-                'message' => 'Permissions synced successfully',
-                'added' => count($toAdd),
-                'removed' => count($toRemove)
-            ];
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Permission sync failed', [
                 'target_user_id' => $targetUser->id,
-                'error' => $e->getMessage()
+                'error'          => $e->getMessage(),
+                'trace'          => $e->getTraceAsString(),
             ]);
-            return ['success' => false, 'message' => 'Failed to sync permissions'];
+            return ['success' => false, 'message' => 'Failed to sync permissions: ' . $e->getMessage()];
         }
+
+        // Clear permission cache
+        \App\Helpers\PermissionHelper::flushCache();
+
+        // Audit log AFTER commit — never inside the transaction
+        try {
+            foreach ($toAdd as $permId) {
+                $perm = Permission::find($permId);
+                if ($perm) PermissionAuditLog::log($targetUser, $perm, 'assigned', $assigningUser, 'Bulk sync');
+            }
+            foreach ($toRemove as $permId) {
+                $perm = Permission::find($permId);
+                if ($perm) PermissionAuditLog::log($targetUser, $perm, 'revoked', $assigningUser, 'Bulk sync');
+            }
+        } catch (\Exception $e) {
+            Log::warning('Audit log failed (permissions were saved)', ['error' => $e->getMessage()]);
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Permissions synced successfully',
+            'added'   => count($toAdd),
+            'removed' => count($toRemove),
+        ];
     }
 
     /**

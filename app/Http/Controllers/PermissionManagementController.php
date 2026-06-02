@@ -217,7 +217,7 @@ class PermissionManagementController extends Controller
     /**
      * Reseller: Manage Child User Permissions
      */
-    public function resellerManageChildPermissions()
+    public function resellerManageChildPermissions(Request $request)
     {
         $user = Auth::user();
 
@@ -239,6 +239,23 @@ class PermissionManagementController extends Controller
         $availablePermissions = $resellerRolePermissions->merge($resellerUserPermissions)
             ->unique('id');
 
+        // If a specific child user is selected, filter permissions based on their type
+        $selectedUser = null;
+        if ($request->has('user_id')) {
+            $selectedUser = Writer::find($request->input('user_id'));
+
+            // Filter out account_management permissions for User type
+            if ($selectedUser && $selectedUser->user_type === 'User') {
+                $availablePermissions = $availablePermissions
+                    ->filter(function($permission) {
+                        return !str_starts_with($permission->key, 'account_management.');
+                    });
+            }
+        } else {
+            // When no user is selected, show all permissions from reseller
+            // The filtering will happen on the frontend when user selects a User type
+        }
+
         // Group by module
         $permissionsByModule = $availablePermissions
             ->sortBy('module')
@@ -250,7 +267,8 @@ class PermissionManagementController extends Controller
             'childUsers' => $childUsers,
             'permissionsByModule' => $permissionsByModule,
             'modules' => $modules,
-            'availablePermissions' => $availablePermissions
+            'availablePermissions' => $availablePermissions,
+            'selectedUser' => $selectedUser
         ]);
     }
 
@@ -273,6 +291,15 @@ class PermissionManagementController extends Controller
 
         // Get child user's permissions
         $childPermissions = $childUser->permissions()->pluck('permission_id')->toArray();
+
+        // Filter out account_management permissions for User type
+        if ($childUser->user_type === 'User') {
+            $childPermissions = DB::table('permissions')
+                ->whereIn('id', $childPermissions)
+                ->where('module', '!=', 'account_management')
+                ->pluck('id')
+                ->toArray();
+        }
 
         return response()->json([
             'permissions' => $childPermissions
@@ -303,6 +330,22 @@ class PermissionManagementController extends Controller
         }
 
         $permissions = $request->input('permissions', []);
+
+        // Validate: User type cannot have account_management permissions
+        if ($childUser->user_type === 'User') {
+            // Get permission modules for the requested permissions
+            $permissionModules = DB::table('permissions')
+                ->whereIn('id', $permissions)
+                ->pluck('module')
+                ->unique()
+                ->toArray();
+
+            if (in_array('account_management', $permissionModules)) {
+                return response()->json([
+                    'error' => 'User type accounts cannot be assigned Account Management permissions.'
+                ], 422);
+            }
+        }
 
         // Get current permissions before update
         $beforeUserPerms = DB::table('user_permissions')

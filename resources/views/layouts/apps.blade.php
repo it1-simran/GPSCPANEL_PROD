@@ -657,24 +657,30 @@ if ($userType === 'admin') {
                                 <span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span>
                             </a>
                             <ul class='sub'>
+                                @if (\App\Helpers\PermissionHelper::hasPermission('settings_management.create'))
                                 <li class="{{ request()->is('reseller/add-template') ? 'active' : '' }}">
                                     <a href="{{ url('reseller/add-template') }}"
                                         class="{{ request()->is('reseller/add-template') ? 'active' : '' }}">
                                         Add Settings
                                     </a>
                                 </li>
+                                @endif
+                                @if (\App\Helpers\PermissionHelper::hasPermission('settings_management.view'))
                                 <li class="{{ request()->is('reseller/view-template') ? 'active' : '' }}">
                                     <a href="{{ url('reseller/view-template') }}"
                                         class="{{ request()->is('reseller/view-template') ? 'active' : '' }}">
                                         View Settings
                                     </a>
                                 </li>
+                                @endif
+                                @if (\App\Helpers\PermissionHelper::hasPermission('settings_management.assign_bulk'))
                                 <li class="{{ request()->is('reseller/assign-setting-bulk') ? 'active' : '' }}">
                                     <a href="<?php echo url('reseller/assign-setting-bulk'); ?>"
                                         class="{{ request()->is('reseller/assign-setting-bulk') ? 'active' : '' }}">
                                         Assign Settings Bulk
                                     </a>
                                 </li>
+                                @endif
                             </ul>
                         </li>
                         @endif
@@ -743,24 +749,30 @@ if ($userType === 'admin') {
                                 <span class='icon-sidebar pe-7s-note fa-2x'></span><span>Settings Management</span>
                             </a>
                             <ul class='sub'>
+                                @if (\App\Helpers\PermissionHelper::hasPermission('settings_management.create'))
                                 <li class="{{ request()->is('user/add-template') ? 'active' : '' }}">
                                     <a href="{{ url('user/add-template') }}"
                                         class="{{ request()->is('user/add-template') ? 'active' : '' }}">
                                         Add Settings
                                     </a>
                                 </li>
+                                @endif
+                                @if (\App\Helpers\PermissionHelper::hasPermission('settings_management.view'))
                                 <li class="{{ request()->is('user/view-template') ? 'active' : '' }}">
                                     <a href="{{ url('user/view-template') }}"
                                         class="{{ request()->is('user/view-template') ? 'active' : '' }}">
                                         View Settings
                                     </a>
                                 </li>
+                                @endif
+                                @if (\App\Helpers\PermissionHelper::hasPermission('settings_management.assign_bulk'))
                                 <li class="{{ request()->is('user/assign-setting-bulk') ? 'active' : '' }}">
                                     <a href="{{ url('user/assign-setting-bulk') }}"
                                         class="{{ request()->is('user/assign-setting-bulk') ? 'active' : '' }}">
                                         Assign Settings Bulk
                                     </a>
                                 </li>
+                                @endif
                             </ul>
                         </li>
                         @endif

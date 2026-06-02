@@ -115,7 +115,7 @@ class RegisterController extends Controller
     foreach ($configuration as $index => $config) {
       $formattedRow = [];
       $keys = array_keys($config);
-      $idSet = $idParameters[$index];
+      $idSet = $idParameters[$index] ?? [];
       $keyIndex = 0;
       foreach ($config as $key => $value) {
         if ($key === 'template') continue;

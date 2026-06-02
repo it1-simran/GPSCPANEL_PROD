@@ -27,7 +27,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'User', 'slug' => 'user', 'description' => 'End user with limited permissions', 'is_active' => 1]
         );
 
-        // Define permissions
+        // Define permissions - comprehensive list for all modules
         $permissions = [
             // Account Management
             ['key' => 'account_management.view', 'module' => 'account_management', 'action' => 'view', 'label' => 'View Account Management', 'order' => 1],
@@ -41,12 +41,16 @@ class PermissionSeeder extends Seeder
 
             // Certificate Management
             ['key' => 'certificate_management.view', 'module' => 'certificate_management', 'action' => 'view', 'label' => 'View Certificate Management', 'order' => 1],
+            ['key' => 'certificate_management.create', 'module' => 'certificate_management', 'action' => 'create', 'label' => 'Create Certificate', 'order' => 2],
+            ['key' => 'certificate_management.edit', 'module' => 'certificate_management', 'action' => 'edit', 'label' => 'Edit Certificate', 'order' => 3],
+            ['key' => 'certificate_management.delete', 'module' => 'certificate_management', 'action' => 'delete', 'label' => 'Delete Certificate', 'order' => 4],
 
             // Settings Management
             ['key' => 'settings_management.view', 'module' => 'settings_management', 'action' => 'view', 'label' => 'View Settings', 'order' => 1],
             ['key' => 'settings_management.create', 'module' => 'settings_management', 'action' => 'create', 'label' => 'Create Settings', 'order' => 2],
             ['key' => 'settings_management.edit', 'module' => 'settings_management', 'action' => 'edit', 'label' => 'Edit Settings', 'order' => 3],
             ['key' => 'settings_management.delete', 'module' => 'settings_management', 'action' => 'delete', 'label' => 'Delete Settings', 'order' => 4],
+            ['key' => 'settings_management.assign_bulk', 'module' => 'settings_management', 'action' => 'assign_bulk', 'label' => 'Assign Settings Bulk', 'order' => 5],
         ];
 
         // Create permissions
@@ -63,17 +67,23 @@ class PermissionSeeder extends Seeder
         $adminPermissions = Permission::where('is_active', 1)->get();
         $adminRole->permissions()->syncWithoutDetaching($adminPermissions->pluck('id'));
 
-        // Assign basic permissions to Reseller role (can be overridden later)
+        // Assign comprehensive permissions to Reseller role
         $resellerPermissions = Permission::whereIn('key', [
             'account_management.view',
             'account_management.create',
             'account_management.edit',
+            'account_management.delete',
             'device_management.view',
             'device_management.edit',
             'certificate_management.view',
+            'certificate_management.create',
+            'certificate_management.edit',
+            'certificate_management.delete',
+            'settings_management.view',
             'settings_management.create',
             'settings_management.edit',
-            'settings_management.view',
+            'settings_management.delete',
+            'settings_management.assign_bulk',
         ])->get();
         $resellerRole->permissions()->syncWithoutDetaching($resellerPermissions->pluck('id'));
 
@@ -81,6 +91,7 @@ class PermissionSeeder extends Seeder
         $userPermissions = Permission::whereIn('key', [
             'device_management.view',
             'certificate_management.view',
+            'settings_management.view',
         ])->get();
         $userRole->permissions()->syncWithoutDetaching($userPermissions->pluck('id'));
     }

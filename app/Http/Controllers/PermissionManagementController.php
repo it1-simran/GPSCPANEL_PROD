@@ -29,13 +29,16 @@ class PermissionManagementController extends Controller
             return redirect()->back()->with('error', 'Unauthorized access');
         }
 
+        // Clear permission cache to ensure fresh load from database
+        \App\Helpers\PermissionHelper::flushCache();
+
         // Get all Resellers
         $resellers = Writer::where('user_type', 'Reseller')
             ->where('is_deleted', 0)
             ->orderBy('name')
             ->get();
 
-        // Get all permissions grouped by module
+        // Get all permissions grouped by module (fresh from database)
         $permissionsByModule = Permission::where('is_active', 1)
             ->orderBy('module')
             ->orderBy('order')
@@ -141,6 +144,9 @@ class PermissionManagementController extends Controller
             return redirect()->back()->with('error', 'Unauthorized access');
         }
 
+        // Clear permission cache to ensure fresh load from database
+        \App\Helpers\PermissionHelper::flushCache();
+
         // Get child users created by this reseller
         $childUsers = Writer::where('created_by', $user->id)
             ->where('is_deleted', 0)
@@ -148,9 +154,17 @@ class PermissionManagementController extends Controller
             ->get();
 
         // Get reseller's permissions (only show these to child users)
+        // Fresh load from database - do not use cached permissions
         $resellerRolePermissions = $user->role ?
-            $user->role->permissions : collect([]);
-        $resellerUserPermissions = $user->permissions;
+            $user->role->permissions()->get() : collect([]);
+
+        // Get user-specific permissions directly from database
+        $resellerUserPermissions = DB::table('user_permissions')
+            ->where('user_id', $user->id)
+            ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->where('permissions.is_active', 1)
+            ->select('permissions.*')
+            ->get();
 
         $availablePermissions = $resellerRolePermissions->merge($resellerUserPermissions)
             ->unique('id');
@@ -194,6 +208,10 @@ class PermissionManagementController extends Controller
     public function getChildUserPermissions($userId)
     {
         $user = Auth::user();
+
+        // Clear permission cache to ensure fresh load from database
+        \App\Helpers\PermissionHelper::flushCache();
+
         $childUser = Writer::find($userId);
 
         // Verify this user is created by current reseller or admin
@@ -205,8 +223,11 @@ class PermissionManagementController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Get child user's permissions
-        $childPermissions = $childUser->permissions()->pluck('permission_id')->toArray();
+        // Get child user's permissions (fresh from database, not cached)
+        $childPermissions = DB::table('user_permissions')
+            ->where('user_id', $childUser->id)
+            ->pluck('permission_id')
+            ->toArray();
 
         // Filter out account_management permissions for User type
         if ($childUser->user_type === 'User') {

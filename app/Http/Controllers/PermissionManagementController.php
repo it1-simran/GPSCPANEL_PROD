@@ -70,25 +70,27 @@ class PermissionManagementController extends Controller
             return response()->json(['error' => 'Reseller not found'], 404);
         }
 
-        // Direct database query - get reseller's permissions from user_permissions table
+        // Account permissions are managed in user_permissions. Role permissions are
+        // defaults only and must not re-enable permissions the admin removed.
         $userPermissions = DB::table('user_permissions')
-            ->where('user_id', $resellerId)
-            ->pluck('permission_id')
+            ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->where('user_permissions.user_id', $resellerId)
+            ->where('permissions.is_active', 1)
+            ->pluck('permissions.id')
+            ->map(fn($id) => (int) $id)
             ->toArray();
 
-        // Get role permissions if reseller has a role
         $rolePermissions = [];
         if ($reseller->role_id) {
             $rolePermissions = DB::table('role_permissions')
                 ->where('role_id', $reseller->role_id)
                 ->pluck('permission_id')
+                ->map(fn($id) => (int) $id)
                 ->toArray();
         }
 
-        $allPermissions = array_values(array_unique(array_merge($rolePermissions, $userPermissions)));
-
         return response()->json([
-            'permissions' => $allPermissions,
+            'permissions' => array_values(array_unique($userPermissions)),
             'rolePermissions' => array_values($rolePermissions),
             'userPermissions' => array_values($userPermissions)
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
@@ -147,44 +149,24 @@ class PermissionManagementController extends Controller
         // Clear permission cache to ensure fresh load from database
         \App\Helpers\PermissionHelper::flushCache();
 
-        // Get child users created by this reseller
-        $childUsers = Writer::where('created_by', $user->id)
+        // Get child users created by this reseller.
+        $childUsers = Writer::where(function ($query) use ($user) {
+                $query->where('created_by', $user->id)
+                    ->orWhere('parent_user_id', $user->id);
+            })
             ->where('is_deleted', 0)
             ->orderBy('name')
             ->get();
 
-        // Get reseller's permissions (only show these to child users)
-        // Fresh load from database - do not use cached permissions
-        $resellerRolePermissions = $user->role ?
-            $user->role->permissions()->get() : collect([]);
-
-        // Get user-specific permissions directly from database
-        $resellerUserPermissions = DB::table('user_permissions')
-            ->where('user_id', $user->id)
-            ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
-            ->where('permissions.is_active', 1)
-            ->select('permissions.*')
-            ->get();
-
-        $availablePermissions = $resellerRolePermissions->merge($resellerUserPermissions)
-            ->unique('id');
-
-        // If a specific child user is selected, filter permissions based on their type
         $selectedUser = null;
         if ($request->has('user_id')) {
             $selectedUser = Writer::find($request->input('user_id'));
-
-            // Filter out account_management permissions for User type
-            if ($selectedUser && $selectedUser->user_type === 'User') {
-                $availablePermissions = $availablePermissions
-                    ->filter(function($permission) {
-                        return !str_starts_with($permission->key, 'account_management.');
-                    });
+            if ($selectedUser && !$this->canManageChildUser($user, $selectedUser)) {
+                return redirect()->back()->with('error', 'Unauthorized access');
             }
-        } else {
-            // When no user is selected, show all permissions from reseller
-            // The filtering will happen on the frontend when user selects a User type
         }
+
+        $availablePermissions = $this->getAssignablePermissionsForUser($user, $selectedUser);
 
         // Group by module
         $permissionsByModule = $availablePermissions
@@ -214,8 +196,12 @@ class PermissionManagementController extends Controller
 
         $childUser = Writer::find($userId);
 
+        if (!$childUser) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
         // Verify this user is created by current reseller or admin
-        if ($user->user_type === 'Reseller' && $childUser->created_by !== $user->id) {
+        if ($user->user_type === 'Reseller' && !$this->canManageChildUser($user, $childUser)) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -225,21 +211,22 @@ class PermissionManagementController extends Controller
 
         // Get child user's permissions (fresh from database, not cached)
         $childPermissions = DB::table('user_permissions')
-            ->where('user_id', $childUser->id)
-            ->pluck('permission_id')
+            ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->where('user_permissions.user_id', $childUser->id)
+            ->where('permissions.is_active', 1)
+            ->pluck('permissions.id')
+            ->map(fn($id) => (int) $id)
             ->toArray();
 
-        // Filter out account_management permissions for User type
-        if ($childUser->user_type === 'User') {
-            $childPermissions = DB::table('permissions')
-                ->whereIn('id', $childPermissions)
-                ->where('module', '!=', 'account_management')
-                ->pluck('id')
-                ->toArray();
+        $allowedPermissionIds = null;
+        if ($user->user_type === 'Reseller') {
+            $allowedPermissionIds = $this->getAssignablePermissionIds($user, $childUser);
+            $childPermissions = array_values(array_intersect($childPermissions, $allowedPermissionIds));
         }
 
         return response()->json([
-            'permissions' => $childPermissions
+            'permissions' => $childPermissions,
+            'assignable_permissions' => $allowedPermissionIds
         ]);
     }
 
@@ -257,7 +244,7 @@ class PermissionManagementController extends Controller
 
         // Verify authorization
         if ($user->user_type === 'Reseller') {
-            if ($childUser->created_by !== $user->id) {
+            if (!$this->canManageChildUser($user, $childUser)) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
             // Validate Reseller is not assigning beyond their permissions
@@ -336,11 +323,8 @@ class PermissionManagementController extends Controller
      */
     private function validatePermissionHierarchy($parentUser, $childUser, $requestedPermissions)
     {
-        // Get parent's accessible permissions
-        $parentRolePermissions = $parentUser->role ?
-            $parentUser->role->permissions()->pluck('id')->toArray() : [];
-        $parentUserPermissions = $parentUser->permissions()->pluck('permission_id')->toArray();
-        $parentAccessiblePermissions = array_unique(array_merge($parentRolePermissions, $parentUserPermissions));
+        $parentAccessiblePermissions = $this->getAssignablePermissionIds($parentUser, $childUser);
+        $requestedPermissions = array_map('intval', $requestedPermissions);
 
         // Check if all requested permissions are accessible to parent
         foreach ($requestedPermissions as $permId) {
@@ -352,6 +336,72 @@ class PermissionManagementController extends Controller
         }
 
         return null; // Valid
+    }
+
+    private function canManageChildUser($parentUser, $childUser): bool
+    {
+        if (!$childUser) {
+            return false;
+        }
+
+        return (int) $childUser->created_by === (int) $parentUser->id
+            || (int) $childUser->parent_user_id === (int) $parentUser->id;
+    }
+
+    private function getEffectiveAssignedPermissionIds($user): array
+    {
+        if (!$user) {
+            return [];
+        }
+
+        $permissionKeys = \App\Helpers\PermissionHelper::getAllAccessiblePermissions($user);
+
+        if (empty($permissionKeys)) {
+            return [];
+        }
+
+        return Permission::whereIn('key', $permissionKeys)
+            ->where('is_active', 1)
+            ->pluck('id')
+            ->map(fn($id) => (int) $id)
+            ->toArray();
+    }
+
+    private function getAssignablePermissionIds($user, $targetUser = null): array
+    {
+        if (!$user) {
+            return [];
+        }
+
+        if ($user->user_type === 'Admin') {
+            $query = Permission::where('is_active', 1);
+        } else {
+            $query = Permission::whereIn('id', $this->getEffectiveAssignedPermissionIds($user))
+                ->where('is_active', 1);
+        }
+
+        if ($targetUser && $targetUser->user_type === 'User') {
+            $query->where('module', '!=', 'account_management');
+        }
+
+        return $query->pluck('id')
+            ->map(fn($id) => (int) $id)
+            ->toArray();
+    }
+
+    private function getAssignablePermissionsForUser($user, $targetUser = null)
+    {
+        $permissionIds = $this->getAssignablePermissionIds($user, $targetUser);
+
+        if (empty($permissionIds)) {
+            return collect([]);
+        }
+
+        return Permission::whereIn('id', $permissionIds)
+            ->where('is_active', 1)
+            ->orderBy('module')
+            ->orderBy('order')
+            ->get();
     }
 
     /**
@@ -455,21 +505,7 @@ class PermissionManagementController extends Controller
      */
     public function getUserModules()
     {
-        $user = Auth::user();
-
-        // Get user's permissions
-        $rolePermissions = $user->role ?
-            $user->role->permissions : collect([]);
-        $userPermissions = $user->permissions;
-
-        $allPermissions = $rolePermissions->merge($userPermissions)->unique('id');
-
-        // Get unique modules with view permission
-        $modules = $allPermissions
-            ->where('action', 'view')
-            ->unique('module')
-            ->pluck('module')
-            ->toArray();
+        $modules = \App\Helpers\PermissionHelper::getAccessibleModules();
 
         return response()->json([
             'modules' => $modules

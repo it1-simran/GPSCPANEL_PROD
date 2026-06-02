@@ -2,7 +2,6 @@
 
 namespace App\Helpers;
 
-use App\Permission;
 use Illuminate\Support\Facades\Auth;
 
 class PermissionHelper
@@ -17,7 +16,7 @@ class PermissionHelper
      * Return the set of permission keys granted to $user (or the currently
      * authenticated user).  Admin users are granted everything.
      */
-    private static function getGrantedKeys($user = null): array
+    private static function getGrantedKeys($user = null, array $visitedUserIds = []): array
     {
         if (!$user) {
             $user = Auth::user();
@@ -31,25 +30,48 @@ class PermissionHelper
             return ['*'];
         }
 
-        $cacheKey = $user->id;
+        $cacheKey = (int) $user->id;
         if (!isset(self::$cache[$cacheKey])) {
-            // Merge role permissions + direct user permissions
-            $keys = [];
-
-            if ($user->role) {
-                foreach ($user->role->permissions as $p) {
-                    $keys[] = $p->key;
-                }
+            if (in_array($cacheKey, $visitedUserIds, true)) {
+                return [];
             }
 
-            foreach ($user->permissions as $p) {
+            $keys = [];
+            $directPermissions = $user->permissions()
+                ->where('permissions.is_active', 1)
+                ->get();
+
+            foreach ($directPermissions as $p) {
                 $keys[] = $p->key;
+            }
+
+            $parent = self::getParentUser($user);
+            if ($parent && (int) $parent->id !== $cacheKey) {
+                $parentKeys = self::getGrantedKeys($parent, array_merge($visitedUserIds, [$cacheKey]));
+
+                if (!in_array('*', $parentKeys, true)) {
+                    $keys = array_values(array_intersect($keys, $parentKeys));
+                }
             }
 
             self::$cache[$cacheKey] = array_unique($keys);
         }
 
         return self::$cache[$cacheKey];
+    }
+
+    /**
+     * Resolve the account parent used for inherited permissions.
+     */
+    private static function getParentUser($user)
+    {
+        $parentId = $user->parent_user_id ?: $user->created_by;
+
+        if (!$parentId) {
+            return null;
+        }
+
+        return \App\Writer::find($parentId);
     }
 
     /**

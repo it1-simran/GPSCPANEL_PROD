@@ -49,19 +49,19 @@ class PermissionAuditLog extends Model
     /**
      * Log a permission assignment or revocation
      *
-     * @param User $targetUser
+     * @param mixed $targetUser
      * @param Permission $permission
      * @param string $action 'assigned' or 'revoked'
-     * @param User|null $assignedBy
+     * @param mixed|null $assignedBy
      * @param string|null $reason
      * @param array|null $metadata
      * @return static
      */
     public static function log(
-        User $targetUser,
+        $targetUser,
         Permission $permission,
         string $action = 'assigned',
-        User $assignedBy = null,
+        $assignedBy = null,
         string $reason = null,
         array $metadata = null
     ) {
@@ -72,7 +72,7 @@ class PermissionAuditLog extends Model
         return static::create([
             'user_id' => $targetUser->id,
             'permission_id' => $permission->id,
-            'assigned_by' => $assignedBy->id,
+            'assigned_by' => $assignedBy ? $assignedBy->id : null,
             'action' => $action,
             'reason' => $reason,
             'metadata' => $metadata ?? [

@@ -27,78 +27,84 @@ class PermissionSeeder extends Seeder
             ['name' => 'User', 'slug' => 'user', 'description' => 'End user with limited permissions', 'is_active' => 1]
         );
 
-        // Define permissions - comprehensive list for all modules
+        // ---------------------------------------------------------------
+        // Master permission list — 15 permissions across 4 modules
+        // ---------------------------------------------------------------
         $permissions = [
-            // Account Management
-            ['key' => 'account_management.view', 'module' => 'account_management', 'action' => 'view', 'label' => 'View Account Management', 'order' => 1],
-            ['key' => 'account_management.create', 'module' => 'account_management', 'action' => 'create', 'label' => 'Create Account', 'order' => 2],
-            ['key' => 'account_management.edit', 'module' => 'account_management', 'action' => 'edit', 'label' => 'Edit Account', 'order' => 3],
-            ['key' => 'account_management.delete', 'module' => 'account_management', 'action' => 'delete', 'label' => 'Delete Account', 'order' => 4],
+            // Account Management (4)
+            ['key' => 'account_management.view',   'module' => 'account_management',   'action' => 'view',        'label' => 'View Account Management', 'order' => 1],
+            ['key' => 'account_management.create', 'module' => 'account_management',   'action' => 'create',      'label' => 'Create Account',          'order' => 2],
+            ['key' => 'account_management.edit',   'module' => 'account_management',   'action' => 'edit',        'label' => 'Edit Account',            'order' => 3],
+            ['key' => 'account_management.delete', 'module' => 'account_management',   'action' => 'delete',      'label' => 'Delete Account',          'order' => 4],
 
-            // Device Management
-            ['key' => 'device_management.view', 'module' => 'device_management', 'action' => 'view', 'label' => 'View Device Management', 'order' => 1],
-            ['key' => 'device_management.edit', 'module' => 'device_management', 'action' => 'edit', 'label' => 'Edit Device', 'order' => 2],
+            // Device Management (2)
+            ['key' => 'device_management.view',    'module' => 'device_management',    'action' => 'view',        'label' => 'View Device Management',  'order' => 1],
+            ['key' => 'device_management.edit',    'module' => 'device_management',    'action' => 'edit',        'label' => 'Edit Device',             'order' => 2],
 
-            // Certificate Management
-            ['key' => 'certificate_management.view', 'module' => 'certificate_management', 'action' => 'view', 'label' => 'View Certificate', 'order' => 1],
+            // Certificate Management (4)
+            ['key' => 'certificate_management.view',   'module' => 'certificate_management', 'action' => 'view',   'label' => 'View Certificate',   'order' => 1],
+            ['key' => 'certificate_management.create', 'module' => 'certificate_management', 'action' => 'create', 'label' => 'Create Certificate', 'order' => 2],
+            ['key' => 'certificate_management.edit',   'module' => 'certificate_management', 'action' => 'edit',   'label' => 'Edit Certificate',   'order' => 3],
+            ['key' => 'certificate_management.delete', 'module' => 'certificate_management', 'action' => 'delete', 'label' => 'Delete Certificate', 'order' => 4],
 
-            // Settings Management
-            ['key' => 'settings_management.view', 'module' => 'settings_management', 'action' => 'view', 'label' => 'View Settings', 'order' => 1],
-            ['key' => 'settings_management.create', 'module' => 'settings_management', 'action' => 'create', 'label' => 'Create Settings', 'order' => 2],
-            ['key' => 'settings_management.edit', 'module' => 'settings_management', 'action' => 'edit', 'label' => 'Edit Settings', 'order' => 3],
-            ['key' => 'settings_management.delete', 'module' => 'settings_management', 'action' => 'delete', 'label' => 'Delete Settings', 'order' => 4],
-            ['key' => 'settings_management.assign_bulk', 'module' => 'settings_management', 'action' => 'assign_bulk', 'label' => 'Assign Settings Bulk', 'order' => 5],
+            // Settings Management (5)
+            ['key' => 'settings_management.view',        'module' => 'settings_management', 'action' => 'view',        'label' => 'View Settings',          'order' => 1],
+            ['key' => 'settings_management.create',      'module' => 'settings_management', 'action' => 'create',      'label' => 'Create Settings',        'order' => 2],
+            ['key' => 'settings_management.edit',        'module' => 'settings_management', 'action' => 'edit',        'label' => 'Edit Settings',          'order' => 3],
+            ['key' => 'settings_management.delete',      'module' => 'settings_management', 'action' => 'delete',      'label' => 'Delete Settings',        'order' => 4],
+            ['key' => 'settings_management.assign_bulk', 'module' => 'settings_management', 'action' => 'assign_bulk', 'label' => 'Assign Settings Bulk',   'order' => 5],
         ];
 
-        // Create permissions
-        $permissionObjects = [];
+        // Upsert permissions — update label/order if key already exists
         foreach ($permissions as $perm) {
-            $permission = Permission::firstOrCreate(
+            Permission::updateOrCreate(
                 ['key' => $perm['key']],
                 array_merge($perm, ['is_active' => 1])
             );
-            $permissionObjects[$perm['key']] = $permission->id;
         }
 
-        // Assign all permissions to Admin role
-        $adminPermissions = Permission::where('is_active', 1)->get();
-        $adminRole->permissions()->syncWithoutDetaching($adminPermissions->pluck('id'));
+        // Remove any permissions NOT in the master list (keeps DB clean)
+        $validKeys = array_column($permissions, 'key');
+        Permission::whereNotIn('key', $validKeys)->delete();
 
-        // Assign default permissions to Reseller role
-        // Reseller has: Account Management (all), Device Management (all), Settings Management (all)
-        $resellerPermissions = Permission::whereIn('key', [
-            // Account Management
-            'account_management.view',
-            'account_management.create',
-            'account_management.edit',
-            'account_management.delete',
-            // Device Management
-            'device_management.view',
-            'device_management.edit',
-            // Settings Management
-            'settings_management.view',
-            'settings_management.create',
-            'settings_management.edit',
-            'settings_management.delete',
-            'settings_management.assign_bulk',
-        ])->get();
-        $resellerRole->permissions()->sync($resellerPermissions->pluck('id'));
+        // Reload fresh IDs after upsert
+        $allPerms = Permission::where('is_active', 1)->pluck('id', 'key');
 
-        // Assign default permissions to User role
-        // User has: Device Management (all), Settings Management (all), Certificate Management (view only)
-        $userPermissions = Permission::whereIn('key', [
-            // Device Management
-            'device_management.view',
-            'device_management.edit',
-            // Settings Management
-            'settings_management.view',
-            'settings_management.create',
-            'settings_management.edit',
-            'settings_management.delete',
+        // ---------------------------------------------------------------
+        // Admin role — all 15 permissions
+        // ---------------------------------------------------------------
+        $adminRole->permissions()->sync($allPerms->values());
+
+        // ---------------------------------------------------------------
+        // Reseller role — Account + Device + Certificate + Settings (all)
+        // ---------------------------------------------------------------
+        $resellerKeys = [
+            'account_management.view', 'account_management.create',
+            'account_management.edit', 'account_management.delete',
+            'device_management.view', 'device_management.edit',
+            'certificate_management.view', 'certificate_management.create',
+            'certificate_management.edit', 'certificate_management.delete',
+            'settings_management.view', 'settings_management.create',
+            'settings_management.edit', 'settings_management.delete',
             'settings_management.assign_bulk',
-            // Certificate Management (view only)
-            'certificate_management.view',
-        ])->get();
-        $userRole->permissions()->sync($userPermissions->pluck('id'));
+        ];
+        $resellerRole->permissions()->sync(
+            $allPerms->only($resellerKeys)->values()
+        );
+
+        // ---------------------------------------------------------------
+        // User role — Device + Certificate + Settings (no account_management)
+        // ---------------------------------------------------------------
+        $userKeys = [
+            'device_management.view', 'device_management.edit',
+            'certificate_management.view', 'certificate_management.create',
+            'certificate_management.edit', 'certificate_management.delete',
+            'settings_management.view', 'settings_management.create',
+            'settings_management.edit', 'settings_management.delete',
+            'settings_management.assign_bulk',
+        ];
+        $userRole->permissions()->sync(
+            $allPerms->only($userKeys)->values()
+        );
     }
 }

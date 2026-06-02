@@ -128,7 +128,7 @@
                                         </thead>
                                         <tbody>
                                             @foreach($permissionsByModule[$module] as $permission)
-                                                <tr>
+                                                <tr class="permission-row" data-permission-id="{{ $permission->id }}">
                                                     <td style="text-align: left;">{{ $permission->label }}</td>
                                                     <td>
                                                         <label class="toggle-switch">
@@ -186,6 +186,19 @@
             success: function(response) {
                 // Uncheck all checkboxes first
                 $('.permission-checkbox').prop('checked', false);
+                $('.permission-row, .module-section').show();
+
+                if (response.assignable_permissions) {
+                    const allowedPermissions = response.assignable_permissions.map(String);
+                    $('.permission-row').each(function() {
+                        const permissionId = String($(this).data('permission-id'));
+                        $(this).toggle(allowedPermissions.includes(permissionId));
+                    });
+
+                    $('.module-section').each(function() {
+                        $(this).toggle($(this).find('.permission-row:visible').length > 0);
+                    });
+                }
 
                 // Check the permissions this child user has
                 response.permissions.forEach(function(permId) {

@@ -163,8 +163,13 @@ class PermissionAssignmentService
     private function cascadeRevokeById(int $parentUserId, int $permissionId): void
     {
         $childIds = DB::table('writers')
-            ->where('parent_user_id', $parentUserId)
+            ->where(function ($query) use ($parentUserId) {
+                $query->where('parent_user_id', $parentUserId)
+                    ->orWhere('created_by', $parentUserId);
+            })
             ->pluck('id')
+            ->unique()
+            ->values()
             ->toArray();
 
         if (empty($childIds)) return;
@@ -187,7 +192,11 @@ class PermissionAssignmentService
     private function cascadeRevoke(User $parentUser, Permission $permission, User $revokingUser): int
     {
         $affectedCount = 0;
-        $children = User::where('parent_user_id', $parentUser->id)->get();
+        $children = User::where(function ($query) use ($parentUser) {
+                $query->where('parent_user_id', $parentUser->id)
+                    ->orWhere('created_by', $parentUser->id);
+            })
+            ->get();
 
         foreach ($children as $child) {
             DB::table('user_permissions')
@@ -197,7 +206,7 @@ class PermissionAssignmentService
 
             try {
                 PermissionAuditLog::log($child, $permission, 'revoked', $revokingUser, 'Cascaded from parent: ' . $parentUser->name);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::warning('Cascade audit log failed', ['error' => $e->getMessage()]);
             }
 
@@ -260,18 +269,35 @@ class PermissionAssignmentService
     /**
      * Sync permissions - replace all with new set
      *
-     * @param User $targetUser
+     * @param mixed $targetUser
      * @param array $permissionIds - New permission IDs
-     * @param User|null $assigningUser
+     * @param mixed|null $assigningUser
      * @return array ['success' => bool, 'message' => string, 'added' => int, 'removed' => int]
      */
     public function syncPermissions(
-        User $targetUser,
+        $targetUser,
         array $permissionIds,
-        User $assigningUser = null
+        $assigningUser = null
     ): array {
         if (!$assigningUser) {
             $assigningUser = auth()->user();
+        }
+
+        $permissionIds = array_values(array_unique(array_map('intval', $permissionIds)));
+
+        if ($assigningUser && $assigningUser->user_type !== 'Admin') {
+            $assignablePermissionIds = $this->getEffectiveAssignedPermissionIds($assigningUser);
+            $disallowedPermissionIds = array_values(array_diff($permissionIds, $assignablePermissionIds));
+
+            if (!empty($disallowedPermissionIds)) {
+                $permission = Permission::whereIn('id', $disallowedPermissionIds)->first();
+                $permName = $permission ? $permission->label : 'Permission #' . $disallowedPermissionIds[0];
+
+                return [
+                    'success' => false,
+                    'message' => "Cannot assign '{$permName}' - this permission is beyond your access level"
+                ];
+            }
         }
 
         // Validation: User type cannot have account_management
@@ -295,8 +321,6 @@ class PermissionAssignmentService
             ->pluck('permission_id')
             ->map(fn($id) => (int) $id)
             ->toArray();
-
-        $permissionIds = array_map('intval', $permissionIds);
 
         // Permissions to add and remove
         $toAdd    = array_values(array_diff($permissionIds, $currentPermIds));
@@ -355,7 +379,7 @@ class PermissionAssignmentService
                 $perm = Permission::find($permId);
                 if ($perm) PermissionAuditLog::log($targetUser, $perm, 'revoked', $assigningUser, 'Bulk sync');
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::warning('Audit log failed (permissions were saved)', ['error' => $e->getMessage()]);
         }
 
@@ -429,19 +453,38 @@ class PermissionAssignmentService
     /**
      * Get all permissions a user can assign (their own permissions)
      *
-     * @param User $user
+     * @param mixed $user
      * @return Collection
      */
-    public function getAssignablePermissions(User $user): Collection
+    public function getAssignablePermissions($user): Collection
     {
         if ($user->user_type === 'Admin') {
             return Permission::where('is_active', 1)->get();
         }
 
         // Non-admin can only assign their own permissions
-        return $user->permissions()
+        return Permission::whereIn('id', $this->getEffectiveAssignedPermissionIds($user))
             ->where('is_active', 1)
             ->get();
+    }
+
+    private function getEffectiveAssignedPermissionIds($user): array
+    {
+        if (!$user) {
+            return [];
+        }
+
+        $permissionKeys = \App\Helpers\PermissionHelper::getAllAccessiblePermissions($user);
+
+        if (empty($permissionKeys)) {
+            return [];
+        }
+
+        return Permission::whereIn('key', $permissionKeys)
+            ->where('is_active', 1)
+            ->pluck('id')
+            ->map(fn($id) => (int) $id)
+            ->toArray();
     }
 
     /**

@@ -313,7 +313,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::delete('/admin/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'destroy'])->name('protocols.packet-alerts.destroy');
 
     /* ======================= Permission Management Routes ======================= */
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'account.management'])->group(function () {
         Route::get('/admin/manage-permissions', [PermissionManagementController::class, 'adminManagePermissions'])->name('admin.manage-permissions');
         Route::get('/admin/manage-user-permissions', [PermissionManagementController::class, 'adminManageUserPermissions'])->name('admin.manage-user-permissions');
 
@@ -407,7 +407,7 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::get('/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->name('certificate.rc-status');
 
     /* ======================= Permission Management Routes ======================= */
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'account.management'])->group(function () {
         Route::get('/manage-child-permissions', [PermissionManagementController::class, 'resellerManageChildPermissions'])->name('reseller.manage-child-permissions');
         Route::get('/permissions/child/{userId}', [PermissionManagementController::class, 'getChildUserPermissions']);
         Route::post('/permissions/child/{userId}/update', [PermissionManagementController::class, 'updateChildUserPermissions']);

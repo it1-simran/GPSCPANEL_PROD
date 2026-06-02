@@ -37,18 +37,16 @@ class PermissionSeeder extends Seeder
 
             // Device Management
             ['key' => 'device_management.view', 'module' => 'device_management', 'action' => 'view', 'label' => 'View Device Management', 'order' => 1],
-            ['key' => 'device_management.create', 'module' => 'device_management', 'action' => 'create', 'label' => 'Create Device', 'order' => 2],
-            ['key' => 'device_management.edit', 'module' => 'device_management', 'action' => 'edit', 'label' => 'Edit Device', 'order' => 3],
-            ['key' => 'device_management.delete', 'module' => 'device_management', 'action' => 'delete', 'label' => 'Delete Device', 'order' => 4],
+            ['key' => 'device_management.edit', 'module' => 'device_management', 'action' => 'edit', 'label' => 'Edit Device', 'order' => 2],
 
             // Certificate Management
             ['key' => 'certificate_management.view', 'module' => 'certificate_management', 'action' => 'view', 'label' => 'View Certificate Management', 'order' => 1],
-            ['key' => 'certificate_management.download', 'module' => 'certificate_management', 'action' => 'download', 'label' => 'Download Certificate', 'order' => 2],
-            ['key' => 'certificate_management.print', 'module' => 'certificate_management', 'action' => 'print', 'label' => 'Print Certificate', 'order' => 3],
 
             // Settings Management
             ['key' => 'settings_management.view', 'module' => 'settings_management', 'action' => 'view', 'label' => 'View Settings', 'order' => 1],
-            ['key' => 'settings_management.edit', 'module' => 'settings_management', 'action' => 'edit', 'label' => 'Edit Settings', 'order' => 2],
+            ['key' => 'settings_management.create', 'module' => 'settings_management', 'action' => 'create', 'label' => 'Create Settings', 'order' => 2],
+            ['key' => 'settings_management.edit', 'module' => 'settings_management', 'action' => 'edit', 'label' => 'Edit Settings', 'order' => 3],
+            ['key' => 'settings_management.delete', 'module' => 'settings_management', 'action' => 'delete', 'label' => 'Delete Settings', 'order' => 4],
         ];
 
         // Create permissions
@@ -71,9 +69,11 @@ class PermissionSeeder extends Seeder
             'account_management.create',
             'account_management.edit',
             'device_management.view',
-            'device_management.create',
             'device_management.edit',
             'certificate_management.view',
+            'settings_management.create',
+            'settings_management.edit',
+            'settings_management.view',
         ])->get();
         $resellerRole->permissions()->syncWithoutDetaching($resellerPermissions->pluck('id'));
 

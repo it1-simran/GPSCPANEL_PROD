@@ -598,8 +598,15 @@
                       </h4>
 
                       <div class="form-group" style="margin-bottom:20px;">
-                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fitment Date <span class="require" style="color:#d32f2f;">*</span></label>
-                        <input class="form-control" type="date" name="fitment_date" value="{{ old('fitment_date', date('Y-m-d')) }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; max-width:300px;" />
+                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                          Fitment Date <span class="require" style="color:#d32f2f;">*</span>
+                          <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— today or earlier only</span>
+                        </label>
+                        <input class="form-control" type="date" name="fitment_date" id="fitment_date_input"
+                          value="{{ old('fitment_date', date('Y-m-d')) }}"
+                          max="{{ date('Y-m-d') }}"
+                          required
+                          style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; max-width:300px;" />
                       </div>
                     </div>
 

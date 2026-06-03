@@ -1700,10 +1700,30 @@
     // ─── Preview Certificate (opens generated PDF in a new tab) ─────────────
     $('#preview-cert-btn').on('click', function() {
       var form = document.getElementById('certificate-details-form');
+
       // Use the browser's native required-field validation before previewing.
       if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
         return;
       }
+
+      // Check verification state — don't allow preview if verification failed
+      const issues = [];
+      const state = window.verificationState;
+      if (state.plate_verified === false) {
+        issues.push('Number plate verification <strong>failed</strong> — the plate photo does not match the RC registration number. Re-upload the correct plate photo or fix the registration number.');
+      }
+      if (state.device_verified === false) {
+        issues.push('Device IMEI verification <strong>failed</strong> — the IMEI extracted from the device label does not match the device\'s stored IMEI. Upload the correct device label or contact your administrator.');
+      }
+      if (state.rc_extracted === false) {
+        issues.push('RC document is <strong>incomplete</strong> — one or more mandatory fields could not be extracted. Please upload a clear and readable RC image until all required fields are detected.');
+      }
+
+      if (issues.length > 0) {
+        showBlockingError(issues);
+        return;
+      }
+
       var originalAction = form.getAttribute('action');
       var originalTarget = form.getAttribute('target');
       form.setAttribute('action', '/user/device/{{ $device->id }}/certificate/preview');

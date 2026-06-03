@@ -29,7 +29,7 @@ class CertificateController extends Controller
         $user = Auth::user();
 
         // Use Device model for better data handling
-        $devicesQuery = Device::where('is_deleted', 0)
+        $devicesQuery = Device::where('devices.is_deleted', 0)
             ->join('device_categories', 'devices.device_category_id', '=', 'device_categories.id')
             ->where('device_categories.is_certification_enable', 1)
             ->select('devices.*');

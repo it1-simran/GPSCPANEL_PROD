@@ -1066,11 +1066,10 @@ class CertificateController extends Controller
     }
 
     /**
-     * Generate a unique VLTD serial number in the format JSDE14Axxxxxxx
+     * Generate a unique VLTD serial number in the format JSDE14A000001
      *   - Prefix: JSDE14A (fixed)
-     *   - Suffix: 7 chars from [A-Z0-9] randomly generated
-     * Retries up to 20 times to find a value not already used by another device.
-     * Returns JSON: { serial: 'JSDE14A1234567' }
+     *   - Suffix: 6-digit numeric counter starting from 000001
+     * Returns JSON: { serial: 'JSDE14A000001' }
      */
     public function generateVltdSerial($id)
     {
@@ -1084,23 +1083,31 @@ class CertificateController extends Controller
         }
 
         $prefix = 'JSDE14A';
-        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // omits 0/O/1/I for readability
-        $maxAttempts = 20;
 
-        for ($i = 0; $i < $maxAttempts; $i++) {
-            $suffix = '';
-            for ($j = 0; $j < 7; $j++) {
-                $suffix .= $alphabet[random_int(0, strlen($alphabet) - 1)];
-            }
-            $candidate = $prefix . $suffix;
+        // Find the highest existing serial to determine the next number
+        $latestSerial = Device::where('is_deleted', 0)
+            ->where(function ($query) {
+                $query->whereJsonContains("configurations->certificate_details->vltd_serial_no", $prefix)
+                    ->orWhereJsonContains("configurations->vltd_serial_no", $prefix);
+            })
+            ->get()
+            ->map(function ($device) use ($prefix) {
+                $config = json_decode($device->configurations, true) ?: [];
+                $serial = $config['certificate_details']['vltd_serial_no']
+                    ?? $config['vltd_serial_no']
+                    ?? null;
 
-            if (self::uniqueJson($device, 'vltd_serial_no', $candidate)) {
-                return response()->json(['serial' => $candidate]);
-            }
-        }
+                if ($serial && strpos($serial, $prefix) === 0) {
+                    $numericPart = (int) substr($serial, strlen($prefix));
+                    return $numericPart;
+                }
+                return 0;
+            })
+            ->max() ?? 0;
 
-        return response()->json([
-            'error' => 'Could not generate a unique serial after ' . $maxAttempts . ' attempts'
-        ], 500);
+        $nextNumber = $latestSerial + 1;
+        $candidate = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+
+        return response()->json(['serial' => $candidate]);
     }
 }

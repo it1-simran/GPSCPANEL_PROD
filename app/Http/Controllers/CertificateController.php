@@ -1086,7 +1086,7 @@ class CertificateController extends Controller
 
         // Find the highest existing serial to determine the next number
         $latestSerial = Device::where('is_deleted', 0)
-            ->where(function ($query) {
+            ->where(function ($query) use ($prefix) {
                 $query->whereJsonContains("configurations->certificate_details->vltd_serial_no", $prefix)
                     ->orWhereJsonContains("configurations->vltd_serial_no", $prefix);
             })

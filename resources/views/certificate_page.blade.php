@@ -1090,6 +1090,8 @@
       plate_verified:   null,   // number plate matches RC
       device_verified:  null,   // device IMEI matches stored
       rc_extracted:     null,   // all mandatory RC fields extracted from the document
+      extracted_imei:   null,   // IMEI extracted from device label
+      device_imei:      null,   // device's stored IMEI
     };
 
     /**
@@ -1129,7 +1131,14 @@
         issues.push('Number plate verification <strong>failed</strong> — the plate photo does not match the RC registration number. Re-upload the correct plate photo or fix the registration number.');
       }
       if (state.device_verified === false) {
-        issues.push('Device IMEI verification <strong>failed</strong> — the IMEI extracted from the device label does not match the device\'s stored IMEI. Upload the correct device label or contact your administrator.');
+        let imeiMsg = 'Device IMEI verification <strong>failed</strong>';
+        if (state.extracted_imei && state.device_imei) {
+          imeiMsg += ' — Extracted IMEI <span style="color:#dc2626;"><strong>' + state.extracted_imei + '</strong></span> does not match device IMEI <span style="color:#dc2626;"><strong>' + state.device_imei + '</strong></span>';
+        } else {
+          imeiMsg += ' — the IMEI extracted from the device label does not match the device\'s stored IMEI';
+        }
+        imeiMsg += '. Upload the correct device label or contact your administrator.';
+        issues.push(imeiMsg);
       }
       if (state.rc_extracted === false) {
         issues.push('RC document is <strong>incomplete</strong> — one or more mandatory fields could not be extracted. Please upload a clear and readable RC image until all required fields are detected.');
@@ -1517,6 +1526,8 @@
               imeiField.val(imei).change();
             }
             msgParts.push('IMEI: <strong>' + imei + '</strong>');
+            window.verificationState.extracted_imei = imei;
+            window.verificationState.device_imei = response.device_imei || null;
             if (response.imei_matches === true) {
               window.verificationState.device_verified = true;
               msgParts.push('<span style="color:#16a34a;">(✓ matches device)</span>');
@@ -1713,7 +1724,14 @@
         issues.push('Number plate verification <strong>failed</strong> — the plate photo does not match the RC registration number. Re-upload the correct plate photo or fix the registration number.');
       }
       if (state.device_verified === false) {
-        issues.push('Device IMEI verification <strong>failed</strong> — the IMEI extracted from the device label does not match the device\'s stored IMEI. Upload the correct device label or contact your administrator.');
+        let imeiMsg = 'Device IMEI verification <strong>failed</strong>';
+        if (state.extracted_imei && state.device_imei) {
+          imeiMsg += ' — Extracted IMEI <span style="color:#dc2626;"><strong>' + state.extracted_imei + '</strong></span> does not match device IMEI <span style="color:#dc2626;"><strong>' + state.device_imei + '</strong></span>';
+        } else {
+          imeiMsg += ' — the IMEI extracted from the device label does not match the device\'s stored IMEI';
+        }
+        imeiMsg += '. Upload the correct device label or contact your administrator.';
+        issues.push(imeiMsg);
       }
       if (state.rc_extracted === false) {
         issues.push('RC document is <strong>incomplete</strong> — one or more mandatory fields could not be extracted. Please upload a clear and readable RC image until all required fields are detected.');

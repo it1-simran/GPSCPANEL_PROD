@@ -1049,29 +1049,46 @@
     // ═══════════════════════════════════════════════════════════════════
     function generateVltdSerial() {
       var deviceId = {{ (int)($device->id ?? 0) }};
-      if (!deviceId) return;
+      if (!deviceId) {
+        console.warn('Device ID not found');
+        return;
+      }
 
       var $input = $('#vltd_serial_no_input');
+      var pathname = window.location.pathname.replace(/\/\d+$/, '/' + deviceId) + '/generate-vltd-serial?t=' + new Date().getTime();
 
       $.ajax({
-        url: window.location.pathname.replace(/\/\d+$/, '/' + deviceId) + '/generate-vltd-serial?t=' + new Date().getTime(),
+        url: pathname,
         type: 'GET',
         dataType: 'json',
         cache: false,
         success: function(response) {
-          if (response.serial) {
+          console.log('Serial generation response:', response);
+          if (response && response.serial) {
+            console.log('Setting serial to:', response.serial);
             $input.val(response.serial);
+            console.log('Current value:', $input.val());
+          } else {
+            console.warn('No serial in response:', response);
           }
         },
-        error: function(xhr) {
-          console.error('Failed to generate VLTD serial:', xhr.status);
+        error: function(xhr, status, error) {
+          console.error('Failed to generate VLTD serial:', {status: xhr.status, statusText: xhr.statusText, error: error});
+          console.error('Response:', xhr.responseText);
         }
       });
     }
 
     // Auto-generate on page load only if input is empty
-    if (!$('#vltd_serial_no_input').val()) {
+    var $serialInput = $('#vltd_serial_no_input');
+    console.log('Serial input element found:', $serialInput.length > 0);
+    console.log('Current value:', $serialInput.val());
+
+    if (!$serialInput.val()) {
+      console.log('Triggering serial generation...');
       generateVltdSerial();
+    } else {
+      console.log('Serial already has value:', $serialInput.val());
     }
 
     // ═══════════════════════════════════════════════════════════════════

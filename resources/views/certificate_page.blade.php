@@ -851,21 +851,9 @@
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
                               VLTD ICCID
-                              <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— auto-fetches SIM data when entered</span>
+                              <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— auto-populated from device label scan only</span>
                             </label>
-                            <table style="width:100%; border-collapse:collapse;">
-                              <tr>
-                                <td style="padding-right:6px;">
-                                  <input class="form-control" type="text" name="vltd_icc_id" id="vltd_icc_id_input" placeholder="Enter or paste ICCID (19-20 digits)" value="{{ old('vltd_icc_id', $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? '')) }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%;" autocomplete="off" />
-                                </td>
-                                <td style="width:1%; vertical-align:middle;">
-                                  <button type="button" id="lookup-iccid-btn" style="background:#0891b2; color:#fff; border:none; padding:10px 14px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap;">
-                                    <i class="fa fa-search"></i> Fetch SIM
-                                  </button>
-                                </td>
-                              </tr>
-                            </table>
-                            <small id="iccid-lookup-status" style="display:block; margin-top:6px; font-size:11px; color:#64748b; min-height:14px;"></small>
+                            <input class="form-control" type="text" name="vltd_icc_id" id="vltd_icc_id_input" placeholder="Auto-fetched from device label" value="{{ old('vltd_icc_id', $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? '')) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f8f8f8;" />
                           </div>
                         </div>
                       </div>
@@ -1486,59 +1474,8 @@
       });
     }
 
-    // Click button to manually lookup
-    $('#lookup-iccid-btn').on('click', function() {
-      const iccid = $('#vltd_icc_id_input').val();
-      lookupIccidAndFillSimFields(iccid, $('#iccid-lookup-status'));
-    });
-
-    // Auto-lookup on input/paste/blur (debounced for typing)
-    let iccidLookupTimer = null;
-    let lastLookedUp     = null;
-
-    function maybeAutoLookup(immediate) {
-      const iccid   = $('#vltd_icc_id_input').val();
-      const $status = $('#iccid-lookup-status');
-      const cleaned = (iccid || '').replace(/[\s\-]/g, '');
-
-      // Don't re-fire for the same ICCID twice in a row
-      if (cleaned === lastLookedUp) return;
-
-      clearTimeout(iccidLookupTimer);
-
-      if (cleaned.length === 0) {
-        $status.text('');
-        return;
-      }
-      if (cleaned.length < 18) {
-        $status.text('ICCID should be 19-20 digits...').css('color', '#94a3b8');
-        return;
-      }
-
-      // Fire immediately on paste/blur, debounce 500ms while typing
-      const delay = immediate ? 0 : 500;
-      iccidLookupTimer = setTimeout(function() {
-        lastLookedUp = cleaned;
-        lookupIccidAndFillSimFields(iccid, $status);
-      }, delay);
-    }
-
-    // Multiple event listeners cover all input scenarios
-    $('#vltd_icc_id_input')
-      .on('input',  function() { maybeAutoLookup(false); })
-      .on('change', function() { maybeAutoLookup(true); })
-      .on('blur',   function() { maybeAutoLookup(true); })
-      .on('paste',  function() { setTimeout(function() { maybeAutoLookup(true); }, 50); });
-
-    // Fire lookup on page load if ICCID field already has a value (e.g. saved from before)
-    // Only if SIM 1 fields are empty (don't override existing data)
-    (function autoLookupOnLoad() {
-      const iccid = ($('#vltd_icc_id_input').val() || '').replace(/[\s\-]/g, '');
-      const sim1Op = $('#certificate-details-form input[name="sim1_operator"]').val();
-      if (iccid.length >= 18 && !sim1Op) {
-        setTimeout(function() { maybeAutoLookup(true); }, 300);
-      }
-    })();
+    // ICCID is now read-only and only populated from device label scan
+    // Manual lookup functionality removed per requirements
 
     // ─── Device Label OCR (IMEI + ICCID) ──────────────────────────────
     $('#extract-device-btn').on('click', function() {

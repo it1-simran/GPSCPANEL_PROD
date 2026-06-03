@@ -29,16 +29,19 @@ class CertificateController extends Controller
         $user = Auth::user();
 
         // Use Device model for better data handling
-        $devicesQuery = Device::where('is_deleted', 0);
+        $devicesQuery = Device::where('is_deleted', 0)
+            ->join('device_categories', 'devices.device_category_id', '=', 'device_categories.id')
+            ->where('device_categories.is_certification_enable', 1)
+            ->select('devices.*');
 
         if ($user->user_type == 'Admin') {
             // Admin: show all devices with user_id != null
-            $devicesQuery->where('user_id', '!=', null);
+            $devicesQuery->where('devices.user_id', '!=', null);
         } elseif ($user->user_type == 'Reseller') {
             // Reseller: show devices created by them + devices assigned to them
             $devicesQuery->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->orWhereIn('user_id', function ($subquery) use ($user) {
+                $q->where('devices.user_id', $user->id)
+                  ->orWhereIn('devices.user_id', function ($subquery) use ($user) {
                       $subquery->select('id')
                                ->from('writers')
                                ->where('created_by', $user->id)
@@ -47,10 +50,10 @@ class CertificateController extends Controller
             });
         } else {
             // User: show only own devices
-            $devicesQuery->where('user_id', $user->id);
+            $devicesQuery->where('devices.user_id', $user->id);
         }
 
-        $devices = $devicesQuery->orderBy('device_category_id')->get();
+        $devices = $devicesQuery->orderBy('devices.device_category_id')->get();
 
         // Group devices by category
         $devicesByCategory = [];
@@ -106,6 +109,12 @@ class CertificateController extends Controller
             if (!$isOwnDevice && !$isChildUserDevice) {
                 return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
             }
+        }
+
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "Certification is not enabled for this device category!"]);
         }
 
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
@@ -168,6 +177,12 @@ class CertificateController extends Controller
             if (!$isOwnDevice && !$isChildUserDevice) {
                 return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
             }
+        }
+
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['status' => 'error', 'message' => "Certification is not enabled for this device category!"], 403);
         }
 
         $uniqueIgnoreId = $device->id;
@@ -321,6 +336,12 @@ class CertificateController extends Controller
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
         }
 
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['status' => 'error', 'message' => "Certification is not enabled for this device category!"], 403);
+        }
+
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
             ->find($device->device_category_id);
@@ -458,6 +479,12 @@ class CertificateController extends Controller
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
         }
 
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['status' => 'error', 'message' => "Certification is not enabled for this device category!"], 403);
+        }
+
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
             ->find($device->device_category_id);
@@ -564,6 +591,12 @@ class CertificateController extends Controller
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
         }
 
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "Certification is not enabled for this device category!"]);
+        }
+
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
             ->find($device->device_category_id);
@@ -654,6 +687,12 @@ class CertificateController extends Controller
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['error' => 'Certification is not enabled for this device category!'], 403);
         }
 
         $request->validate([
@@ -752,6 +791,12 @@ class CertificateController extends Controller
             return response()->json(['error' => 'Unauthorized access'], 403);
         }
 
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['error' => 'Certification is not enabled for this device category!'], 403);
+        }
+
         $request->validate([
             'plate_file'      => 'required|file|mimes:jpg,jpeg,png,bmp,gif|max:5120',
             'expected_reg_no' => 'required|string|max:20',
@@ -846,6 +891,12 @@ class CertificateController extends Controller
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['error' => 'Certification is not enabled for this device category!'], 403);
         }
 
         $request->validate([
@@ -950,6 +1001,12 @@ class CertificateController extends Controller
             return response()->json(['error' => 'Unauthorized access'], 403);
         }
 
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['error' => 'Certification is not enabled for this device category!'], 403);
+        }
+
         $request->validate([
             'iccid' => 'required|string|min:18|max:25',
         ]);
@@ -1001,6 +1058,12 @@ class CertificateController extends Controller
             return response()->json(['error' => 'Unauthorized access'], 403);
         }
 
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['error' => 'Certification is not enabled for this device category!'], 403);
+        }
+
         $config = json_decode($device->configurations, true) ?: [];
         $rcDetails = $config['rc_details'] ?? null;
 
@@ -1024,6 +1087,12 @@ class CertificateController extends Controller
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['error' => 'Certification is not enabled for this device category!'], 403);
         }
 
         $fallbackService = new \App\Services\RCFallbackService();
@@ -1080,6 +1149,12 @@ class CertificateController extends Controller
         $device = Device::find($id);
         if (!$device) {
             return response()->json(['error' => 'Device not found'], 404);
+        }
+
+        // Certification enabled check: device category must have certification enabled
+        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
+            return response()->json(['error' => 'Certification is not enabled for this device category!'], 403);
         }
 
         $prefix = 'JSDE14A';

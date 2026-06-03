@@ -1133,9 +1133,9 @@
       if (state.device_verified === false) {
         let imeiMsg = 'Device IMEI verification <strong>failed</strong>';
         if (state.extracted_imei && state.device_imei) {
-          imeiMsg += ' — Extracted IMEI <span style="color:#dc2626;"><strong>' + state.extracted_imei + '</strong></span> does not match device IMEI <span style="color:#dc2626;"><strong>' + state.device_imei + '</strong></span>';
+          imeiMsg += ' — Extracted IMEI <span style="color:#dc2626;"><strong>' + state.extracted_imei + '</strong></span> does not match stored device IMEI <span style="color:#dc2626;"><strong>' + state.device_imei + '</strong></span> (from database)';
         } else {
-          imeiMsg += ' — the IMEI extracted from the device label does not match the device\'s stored IMEI';
+          imeiMsg += ' — the IMEI extracted from the device label does not match the device\'s stored IMEI in the database';
         }
         imeiMsg += '. Upload the correct device label or contact your administrator.';
         issues.push(imeiMsg);
@@ -1530,11 +1530,11 @@
             window.verificationState.device_imei = response.device_imei || null;
             if (response.imei_matches === true) {
               window.verificationState.device_verified = true;
-              msgParts.push('<span style="color:#16a34a;">(✓ matches device)</span>');
+              msgParts.push('<span style="color:#16a34a;">(✓ matches stored device IMEI)</span>');
             } else if (response.imei_matches === false) {
               window.verificationState.device_verified = false;
-              msgParts.push('<span style="color:#dc2626;">(⚠ does NOT match device IMEI '
-                + (response.device_imei || '') + ')</span>');
+              msgParts.push('<span style="color:#dc2626;">(⚠ does NOT match stored device IMEI <strong>'
+                + (response.device_imei || '') + '</strong>)</span>');
             } else {
               // No stored device IMEI to compare — consider verified
               window.verificationState.device_verified = true;
@@ -1564,9 +1564,9 @@
             const state = window.verificationState;
             let imeiMsg = 'Device IMEI verification <strong>failed</strong>';
             if (state.extracted_imei && state.device_imei) {
-              imeiMsg += ' — Extracted IMEI <span style="color:#dc2626;"><strong>' + state.extracted_imei + '</strong></span> does not match device IMEI <span style="color:#dc2626;"><strong>' + state.device_imei + '</strong></span>';
+              imeiMsg += ' — Extracted IMEI <span style="color:#dc2626;"><strong>' + state.extracted_imei + '</strong></span> does not match stored device IMEI <span style="color:#dc2626;"><strong>' + state.device_imei + '</strong></span> (from database)';
             } else {
-              imeiMsg += ' — the IMEI extracted from the device label does not match the device\'s stored IMEI';
+              imeiMsg += ' — the IMEI extracted from the device label does not match the device\'s stored IMEI in the database';
             }
             imeiMsg += '. Upload the correct device label or contact your administrator.';
             showBlockingError([imeiMsg]);
@@ -1737,9 +1737,9 @@
       if (state.device_verified === false) {
         let imeiMsg = 'Device IMEI verification <strong>failed</strong>';
         if (state.extracted_imei && state.device_imei) {
-          imeiMsg += ' — Extracted IMEI <span style="color:#dc2626;"><strong>' + state.extracted_imei + '</strong></span> does not match device IMEI <span style="color:#dc2626;"><strong>' + state.device_imei + '</strong></span>';
+          imeiMsg += ' — Extracted IMEI <span style="color:#dc2626;"><strong>' + state.extracted_imei + '</strong></span> does not match stored device IMEI <span style="color:#dc2626;"><strong>' + state.device_imei + '</strong></span> (from database)';
         } else {
-          imeiMsg += ' — the IMEI extracted from the device label does not match the device\'s stored IMEI';
+          imeiMsg += ' — the IMEI extracted from the device label does not match the device\'s stored IMEI in the database';
         }
         imeiMsg += '. Upload the correct device label or contact your administrator.';
         issues.push(imeiMsg);

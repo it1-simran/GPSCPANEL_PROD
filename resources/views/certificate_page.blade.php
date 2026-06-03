@@ -1062,6 +1062,9 @@
         type: 'GET',
         dataType: 'json',
         cache: false,
+        headers: {
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val()
+        },
         success: function(response) {
           console.log('Serial generation response:', response);
           if (response && response.serial) {

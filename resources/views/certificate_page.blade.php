@@ -1556,9 +1556,20 @@
           $('#device-success-message').html(msgParts.join(' · '));
           $('#device-extract-success').show();
 
-          // Clear blocker if device verification passed
+          // Show/clear blocker based on device verification result
           if (window.verificationState.device_verified === true) {
             showBlockingError([]);
+          } else if (window.verificationState.device_verified === false) {
+            // Show blocking error with dynamic IMEI values
+            const state = window.verificationState;
+            let imeiMsg = 'Device IMEI verification <strong>failed</strong>';
+            if (state.extracted_imei && state.device_imei) {
+              imeiMsg += ' — Extracted IMEI <span style="color:#dc2626;"><strong>' + state.extracted_imei + '</strong></span> does not match device IMEI <span style="color:#dc2626;"><strong>' + state.device_imei + '</strong></span>';
+            } else {
+              imeiMsg += ' — the IMEI extracted from the device label does not match the device\'s stored IMEI';
+            }
+            imeiMsg += '. Upload the correct device label or contact your administrator.';
+            showBlockingError([imeiMsg]);
           }
 
           // Render SIM profile details from GrowSpace API

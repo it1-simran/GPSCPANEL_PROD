@@ -64,8 +64,23 @@ class CertificateController extends Controller
             }
 
             $config = json_decode($device->configurations, true) ?: [];
-            $device->certificate_status = !empty($config['certificate_details']) ? 'Saved' : 'Draft';
-            $device->has_certificate = !empty($config['certificate_details']);
+
+            // Determine certificate status based on configuration
+            if (!empty($config['certificate_details'])) {
+                // Certificate details exist - check if it's been submitted/approved
+                $details = $config['certificate_details'];
+
+                // Check if certificate has been submitted/approved (has issued_date or approval status)
+                if (!empty($details['issued_date']) || !empty($details['approval_status'])) {
+                    $device->certificate_status = 'Approved';
+                } else {
+                    $device->certificate_status = 'Saved';
+                }
+                $device->has_certificate = true;
+            } else {
+                $device->certificate_status = 'Pending';
+                $device->has_certificate = false;
+            }
 
             $devicesByCategory[$categoryId][] = $device;
         }
@@ -205,27 +220,61 @@ class CertificateController extends Controller
         }
 
         $request->validate([
-            'owner_name' => 'required|string|max:255',
-            'owner_address' => 'required|string|max:500',
             'fitment_date' => 'required|date|before_or_equal:today',
-            'vltd_make' => 'required|string|max:255',
-            'color' => 'required|string|max:255',
-            'vehicle_model' => 'required|string|max:255',
+            'vendor_name' => 'required|string|max:255',
+            'vendor_contact' => 'required|string|max:20',
+            'vendor_address' => 'required|string|max:500',
+            'vendor_email' => 'required|email|max:255',
+            'vendor_gst' => 'nullable|string|max:255',
             'fitter_company' => 'required|string|max:255',
             'fitter_contact' => 'required|string|max:20',
             'fitter_address' => 'required|string|max:500',
             'fitter_email' => 'required|email|max:255',
+            'owner_name' => 'required|string|max:255',
+            'owner_mobile' => 'required|string|max:20',
+            'owner_address' => 'required|string|max:500',
+            'owner_email' => 'required|email|max:255',
+            'vehicle_registration_no' => 'required|string|max:255',
+            'chassis_no' => 'required|string|max:255',
+            'engine_no' => 'required|string|max:255',
+            'color' => 'required|string|max:255',
+            'vehicle_model' => 'required|string|max:255',
+            'vehicle_class' => 'required|string|max:255',
+            'fuel_type' => 'required|string|max:255',
+            'vltd_serial_no' => 'required|string|max:255',
+            'vltd_make' => 'required|string|max:255',
+            'vltd_model' => 'required|string|max:255',
+            'vltd_icc_id' => 'nullable|string|max:255',
+            'arai_tac' => 'nullable|string|max:255',
+            'arai_date' => 'nullable|date|before_or_equal:today',
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
         ], [
-            'owner_name.required' => 'The owner name field is required.',
-            'owner_address.required' => 'The owner address field is required.',
+            'fitment_date.required' => 'The fitment date field is required.',
             'fitment_date.before_or_equal' => 'Fitment date cannot be in the future.',
-            'arai_date.before_or_equal' => 'ARAI date cannot be in the future.',
+            'vendor_name.required' => 'The vendor name field is required.',
+            'vendor_contact.required' => 'The vendor contact number is required.',
+            'vendor_address.required' => 'The vendor address field is required.',
+            'vendor_email.required' => 'The vendor email field is required.',
             'fitter_company.required' => 'The fitter company name is required.',
             'fitter_contact.required' => 'The fitter contact number is required.',
             'fitter_address.required' => 'The fitter address is required.',
             'fitter_email.required' => 'The fitter email is required.',
+            'owner_name.required' => 'The owner name field is required.',
+            'owner_mobile.required' => 'The owner mobile number is required.',
+            'owner_address.required' => 'The owner address field is required.',
+            'owner_email.required' => 'The owner email is required.',
+            'vehicle_registration_no.required' => 'The vehicle registration number is required.',
+            'chassis_no.required' => 'The chassis number is required.',
+            'engine_no.required' => 'The engine number is required.',
+            'color.required' => 'The color field is required.',
+            'vehicle_model.required' => 'The vehicle model is required.',
+            'vehicle_class.required' => 'The vehicle class is required.',
+            'fuel_type.required' => 'The fuel type is required.',
+            'vltd_serial_no.required' => 'The VLTD serial number is required.',
+            'vltd_make.required' => 'The VLTD make is required.',
+            'vltd_model.required' => 'The VLTD model is required.',
+            'arai_date.before_or_equal' => 'ARAI date cannot be in the future.',
         ]);
 
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
@@ -256,7 +305,15 @@ class CertificateController extends Controller
         $config['certificate_details'] = [
             'holder_name' => $request->owner_name,
             'authority_city' => $authorityCity,
+            'owner_name' => $request->owner_name,
+            'owner_mobile' => $request->owner_mobile,
             'owner_address' => $request->owner_address,
+            'owner_email' => $request->owner_email,
+            'vendor_name' => $request->vendor_name,
+            'vendor_contact' => $request->vendor_contact,
+            'vendor_address' => $request->vendor_address,
+            'vendor_email' => $request->vendor_email,
+            'vendor_gst' => $request->vendor_gst ?? null,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -266,8 +323,8 @@ class CertificateController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
-            'vehicle_class' => $request->vehicle_class ?? null,
-            'fuel_type' => $request->fuel_type ?? null,
+            'vehicle_class' => $request->vehicle_class,
+            'fuel_type' => $request->fuel_type,
             'vltd_icc_id' => $request->vltd_icc_id,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
@@ -299,34 +356,61 @@ class CertificateController extends Controller
     public function generateCertificate($id, Request $request)
     {
         $request->validate([
-            'owner_name' => 'required|string|max:255',
-            'owner_address' => 'required|string|max:500',
             'fitment_date' => 'required|date|before_or_equal:today',
-            'vehicle_registration_no' => 'required|string|max:255',
-            'vltd_serial_no' => 'required|string|max:255',
-            'vltd_make' => 'required|string|max:255',
-            'vltd_model' => 'required|string|max:255',
-            'chassis_no' => 'required|string|max:255',
-            'engine_no' => 'required|string|max:255',
-            'color' => 'required|string|max:255',
-            'vehicle_model' => 'required|string|max:255',
+            'vendor_name' => 'required|string|max:255',
+            'vendor_contact' => 'required|string|max:20',
+            'vendor_address' => 'required|string|max:500',
+            'vendor_email' => 'required|email|max:255',
+            'vendor_gst' => 'nullable|string|max:255',
             'fitter_company' => 'required|string|max:255',
             'fitter_contact' => 'required|string|max:20',
             'fitter_address' => 'required|string|max:500',
             'fitter_email' => 'required|email|max:255',
+            'owner_name' => 'required|string|max:255',
+            'owner_mobile' => 'required|string|max:20',
+            'owner_address' => 'required|string|max:500',
+            'owner_email' => 'required|email|max:255',
+            'vehicle_registration_no' => 'required|string|max:255',
+            'chassis_no' => 'required|string|max:255',
+            'engine_no' => 'required|string|max:255',
+            'color' => 'required|string|max:255',
+            'vehicle_model' => 'required|string|max:255',
+            'vehicle_class' => 'required|string|max:255',
+            'fuel_type' => 'required|string|max:255',
+            'vltd_serial_no' => 'required|string|max:255',
+            'vltd_make' => 'required|string|max:255',
+            'vltd_model' => 'required|string|max:255',
+            'vltd_icc_id' => 'nullable|string|max:255',
             'arai_tac' => 'nullable|string|max:255',
             'arai_date' => 'nullable|date|before_or_equal:today',
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
         ], [
-            'owner_name.required' => 'The owner name field is required.',
-            'owner_address.required' => 'The owner address field is required.',
+            'fitment_date.required' => 'The fitment date field is required.',
             'fitment_date.before_or_equal' => 'Fitment date cannot be in the future.',
-            'arai_date.before_or_equal' => 'ARAI date cannot be in the future.',
+            'vendor_name.required' => 'The vendor name field is required.',
+            'vendor_contact.required' => 'The vendor contact number is required.',
+            'vendor_address.required' => 'The vendor address field is required.',
+            'vendor_email.required' => 'The vendor email field is required.',
             'fitter_company.required' => 'The fitter company name is required.',
             'fitter_contact.required' => 'The fitter contact number is required.',
             'fitter_address.required' => 'The fitter address is required.',
             'fitter_email.required' => 'The fitter email is required.',
+            'owner_name.required' => 'The owner name field is required.',
+            'owner_mobile.required' => 'The owner mobile number is required.',
+            'owner_address.required' => 'The owner address field is required.',
+            'owner_email.required' => 'The owner email is required.',
+            'vehicle_registration_no.required' => 'The vehicle registration number is required.',
+            'chassis_no.required' => 'The chassis number is required.',
+            'engine_no.required' => 'The engine number is required.',
+            'color.required' => 'The color field is required.',
+            'vehicle_model.required' => 'The vehicle model is required.',
+            'vehicle_class.required' => 'The vehicle class is required.',
+            'fuel_type.required' => 'The fuel type is required.',
+            'vltd_serial_no.required' => 'The VLTD serial number is required.',
+            'vltd_make.required' => 'The VLTD make is required.',
+            'vltd_model.required' => 'The VLTD model is required.',
+            'arai_date.before_or_equal' => 'ARAI date cannot be in the future.',
         ]);
 
         $device = Device::findOrFail($id);
@@ -378,7 +462,15 @@ class CertificateController extends Controller
         $data = [
             'holder_name' => $request->owner_name,
             'authority_city' => $authorityCity,
+            'owner_name' => $request->owner_name,
+            'owner_mobile' => $request->owner_mobile,
             'owner_address' => $request->owner_address,
+            'owner_email' => $request->owner_email,
+            'vendor_name' => $request->vendor_name,
+            'vendor_contact' => $request->vendor_contact,
+            'vendor_address' => $request->vendor_address,
+            'vendor_email' => $request->vendor_email,
+            'vendor_gst' => $request->vendor_gst ?? null,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -388,16 +480,16 @@ class CertificateController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
-            'vehicle_class' => $request->vehicle_class ?? ($savedCert['vehicle_class'] ?? null),
-            'fuel_type' => $request->fuel_type ?? ($savedCert['fuel_type'] ?? null),
+            'vehicle_class' => $request->vehicle_class,
+            'fuel_type' => $request->fuel_type,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId ?: ($request->vltd_icc_id ?? ($savedCert['vltd_icc_id'] ?? '')),
             'service_provider' => $provider,
-            'fitter_company' => $request->fitter_company ?? ($savedCert['fitter_company'] ?? null),
-            'fitter_contact' => $request->fitter_contact ?? ($savedCert['fitter_contact'] ?? null),
-            'fitter_address' => $request->fitter_address ?? ($savedCert['fitter_address'] ?? null),
-            'fitter_email' => $request->fitter_email ?? ($savedCert['fitter_email'] ?? null),
+            'fitter_company' => $request->fitter_company,
+            'fitter_contact' => $request->fitter_contact,
+            'fitter_address' => $request->fitter_address,
+            'fitter_email' => $request->fitter_email,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
@@ -408,6 +500,26 @@ class CertificateController extends Controller
             'sim2_operator' => $request->sim2_operator ?? ($savedCert['sim2_operator'] ?? null),
             'sim2_msisdn'   => $request->sim2_msisdn   ?? ($savedCert['sim2_msisdn']   ?? null),
         ];
+
+        // Attach images from storage if they exist in device config
+        $ocrImages = $config['ocr_images'] ?? [];
+        $imageFields = [
+            'device'   => 'device_image_uri',
+            'rc_front' => 'rc_front_image_uri',
+            'rc_back'  => 'rc_back_image_uri',
+            'plate'    => 'plate_image_uri',
+        ];
+
+        foreach ($imageFields as $slot => $viewKey) {
+            $path = $ocrImages[$slot] ?? null;
+            if ($path && file_exists(storage_path('app/' . $path))) {
+                $fileContents = file_get_contents(storage_path('app/' . $path));
+                $mimeType = mime_content_type(storage_path('app/' . $path));
+                $data[$viewKey] = 'data:' . $mimeType . ';base64,' . base64_encode($fileContents);
+            } else {
+                $data[$viewKey] = null;
+            }
+        }
 
         $pdfLink = url('/AS9076.pdf');
         $qrText = $pdfLink;
@@ -432,6 +544,7 @@ class CertificateController extends Controller
         }
 
         $data['qr_image'] = $qrImageDataUri;
+        header('Content-Type: application/pdf');
         $pdf = PDF::loadView('pdf.certificate', $data);
         return $pdf->download('certificate_' . $device->imei . '.pdf');
     }
@@ -442,34 +555,61 @@ class CertificateController extends Controller
     public function previewCertificate($id, Request $request)
     {
         $request->validate([
-            'owner_name' => 'required|string|max:255',
-            'owner_address' => 'required|string|max:500',
             'fitment_date' => 'required|date|before_or_equal:today',
-            'vehicle_registration_no' => 'required|string|max:255',
-            'vltd_serial_no' => 'required|string|max:255',
-            'vltd_make' => 'required|string|max:255',
-            'vltd_model' => 'required|string|max:255',
-            'chassis_no' => 'required|string|max:255',
-            'engine_no' => 'required|string|max:255',
-            'color' => 'required|string|max:255',
-            'vehicle_model' => 'required|string|max:255',
+            'vendor_name' => 'required|string|max:255',
+            'vendor_contact' => 'required|string|max:20',
+            'vendor_address' => 'required|string|max:500',
+            'vendor_email' => 'required|email|max:255',
+            'vendor_gst' => 'nullable|string|max:255',
             'fitter_company' => 'required|string|max:255',
             'fitter_contact' => 'required|string|max:20',
             'fitter_address' => 'required|string|max:500',
             'fitter_email' => 'required|email|max:255',
+            'owner_name' => 'required|string|max:255',
+            'owner_mobile' => 'required|string|max:20',
+            'owner_address' => 'required|string|max:500',
+            'owner_email' => 'required|email|max:255',
+            'vehicle_registration_no' => 'required|string|max:255',
+            'chassis_no' => 'required|string|max:255',
+            'engine_no' => 'required|string|max:255',
+            'color' => 'required|string|max:255',
+            'vehicle_model' => 'required|string|max:255',
+            'vehicle_class' => 'required|string|max:255',
+            'fuel_type' => 'required|string|max:255',
+            'vltd_serial_no' => 'required|string|max:255',
+            'vltd_make' => 'required|string|max:255',
+            'vltd_model' => 'required|string|max:255',
+            'vltd_icc_id' => 'nullable|string|max:255',
             'arai_tac' => 'nullable|string|max:255',
             'arai_date' => 'nullable|date|before_or_equal:today',
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
         ], [
-            'owner_name.required' => 'The owner name field is required.',
-            'owner_address.required' => 'The owner address field is required.',
+            'fitment_date.required' => 'The fitment date field is required.',
             'fitment_date.before_or_equal' => 'Fitment date cannot be in the future.',
-            'arai_date.before_or_equal' => 'ARAI date cannot be in the future.',
+            'vendor_name.required' => 'The vendor name field is required.',
+            'vendor_contact.required' => 'The vendor contact number is required.',
+            'vendor_address.required' => 'The vendor address field is required.',
+            'vendor_email.required' => 'The vendor email field is required.',
             'fitter_company.required' => 'The fitter company name is required.',
             'fitter_contact.required' => 'The fitter contact number is required.',
             'fitter_address.required' => 'The fitter address is required.',
             'fitter_email.required' => 'The fitter email is required.',
+            'owner_name.required' => 'The owner name field is required.',
+            'owner_mobile.required' => 'The owner mobile number is required.',
+            'owner_address.required' => 'The owner address field is required.',
+            'owner_email.required' => 'The owner email is required.',
+            'vehicle_registration_no.required' => 'The vehicle registration number is required.',
+            'chassis_no.required' => 'The chassis number is required.',
+            'engine_no.required' => 'The engine number is required.',
+            'color.required' => 'The color field is required.',
+            'vehicle_model.required' => 'The vehicle model is required.',
+            'vehicle_class.required' => 'The vehicle class is required.',
+            'fuel_type.required' => 'The fuel type is required.',
+            'vltd_serial_no.required' => 'The VLTD serial number is required.',
+            'vltd_make.required' => 'The VLTD make is required.',
+            'vltd_model.required' => 'The VLTD model is required.',
+            'arai_date.before_or_equal' => 'ARAI date cannot be in the future.',
         ]);
 
         $device = Device::findOrFail($id);
@@ -521,7 +661,15 @@ class CertificateController extends Controller
         $data = [
             'holder_name' => $request->owner_name,
             'authority_city' => $authorityCity,
+            'owner_name' => $request->owner_name,
+            'owner_mobile' => $request->owner_mobile,
             'owner_address' => $request->owner_address,
+            'owner_email' => $request->owner_email,
+            'vendor_name' => $request->vendor_name,
+            'vendor_contact' => $request->vendor_contact,
+            'vendor_address' => $request->vendor_address,
+            'vendor_email' => $request->vendor_email,
+            'vendor_gst' => $request->vendor_gst ?? null,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -531,16 +679,16 @@ class CertificateController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
-            'vehicle_class' => $request->vehicle_class ?? ($savedCert['vehicle_class'] ?? null),
-            'fuel_type' => $request->fuel_type ?? ($savedCert['fuel_type'] ?? null),
+            'vehicle_class' => $request->vehicle_class,
+            'fuel_type' => $request->fuel_type,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId ?: ($request->vltd_icc_id ?? ($savedCert['vltd_icc_id'] ?? '')),
             'service_provider' => $provider,
-            'fitter_company' => $request->fitter_company ?? ($savedCert['fitter_company'] ?? null),
-            'fitter_contact' => $request->fitter_contact ?? ($savedCert['fitter_contact'] ?? null),
-            'fitter_address' => $request->fitter_address ?? ($savedCert['fitter_address'] ?? null),
-            'fitter_email' => $request->fitter_email ?? ($savedCert['fitter_email'] ?? null),
+            'fitter_company' => $request->fitter_company,
+            'fitter_contact' => $request->fitter_contact,
+            'fitter_address' => $request->fitter_address,
+            'fitter_email' => $request->fitter_email,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
@@ -552,31 +700,56 @@ class CertificateController extends Controller
             'sim2_msisdn'   => $request->sim2_msisdn   ?? ($savedCert['sim2_msisdn']   ?? null),
         ];
 
+        // Attach images from storage if they exist in device config
+        $ocrImages = $config['ocr_images'] ?? [];
+        $imageFields = [
+            'device'   => 'device_image_uri',
+            'rc_front' => 'rc_front_image_uri',
+            'rc_back'  => 'rc_back_image_uri',
+            'plate'    => 'plate_image_uri',
+        ];
+
+        foreach ($imageFields as $slot => $viewKey) {
+            $path = $ocrImages[$slot] ?? null;
+            if ($path && file_exists(storage_path('app/' . $path))) {
+                $fileContents = file_get_contents(storage_path('app/' . $path));
+                $mimeType = mime_content_type(storage_path('app/' . $path));
+                $data[$viewKey] = 'data:' . $mimeType . ';base64,' . base64_encode($fileContents);
+            } else {
+                $data[$viewKey] = null;
+            }
+        }
+
         $pdfLink = url('/AS9076.pdf');
         $qrText = $pdfLink;
-        $client = new Client();
         $qrImageDataUri = null;
 
-        try {
-            $resp = $client->get('https://api.qrserver.com/v1/create-qr-code/', [
-                'query' => [
-                    'size' => '150x150',
-                    'data' => $qrText
-                ],
-                'http_errors' => false,
-                'timeout' => 10
-            ]);
-            if ($resp->getStatusCode() === 200) {
-                $body = $resp->getBody()->getContents();
-                $qrImageDataUri = 'data:image/png;base64,' . base64_encode($body);
+        // Skip QR generation for AJAX previews to significantly improve speed
+        if (!$request->ajax()) {
+            $client = new Client();
+            try {
+                $resp = $client->get('https://api.qrserver.com/v1/create-qr-code/', [
+                    'query' => [
+                        'size' => '150x150',
+                        'data' => $qrText
+                    ],
+                    'http_errors' => false,
+                    'timeout' => 5 // Reduced timeout
+                ]);
+                if ($resp->getStatusCode() === 200) {
+                    $body = $resp->getBody()->getContents();
+                    $qrImageDataUri = 'data:image/png;base64,' . base64_encode($body);
+                }
+            } catch (\Throwable $e) {
+                $qrImageDataUri = null;
             }
-        } catch (\Throwable $e) {
-            $qrImageDataUri = null;
         }
 
         $data['qr_image'] = $qrImageDataUri;
+
+        // Force PDF generation for all requests to fix the binary display issue
         $pdf = PDF::loadView('pdf.certificate', $data);
-        return $pdf->stream('certificate_' . $device->imei . '.pdf');
+        return $pdf->stream('certificate_' . $device->imei . '.pdf', ['Attachment' => false]);
     }
 
     /**
@@ -962,15 +1135,17 @@ class CertificateController extends Controller
             }
 
             return response()->json([
-                'success'      => true,
-                'imei'         => $info['imei'],
-                'iccid'        => $info['iccid'],
-                'device_imei'  => $deviceImei,
-                'imei_matches' => $imeiMatches,
-                'sims'         => $simData['sims'],
-                'plan_status'  => $simData['plan_status'],
-                'organization' => $simData['organization'],
-                'message'      => 'Device info extracted: '
+                'success'           => true,
+                'imei'              => $info['imei'],
+                'iccid'             => $info['iccid'],
+                'device_imei'       => $deviceImei,
+                'imei_matches'      => $imeiMatches,
+                'sims'              => $simData['sims'],
+                'plan_status'       => $simData['plan_status'],
+                'organization'      => $simData['organization'],
+                'activation_date'   => $simData['activation_date'] ?? null,
+                'expiry_date'       => $simData['expiry_date'] ?? null,
+                'message'           => 'Device info extracted: '
                     . ($info['imei']  ? 'IMEI ' . $info['imei']  : 'IMEI not found')
                     . ', '
                     . ($info['iccid'] ? 'ICCID ' . $info['iccid'] : 'ICCID not found'),

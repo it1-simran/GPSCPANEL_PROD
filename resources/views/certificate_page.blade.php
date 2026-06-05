@@ -321,6 +321,96 @@
 }
 
 /* ── Responsive — stack 2-column rows on small screens ─────────── */
+/* ── Wizard Steps ────────────────────────────────────────────── */
+.wizard-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  position: relative;
+  padding: 0 10px;
+}
+
+.wizard-steps::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 1;
+}
+
+.wizard-step {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  flex: 1;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+  font-weight: 700;
+  color: #64748b;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.wizard-step.active .step-number {
+  background: #76CF1C;
+  border-color: #76CF1C;
+  color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(118, 207, 28, 0.2);
+}
+
+.wizard-step.completed .step-number {
+  background: #76CF1C;
+  border-color: #76CF1C;
+  color: #ffffff;
+}
+
+.step-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wizard-step.active .step-label {
+  color: #0f172a;
+}
+
+.wizard-content-step {
+  display: none;
+}
+
+.wizard-content-step.active {
+  display: block;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wizard-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
 @media (max-width: 768px) {
   #certificate-details-form .row > [class*="col-lg-"],
   #certificate-details-form .row > [class*="col-md-"] {
@@ -367,6 +457,26 @@
             <div class="clearfix"></div>
           </div>
           <div class="c_content">
+            <!-- Wizard Steps Indicator -->
+            <div class="wizard-steps">
+              <div class="wizard-step active" id="step-indicator-1">
+                <div class="step-number">1</div>
+                <div class="step-label">RC Verification</div>
+              </div>
+              <div class="wizard-step" id="step-indicator-2">
+                <div class="step-number">2</div>
+                <div class="step-label">Device Verification</div>
+              </div>
+              <div class="wizard-step" id="step-indicator-3">
+                <div class="step-number">3</div>
+                <div class="step-label">Certificate Info</div>
+              </div>
+              <div class="wizard-step" id="step-indicator-4">
+                <div class="step-number">4</div>
+                <div class="step-label">Preview</div>
+              </div>
+            </div>
+
             @if ($errors->any())
               <div class="row">
                 <div class="col-sm-12">
@@ -377,7 +487,9 @@
                 </div>
               </div>
             @endif
+
             @if($saved && empty($edit_mode))
+              <!-- (Existing saved view code...) -->
               <div class="row" style="margin-bottom:12px;">
                 <div class="col-md-12" style="display:flex; justify-content:flex-end; gap:10px;">
                   <a href="?edit=1" class="btn btn-warning" style="background-color:#f59e0b; border-color:#f59e0b; color:#fff; padding:8px 20px; font-weight:600; text-decoration:none; border-radius:6px;">
@@ -391,101 +503,94 @@
                 </div>
               </div>
             @else
-              <div class="row">
-                <div class="col-md-12">
-                  @php
-                    $formData = is_array($saved) ? $saved : [];
-                    // Auto-fill helpers sourced from existing device data.
-                    $deviceCfg    = json_decode($device->configurations ?? '', true) ?: [];
-                    $autoImei     = $device->imei ?? '';
-                    $autoIccid    = $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? ($deviceCfg['ccid']['value'] ?? ($deviceCfg['iccid']['value'] ?? '')));
-                    $autoModel    = $formData['vltd_model'] ?? ($vltd_model ?? ($category_name ?? ''));
-                    $autoFirmware = $formData['firmware_version'] ?? ($deviceCfg['firmware_version']['value'] ?? ($deviceCfg['firmwareVersion']['value'] ?? ''));
-                    $autoVendorId = $formData['vendor_id'] ?? ($deviceCfg['vendorId']['value'] ?? ($deviceCfg['vendor_id'] ?? ''));
-                  @endphp
-                  <div class="alert alert-success alert-dismissible" role="alert" id="rc-upload-info" style="display:none;">
-                    <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
-                    <i class="fa fa-check-circle"></i> <strong>Success!</strong> RC details have been extracted and auto-populated. Please review and edit if needed.
+              @php
+                $formData = is_array($saved) ? $saved : [];
+                $deviceCfg    = json_decode($device->configurations ?? '', true) ?: [];
+                $autoImei     = $device->imei ?? '';
+                $autoIccid    = $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? ($deviceCfg['ccid']['value'] ?? ($deviceCfg['iccid']['value'] ?? '')));
+                $autoModel    = $formData['vltd_model'] ?? ($vltd_model ?? ($category_name ?? ''));
+                $autoFirmware = $formData['firmware_version'] ?? ($deviceCfg['firmware_version']['value'] ?? ($deviceCfg['firmwareVersion']['value'] ?? ''));
+                $autoVendorId = $formData['vendor_id'] ?? ($deviceCfg['vendorId']['value'] ?? ($deviceCfg['vendor_id'] ?? ''));
+              @endphp
+
+              <!-- Step 1: RC & Number Plate Verification -->
+              <div class="wizard-content-step active" id="wizard-step-1">
+                <div class="alert alert-success alert-dismissible" role="alert" id="rc-upload-info" style="display:none;">
+                  <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                  <i class="fa fa-check-circle"></i> <strong>Success!</strong> RC details have been extracted and auto-populated.
+                </div>
+
+                <div class="rc-upload-card" style="background: linear-gradient(135deg, #76CF1C15 0%, #76CF1C08 100%); border: 2px dashed #76CF1C; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <h4 style="color:#333; margin-bottom:15px; font-weight:600;">
+                        <i class="fa fa-file-pdf-o" style="color:#76CF1C;margin-right:8px;"></i>Step 1: Upload Registration Certificate (RC)
+                      </h4>
+                      <p style="color:#666; font-size:13px; margin-bottom:15px;">Upload both <strong>front</strong> and <strong>back</strong> pages of your RC document.</p>
+                    </div>
                   </div>
 
-                  <!-- RC Upload Card -->
-                  <div class="rc-upload-card" style="background: linear-gradient(135deg, #76CF1C15 0%, #76CF1C08 100%); border: 2px dashed #76CF1C; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
-                    <div class="row">
-                      <div class="col-md-12">
-                        <h4 style="color:#333; margin-bottom:15px; font-weight:600;">
-                          <i class="fa fa-file-pdf-o" style="color:#76CF1C;margin-right:8px;"></i>Upload Registration Certificate (RC)
-                        </h4>
-                        <p style="color:#666; font-size:13px; margin-bottom:15px;">Upload both <strong>front</strong> and <strong>back</strong> pages of your RC document. We'll extract vehicle details from both. Supported formats: PDF, JPG, PNG, BMP, GIF (Max 5MB each).</p>
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <!-- RC Front -->
-                      <div class="col-md-6">
-                        <div class="form-group" style="margin-bottom:12px;">
-                          <label style="font-weight:600; color:#333; display:block; margin-bottom:8px; font-size:13px;">
-                            <i class="fa fa-id-card" style="color:#76CF1C;margin-right:6px;"></i>RC Front Page <span style="color:#d32f2f;">*</span>
-                          </label>
-                          <input type="file" id="rc_file_front" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
-                          <small style="color:#666; font-size:11px; display:block; margin-top:4px;">Main RC page with vehicle details</small>
-                          <div id="rc-front-preview" style="display:none; margin-top:8px;">
-                            <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#76CF1C20; color:#166534; border-radius:4px; font-size:12px; font-weight:500;">
-                              <i class="fa fa-check-circle"></i> <span id="rc-front-name"></span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- RC Back -->
-                      <div class="col-md-6">
-                        <div class="form-group" style="margin-bottom:12px;">
-                          <label style="font-weight:600; color:#333; display:block; margin-bottom:8px; font-size:13px;">
-                            <i class="fa fa-id-card-o" style="color:#76CF1C;margin-right:6px;"></i>RC Back Page <span style="color:#888; font-weight:400;">(optional)</span>
-                          </label>
-                          <input type="file" id="rc_file_back" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
-                          <small style="color:#666; font-size:11px; display:block; margin-top:4px;">Optional: back page (address, owner photo)</small>
-                          <div id="rc-back-preview" style="display:none; margin-top:8px;">
-                            <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#76CF1C20; color:#166534; border-radius:4px; font-size:12px; font-weight:500;">
-                              <i class="fa fa-check-circle"></i> <span id="rc-back-name"></span>
-                            </span>
-                          </div>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600; color:#333; display:block; margin-bottom:8px; font-size:13px;">
+                          <i class="fa fa-id-card" style="color:#76CF1C;margin-right:6px;"></i>RC Front Page <span style="color:#d32f2f;">*</span>
+                        </label>
+                        <input type="file" id="rc_file_front" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
+                        <div id="rc-front-preview" style="display:none; margin-top:8px;">
+                          <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#76CF1C20; color:#166534; border-radius:4px; font-size:12px; font-weight:500;">
+                            <i class="fa fa-check-circle"></i> <span id="rc-front-name"></span>
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    <div class="row">
-                      <div class="col-md-12">
-                        <button class="btn btn-success" type="button" id="upload-rc-btn" style="margin-top:10px; background-color:#76CF1C; border-color:#76CF1C; color:#fff; padding:10px 30px; font-weight:500;">
-                          <i class="fa fa-upload"></i> Upload & Extract Details
-                        </button>
-
-                        <div id="rc-upload-progress" style="display:none; margin-top:15px;">
-                          <p style="font-size:12px; color:#666; margin-bottom:8px;">Processing RC document<span id="rc-progress-detail"></span>...</p>
-                          <div class="progress" style="height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden;">
-                            <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%; background-color:#76CF1C; border-radius:3px;"></div>
-                          </div>
-                        </div>
-                        <div id="rc-upload-error" style="display:none; margin-top:15px;">
-                          <div class="alert alert-danger alert-dismissible" style="margin:0;">
-                            <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
-                            <i class="fa fa-exclamation-circle"></i> <span id="error-message"></span>
-                          </div>
+                    <div class="col-md-6">
+                      <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600; color:#333; display:block; margin-bottom:8px; font-size:13px;">
+                          <i class="fa fa-id-card-o" style="color:#76CF1C;margin-right:6px;"></i>RC Back Page <span style="color:#888; font-weight:400;">(optional)</span>
+                        </label>
+                        <input type="file" id="rc_file_back" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
+                        <div id="rc-back-preview" style="display:none; margin-top:8px;">
+                          <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#76CF1C20; color:#166534; border-radius:4px; font-size:12px; font-weight:500;">
+                            <i class="fa fa-check-circle"></i> <span id="rc-back-name"></span>
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Number Plate Verification Card -->
+                  <div class="row">
+                    <div class="col-md-12">
+                      <button class="btn btn-success" type="button" id="upload-rc-btn" style="margin-top:10px; background-color:#76CF1C; border-color:#76CF1C; color:#fff; padding:10px 30px; font-weight:500;">
+                        <i class="fa fa-upload"></i> Upload & Extract Details
+                      </button>
+
+                      <div id="rc-upload-progress" style="display:none; margin-top:15px;">
+                        <p style="font-size:12px; color:#666; margin-bottom:8px;">Processing RC document<span id="rc-progress-detail"></span>...</p>
+                        <div class="progress" style="height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden;">
+                          <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%; background-color:#76CF1C; border-radius:3px;"></div>
+                        </div>
+                      </div>
+                      <div id="rc-upload-error" style="display:none; margin-top:15px;">
+                        <div class="alert alert-danger alert-dismissible" style="margin:0;">
+                          <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                          <i class="fa fa-exclamation-circle"></i> <span id="error-message"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Number Plate Verification Section -->
+                <div id="number-plate-section" style="display:none;">
                   <div class="plate-verify-card" style="background: linear-gradient(135deg, #3b82f615 0%, #3b82f608 100%); border: 2px dashed #3b82f6; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
                     <div class="row">
                       <div class="col-md-12">
                         <h4 style="color:#333; margin-bottom:15px; font-weight:600;">
-                          <i class="fa fa-car" style="color:#3b82f6;margin-right:8px;"></i>Verify Number Plate
+                          <i class="fa fa-car" style="color:#3b82f6;margin-right:8px;"></i>Scan Vehicle Number Plate
                         </h4>
-                        <p style="color:#666; font-size:13px; margin-bottom:15px;">
-                          Upload a photo of the vehicle's number plate. We'll check if it matches the registration number from the RC document.
-                          <strong>Tip:</strong> Make sure the plate is clearly visible and well-lit.
-                        </p>
+                        <p style="color:#666; font-size:13px; margin-bottom:15px;">Upload a photo of the vehicle's number plate to compare with the RC.</p>
 
                         <div class="file-upload-wrapper">
                           <div class="form-group" style="margin-bottom:0;">
@@ -520,77 +625,88 @@
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <!-- Device Image OCR Card -->
-                  <div class="device-extract-card" style="background: linear-gradient(135deg, #f59e0b15 0%, #f59e0b08 100%); border: 2px dashed #f59e0b; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
-                    <div class="row">
-                      <div class="col-md-12">
-                        <h4 style="color:#333; margin-bottom:15px; font-weight:600;">
-                          <i class="fa fa-microchip" style="color:#f59e0b;margin-right:8px;"></i>Scan Device Label
-                        </h4>
-                        <p style="color:#666; font-size:13px; margin-bottom:15px;">
-                          Upload a photo of the GPS device's label/sticker. We'll automatically extract <strong>IMEI</strong> and <strong>ICCID</strong> and fill them into the form below.
-                          <strong>Tip:</strong> Make sure the label text is clearly visible and well-lit.
-                        </p>
+                <div class="wizard-buttons">
+                  <div></div>
+                  <button type="button" class="btn btn-primary next-step" data-step="1">Next: Device Verification <i class="fa fa-arrow-right"></i></button>
+                </div>
+              </div>
 
-                        <div class="file-upload-wrapper">
-                          <div class="form-group" style="margin-bottom:0;">
-                            <input type="file" id="device_file" accept=".jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
-                          </div>
+              <!-- Step 2: Device Label Verification -->
+              <div class="wizard-content-step" id="wizard-step-2">
+                <div class="device-extract-card" style="background: linear-gradient(135deg, #f59e0b15 0%, #f59e0b08 100%); border: 2px dashed #f59e0b; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <h4 style="color:#333; margin-bottom:15px; font-weight:600;">
+                        <i class="fa fa-microchip" style="color:#f59e0b;margin-right:8px;"></i>Step 2: Scan Device Label
+                      </h4>
+                      <p style="color:#666; font-size:13px; margin-bottom:15px;">Upload a photo of the GPS device's label/sticker to extract IMEI and ICCID.</p>
+
+                      <div class="file-upload-wrapper">
+                        <div class="form-group" style="margin-bottom:0;">
+                          <input type="file" id="device_file" accept=".jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
                         </div>
+                      </div>
 
-                        <button class="btn btn-warning" type="button" id="extract-device-btn" style="margin-top:10px; background-color:#f59e0b; border-color:#f59e0b; color:#fff; padding:10px 30px; font-weight:500;">
-                          <i class="fa fa-search"></i> Scan & Extract IMEI/ICCID
-                        </button>
+                      <button class="btn btn-warning" type="button" id="extract-device-btn" style="margin-top:10px; background-color:#f59e0b; border-color:#f59e0b; color:#fff; padding:10px 30px; font-weight:500;">
+                        <i class="fa fa-search"></i> Scan & Extract IMEI/ICCID
+                      </button>
 
-                        <div id="device-extract-progress" style="display:none; margin-top:15px;">
-                          <p style="font-size:12px; color:#666; margin-bottom:8px;">Scanning device label...</p>
-                          <div class="progress" style="height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden;">
-                            <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%; background-color:#f59e0b; border-radius:3px;"></div>
-                          </div>
+                      <div id="device-extract-progress" style="display:none; margin-top:15px;">
+                        <p style="font-size:12px; color:#666; margin-bottom:8px;">Scanning device label...</p>
+                        <div class="progress" style="height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden;">
+                          <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%; background-color:#f59e0b; border-radius:3px;"></div>
                         </div>
+                      </div>
 
-                        <div id="device-extract-success" style="display:none; margin-top:15px;">
-                          <div class="alert alert-success alert-dismissible" style="margin:0;">
-                            <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
-                            <i class="fa fa-check-circle"></i> <strong>Extracted!</strong> <span id="device-success-message"></span>
-                          </div>
+                      <div id="device-extract-success" style="display:none; margin-top:15px;">
+                        <div class="alert alert-success alert-dismissible" style="margin:0;">
+                          <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                          <i class="fa fa-check-circle"></i> <strong>Extracted!</strong> <span id="device-success-message"></span>
                         </div>
+                      </div>
 
-                        <!-- SIM Profile Details (populated from GrowSpace API) -->
-                        <div id="sim-profiles-container" style="display:none; margin-top:15px; background:#fff; border-radius:8px; padding:18px; border:1px solid #fde68a;">
-                          <h5 style="color:#92400e; margin:0 0 12px 0; font-weight:600; font-size:14px;">
-                            <i class="fa fa-sim-card" style="margin-right:6px;"></i>SIM Profile Details
-                          </h5>
-                          <div id="sim-meta" style="font-size:12px; color:#64748b; margin-bottom:10px;"></div>
-                          <table id="sim-profiles-table" style="width:100%; border-collapse:collapse; font-size:13px;">
-                            <thead>
-                              <tr style="background:#fef3c7;">
-                                <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Slot</th>
-                                <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Operator</th>
-                                <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">MSISDN</th>
-                                <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">IMSI</th>
-                                <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Status</th>
-                                <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Activation Date</th>
-                                <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Expiry Date</th>
-                              </tr>
-                            </thead>
-                            <tbody id="sim-profiles-tbody"></tbody>
-                          </table>
-                        </div>
+                      <div id="sim-profiles-container" style="display:none; margin-top:15px; background:#fff; border-radius:8px; padding:18px; border:1px solid #fde68a;">
+                        <h5 style="color:#92400e; margin:0 0 12px 0; font-weight:600; font-size:14px;">
+                          <i class="fa fa-sim-card" style="margin-right:6px;"></i>SIM Profile Details
+                        </h5>
+                        <div id="sim-meta" style="font-size:12px; color:#64748b; margin-bottom:10px;"></div>
+                        <table id="sim-profiles-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+                          <thead>
+                            <tr style="background:#fef3c7;">
+                              <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Slot</th>
+                              <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Operator</th>
+                              <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">MSISDN</th>
+                              <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">IMSI</th>
+                              <th style="padding:8px 10px; text-align:left; font-weight:600; color:#92400e; border-bottom:1px solid #fde68a;">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody id="sim-profiles-tbody"></tbody>
+                        </table>
+                      </div>
 
-                        <div id="device-extract-error" style="display:none; margin-top:15px;">
-                          <div class="alert alert-danger alert-dismissible" style="margin:0;">
-                            <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
-                            <i class="fa fa-exclamation-circle"></i> <strong>Error:</strong> <span id="device-error-message"></span>
-                          </div>
+                      <div id="device-extract-error" style="display:none; margin-top:15px;">
+                        <div class="alert alert-danger alert-dismissible" style="margin:0;">
+                          <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                          <i class="fa fa-exclamation-circle"></i> <strong>Error:</strong> <span id="device-error-message"></span>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <form class="validator form-horizontal" id="certificate-details-form" method="post" action="/user/device/{{ $device->id }}/certificate/save" enctype="multipart/form-data">
-                    @csrf
+                <div class="wizard-buttons">
+                  <button type="button" class="btn btn-default prev-step" data-step="2"><i class="fa fa-arrow-left"></i> Previous</button>
+                  <button type="button" class="btn btn-primary next-step" data-step="2">Next: Certificate Info <i class="fa fa-arrow-right"></i></button>
+                </div>
+              </div>
+
+              <!-- Step 3: Certificate Information Form -->
+              <div class="wizard-content-step" id="wizard-step-3">
+                <form class="validator form-horizontal" id="certificate-details-form" method="post" action="/user/device/{{ $device->id }}/certificate/save" enctype="multipart/form-data">
+                  @csrf
+                  <div id="form-sections-container">
                     <!-- Certificate Details Section -->
                     <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:20px;">
                       <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
@@ -724,7 +840,6 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Registration Number <span class="require" style="color:#d32f2f;">*</span></label>
-                            {{-- Mirrors the canonical Vehicle Registration No (kept in sync via JS); display-only to avoid a duplicate submit field. --}}
                             <input class="form-control" type="text" id="owner_vehicle_reg_display" placeholder="Auto-filled from Vehicle Information" value="{{ old('vehicle_registration_no', $formData['vehicle_registration_no'] ?? '') }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
@@ -741,13 +856,13 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Registration No <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="vehicle_registration_no" placeholder="e.g., RJ18GB8351" value="{{ old('vehicle_registration_no', $formData['vehicle_registration_no'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="vehicle_registration_no" placeholder="e.g., RJ18GB8351" value="{{ old('vehicle_registration_no', $formData['vehicle_registration_no'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Chassis No <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="chassis_no" placeholder="Enter chassis number" value="{{ old('chassis_no', $formData['chassis_no'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="chassis_no" placeholder="Enter chassis number" value="{{ old('chassis_no', $formData['chassis_no'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
                           </div>
                         </div>
                       </div>
@@ -756,13 +871,13 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Engine No <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="engine_no" placeholder="Enter engine number" value="{{ old('engine_no', $formData['engine_no'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="engine_no" placeholder="Enter engine number" value="{{ old('engine_no', $formData['engine_no'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Color <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="color" placeholder="e.g., White, Black" value="{{ old('color', $formData['color'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="color" placeholder="e.g., White, Black" value="{{ old('color', $formData['color'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
                           </div>
                         </div>
                       </div>
@@ -771,24 +886,24 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Model <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="vehicle_model" placeholder="Enter vehicle model" value="{{ old('vehicle_model', $formData['vehicle_model'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="vehicle_model" placeholder="Enter vehicle model" value="{{ old('vehicle_model', $formData['vehicle_model'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Class</label>
-                            <input class="form-control" type="text" name="vehicle_class" placeholder="e.g., Truck, Bus" value="{{ old('vehicle_class', $formData['vehicle_class'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Class <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vehicle_class" placeholder="e.g., Truck, Bus" value="{{ old('vehicle_class', $formData['vehicle_class'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
                           </div>
                         </div>
                       </div>
 
                       <div class="form-group" style="margin-bottom:20px;">
-                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fuel Type</label>
-                        <input class="form-control" type="text" name="fuel_type" placeholder="Petrol/Diesel/CNG/Electric" value="{{ old('fuel_type', $formData['fuel_type'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fuel Type <span class="require" style="color:#d32f2f;">*</span></label>
+                        <input class="form-control" type="text" name="fuel_type" placeholder="Petrol/Diesel/CNG/Electric" value="{{ old('fuel_type', $formData['fuel_type'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
                       </div>
                     </div>
 
-                    <!-- Service Provider Section (placed before VLTD Device Information) -->
+                    <!-- Service Provider Section -->
                     <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
                       <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
                         <i class="fa fa-building" style="color:#76CF1C;margin-right:8px;"></i>Service Provider
@@ -796,19 +911,6 @@
 
                       <div class="form-group" style="margin-bottom:20px;">
                         <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Select Service Provider <span class="require" style="color:#d32f2f;">*</span></label>
-                        @php
-                          $savedProvider = $formData['service_provider'] ?? null;
-                          if (!$savedProvider && isset($formData['service_providers'])) {
-                            if (is_array($formData['service_providers'])) {
-                              $savedProvider = $formData['service_providers'][0] ?? null;
-                            } else {
-                              $savedProvider = $formData['service_providers'];
-                            }
-                          }
-                          $selectedProvider = old('service_provider', $savedProvider);
-                        @endphp
-                        {{-- Service provider is locked to Growspace for now: pre-selected and not changeable. --}}
-                        {{-- The disabled <select> below is for display only; the hidden input carries the value on submit. --}}
                         <input type="hidden" name="service_provider" value="Growspace">
                         <select id="serviceProvidersSelect" disabled style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f5f5f5; cursor:not-allowed;">
                           <option value="Growspace" selected>Growspace</option>
@@ -827,7 +929,6 @@
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
                               VLTD Serial No <span class="require" style="color:#d32f2f;">*</span>
-                              <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— auto-generated, unique</span>
                             </label>
                             <input class="form-control" type="text" name="vltd_serial_no" id="vltd_serial_no_input" placeholder="Auto-generated serial number" value="{{ old('vltd_serial_no', $formData['vltd_serial_no'] ?? '') }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f8f8f8; font-family: monospace; letter-spacing: 1px;" />
                           </div>
@@ -851,76 +952,13 @@
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
                               VLTD ICCID
-                              <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— auto-populated from device label scan only</span>
                             </label>
                             <input class="form-control" type="text" name="vltd_icc_id" id="vltd_icc_id_input" placeholder="Auto-fetched from device label" value="{{ old('vltd_icc_id', $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? '')) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f8f8f8;" />
                           </div>
                         </div>
                       </div>
+                    </div>
 
-                      <!-- SIM Profile Details (auto-filled from device label scan) -->
-                      <div class="row" id="sim-form-row" style="{{ !empty($formData['sim1_operator']) ? '' : 'display:none;' }}">
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
-                              <i class="fa fa-sim-card" style="color:#76CF1C;margin-right:6px;"></i>SIM 1 Operator
-                            </label>
-                            <input class="form-control" type="text" name="sim1_operator" placeholder="e.g., Airtel" value="{{ old('sim1_operator', $formData['sim1_operator'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
-                          </div>
-                        </div>
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">SIM 1 MSISDN</label>
-                            <input class="form-control" type="text" name="sim1_msisdn" placeholder="Phone number" value="{{ old('sim1_msisdn', $formData['sim1_msisdn'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
-                          </div>
-                        </div>
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
-                              <i class="fa fa-sim-card" style="color:#76CF1C;margin-right:6px;"></i>SIM 2 Operator
-                            </label>
-                            <input class="form-control" type="text" name="sim2_operator" placeholder="e.g., BSNL" value="{{ old('sim2_operator', $formData['sim2_operator'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
-                          </div>
-                        </div>
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">SIM 2 MSISDN</label>
-                            <input class="form-control" type="text" name="sim2_msisdn" placeholder="Phone number" value="{{ old('sim2_msisdn', $formData['sim2_msisdn'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
-                          </div>
-                        </div>
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
-                              <i class="fa fa-calendar" style="color:#76CF1C;margin-right:6px;"></i>SIM 1 Activation Date <span style="font-weight:400; color:#94a3b8; font-size:11px;">(from API)</span>
-                            </label>
-                            <input class="form-control" type="text" name="sim1_activation_date" placeholder="Auto-fetched from SIM API" value="{{ old('sim1_activation_date', $formData['sim1_activation_date'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8fafc;" readonly />
-                          </div>
-                        </div>
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
-                              <i class="fa fa-calendar" style="color:#76CF1C;margin-right:6px;"></i>SIM 1 Expiry Date <span style="font-weight:400; color:#94a3b8; font-size:11px;">(from API)</span>
-                            </label>
-                            <input class="form-control" type="text" name="sim1_expiry_date" placeholder="Auto-fetched from SIM API" value="{{ old('sim1_expiry_date', $formData['sim1_expiry_date'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8fafc;" readonly />
-                          </div>
-                        </div>
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
-                              <i class="fa fa-calendar" style="color:#76CF1C;margin-right:6px;"></i>SIM 2 Activation Date <span style="font-weight:400; color:#94a3b8; font-size:11px;">(from API)</span>
-                            </label>
-                            <input class="form-control" type="text" name="sim2_activation_date" placeholder="Auto-fetched from SIM API" value="{{ old('sim2_activation_date', $formData['sim2_activation_date'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8fafc;" readonly />
-                          </div>
-                        </div>
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
-                              <i class="fa fa-calendar" style="color:#76CF1C;margin-right:6px;"></i>SIM 2 Expiry Date <span style="font-weight:400; color:#94a3b8; font-size:11px;">(from API)</span>
-                            </label>
-                            <input class="form-control" type="text" name="sim2_expiry_date" placeholder="Auto-fetched from SIM API" value="{{ old('sim2_expiry_date', $formData['sim2_expiry_date'] ?? '') }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8fafc;" readonly />
-                          </div>
-                        </div>
-                      </div>
                     <!-- Device Details Section -->
                     <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
                       <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
@@ -937,7 +975,6 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">ICCID Number <span class="require" style="color:#d32f2f;">*</span></label>
-                            {{-- Mirrors the canonical VLTD ICCID field (kept in sync via JS). --}}
                             <input class="form-control" type="text" name="device_iccid" id="device_iccid_display" value="{{ old('device_iccid', $formData['device_iccid'] ?? $autoIccid) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
@@ -954,16 +991,13 @@
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vendor ID <span class="require" style="color:#d32f2f;">*</span></label>
                             <input class="form-control" type="text" name="vendor_id" value="{{ old('vendor_id', $autoVendorId) }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
-                            <small class="form-text text-muted" style="color:#94a3b8;">
-                              <i class="fa fa-info-circle"></i> Auto-populated from device configuration.
-                            </small>
                           </div>
                         </div>
                       </div>
 
                       <div class="form-group" style="margin-bottom:20px;">
                         <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Firmware Version <span style="font-weight:400; color:#94a3b8; font-size:11px;">(if applicable)</span></label>
-                        <input class="form-control" type="text" name="firmware_version" placeholder="e.g., v1.2.3" value="{{ old('firmware_version', $autoFirmware) }}" style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                        <input class="form-control" type="text" name="firmware_version" placeholder="e.g., v1.2.3" value="{{ old('firmware_version', $autoFirmware) }}" readonly disabled style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8fafc; color:#64748b;" />
                       </div>
                     </div>
 
@@ -990,24 +1024,34 @@
                       </div>
                     </div>
                     @endif
+                  </div>
 
-                    <!-- Action Buttons -->
-                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
-                      <div class="form-group" style="margin-bottom:0;">
-                        <div class="col-lg-12 text-right">
-                          <button class="btn btn-default" type="reset" style="margin-right:10px; border-radius:4px; padding:10px 30px;">
-                            <i class="fa fa-times"></i> Reset
-                          </button>
-                          <button class="btn btn-info" type="button" id="preview-cert-btn" style="margin-right:10px; background-color:#0891b2; border-color:#0891b2; color:#fff; border-radius:4px; padding:10px 30px; font-weight:500;">
-                            <i class="fa fa-eye"></i> Preview Certificate
-                          </button>
-                          <button class="btn btn-primary" type="submit" style="background-color:#76CF1C; border-color:#76CF1C; color:#fff; border-radius:4px; padding:10px 30px; font-weight:500;">
-                            <i class="fa fa-save"></i> Save &amp; View Certificate
-                          </button>
-                        </div>
-                      </div>
+                  <div class="wizard-buttons">
+                    <button type="button" class="btn btn-default prev-step" data-step="3"><i class="fa fa-arrow-left"></i> Previous</button>
+                    <button type="button" class="btn btn-primary next-step" data-step="3">Next: Preview & Generate <i class="fa fa-arrow-right"></i></button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Step 4: Preview & Generate -->
+              <div class="wizard-content-step" id="wizard-step-4">
+                <div class="preview-container" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+                  <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                    <i class="fa fa-eye" style="color:#76CF1C;margin-right:8px;"></i>Step 4: Certificate Preview
+                  </h4>
+                  <div id="certificate-preview-frame" style="height: 70vh; width: 100%; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center;">
+                    <div class="text-center">
+                      <i class="fa fa-spinner fa-spin fa-3x" style="color:#76CF1C; margin-bottom:15px;"></i>
+                      <p>Generating preview...</p>
                     </div>
-                  </form>
+                  </div>
+                </div>
+
+                <div class="wizard-buttons">
+                  <button type="button" class="btn btn-default prev-step" data-step="4"><i class="fa fa-arrow-left"></i> Previous</button>
+                  <button type="button" class="btn btn-success" id="final-generate-btn" style="background-color:#76CF1C; border-color:#76CF1C; color:#fff; padding:10px 40px; font-weight:700;">
+                    <i class="fa fa-certificate"></i> GENERATE CERTIFICATE
+                  </button>
                 </div>
               </div>
             @endif
@@ -1081,6 +1125,125 @@
     } else {
       console.log('Serial already has value:', $serialInput.val());
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // WIZARD NAVIGATION LOGIC
+    // ═══════════════════════════════════════════════════════════════════
+    let currentStep = 1;
+
+    function showStep(step) {
+      $('.wizard-content-step').removeClass('active');
+      $('#wizard-step-' + step).addClass('active');
+
+      $('.wizard-step').removeClass('active completed');
+      for (let i = 1; i <= 4; i++) {
+        const $indicator = $('#step-indicator-' + i);
+        if (i < step) {
+          $indicator.addClass('completed');
+        } else if (i === step) {
+          $indicator.addClass('active');
+        }
+      }
+
+      // If entering Step 4, trigger preview
+      if (step === 4) {
+        generatePreview();
+      }
+
+      currentStep = step;
+      window.scrollTo(0, 0);
+    }
+
+    function validateStep(step) {
+      const state = window.verificationState;
+      const issues = [];
+
+      if (step === 1) {
+        if (state.rc_extracted === null) {
+          issues.push('Please upload and extract details from the RC document first.');
+        } else if (state.rc_extracted === false) {
+          issues.push('RC document verification failed or incomplete. Please upload a clearer image.');
+        }
+
+        if (state.plate_verified === null) {
+          issues.push('Please verify the vehicle number plate before proceeding.');
+        } else if (state.plate_verified === false) {
+          issues.push('Number plate verification failed. The plate must match the RC registration number.');
+        }
+      } else if (step === 2) {
+        if (state.device_verified === null) {
+          issues.push('Please scan the device label before proceeding.');
+        } else if (state.device_verified === false) {
+          issues.push('Device verification failed. The scanned IMEI must match the assigned device.');
+        }
+      } else if (step === 3) {
+        const form = document.getElementById('certificate-details-form');
+        if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+          return false;
+        }
+
+        const ownerName = $('input[name="owner_name"]').val() || '';
+        const ownerAddress = $('textarea[name="owner_address"]').val() || '';
+        if (!ownerName.trim()) issues.push('Owner Name is required.');
+        if (!ownerAddress.trim()) issues.push('Owner Address is required.');
+      }
+
+      if (issues.length > 0) {
+        showBlockingError(issues);
+        return false;
+      }
+
+      showBlockingError([]);
+      return true;
+    }
+
+    $('.next-step').on('click', function() {
+      const step = $(this).data('step');
+      if (validateStep(step)) {
+        showStep(step + 1);
+      }
+    });
+
+    $('.prev-step').on('click', function() {
+      const step = $(this).data('step');
+      showStep(step - 1);
+    });
+
+    function generatePreview() {
+      const $frame = $('#certificate-preview-frame');
+      $frame.html('<div class="text-center"><i class="fa fa-spinner fa-spin fa-3x" style="color:#76CF1C; margin-bottom:15px;"></i><p>Generating certificate preview...</p></div>');
+
+      const form = document.getElementById('certificate-details-form');
+      const formData = new FormData(form);
+
+      $.ajax({
+        url: '/user/device/{{ $device->id }}/certificate/preview',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        xhrFields: {
+          responseType: 'blob'
+        },
+        timeout: 15000,
+        success: function(blob) {
+          // Create a local URL for the PDF blob
+          const url = URL.createObjectURL(blob);
+          $frame.html('<iframe src="' + url + '" style="width:100%; height:100%; border:none; background:#fff;"></iframe>');
+        },
+        error: function(xhr, status, error) {
+          console.error('Preview error:', {status, error, response: xhr.responseText});
+          $frame.html('<div class="alert alert-danger"><strong>Error generating preview.</strong><br>Please ensure all required fields are filled correctly and try again.</div>');
+        }
+      });
+    }
+
+    $('#final-generate-btn').on('click', function() {
+      $('#certificate-details-form').submit();
+    });
 
     // ═══════════════════════════════════════════════════════════════════
     // VERIFICATION STATE — tracks the result of each verification step
@@ -1332,6 +1495,9 @@
         console.log('RC extracted data:', finalData);
         if (finalData) populateFormFields(finalData);
 
+          // Show number plate section after successful RC extraction
+          $('#number-plate-section').fadeIn();
+
         // ── Data extraction validation (on the merged front+back result) ──
         // Every mandatory RC field (marked * on the form) must be present
         // before the user can proceed.
@@ -1577,16 +1743,14 @@
           if (sims.length > 0) {
             const $tbody = $('#sim-profiles-tbody');
             sims.forEach(function(sim, idx) {
-              const slot           = sim.profile_slot || (idx + 1);
-              const operator       = sim.operator     || '—';
-              const msisdn         = sim.msisdn       || '—';
-              const imsi           = sim.imsi         || '—';
-              const status         = sim.status       || '—';
-              const activationDate = sim.activation_date || '—';
-              const expiryDate     = sim.expiry_date  || '—';
-              const statusColor    = (status.toLowerCase() === 'active') ? '#16a34a'
-                                  : (status.toLowerCase() === 'provisioned') ? '#0891b2'
-                                  : '#64748b';
+              const slot        = sim.profile_slot || (idx + 1);
+              const operator    = sim.operator     || '—';
+              const msisdn      = sim.msisdn       || '—';
+              const imsi        = sim.imsi         || '—';
+              const status      = sim.status       || '—';
+              const statusColor = (status.toLowerCase() === 'active') ? '#16a34a'
+                                : (status.toLowerCase() === 'provisioned') ? '#0891b2'
+                                : '#64748b';
 
               $tbody.append(
                 '<tr style="border-bottom:1px solid #fef3c7;">' +
@@ -1595,8 +1759,6 @@
                   '<td style="padding:10px; font-family:monospace;">' + msisdn + '</td>' +
                   '<td style="padding:10px; font-family:monospace; color:#64748b;">' + imsi + '</td>' +
                   '<td style="padding:10px;"><span style="background:' + statusColor + '20; color:' + statusColor + '; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:600;">' + status + '</span></td>' +
-                  '<td style="padding:10px; color:#64748b;">' + activationDate + '</td>' +
-                  '<td style="padding:10px; color:#64748b;">' + expiryDate + '</td>' +
                 '</tr>'
               );
 
@@ -1604,13 +1766,22 @@
               if (idx < 2) {
                 const opField       = $('#certificate-details-form input[name="sim' + (idx + 1) + '_operator"]');
                 const msField       = $('#certificate-details-form input[name="sim' + (idx + 1) + '_msisdn"]');
-                const activationField = $('#certificate-details-form input[name="sim' + (idx + 1) + '_activation_date"]');
-                const expiryField   = $('#certificate-details-form input[name="sim' + (idx + 1) + '_expiry_date"]');
 
                 if (opField.length && sim.operator) opField.val(sim.operator).change();
                 if (msField.length && sim.msisdn)   msField.val(sim.msisdn).change();
-                if (activationField.length && sim.activation_date) activationField.val(sim.activation_date).change();
-                if (expiryField.length && sim.expiry_date)   expiryField.val(sim.expiry_date).change();
+              }
+
+              // Populate activation and expiry dates from the top-level response fields (only once)
+              if (idx === 0) {
+                const activationField = $('#certificate-details-form input[name="activation_date"]');
+                const expiryField = $('#certificate-details-form input[name="expiry_date"]');
+
+                if (activationField.length && response.activation_date) {
+                  activationField.val(response.activation_date).change();
+                }
+                if (expiryField.length && response.expiry_date) {
+                  expiryField.val(response.expiry_date).change();
+                }
               }
             });
 
@@ -1618,8 +1789,11 @@
             $('#sim-form-row').show();
 
             let meta = [];
-            if (response.organization) meta.push('Org: <strong>' + response.organization + '</strong>');
-            if (response.plan_status)  meta.push('Plan: <strong>' + response.plan_status + '</strong>');
+            if (response.organization)    meta.push('Org: <strong>' + response.organization + '</strong>');
+            if (response.plan_status)     meta.push('Plan: <strong>' + response.plan_status + '</strong>');
+            if (response.activation_date) meta.push('Activated: <strong>' + response.activation_date + '</strong>');
+            if (response.expiry_date)     meta.push('Expires: <strong>' + response.expiry_date + '</strong>');
+            
             $('#sim-meta').html(meta.join(' &nbsp;·&nbsp; '));
             $('#sim-profiles-container').show();
           }

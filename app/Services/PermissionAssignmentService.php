@@ -285,6 +285,9 @@ class PermissionAssignmentService
 
         $permissionIds = array_values(array_unique(array_map('intval', $permissionIds)));
 
+        // Apply permission dependencies: add parent permissions if child is being added
+        $permissionIds = $this->applyDependencies($permissionIds);
+
         if ($assigningUser && $assigningUser->user_type !== 'Admin') {
             $assignablePermissionIds = $this->getEffectiveAssignedPermissionIds($assigningUser);
             $disallowedPermissionIds = array_values(array_diff($permissionIds, $assignablePermissionIds));
@@ -326,18 +329,21 @@ class PermissionAssignmentService
         $toAdd    = array_values(array_diff($permissionIds, $currentPermIds));
         $toRemove = array_values(array_diff($currentPermIds, $permissionIds));
 
+        // When removing a permission, also remove all dependent permissions (children)
+        $toRemoveWithDependents = $this->getPermissionsWithDependents($toRemove);
+
         try {
             // --- Single atomic sync: delete removed, insert added ---
             DB::beginTransaction();
 
-            if (!empty($toRemove)) {
+            if (!empty($toRemoveWithDependents)) {
                 DB::table('user_permissions')
                     ->where('user_id', $targetUser->id)
-                    ->whereIn('permission_id', $toRemove)
+                    ->whereIn('permission_id', $toRemoveWithDependents)
                     ->delete();
 
                 // Cascade removal to ALL descendants for each revoked permission
-                foreach ($toRemove as $permId) {
+                foreach ($toRemoveWithDependents as $permId) {
                     $this->cascadeRevokeById($targetUser->id, $permId);
                 }
             }
@@ -375,7 +381,7 @@ class PermissionAssignmentService
                 $perm = Permission::find($permId);
                 if ($perm) PermissionAuditLog::log($targetUser, $perm, 'assigned', $assigningUser, 'Bulk sync');
             }
-            foreach ($toRemove as $permId) {
+            foreach ($toRemoveWithDependents as $permId) {
                 $perm = Permission::find($permId);
                 if ($perm) PermissionAuditLog::log($targetUser, $perm, 'revoked', $assigningUser, 'Bulk sync');
             }
@@ -387,7 +393,7 @@ class PermissionAssignmentService
             'success' => true,
             'message' => 'Permissions synced successfully',
             'added'   => count($toAdd),
-            'removed' => count($toRemove),
+            'removed' => count($toRemoveWithDependents),
         ];
     }
 
@@ -500,5 +506,55 @@ class PermissionAssignmentService
             ->with('permission', 'assignedBy')
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * Apply permission dependencies: if a child is being added, ensure parent is also added
+     * @param array $permissionIds
+     * @return array Updated permission IDs with parents included
+     */
+    private function applyDependencies(array $permissionIds): array
+    {
+        $permissionsToAdd = [];
+
+        foreach ($permissionIds as $permId) {
+            $permissionsToAdd[] = $permId;
+
+            // Get the permission and all its parents
+            $permission = Permission::find($permId);
+            if ($permission && $permission->hasParent()) {
+                $parent = $permission->parent;
+                while ($parent) {
+                    if (!in_array($parent->id, $permissionsToAdd)) {
+                        $permissionsToAdd[] = $parent->id;
+                    }
+                    $parent = $parent->parent;
+                }
+            }
+        }
+
+        return array_values(array_unique($permissionsToAdd));
+    }
+
+    /**
+     * Get permissions with all their dependent children
+     * @param array $permissionIds
+     * @return array All permission IDs including dependent children
+     */
+    private function getPermissionsWithDependents(array $permissionIds): array
+    {
+        $allIds = [];
+
+        foreach ($permissionIds as $permId) {
+            $allIds[] = $permId;
+
+            $permission = Permission::find($permId);
+            if ($permission) {
+                $dependentIds = $permission->getDependentPermissionIds();
+                $allIds = array_merge($allIds, $dependentIds);
+            }
+        }
+
+        return array_values(array_unique($allIds));
     }
 }

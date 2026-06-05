@@ -88,10 +88,12 @@ class GoogleVisionRCService
     {
         $client = null;
         try {
-            $imageContent = file_get_contents($imagePath);
-            if ($imageContent === false) {
-                throw new Exception('Could not read image file.');
+            // Read, scale down to max 1600px, and compress to JPEG 75% to optimize upload size
+            $img = $this->imageManager->read($imagePath);
+            if ($img->width() > 1600 || $img->height() > 1600) {
+                $img->scale(width: 1600, height: 1600);
             }
+            $imageContent = (string) $img->toJpeg(quality: 75);
 
             // Build the image object
             $image = new Image();
@@ -110,9 +112,11 @@ class GoogleVisionRCService
             $batchRequest = new BatchAnnotateImagesRequest();
             $batchRequest->setRequests([$annotateRequest]);
 
-            // Call the API
+            // Call the API with a timeout to prevent hanging on localhost network issues
             $client = $this->getClient();
-            $batchResponse = $client->batchAnnotateImages($batchRequest);
+            $batchResponse = $client->batchAnnotateImages($batchRequest, [
+                'timeoutMillis' => 15000,
+            ]);
 
             // Get first response
             $responses = $batchResponse->getResponses();
@@ -965,10 +969,12 @@ class GoogleVisionRCService
                 throw new Exception('Plate image not found: ' . $imagePath);
             }
 
-            $imageContent = file_get_contents($imagePath);
-            if ($imageContent === false) {
-                throw new Exception('Could not read plate image.');
+            // Read, scale down to max 1200px, and compress to JPEG 75% to optimize upload size
+            $img = $this->imageManager->read($imagePath);
+            if ($img->width() > 1200 || $img->height() > 1200) {
+                $img->scale(width: 1200, height: 1200);
             }
+            $imageContent = (string) $img->toJpeg(quality: 75);
 
             $image = new Image();
             $image->setContent($imageContent);
@@ -984,7 +990,9 @@ class GoogleVisionRCService
             $batchRequest->setRequests([$annotateRequest]);
 
             $client = $this->getClient();
-            $batchResponse = $client->batchAnnotateImages($batchRequest);
+            $batchResponse = $client->batchAnnotateImages($batchRequest, [
+                'timeoutMillis' => 15000,
+            ]);
             $responses = $batchResponse->getResponses();
 
             if (empty($responses)) return $result;
@@ -1007,15 +1015,21 @@ class GoogleVisionRCService
             // Remove any whitespace, dashes, dots between plate parts
             $compact = preg_replace('~[\s\-\.]+~', '', $combined);
 
-            // Indian plate format: 2 letters + 1-2 digits + 1-3 letters + 1-4 digits
-            if (preg_match('~([A-Z]{2}\d{1,2}[A-Z]{1,3}\d{1,4})~', $compact, $m)) {
+            // Indian plate format: 2 letters + 1-2 digits + 0-3 letters + 1-4 digits
+            if (preg_match('~([A-Z]{2}\d{1,2}[A-Z]{0,3}\d{1,4})~', $compact, $m)) {
                 $result['plate'] = $m[1];
                 return $result;
             }
 
-            // Fallback: try with spaces allowed
-            if (preg_match('~([A-Z]{2}\s*\d{1,2}\s*[A-Z]{1,3}\s*\d{1,4})~', $combined, $m)) {
-                $result['plate'] = preg_replace('~\s+~', '', $m[1]);
+            // Fallback: try with spaces allowed, making middle letters optional
+            if (preg_match('~([A-Z]{2}\s*\d{1,2}\s*[A-Z]{0,3}\s*\d{1,4})~', $combined, $m)) {
+                $result['plate'] = preg_replace('~[\s\-\.]+~', '', $m[1]);
+                return $result;
+            }
+
+            // Ultimate Fallback: Any sequence of 7-10 alphanumeric characters starting with 2 letters and ending with 2-4 digits
+            if (preg_match('~([A-Z]{2}[A-Z0-9]{3,8}\d{2,4})~', $compact, $m)) {
+                $result['plate'] = $m[1];
                 return $result;
             }
 
@@ -1056,10 +1070,12 @@ class GoogleVisionRCService
                 throw new Exception('Device image not found: ' . $imagePath);
             }
 
-            $imageContent = file_get_contents($imagePath);
-            if ($imageContent === false) {
-                throw new Exception('Could not read device image.');
+            // Read, scale down to max 1200px, and compress to JPEG 75% to optimize upload size
+            $img = $this->imageManager->read($imagePath);
+            if ($img->width() > 1200 || $img->height() > 1200) {
+                $img->scale(width: 1200, height: 1200);
             }
+            $imageContent = (string) $img->toJpeg(quality: 75);
 
             $image = new Image();
             $image->setContent($imageContent);
@@ -1075,7 +1091,9 @@ class GoogleVisionRCService
             $batchRequest->setRequests([$annotateRequest]);
 
             $client = $this->getClient();
-            $batchResponse = $client->batchAnnotateImages($batchRequest);
+            $batchResponse = $client->batchAnnotateImages($batchRequest, [
+                'timeoutMillis' => 15000,
+            ]);
             $responses = $batchResponse->getResponses();
 
             if (empty($responses)) {

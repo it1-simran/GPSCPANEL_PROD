@@ -846,10 +846,13 @@ class DeviceCategoryController extends Controller
                 $oldConfig['firmware_id'] = $firmware->id;
                 $oldConfig['firmware_file'] = $newFirmware['filename'];
                 $oldConfig['firmware_version'] = $newFirmware['version'];
+                $result = $oldConfig;
                 if (isset($oldConfig['template'])) {
                     $oldTemplate = Template::select('*')->where('id', $oldConfig['template'])->first();
 
-                    $result = array_diff_key($oldConfig, json_decode($oldTemplate->configurations, true));
+                    if ($oldTemplate) {
+                        $result = array_diff_key($oldConfig, json_decode($oldTemplate->configurations, true));
+                    }
                 }
                 $config = json_decode($default_template->configurations, true);
 

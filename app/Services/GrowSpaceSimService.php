@@ -92,10 +92,12 @@ class GrowSpaceSimService
             usort($sims, fn($a, $b) => ($a['profile_slot'] ?? 99) <=> ($b['profile_slot'] ?? 99));
 
             return [
-                'iccid'        => $record['iccid']            ?? $iccid,
-                'plan_status'  => $record['planStatus']       ?? null,
-                'organization' => $record['organizationName'] ?? null,
-                'sims'         => $sims,
+                'iccid'           => $record['iccid']            ?? $iccid,
+                'plan_status'     => $record['planStatus']       ?? null,
+                'organization'    => $record['organizationName'] ?? null,
+                'activation_date' => $record['activationDate']   ?? null,
+                'expiry_date'     => $record['expiryDate']       ?? null,
+                'sims'            => $sims,
             ];
 
         } catch (Exception $e) {
@@ -112,10 +114,12 @@ class GrowSpaceSimService
     protected function emptyResult(?string $iccid = null): array
     {
         return [
-            'iccid'        => $iccid,
-            'plan_status'  => null,
-            'organization' => null,
-            'sims'         => [],
+            'iccid'           => $iccid,
+            'plan_status'     => null,
+            'organization'    => null,
+            'activation_date' => null,
+            'expiry_date'     => null,
+            'sims'            => [],
         ];
     }
 }

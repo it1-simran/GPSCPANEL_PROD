@@ -322,6 +322,9 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
         Route::get('/admin/permissions/user/{userId}', [PermissionManagementController::class, 'getUserPermissions']);
         Route::post('/admin/permissions/user/{userId}/update', [PermissionManagementController::class, 'updateUserPermissions']);
 
+        // Permission dependencies
+        Route::get('/admin/permissions/dependencies/get', [PermissionManagementController::class, 'getPermissionDependencies']);
+
         // Generic reseller routes
         Route::get('/admin/permissions/{resellerId}', [PermissionManagementController::class, 'getResellerPermissions']);
         Route::post('/admin/permissions/{resellerId}/update', [PermissionManagementController::class, 'updateResellerPermissions']);

@@ -511,4 +511,37 @@ class PermissionManagementController extends Controller
             'modules' => $modules
         ]);
     }
+
+    /**
+     * Get permission dependencies
+     * Returns parent-child relationships for permissions
+     */
+    public function getPermissionDependencies()
+    {
+        $permissions = Permission::where('is_active', 1)->get();
+
+        $dependencies = [];
+        foreach ($permissions as $permission) {
+            $parentId = $permission->parent_permission_id;
+            if ($parentId) {
+                $dependencies[$permission->id] = $parentId;
+            }
+        }
+
+        // Also get inverse: which permissions depend on each permission
+        $dependents = [];
+        foreach ($permissions as $permission) {
+            if ($permission->parent_permission_id) {
+                if (!isset($dependents[$permission->parent_permission_id])) {
+                    $dependents[$permission->parent_permission_id] = [];
+                }
+                $dependents[$permission->parent_permission_id][] = $permission->id;
+            }
+        }
+
+        return response()->json([
+            'dependencies' => $dependencies,  // child_id => parent_id
+            'dependents' => $dependents       // parent_id => [child_id, ...]
+        ]);
+    }
 }

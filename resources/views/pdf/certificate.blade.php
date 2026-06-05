@@ -5,12 +5,14 @@
   <meta charset="UTF-8">
   <title>VLTD Fitment Certificate</title>
   <style>
-    @page { margin: 10px 14px; }
+    @page { margin: 8px 10px; }
 
     body {
       font-family: DejaVu Sans, sans-serif;
-      font-size: 9px;
+      font-size: 8.5px;
       color: #1a1a1a;
+      margin: 0;
+      padding: 0;
     }
 
     .page {
@@ -22,63 +24,69 @@
     .header {
       background: #76CF1C;
       color: #ffffff;
-      padding: 7px 12px;
+      padding: 5px 10px;
     }
     .header table { width: 100%; border-collapse: collapse; }
     .company {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.3px;
+      margin: 0;
     }
     .cert-title {
-      font-size: 9.5px;
-      margin-top: 2px;
+      font-size: 8.5px;
+      margin: 1px 0 0 0;
       color: #eafad9;
+      line-height: 1.2;
     }
-    .qr-cell { text-align: right; width: 66px; vertical-align: top; }
+    .qr-cell { text-align: right; width: 60px; vertical-align: top; }
     .qr {
-      width: 58px; height: 58px;
+      width: 50px; height: 50px;
       background: #fff; border: 2px solid #fff;
     }
 
     .meta-bar {
       background: #eef7e0;
       border-bottom: 1px solid #cfe3b5;
-      padding: 4px 12px;
-      font-size: 9px;
+      padding: 3px 10px;
+      font-size: 8px;
     }
     .meta-bar table { width: 100%; }
     .meta-bar .bold { font-weight: bold; }
 
-    .content { padding: 8px 12px 6px 12px; }
+    .content { padding: 5px 10px 4px 10px; }
 
     .intro {
-      line-height: 1.35;
-      margin-bottom: 6px;
+      line-height: 1.3;
+      margin-bottom: 4px;
       text-align: justify;
+      font-size: 8px;
     }
 
     /* ── Section ──────────────────────────────────────────── */
-    .section { margin-top: 6px; }
+    .section { margin-top: 3px; }
     .section-title {
       background: #76CF1C;
       color: #fff;
       font-weight: bold;
-      font-size: 9.5px;
-      padding: 3px 8px;
+      font-size: 8.5px;
+      padding: 2px 6px;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
+      margin: 0;
     }
     table.detail {
       width: 100%;
       border-collapse: collapse;
       border: 1px solid #cfe3b5;
       border-top: none;
+      margin: 0;
     }
     table.detail td {
       border: 1px solid #cfe3b5;
-      padding: 3px 7px;
+      padding: 2px 5px;
       vertical-align: top;
+      font-size: 8px;
     }
     td.label {
       background: #eef7e0;
@@ -89,16 +97,16 @@
     td.value { width: 28%; }
 
     /* ── Images ───────────────────────────────────────────── */
-    table.images { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    table.images { width: 100%; border-collapse: collapse; margin: 3px 0 0 0; }
     table.images td {
       text-align: center;
       vertical-align: middle;
-      padding: 8px;
+      padding: 4px;
       border: 1px solid #cfe3b5;
     }
     .img-frame {
       width: 100%;
-      height: 200px;
+      height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -106,37 +114,37 @@
     }
     .img-frame img {
       max-width: 95%;
-      max-height: 195px;
+      max-height: 115px;
       object-fit: contain;
     }
     .img-cap {
-      font-size: 9px;
+      font-size: 7.5px;
       font-weight: bold;
       color: #3f6f0e;
-      margin-top: 6px;
+      margin: 3px 0 0 0;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     }
     .img-missing {
       color: #9aa7b4;
-      font-size: 9px;
+      font-size: 7.5px;
       font-style: italic;
     }
 
     /* ── SIM table ────────────────────────────────────────── */
-    table.sim { width: 100%; border-collapse: collapse; border: 1px solid #cfe3b5; border-top: none; }
-    table.sim th, table.sim td { border: 1px solid #cfe3b5; padding: 3px 7px; text-align: left; font-size: 9px; }
+    table.sim { width: 100%; border-collapse: collapse; border: 1px solid #cfe3b5; border-top: none; margin: 0; }
+    table.sim th, table.sim td { border: 1px solid #cfe3b5; padding: 2px 5px; text-align: left; font-size: 7.5px; }
     table.sim th { background: #eef7e0; color: #3f6f0e; }
 
     /* ── Footer ───────────────────────────────────────────── */
     .footer {
-      margin-top: 8px;
-      padding: 0 4px;
+      margin-top: 4px;
+      padding: 0 3px;
     }
     .footer table { width: 100%; }
     .sign-box { text-align: right; vertical-align: bottom; }
-    .sign-line { border-top: 1px solid #1a1a1a; width: 160px; margin-left: auto; padding-top: 2px; }
-    .note { margin-top: 7px; font-size: 8px; color: #6b7785; text-align: center; }
+    .sign-line { border-top: 1px solid #1a1a1a; width: 140px; margin-left: auto; padding-top: 1px; }
+    .note { margin-top: 3px; font-size: 7px; color: #6b7785; text-align: center; }
     .bold { font-weight: bold; }
     .u { text-decoration: underline; }
   </style>
@@ -219,19 +227,53 @@
         </table>
       </div>
 
-      @if(!empty($sim1_operator) || !empty($sim1_msisdn) || !empty($sim2_operator) || !empty($sim2_msisdn))
-      <!-- SIM Profile Details -->
+      @if(!empty($sim1_operator) || !empty($sim1_msisdn) || !empty($sim2_operator) || !empty($sim2_msisdn) || !empty($organization_name) || !empty($plan_status))
+      <!-- SIM & Plan Information -->
       <div class="section">
-        <div class="section-title">SIM Profile Details</div>
-        <table class="sim">
-          <tr><th>Slot</th><th>Operator</th><th>MSISDN</th><th>Activation Date</th><th>Expiry Date</th></tr>
-          @if(!empty($sim1_operator) || !empty($sim1_msisdn))
-          <tr><td>SIM 1</td><td>{{ $sim1_operator ?? '—' }}</td><td>{{ $sim1_msisdn ?? '—' }}</td><td>{{ $sim1_activation_date ?? '—' }}</td><td>{{ $sim1_expiry_date ?? '—' }}</td></tr>
-          @endif
-          @if(!empty($sim2_operator) || !empty($sim2_msisdn))
-          <tr><td>SIM 2</td><td>{{ $sim2_operator ?? '—' }}</td><td>{{ $sim2_msisdn ?? '—' }}</td><td>{{ $sim2_activation_date ?? '—' }}</td><td>{{ $sim2_expiry_date ?? '—' }}</td></tr>
-          @endif
+        <div class="section-title">SIM & Plan Information</div>
+
+        <!-- Plan Level Details -->
+        <table class="detail">
+          <tr>
+            <td class="label">Organization</td><td class="value">{{ $organization_name ?? '—' }}</td>
+            <td class="label">Plan Status</td><td class="value">{{ $plan_status ?? '—' }}</td>
+          </tr>
+          <tr>
+            <td class="label">Activation Date</td><td class="value">{{ $sim1_activation_date ?? '—' }}</td>
+            <td class="label">Expiry Date</td><td class="value">{{ $sim1_expiry_date ?? '—' }}</td>
+          </tr>
         </table>
+
+        <!-- SIM Profile Details Table -->
+        <div style="margin-top: 6px;">
+          <table class="sim">
+            <tr>
+              <th>Slot</th>
+              <th>Operator</th>
+              <th>MSISDN</th>
+              <th>IMSI</th>
+              <th>Status</th>
+            </tr>
+            @if(!empty($sim1_operator) || !empty($sim1_msisdn) || !empty($sim1_imsi) || !empty($sim1_profile_status))
+            <tr>
+              <td><strong>SIM 1</strong></td>
+              <td>{{ !empty($sim1_operator) && $sim1_operator !== '—' ? $sim1_operator : '—' }}</td>
+              <td style="font-family:monospace; font-size:8px;">{{ !empty($sim1_msisdn) && $sim1_msisdn !== '—' ? $sim1_msisdn : '—' }}</td>
+              <td style="font-family:monospace; font-size:8px;">{{ !empty($sim1_imsi) && $sim1_imsi !== '—' ? $sim1_imsi : '—' }}</td>
+              <td>{{ !empty($sim1_profile_status) && $sim1_profile_status !== '—' ? $sim1_profile_status : '—' }}</td>
+            </tr>
+            @endif
+            @if(!empty($sim2_operator) || !empty($sim2_msisdn) || !empty($sim2_imsi) || !empty($sim2_profile_status))
+            <tr>
+              <td><strong>SIM 2</strong></td>
+              <td>{{ !empty($sim2_operator) && $sim2_operator !== '—' ? $sim2_operator : '—' }}</td>
+              <td style="font-family:monospace; font-size:8px;">{{ !empty($sim2_msisdn) && $sim2_msisdn !== '—' ? $sim2_msisdn : '—' }}</td>
+              <td style="font-family:monospace; font-size:8px;">{{ !empty($sim2_imsi) && $sim2_imsi !== '—' ? $sim2_imsi : '—' }}</td>
+              <td>{{ !empty($sim2_profile_status) && $sim2_profile_status !== '—' ? $sim2_profile_status : '—' }}</td>
+            </tr>
+            @endif
+          </table>
+        </div>
       </div>
       @endif
 

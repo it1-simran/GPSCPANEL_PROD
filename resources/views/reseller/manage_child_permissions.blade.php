@@ -157,8 +157,13 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     let currentUserId = null;
+    let permissionDependencies = {}; // child_id => parent_id
+    let permissionDependents = {}; // parent_id => [child_id, ...]
 
     $(document).ready(function() {
+        // Load permission dependencies
+        loadPermissionDependencies();
+
         // Check if user_id is in query parameters
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('user_id');
@@ -166,6 +171,27 @@
             currentUserId = userId;
             loadChildUserPermissions(userId);
         }
+
+        // Add change event listeners for permission checkboxes
+        $(document).on('change', '.permission-checkbox', function() {
+            const permId = $(this).val();
+            const isChecked = $(this).is(':checked');
+
+            if (isChecked) {
+                // If checking a child, also check its parent
+                if (permissionDependencies[permId]) {
+                    const parentId = permissionDependencies[permId];
+                    $('.permission-checkbox[value="' + parentId + '"]').prop('checked', true);
+                }
+            } else {
+                // If unchecking a parent, also uncheck all its children
+                if (permissionDependents[permId]) {
+                    permissionDependents[permId].forEach(childId => {
+                        $('.permission-checkbox[value="' + childId + '"]').prop('checked', false);
+                    });
+                }
+            }
+        });
     });
 
     $('#childUserSelect').on('change', function() {
@@ -176,6 +202,25 @@
             $('#permissionsContainer').hide();
         }
     });
+
+    function loadPermissionDependencies() {
+        $.ajax({
+            url: '/admin/permissions/dependencies/get',
+            type: 'GET',
+            success: function(response) {
+                permissionDependencies = response.dependencies;
+                permissionDependents = response.dependents;
+                console.log('Permission dependencies loaded:', {
+                    dependencies: permissionDependencies,
+                    dependents: permissionDependents
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading permission dependencies:', error);
+                // Continue even if dependencies fail to load
+            }
+        });
+    }
 
     function loadChildUserPermissions(userId) {
         $('#loading').addClass('active');
@@ -193,7 +238,21 @@
                 $('.permission-checkbox').prop('checked', false);
 
                 if (response.permissions && response.permissions.length) {
+                    let permissionsToCheck = [...response.permissions];
+
+                    // Also check parent permissions of any checked children
                     response.permissions.forEach(function(permId) {
+                        if (permissionDependencies[permId]) {
+                            // This is a child permission, add its parent
+                            let parentId = permissionDependencies[permId];
+                            if (!permissionsToCheck.includes(parentId)) {
+                                permissionsToCheck.push(parentId);
+                            }
+                        }
+                    });
+
+                    // Check all the permissions
+                    permissionsToCheck.forEach(function(permId) {
                         $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);
                     });
                 }

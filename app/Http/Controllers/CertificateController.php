@@ -63,23 +63,21 @@ class CertificateController extends Controller
                 $devicesByCategory[$categoryId] = [];
             }
 
-            $config = json_decode($device->configurations, true) ?: [];
-
-            // Determine certificate status based on configuration
-            if (!empty($config['certificate_details'])) {
-                // Certificate details exist - check if it's been submitted/approved
-                $details = $config['certificate_details'];
-
-                // Check if certificate has been submitted/approved (has issued_date or approval status)
-                if (!empty($details['issued_date']) || !empty($details['approval_status'])) {
-                    $device->certificate_status = 'Approved';
-                } else {
-                    $device->certificate_status = 'Saved';
-                }
+            // Determine certificate status based on is_certificate_generated flag
+            if ($device->is_certificate_generated) {
+                // Certificate has been generated
+                $device->certificate_status = 'Generated';
                 $device->has_certificate = true;
             } else {
-                $device->certificate_status = 'Pending';
-                $device->has_certificate = false;
+                // Check if certificate details have been saved
+                $config = json_decode($device->configurations, true) ?: [];
+                if (!empty($config['certificate_details'])) {
+                    $device->certificate_status = 'Saved';
+                    $device->has_certificate = true;
+                } else {
+                    $device->certificate_status = 'Pending';
+                    $device->has_certificate = false;
+                }
             }
 
             $devicesByCategory[$categoryId][] = $device;
@@ -146,9 +144,34 @@ class CertificateController extends Controller
             $iccId = $deviceConfig['ccid']['value'] ?? ($deviceConfig['iccid']['value'] ?? '');
         }
 
-        $config = json_decode($device->configurations, true) ?: [];
-        $saved = $config['certificate_details'] ?? null;
+        // Fetch certificate data from the dedicated certificate_data field ONLY
+        $saved = null;
+
+        if (!empty($device->certificate_data)) {
+            $saved = json_decode($device->certificate_data, true);
+        }
+
+        // If certificate_data is empty, try to migrate from old configuration location
+        if (empty($saved)) {
+            $config = json_decode($device->configurations, true) ?: [];
+            $oldSaved = $config['certificate_details'] ?? null;
+
+            if (!empty($oldSaved)) {
+                // Migrate old data to certificate_data field
+                $device->certificate_data = json_encode($oldSaved);
+                $device->update();
+                $saved = $oldSaved;
+            }
+        }
+
+        $isCertificateGenerated = (bool) $device->is_certificate_generated;
+
+        // Prevent editing if certificate has been generated
         $editMode = (int) $request->query('edit', 0) === 1;
+        if ($editMode && $isCertificateGenerated) {
+            // Redirect to view mode without edit parameter
+            return redirect('/user/certificate/' . $id)->with('warning', 'Certificate cannot be edited once it has been generated.');
+        }
 
         return view('certificate_page', [
             'device' => $device,
@@ -159,7 +182,8 @@ class CertificateController extends Controller
             'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId,
             'saved' => $saved,
-            'edit_mode' => $editMode,
+            'edit_mode' => $editMode && !$isCertificateGenerated,
+            'is_certificate_generated' => $isCertificateGenerated,
         ]);
     }
 
@@ -220,20 +244,30 @@ class CertificateController extends Controller
         }
 
         $request->validate([
+            // Certificate & Fitment
             'fitment_date' => 'required|date|before_or_equal:today',
+
+            // Vendor Details
             'vendor_name' => 'required|string|max:255',
             'vendor_contact' => 'required|string|max:20',
             'vendor_address' => 'required|string|max:500',
             'vendor_email' => 'required|email|max:255',
             'vendor_gst' => 'nullable|string|max:255',
+            'vendor_id' => 'nullable|string|max:255',
+
+            // Fitter Details
             'fitter_company' => 'required|string|max:255',
             'fitter_contact' => 'required|string|max:20',
             'fitter_address' => 'required|string|max:500',
             'fitter_email' => 'required|email|max:255',
+
+            // Owner Details
             'owner_name' => 'required|string|max:255',
             'owner_mobile' => 'required|string|max:20',
             'owner_address' => 'required|string|max:500',
             'owner_email' => 'required|email|max:255',
+
+            // Vehicle Details (mandatory user-filled fields)
             'vehicle_registration_no' => 'required|string|max:255',
             'chassis_no' => 'required|string|max:255',
             'engine_no' => 'required|string|max:255',
@@ -241,14 +275,42 @@ class CertificateController extends Controller
             'vehicle_model' => 'required|string|max:255',
             'vehicle_class' => 'required|string|max:255',
             'fuel_type' => 'required|string|max:255',
-            'vltd_serial_no' => 'required|string|max:255',
-            'vltd_make' => 'required|string|max:255',
-            'vltd_model' => 'required|string|max:255',
+
+            // VLTD Details (auto-generated/auto-filled)
+            'vltd_serial_no' => 'nullable|string|max:255',
+            'vltd_make' => 'nullable|string|max:255',
+            'vltd_model' => 'nullable|string|max:255',
             'vltd_icc_id' => 'nullable|string|max:255',
+
+            // Device Details (read-only)
+            'device_imei' => 'nullable|string|max:255',
+            'device_iccid' => 'nullable|string|max:255',
+            'device_model' => 'nullable|string|max:255',
+            'firmware_version' => 'nullable|string|max:255',
+
+            // Compliance
             'arai_tac' => 'nullable|string|max:255',
             'arai_date' => 'nullable|date|before_or_equal:today',
+
+            // Service Provider
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
+
+            // SIM Details (optional)
+            'organization_name' => 'nullable|string|max:255',
+            'plan_status' => 'nullable|string|max:255',
+            'sim1_operator' => 'nullable|string|max:255',
+            'sim1_msisdn' => 'nullable|string|max:255',
+            'sim1_imsi' => 'nullable|string|max:255',
+            'sim1_profile_status' => 'nullable|string|max:255',
+            'sim1_activation_date' => 'nullable|date',
+            'sim1_expiry_date' => 'nullable|date',
+            'sim2_operator' => 'nullable|string|max:255',
+            'sim2_msisdn' => 'nullable|string|max:255',
+            'sim2_imsi' => 'nullable|string|max:255',
+            'sim2_profile_status' => 'nullable|string|max:255',
+            'sim2_activation_date' => 'nullable|date',
+            'sim2_expiry_date' => 'nullable|date',
         ], [
             'fitment_date.required' => 'The fitment date field is required.',
             'fitment_date.before_or_equal' => 'Fitment date cannot be in the future.',
@@ -271,9 +333,6 @@ class CertificateController extends Controller
             'vehicle_model.required' => 'The vehicle model is required.',
             'vehicle_class.required' => 'The vehicle class is required.',
             'fuel_type.required' => 'The fuel type is required.',
-            'vltd_serial_no.required' => 'The VLTD serial number is required.',
-            'vltd_make.required' => 'The VLTD make is required.',
-            'vltd_model.required' => 'The VLTD model is required.',
             'arai_date.before_or_equal' => 'ARAI date cannot be in the future.',
         ]);
 
@@ -302,7 +361,7 @@ class CertificateController extends Controller
         $addressParts = explode(',', $ownerAddress);
         $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
 
-        $config['certificate_details'] = [
+        $certificateData = [
             'holder_name' => $request->owner_name,
             'authority_city' => $authorityCity,
             'owner_name' => $request->owner_name,
@@ -314,6 +373,7 @@ class CertificateController extends Controller
             'vendor_address' => $request->vendor_address,
             'vendor_email' => $request->vendor_email,
             'vendor_gst' => $request->vendor_gst ?? null,
+            'vendor_id' => $request->vendor_id ?? null,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -326,6 +386,7 @@ class CertificateController extends Controller
             'vehicle_class' => $request->vehicle_class,
             'fuel_type' => $request->fuel_type,
             'vltd_icc_id' => $request->vltd_icc_id,
+            'firmware_version' => $request->firmware_version ?? null,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
             'service_provider' => $serviceProvider,
@@ -334,20 +395,36 @@ class CertificateController extends Controller
             'fitter_address' => $request->fitter_address,
             'fitter_email' => $request->fitter_email,
             // SIM details auto-captured via device label scan (GrowSpace API)
+            'organization_name' => $request->organization_name ?? null,
+            'plan_status' => $request->plan_status ?? null,
             'sim1_operator' => $request->sim1_operator ?? null,
             'sim1_msisdn'   => $request->sim1_msisdn ?? null,
+            'sim1_imsi' => $request->sim1_imsi ?? null,
+            'sim1_profile_status' => $request->sim1_profile_status ?? null,
             'sim1_activation_date' => $request->sim1_activation_date ?? null,
             'sim1_expiry_date' => $request->sim1_expiry_date ?? null,
             'sim2_operator' => $request->sim2_operator ?? null,
             'sim2_msisdn'   => $request->sim2_msisdn ?? null,
+            'sim2_imsi' => $request->sim2_imsi ?? null,
+            'sim2_profile_status' => $request->sim2_profile_status ?? null,
             'sim2_activation_date' => $request->sim2_activation_date ?? null,
             'sim2_expiry_date' => $request->sim2_expiry_date ?? null,
+            // Certificate generation tracking
+            'certificate_generated' => false,
+            'generated_at' => null,
         ];
 
+        // Keep backward compatibility: also save to configurations
+        $config['certificate_details'] = $certificateData;
+
         $device->configurations = json_encode($config);
+        // Save all certificate data to the new certificate_data field
+        $device->certificate_data = json_encode($certificateData);
+        // Mark certificate as generated when saved
+        $device->is_certificate_generated = true;
         $device->update();
 
-        return redirect('/user/certificate/' . $device->id . '/view');
+        return redirect('/admin/certificate/' . $device->id . '/view')->with('success', 'Certificate details saved successfully!');
     }
 
     /**
@@ -356,20 +433,30 @@ class CertificateController extends Controller
     public function generateCertificate($id, Request $request)
     {
         $request->validate([
+            // Certificate & Fitment
             'fitment_date' => 'required|date|before_or_equal:today',
+
+            // Vendor Details
             'vendor_name' => 'required|string|max:255',
             'vendor_contact' => 'required|string|max:20',
             'vendor_address' => 'required|string|max:500',
             'vendor_email' => 'required|email|max:255',
             'vendor_gst' => 'nullable|string|max:255',
+            'vendor_id' => 'nullable|string|max:255',
+
+            // Fitter Details
             'fitter_company' => 'required|string|max:255',
             'fitter_contact' => 'required|string|max:20',
             'fitter_address' => 'required|string|max:500',
             'fitter_email' => 'required|email|max:255',
+
+            // Owner Details
             'owner_name' => 'required|string|max:255',
             'owner_mobile' => 'required|string|max:20',
             'owner_address' => 'required|string|max:500',
             'owner_email' => 'required|email|max:255',
+
+            // Vehicle Details (mandatory user-filled fields)
             'vehicle_registration_no' => 'required|string|max:255',
             'chassis_no' => 'required|string|max:255',
             'engine_no' => 'required|string|max:255',
@@ -377,14 +464,42 @@ class CertificateController extends Controller
             'vehicle_model' => 'required|string|max:255',
             'vehicle_class' => 'required|string|max:255',
             'fuel_type' => 'required|string|max:255',
-            'vltd_serial_no' => 'required|string|max:255',
-            'vltd_make' => 'required|string|max:255',
-            'vltd_model' => 'required|string|max:255',
+
+            // VLTD Details (auto-generated/auto-filled)
+            'vltd_serial_no' => 'nullable|string|max:255',
+            'vltd_make' => 'nullable|string|max:255',
+            'vltd_model' => 'nullable|string|max:255',
             'vltd_icc_id' => 'nullable|string|max:255',
+
+            // Device Details (read-only)
+            'device_imei' => 'nullable|string|max:255',
+            'device_iccid' => 'nullable|string|max:255',
+            'device_model' => 'nullable|string|max:255',
+            'firmware_version' => 'nullable|string|max:255',
+
+            // Compliance
             'arai_tac' => 'nullable|string|max:255',
             'arai_date' => 'nullable|date|before_or_equal:today',
+
+            // Service Provider
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
+
+            // SIM Details (optional)
+            'organization_name' => 'nullable|string|max:255',
+            'plan_status' => 'nullable|string|max:255',
+            'sim1_operator' => 'nullable|string|max:255',
+            'sim1_msisdn' => 'nullable|string|max:255',
+            'sim1_imsi' => 'nullable|string|max:255',
+            'sim1_profile_status' => 'nullable|string|max:255',
+            'sim1_activation_date' => 'nullable|date',
+            'sim1_expiry_date' => 'nullable|date',
+            'sim2_operator' => 'nullable|string|max:255',
+            'sim2_msisdn' => 'nullable|string|max:255',
+            'sim2_imsi' => 'nullable|string|max:255',
+            'sim2_profile_status' => 'nullable|string|max:255',
+            'sim2_activation_date' => 'nullable|date',
+            'sim2_expiry_date' => 'nullable|date',
         ], [
             'fitment_date.required' => 'The fitment date field is required.',
             'fitment_date.before_or_equal' => 'Fitment date cannot be in the future.',
@@ -407,9 +522,6 @@ class CertificateController extends Controller
             'vehicle_model.required' => 'The vehicle model is required.',
             'vehicle_class.required' => 'The vehicle class is required.',
             'fuel_type.required' => 'The fuel type is required.',
-            'vltd_serial_no.required' => 'The VLTD serial number is required.',
-            'vltd_make.required' => 'The VLTD make is required.',
-            'vltd_model.required' => 'The VLTD model is required.',
             'arai_date.before_or_equal' => 'ARAI date cannot be in the future.',
         ]);
 
@@ -421,14 +533,13 @@ class CertificateController extends Controller
         }
 
         // Certification enabled check: device category must have certification enabled
-        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
+            ->find($device->device_category_id);
         if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
             return response()->json(['status' => 'error', 'message' => "Certification is not enabled for this device category!"], 403);
         }
 
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
-        $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
-            ->find($device->device_category_id);
         $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
 
         $config = json_decode($device->configurations, true);
@@ -471,11 +582,13 @@ class CertificateController extends Controller
             'vendor_address' => $request->vendor_address,
             'vendor_email' => $request->vendor_email,
             'vendor_gst' => $request->vendor_gst ?? null,
+            'vendor_id' => $request->vendor_id ?? null,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
             'vltd_make' => $request->vltd_make,
             'vltd_model' => $vltdModel,
+            'firmware_version' => $request->firmware_version ?? null,
             'chassis_no' => $request->chassis_no,
             'engine_no' => $request->engine_no,
             'color' => $request->color,
@@ -494,14 +607,25 @@ class CertificateController extends Controller
             'imei' => $device->imei,
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
-            // SIM details — prefer request, fall back to saved config
+            // SIM/Plan details — prefer request, fall back to saved config
+            'organization_name' => $request->organization_name ?? ($savedCert['organization_name'] ?? null),
+            'plan_status' => $request->plan_status ?? ($savedCert['plan_status'] ?? null),
             'sim1_operator' => $request->sim1_operator ?? ($savedCert['sim1_operator'] ?? null),
             'sim1_msisdn'   => $request->sim1_msisdn   ?? ($savedCert['sim1_msisdn']   ?? null),
+            'sim1_imsi'     => $request->sim1_imsi     ?? ($savedCert['sim1_imsi']     ?? null),
+            'sim1_profile_status' => $request->sim1_profile_status ?? ($savedCert['sim1_profile_status'] ?? null),
+            'sim1_activation_date' => $request->sim1_activation_date ?? ($savedCert['sim1_activation_date'] ?? null),
+            'sim1_expiry_date' => $request->sim1_expiry_date ?? ($savedCert['sim1_expiry_date'] ?? null),
             'sim2_operator' => $request->sim2_operator ?? ($savedCert['sim2_operator'] ?? null),
             'sim2_msisdn'   => $request->sim2_msisdn   ?? ($savedCert['sim2_msisdn']   ?? null),
+            'sim2_imsi'     => $request->sim2_imsi     ?? ($savedCert['sim2_imsi']     ?? null),
+            'sim2_profile_status' => $request->sim2_profile_status ?? ($savedCert['sim2_profile_status'] ?? null),
+            'sim2_activation_date' => $request->sim2_activation_date ?? ($savedCert['sim2_activation_date'] ?? null),
+            'sim2_expiry_date' => $request->sim2_expiry_date ?? ($savedCert['sim2_expiry_date'] ?? null),
         ];
 
         // Attach images from storage if they exist in device config
+        // Skip image processing for AJAX previews to improve performance
         $ocrImages = $config['ocr_images'] ?? [];
         $imageFields = [
             'device'   => 'device_image_uri',
@@ -510,13 +634,21 @@ class CertificateController extends Controller
             'plate'    => 'plate_image_uri',
         ];
 
-        foreach ($imageFields as $slot => $viewKey) {
-            $path = $ocrImages[$slot] ?? null;
-            if ($path && file_exists(storage_path('app/' . $path))) {
-                $fileContents = file_get_contents(storage_path('app/' . $path));
-                $mimeType = mime_content_type(storage_path('app/' . $path));
-                $data[$viewKey] = 'data:' . $mimeType . ';base64,' . base64_encode($fileContents);
-            } else {
+        if (!$request->ajax()) {
+            // Only process images for non-AJAX requests (full PDF generation)
+            foreach ($imageFields as $slot => $viewKey) {
+                $path = $ocrImages[$slot] ?? null;
+                if ($path && file_exists(storage_path('app/' . $path))) {
+                    $fileContents = file_get_contents(storage_path('app/' . $path));
+                    $mimeType = mime_content_type(storage_path('app/' . $path));
+                    $data[$viewKey] = 'data:' . $mimeType . ';base64,' . base64_encode($fileContents);
+                } else {
+                    $data[$viewKey] = null;
+                }
+            }
+        } else {
+            // For AJAX preview, set images to null to skip processing
+            foreach ($imageFields as $slot => $viewKey) {
                 $data[$viewKey] = null;
             }
         }
@@ -544,6 +676,24 @@ class CertificateController extends Controller
         }
 
         $data['qr_image'] = $qrImageDataUri;
+
+        // Save complete certificate data to database before generating PDF
+        try {
+            $config = json_decode($device->configurations, true) ?: [];
+
+            // Add generation metadata to certificate data
+            $data['certificate_generated'] = true;
+            $data['generated_at'] = Carbon::now()->format('Y-m-d H:i:s');
+
+            // Store the complete certificate data
+            $device->certificate_data = json_encode($data);
+            $device->is_certificate_generated = true;
+            $device->update();
+        } catch (\Exception $e) {
+            \Log::error('Failed to save certificate data: ' . $e->getMessage());
+            // Continue with PDF generation even if data save fails
+        }
+
         header('Content-Type: application/pdf');
         $pdf = PDF::loadView('pdf.certificate', $data);
         return $pdf->download('certificate_' . $device->imei . '.pdf');
@@ -555,20 +705,30 @@ class CertificateController extends Controller
     public function previewCertificate($id, Request $request)
     {
         $request->validate([
+            // Certificate & Fitment
             'fitment_date' => 'required|date|before_or_equal:today',
+
+            // Vendor Details
             'vendor_name' => 'required|string|max:255',
             'vendor_contact' => 'required|string|max:20',
             'vendor_address' => 'required|string|max:500',
             'vendor_email' => 'required|email|max:255',
             'vendor_gst' => 'nullable|string|max:255',
+            'vendor_id' => 'nullable|string|max:255',
+
+            // Fitter Details
             'fitter_company' => 'required|string|max:255',
             'fitter_contact' => 'required|string|max:20',
             'fitter_address' => 'required|string|max:500',
             'fitter_email' => 'required|email|max:255',
+
+            // Owner Details
             'owner_name' => 'required|string|max:255',
             'owner_mobile' => 'required|string|max:20',
             'owner_address' => 'required|string|max:500',
             'owner_email' => 'required|email|max:255',
+
+            // Vehicle Details (mandatory user-filled fields)
             'vehicle_registration_no' => 'required|string|max:255',
             'chassis_no' => 'required|string|max:255',
             'engine_no' => 'required|string|max:255',
@@ -576,14 +736,42 @@ class CertificateController extends Controller
             'vehicle_model' => 'required|string|max:255',
             'vehicle_class' => 'required|string|max:255',
             'fuel_type' => 'required|string|max:255',
-            'vltd_serial_no' => 'required|string|max:255',
-            'vltd_make' => 'required|string|max:255',
-            'vltd_model' => 'required|string|max:255',
+
+            // VLTD Details (auto-generated/auto-filled)
+            'vltd_serial_no' => 'nullable|string|max:255',
+            'vltd_make' => 'nullable|string|max:255',
+            'vltd_model' => 'nullable|string|max:255',
             'vltd_icc_id' => 'nullable|string|max:255',
+
+            // Device Details (read-only)
+            'device_imei' => 'nullable|string|max:255',
+            'device_iccid' => 'nullable|string|max:255',
+            'device_model' => 'nullable|string|max:255',
+            'firmware_version' => 'nullable|string|max:255',
+
+            // Compliance
             'arai_tac' => 'nullable|string|max:255',
             'arai_date' => 'nullable|date|before_or_equal:today',
+
+            // Service Provider
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
+
+            // SIM Details (optional)
+            'organization_name' => 'nullable|string|max:255',
+            'plan_status' => 'nullable|string|max:255',
+            'sim1_operator' => 'nullable|string|max:255',
+            'sim1_msisdn' => 'nullable|string|max:255',
+            'sim1_imsi' => 'nullable|string|max:255',
+            'sim1_profile_status' => 'nullable|string|max:255',
+            'sim1_activation_date' => 'nullable|date',
+            'sim1_expiry_date' => 'nullable|date',
+            'sim2_operator' => 'nullable|string|max:255',
+            'sim2_msisdn' => 'nullable|string|max:255',
+            'sim2_imsi' => 'nullable|string|max:255',
+            'sim2_profile_status' => 'nullable|string|max:255',
+            'sim2_activation_date' => 'nullable|date',
+            'sim2_expiry_date' => 'nullable|date',
         ], [
             'fitment_date.required' => 'The fitment date field is required.',
             'fitment_date.before_or_equal' => 'Fitment date cannot be in the future.',
@@ -606,9 +794,6 @@ class CertificateController extends Controller
             'vehicle_model.required' => 'The vehicle model is required.',
             'vehicle_class.required' => 'The vehicle class is required.',
             'fuel_type.required' => 'The fuel type is required.',
-            'vltd_serial_no.required' => 'The VLTD serial number is required.',
-            'vltd_make.required' => 'The VLTD make is required.',
-            'vltd_model.required' => 'The VLTD model is required.',
             'arai_date.before_or_equal' => 'ARAI date cannot be in the future.',
         ]);
 
@@ -620,14 +805,13 @@ class CertificateController extends Controller
         }
 
         // Certification enabled check: device category must have certification enabled
-        $deviceCategory = DeviceCategory::find($device->device_category_id);
+        $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
+            ->find($device->device_category_id);
         if (!$deviceCategory || !$deviceCategory->is_certification_enable) {
             return response()->json(['status' => 'error', 'message' => "Certification is not enabled for this device category!"], 403);
         }
 
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
-        $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
-            ->find($device->device_category_id);
         $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
 
         $config = json_decode($device->configurations, true);
@@ -670,11 +854,13 @@ class CertificateController extends Controller
             'vendor_address' => $request->vendor_address,
             'vendor_email' => $request->vendor_email,
             'vendor_gst' => $request->vendor_gst ?? null,
+            'vendor_id' => $request->vendor_id ?? null,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
             'vltd_make' => $request->vltd_make,
             'vltd_model' => $vltdModel,
+            'firmware_version' => $request->firmware_version ?? null,
             'chassis_no' => $request->chassis_no,
             'engine_no' => $request->engine_no,
             'color' => $request->color,
@@ -693,14 +879,25 @@ class CertificateController extends Controller
             'imei' => $device->imei,
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
-            // SIM details — prefer request, fall back to saved config
+            // SIM/Plan details — prefer request, fall back to saved config
+            'organization_name' => $request->organization_name ?? ($savedCert['organization_name'] ?? null),
+            'plan_status' => $request->plan_status ?? ($savedCert['plan_status'] ?? null),
             'sim1_operator' => $request->sim1_operator ?? ($savedCert['sim1_operator'] ?? null),
             'sim1_msisdn'   => $request->sim1_msisdn   ?? ($savedCert['sim1_msisdn']   ?? null),
+            'sim1_imsi'     => $request->sim1_imsi     ?? ($savedCert['sim1_imsi']     ?? null),
+            'sim1_profile_status' => $request->sim1_profile_status ?? ($savedCert['sim1_profile_status'] ?? null),
+            'sim1_activation_date' => $request->sim1_activation_date ?? ($savedCert['sim1_activation_date'] ?? null),
+            'sim1_expiry_date' => $request->sim1_expiry_date ?? ($savedCert['sim1_expiry_date'] ?? null),
             'sim2_operator' => $request->sim2_operator ?? ($savedCert['sim2_operator'] ?? null),
             'sim2_msisdn'   => $request->sim2_msisdn   ?? ($savedCert['sim2_msisdn']   ?? null),
+            'sim2_imsi'     => $request->sim2_imsi     ?? ($savedCert['sim2_imsi']     ?? null),
+            'sim2_profile_status' => $request->sim2_profile_status ?? ($savedCert['sim2_profile_status'] ?? null),
+            'sim2_activation_date' => $request->sim2_activation_date ?? ($savedCert['sim2_activation_date'] ?? null),
+            'sim2_expiry_date' => $request->sim2_expiry_date ?? ($savedCert['sim2_expiry_date'] ?? null),
         ];
 
         // Attach images from storage if they exist in device config
+        // Skip image processing for AJAX previews to improve performance
         $ocrImages = $config['ocr_images'] ?? [];
         $imageFields = [
             'device'   => 'device_image_uri',
@@ -709,13 +906,21 @@ class CertificateController extends Controller
             'plate'    => 'plate_image_uri',
         ];
 
-        foreach ($imageFields as $slot => $viewKey) {
-            $path = $ocrImages[$slot] ?? null;
-            if ($path && file_exists(storage_path('app/' . $path))) {
-                $fileContents = file_get_contents(storage_path('app/' . $path));
-                $mimeType = mime_content_type(storage_path('app/' . $path));
-                $data[$viewKey] = 'data:' . $mimeType . ';base64,' . base64_encode($fileContents);
-            } else {
+        if (!$request->ajax()) {
+            // Only process images for non-AJAX requests (full PDF generation)
+            foreach ($imageFields as $slot => $viewKey) {
+                $path = $ocrImages[$slot] ?? null;
+                if ($path && file_exists(storage_path('app/' . $path))) {
+                    $fileContents = file_get_contents(storage_path('app/' . $path));
+                    $mimeType = mime_content_type(storage_path('app/' . $path));
+                    $data[$viewKey] = 'data:' . $mimeType . ';base64,' . base64_encode($fileContents);
+                } else {
+                    $data[$viewKey] = null;
+                }
+            }
+        } else {
+            // For AJAX preview, set images to null to skip processing
+            foreach ($imageFields as $slot => $viewKey) {
                 $data[$viewKey] = null;
             }
         }
@@ -775,8 +980,25 @@ class CertificateController extends Controller
             ->find($device->device_category_id);
         $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
 
-        $config = json_decode($device->configurations, true) ?: [];
-        $details = $config['certificate_details'] ?? null;
+        // Fetch certificate data from the dedicated certificate_data field ONLY
+        $details = null;
+
+        if (!empty($device->certificate_data)) {
+            $details = json_decode($device->certificate_data, true);
+        }
+
+        // If certificate_data is empty, try to migrate from old configuration location
+        if (empty($details)) {
+            $config = json_decode($device->configurations, true) ?: [];
+            $oldDetails = $config['certificate_details'] ?? null;
+
+            if (!empty($oldDetails)) {
+                // Migrate old data to certificate_data field
+                $device->certificate_data = json_encode($oldDetails);
+                $device->update();
+                $details = $oldDetails;
+            }
+        }
 
         if (!$details) {
             return redirect('/user/certificate/' . $device->id);
@@ -888,6 +1110,36 @@ class CertificateController extends Controller
             // here we just report which required fields this file yielded.
             $requiredFields = ['vehicle_registration_no', 'chassis_no', 'engine_no', 'color', 'vehicle_model'];
             $missingLabels = \App\Services\OcrQualityHelper::missingFieldLabels($requiredFields, $extractedData);
+
+            // ── Duplicate RC Validation ───────────────────────────────────
+            // Check if a certificate already exists for this vehicle registration number
+            if (!empty($extractedData['vehicle_registration_no'])) {
+                $vehicleRegNo = $extractedData['vehicle_registration_no'];
+
+                // Check if another device has a certificate with this registration number
+                $duplicateExists = Device::where('id', '!=', $device->id)
+                    ->where(function ($query) use ($vehicleRegNo) {
+                        // Check in certificate_data field
+                        $query->whereRaw("JSON_EXTRACT(certificate_data, '$.vehicle_registration_no') = ?", [$vehicleRegNo])
+                        // Also check in configurations field for backward compatibility
+                        ->orWhereRaw("JSON_EXTRACT(configurations, '$.certificate_details.vehicle_registration_no') = ?", [$vehicleRegNo]);
+                    })
+                    ->where('is_certificate_generated', true)
+                    ->exists();
+
+                if ($duplicateExists) {
+                    // Clean up uploaded file
+                    if (isset($filePath) && file_exists(storage_path('app/' . $filePath))) {
+                        unlink(storage_path('app/' . $filePath));
+                    }
+
+                    return response()->json([
+                        'success' => false,
+                        'is_duplicate' => true,
+                        'error' => 'A certificate has already been generated for vehicle registration number: ' . $vehicleRegNo,
+                    ], 422);
+                }
+            }
 
             // Store RC file path in device config
             $config = json_decode($device->configurations, true) ?: [];
@@ -1194,23 +1446,27 @@ class CertificateController extends Controller
 
             if (empty($simData['sims'])) {
                 return response()->json([
-                    'success'      => false,
-                    'iccid'        => $iccid,
-                    'sims'         => [],
-                    'plan_status'  => $simData['plan_status'],
-                    'organization' => $simData['organization'],
-                    'message'      => 'No SIM details found in GrowSpace for ICCID ' . $iccid
-                                    . '. The ICCID may not be registered with GrowSpace, or may belong to a different provider.',
+                    'success'           => false,
+                    'iccid'             => $iccid,
+                    'sims'              => [],
+                    'organization'      => $simData['organization'],
+                    'plan_status'       => $simData['plan_status'],
+                    'activation_date'   => $simData['activation_date'] ?? null,
+                    'expiry_date'       => $simData['expiry_date'] ?? null,
+                    'message'           => 'No SIM details found in GrowSpace for ICCID ' . $iccid
+                                        . '. The ICCID may not be registered with GrowSpace, or may belong to a different provider.',
                 ], 404);
             }
 
             return response()->json([
-                'success'      => true,
-                'iccid'        => $iccid,
-                'sims'         => $simData['sims'],
-                'plan_status'  => $simData['plan_status'],
-                'organization' => $simData['organization'],
-                'message'      => count($simData['sims']) . ' SIM profile(s) found for ICCID ' . $iccid,
+                'success'           => true,
+                'iccid'             => $iccid,
+                'sims'              => $simData['sims'],
+                'organization'      => $simData['organization'],
+                'plan_status'       => $simData['plan_status'],
+                'activation_date'   => $simData['activation_date'] ?? null,
+                'expiry_date'       => $simData['expiry_date'] ?? null,
+                'message'           => count($simData['sims']) . ' SIM profile(s) found for ICCID ' . $iccid,
             ]);
 
         } catch (\Exception $e) {

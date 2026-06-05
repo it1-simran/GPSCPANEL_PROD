@@ -457,7 +457,8 @@
             <div class="clearfix"></div>
           </div>
           <div class="c_content">
-            <!-- Wizard Steps Indicator -->
+            <!-- Wizard Steps Indicator - Only show if certificate is not generated -->
+            @if(!$is_certificate_generated)
             <div class="wizard-steps">
               <div class="wizard-step active" id="step-indicator-1">
                 <div class="step-number">1</div>
@@ -471,11 +472,8 @@
                 <div class="step-number">3</div>
                 <div class="step-label">Certificate Info</div>
               </div>
-              <div class="wizard-step" id="step-indicator-4">
-                <div class="step-number">4</div>
-                <div class="step-label">Preview</div>
-              </div>
             </div>
+            @endif
 
             @if ($errors->any())
               <div class="row">
@@ -488,13 +486,39 @@
               </div>
             @endif
 
-            @if($saved && empty($edit_mode))
-              <!-- (Existing saved view code...) -->
+            @if (Session::has('success'))
+              <div class="row">
+                <div class="col-sm-12">
+                  <div class="alert alert-success alert-dismissible" role="alert" style="background-color:#d1fae5; border:1px solid #10b981; color:#065f46;">
+                    <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                    <i class="fa fa-check-circle" style="margin-right:8px; color:#10b981;"></i>
+                    <strong>Success!</strong> {{ Session::get('success') }}
+                    <br><small style="margin-top:5px; display:block;">The certificate status has been updated to <strong>"Saved"</strong>. You can now view it in the certificate management list.</small>
+                  </div>
+                </div>
+              </div>
+            @endif
+
+            @if (Session::has('warning'))
+              <div class="row">
+                <div class="col-sm-12">
+                  <div class="alert alert-warning alert-dismissible" role="alert" style="background-color:#fef3c7; border:1px solid #f59e0b; color:#92400e;">
+                    <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
+                    <i class="fa fa-lock" style="margin-right:8px; color:#f59e0b;"></i>
+                    <strong>Certificate Locked</strong> {{ Session::get('warning') }}
+                  </div>
+                </div>
+              </div>
+            @endif
+
+            @if($is_certificate_generated && empty($edit_mode))
+              <!-- Certificate has been generated - show locked view -->
               <div class="row" style="margin-bottom:12px;">
-                <div class="col-md-12" style="display:flex; justify-content:flex-end; gap:10px;">
-                  <a href="?edit=1" class="btn btn-warning" style="background-color:#f59e0b; border-color:#f59e0b; color:#fff; padding:8px 20px; font-weight:600; text-decoration:none; border-radius:6px;">
-                    <i class="fa fa-edit"></i> Edit Certificate
-                  </a>
+                <div class="col-md-12">
+                  <div class="alert alert-success alert-dismissible" role="alert" style="background-color:#d1fae5; border:1px solid #10b981; color:#065f46; margin:0;">
+                    <i class="fa fa-check-circle" style="margin-right:8px;"></i>
+                    <strong>Certificate Generated</strong> - Your certificate has been successfully generated and locked. To make changes, contact your administrator.
+                  </div>
                 </div>
               </div>
               <div class="row">
@@ -506,11 +530,28 @@
               @php
                 $formData = is_array($saved) ? $saved : [];
                 $deviceCfg    = json_decode($device->configurations ?? '', true) ?: [];
-                $autoImei     = $device->imei ?? '';
-                $autoIccid    = $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? ($deviceCfg['ccid']['value'] ?? ($deviceCfg['iccid']['value'] ?? '')));
-                $autoModel    = $formData['vltd_model'] ?? ($vltd_model ?? ($category_name ?? ''));
-                $autoFirmware = $formData['firmware_version'] ?? ($deviceCfg['firmware_version']['value'] ?? ($deviceCfg['firmwareVersion']['value'] ?? ''));
-                $autoVendorId = $formData['vendor_id'] ?? ($deviceCfg['vendorId']['value'] ?? ($deviceCfg['vendor_id'] ?? ''));
+                $autoImei     = is_string($device->imei ?? null) ? $device->imei : '';
+                $autoSerialNo = is_string($formData['vltd_serial_no'] ?? null) ? $formData['vltd_serial_no'] : (is_string($device->imei ?? null) ? $device->imei : '');
+                $autoIccid    = is_string($formData['vltd_icc_id'] ?? null) ? $formData['vltd_icc_id'] : (is_string($vltd_icc_id ?? null) ? $vltd_icc_id : (is_string($deviceCfg['ccid']['value'] ?? null) ? $deviceCfg['ccid']['value'] : (is_string($deviceCfg['iccid']['value'] ?? null) ? $deviceCfg['iccid']['value'] : '')));
+                $autoModel    = is_string($formData['vltd_model'] ?? null) ? $formData['vltd_model'] : (is_string($vltd_model ?? null) ? $vltd_model : (is_string($category_name ?? null) ? $category_name : ''));
+
+                // Firmware Version - check multiple possible locations in configuration
+                // Use is_string() to avoid returning arrays
+                $autoFirmware = is_string($formData['firmware_version'] ?? null) ? $formData['firmware_version'] :
+                               (is_string($deviceCfg['firmware_version'] ?? null) ? $deviceCfg['firmware_version'] :
+                               (is_string($deviceCfg['firmware_version']['value'] ?? null) ? $deviceCfg['firmware_version']['value'] :
+                               (is_string($deviceCfg['firmwareVersion'] ?? null) ? $deviceCfg['firmwareVersion'] :
+                               (is_string($deviceCfg['firmwareVersion']['value'] ?? null) ? $deviceCfg['firmwareVersion']['value'] :
+                               ''))));
+
+                // Vendor ID - check multiple possible locations in configuration
+                // Use is_string() to avoid returning arrays
+                $autoVendorId = is_string($formData['vendor_id'] ?? null) ? $formData['vendor_id'] :
+                               (is_string($deviceCfg['vendor_id'] ?? null) ? $deviceCfg['vendor_id'] :
+                               (is_string($deviceCfg['vendor_id']['value'] ?? null) ? $deviceCfg['vendor_id']['value'] :
+                               (is_string($deviceCfg['vendorId'] ?? null) ? $deviceCfg['vendorId'] :
+                               (is_string($deviceCfg['vendorId']['value'] ?? null) ? $deviceCfg['vendorId']['value'] :
+                               ''))));
               @endphp
 
               <!-- Step 1: RC & Number Plate Verification -->
@@ -930,7 +971,7 @@
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
                               VLTD Serial No <span class="require" style="color:#d32f2f;">*</span>
                             </label>
-                            <input class="form-control" type="text" name="vltd_serial_no" id="vltd_serial_no_input" placeholder="Auto-generated serial number" value="{{ old('vltd_serial_no', $formData['vltd_serial_no'] ?? '') }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f8f8f8; font-family: monospace; letter-spacing: 1px;" />
+                            <input class="form-control" type="text" name="vltd_serial_no" id="vltd_serial_no_input" placeholder="Auto-generated serial number" value="{{ old('vltd_serial_no', $autoSerialNo) }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f8f8f8; font-family: monospace; letter-spacing: 1px;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
@@ -997,7 +1038,164 @@
 
                       <div class="form-group" style="margin-bottom:20px;">
                         <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Firmware Version <span style="font-weight:400; color:#94a3b8; font-size:11px;">(if applicable)</span></label>
-                        <input class="form-control" type="text" name="firmware_version" placeholder="e.g., v1.2.3" value="{{ old('firmware_version', $autoFirmware) }}" readonly disabled style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8fafc; color:#64748b;" />
+                        <input class="form-control" type="text" name="firmware_version" placeholder="e.g., v1.2.3" value="{{ old('firmware_version', $autoFirmware) }}" readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8fafc; color:#64748b;" />
+                      </div>
+                    </div>
+
+                    <!-- SIM & Plan Information Section -->
+                    <div id="sim-form-row" style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
+                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
+                        <i class="fa fa-sim-card" style="color:#76CF1C;margin-right:8px;"></i>SIM & Plan Information
+                      </h4>
+
+                      <!-- SIM/Plan Details (Read-only) -->
+                      <div style="background: #ffffff; padding: 18px 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #3b82f6; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <h5 style="color:#1e40af; margin-bottom:18px; font-weight:700; font-size:12px; text-transform: uppercase; letter-spacing: 0.8px;">SIM/Plan Details (Auto-fetched from API)</h5>
+
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div style="margin-bottom:18px;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">Organization Name</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px;">
+                                <span id="org_name_display">—</span>
+                              </div>
+                              <input type="hidden" name="organization_name" id="organization_name_hidden" value="{{ old('organization_name', $formData['organization_name'] ?? '') }}" />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div style="margin-bottom:18px;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">ICCID</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px; font-family:monospace;">
+                                <span id="iccid_display">—</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div style="margin-bottom:18px;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">Plan Status</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px;">
+                                <span id="plan_status_display">—</span>
+                              </div>
+                              <input type="hidden" name="plan_status" id="plan_status_hidden" value="{{ old('plan_status', $formData['plan_status'] ?? '') }}" />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div style="margin-bottom:0;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">Activation Date</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px;">
+                                <span id="activation_date_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim1_activation_date" id="sim1_activation_date_hidden" value="{{ old('sim1_activation_date', $formData['sim1_activation_date'] ?? '') }}" />
+                              <input type="hidden" name="sim2_activation_date" id="sim2_activation_date_hidden" value="{{ old('sim2_activation_date', $formData['sim2_activation_date'] ?? '') }}" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="row" style="margin-top:18px;">
+                          <div class="col-md-6">
+                            <div style="margin-bottom:0;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">Expiry Date</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px;">
+                                <span id="expiry_date_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim1_expiry_date" id="sim1_expiry_date_hidden" value="{{ old('sim1_expiry_date', $formData['sim1_expiry_date'] ?? '') }}" />
+                              <input type="hidden" name="sim2_expiry_date" id="sim2_expiry_date_hidden" value="{{ old('sim2_expiry_date', $formData['sim2_expiry_date'] ?? '') }}" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Profile 1 Details (Read-only) -->
+                      <div style="background: #ffffff; padding: 18px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #76CF1C; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <h5 style="color:#16a34a; margin-bottom:16px; font-weight:700; font-size:13px;">Profile 1 (SIM 1)</h5>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div style="margin-bottom:16px;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">Operator</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px;">
+                                <span id="sim1_operator_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim1_operator" id="sim1_operator_hidden" value="{{ old('sim1_operator', $formData['sim1_operator'] ?? '') }}" />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div style="margin-bottom:16px;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">MSISDN</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px; font-family:monospace;">
+                                <span id="sim1_msisdn_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim1_msisdn" id="sim1_msisdn_hidden" value="{{ old('sim1_msisdn', $formData['sim1_msisdn'] ?? '') }}" />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div style="margin-bottom:0;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">IMSI</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px; font-family:monospace;">
+                                <span id="sim1_imsi_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim1_imsi" id="sim1_imsi_hidden" value="{{ old('sim1_imsi', $formData['sim1_imsi'] ?? '') }}" />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div style="margin-bottom:0;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">Profile Status</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px;">
+                                <span id="sim1_status_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim1_profile_status" id="sim1_status_hidden" value="{{ old('sim1_profile_status', $formData['sim1_profile_status'] ?? '') }}" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Profile 2 Details (Read-only) -->
+                      <div style="background: #ffffff; padding: 18px 20px; border-radius: 8px; margin-bottom: 0; border-left: 4px solid #76CF1C; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <h5 style="color:#16a34a; margin-bottom:16px; font-weight:700; font-size:13px;">Profile 2 (SIM 2)</h5>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div style="margin-bottom:16px;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">Operator</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px;">
+                                <span id="sim2_operator_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim2_operator" id="sim2_operator_hidden" value="{{ old('sim2_operator', $formData['sim2_operator'] ?? '') }}" />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div style="margin-bottom:16px;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">MSISDN</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px; font-family:monospace;">
+                                <span id="sim2_msisdn_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim2_msisdn" id="sim2_msisdn_hidden" value="{{ old('sim2_msisdn', $formData['sim2_msisdn'] ?? '') }}" />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div style="margin-bottom:0;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">IMSI</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px; font-family:monospace;">
+                                <span id="sim2_imsi_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim2_imsi" id="sim2_imsi_hidden" value="{{ old('sim2_imsi', $formData['sim2_imsi'] ?? '') }}" />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div style="margin-bottom:0;">
+                              <label style="font-weight:600; color:#1f2937; display:block; margin-bottom:6px; font-size:12px;">Profile Status</label>
+                              <div style="padding:10px 12px; background-color:#f3f4f6; border-radius:6px; border:1px solid #d1d5db; color:#4b5563; font-size:13px;">
+                                <span id="sim2_status_display">—</span>
+                              </div>
+                              <input type="hidden" name="sim2_profile_status" id="sim2_status_hidden" value="{{ old('sim2_profile_status', $formData['sim2_profile_status'] ?? '') }}" />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -1026,33 +1224,19 @@
                     @endif
                   </div>
 
-                  <div class="wizard-buttons">
-                    <button type="button" class="btn btn-default prev-step" data-step="3"><i class="fa fa-arrow-left"></i> Previous</button>
-                    <button type="button" class="btn btn-primary next-step" data-step="3">Next: Preview & Generate <i class="fa fa-arrow-right"></i></button>
-                  </div>
-                </form>
-              </div>
 
-              <!-- Step 4: Preview & Generate -->
-              <div class="wizard-content-step" id="wizard-step-4">
-                <div class="preview-container" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
-                  <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
-                    <i class="fa fa-eye" style="color:#76CF1C;margin-right:8px;"></i>Step 4: Certificate Preview
-                  </h4>
-                  <div id="certificate-preview-frame" style="height: 70vh; width: 100%; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center;">
-                    <div class="text-center">
-                      <i class="fa fa-spinner fa-spin fa-3x" style="color:#76CF1C; margin-bottom:15px;"></i>
-                      <p>Generating preview...</p>
+                  <div class="wizard-buttons" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <button type="button" class="btn btn-default prev-step" data-step="3"><i class="fa fa-arrow-left"></i> Previous</button>
+                    <div style="display:flex; gap:10px; margin-left:auto;">
+                      <button type="button" class="btn btn-info" id="preview-btn" style="background-color:#3b82f6; border-color:#3b82f6; color:#fff; padding:10px 30px; font-weight:600;">
+                        <i class="fa fa-eye"></i> Preview Certificate
+                      </button>
+                      <button type="button" class="btn btn-success" id="save-certificate-btn" style="background-color:#76CF1C; border-color:#76CF1C; color:#fff; padding:10px 40px; font-weight:700;">
+                        <i class="fa fa-save"></i> Save Certificate
+                      </button>
                     </div>
                   </div>
-                </div>
-
-                <div class="wizard-buttons">
-                  <button type="button" class="btn btn-default prev-step" data-step="4"><i class="fa fa-arrow-left"></i> Previous</button>
-                  <button type="button" class="btn btn-success" id="final-generate-btn" style="background-color:#76CF1C; border-color:#76CF1C; color:#fff; padding:10px 40px; font-weight:700;">
-                    <i class="fa fa-certificate"></i> GENERATE CERTIFICATE
-                  </button>
-                </div>
+                </form>
               </div>
             @endif
           </div>
@@ -1136,18 +1320,13 @@
       $('#wizard-step-' + step).addClass('active');
 
       $('.wizard-step').removeClass('active completed');
-      for (let i = 1; i <= 4; i++) {
+      for (let i = 1; i <= 3; i++) {
         const $indicator = $('#step-indicator-' + i);
         if (i < step) {
           $indicator.addClass('completed');
         } else if (i === step) {
           $indicator.addClass('active');
         }
-      }
-
-      // If entering Step 4, trigger preview
-      if (step === 4) {
-        generatePreview();
       }
 
       currentStep = step;
@@ -1177,15 +1356,19 @@
           issues.push('Device verification failed. The scanned IMEI must match the assigned device.');
         }
       } else if (step === 3) {
+        // Use the comprehensive validation function that checks ALL required fields
+        const validation = validateRequiredFields();
+        if (!validation.isValid) {
+          validation.missingFields.forEach(function(field) {
+            issues.push('Missing required field: ' + field);
+          });
+        }
+
+        // Also check HTML5 form validity
         const form = document.getElementById('certificate-details-form');
         if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
           return false;
         }
-
-        const ownerName = $('input[name="owner_name"]').val() || '';
-        const ownerAddress = $('textarea[name="owner_address"]').val() || '';
-        if (!ownerName.trim()) issues.push('Owner Name is required.');
-        if (!ownerAddress.trim()) issues.push('Owner Address is required.');
       }
 
       if (issues.length > 0) {
@@ -1209,9 +1392,30 @@
       showStep(step - 1);
     });
 
+    // Populate display fields with pre-saved values on page load
+    function populateDisplayFieldsFromHidden() {
+      const fields = [
+        { display: '#org_name_display', hidden: '#organization_name_hidden' },
+        { display: '#plan_status_display', hidden: '#plan_status_hidden' },
+        { display: '#sim1_imsi_display', hidden: '#sim1_imsi_hidden' },
+        { display: '#sim1_status_display', hidden: '#sim1_status_hidden' },
+        { display: '#sim2_imsi_display', hidden: '#sim2_imsi_hidden' },
+        { display: '#sim2_status_display', hidden: '#sim2_status_hidden' }
+      ];
+      fields.forEach(function(field) {
+        const value = $(field.hidden).val();
+        if (value && value.trim() !== '') {
+          $(field.display).text(value);
+        }
+      });
+    }
+
+    // Call on page load to populate display fields with saved values
+    populateDisplayFieldsFromHidden();
+
     function generatePreview() {
       const $frame = $('#certificate-preview-frame');
-      $frame.html('<div class="text-center"><i class="fa fa-spinner fa-spin fa-3x" style="color:#76CF1C; margin-bottom:15px;"></i><p>Generating certificate preview...</p></div>');
+      $frame.html('<div class="text-center"><i class="fa fa-spinner fa-spin fa-3x" style="color:#76CF1C; margin-bottom:15px;"></i><p style="font-size: 16px; font-weight: 500;">Generating Certificate Preview...</p><p style="font-size: 12px; color: #666; margin-top: 15px;">Please wait. This may take up to 5 minutes on first generation.</p><div style="margin-top: 20px; padding: 10px; background: #f0f8ff; border-radius: 4px; border-left: 4px solid #76CF1C;"><p style="font-size: 11px; color: #666; margin: 0;">The PDF is being generated from your data. Subsequent previews will be faster.</p></div></div>');
 
       const form = document.getElementById('certificate-details-form');
       const formData = new FormData(form);
@@ -1228,20 +1432,203 @@
         xhrFields: {
           responseType: 'blob'
         },
-        timeout: 15000,
+        timeout: 300000,
         success: function(blob) {
-          // Create a local URL for the PDF blob
-          const url = URL.createObjectURL(blob);
-          $frame.html('<iframe src="' + url + '" style="width:100%; height:100%; border:none; background:#fff;"></iframe>');
+          // Check if response is actually a PDF or an error
+          if (blob.type && blob.type.indexOf('application/pdf') > -1) {
+            // Create a local URL for the PDF blob
+            const url = URL.createObjectURL(blob);
+            $frame.html('<iframe src="' + url + '" style="width:100%; height:100%; border:none; background:#fff;"></iframe>');
+          } else {
+            // Response is not a PDF, likely an error
+            const reader = new FileReader();
+            reader.onload = function() {
+              try {
+                const response = JSON.parse(reader.result);
+                let errorMsg = '<div class="alert alert-danger"><strong>Error generating preview.</strong>';
+                if (response.errors) {
+                  errorMsg += '<br><strong>Validation Errors:</strong><ul style="margin: 10px 0; padding-left: 20px;">';
+                  for (const [field, messages] of Object.entries(response.errors)) {
+                    messages.forEach(msg => {
+                      errorMsg += `<li>${msg}</li>`;
+                    });
+                  }
+                  errorMsg += '</ul>';
+                }
+                errorMsg += '</div>';
+                $frame.html(errorMsg);
+              } catch(e) {
+                $frame.html('<div class="alert alert-danger"><strong>Error generating preview.</strong><br>Please ensure all required fields are filled correctly and try again.</div>');
+              }
+            };
+            reader.readAsText(blob);
+          }
         },
         error: function(xhr, status, error) {
-          console.error('Preview error:', {status, error, response: xhr.responseText});
-          $frame.html('<div class="alert alert-danger"><strong>Error generating preview.</strong><br>Please ensure all required fields are filled correctly and try again.</div>');
+          console.error('Preview error:', {status, statusText: xhr.statusText, error});
+
+          let errorMsg = '<div class="alert alert-danger"><strong>Error generating preview.</strong>';
+
+          // Try to parse validation errors from response
+          if (xhr.status === 422 && xhr.responseText) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              if (response.errors) {
+                errorMsg += '<br><strong>Validation Errors:</strong><ul style="margin: 10px 0; padding-left: 20px;">';
+                for (const [field, messages] of Object.entries(response.errors)) {
+                  messages.forEach(msg => {
+                    errorMsg += `<li>${msg}</li>`;
+                  });
+                }
+                errorMsg += '</ul>';
+              }
+            } catch (e) {
+              console.error('Could not parse error response:', e);
+            }
+          }
+
+          errorMsg += '<br>Please ensure all required fields are filled correctly and try again.</div>';
+          $frame.html(errorMsg);
         }
       });
     }
 
-    $('#final-generate-btn').on('click', function() {
+    // Validate required fields - includes ALL fields marked as required in the form
+    function validateRequiredFields() {
+      const requiredFields = {
+        // Vendor Information
+        'vendor_name': 'Vendor Name',
+        'vendor_contact': 'Vendor Contact Number',
+        'vendor_address': 'Vendor Address',
+        'vendor_email': 'Vendor Email',
+        // Fitter Information
+        'fitter_company': 'Fitter Company Name',
+        'fitter_contact': 'Fitter Contact Number',
+        'fitter_address': 'Fitter Address',
+        'fitter_email': 'Fitter Email',
+        // Owner Information
+        'owner_name': 'Owner Name',
+        'owner_mobile': 'Owner Mobile Number',
+        'owner_address': 'Owner Address',
+        'owner_email': 'Owner Email',
+        // Vehicle Information
+        'vehicle_registration_no': 'Vehicle Registration Number',
+        'chassis_no': 'Chassis No',
+        'engine_no': 'Engine No',
+        'color': 'Color',
+        'vehicle_model': 'Vehicle Model',
+        'vehicle_class': 'Vehicle Class',
+        'fuel_type': 'Fuel Type',
+        // Device Information
+        'vltd_serial_no': 'VLTD Serial No (IMEI)',
+        'vltd_make': 'VLTD Make',
+        'vltd_model': 'VLTD Model',
+        'vltd_icc_id': 'ICCID',
+        'fitment_date': 'Fitment Date'
+      };
+
+      const missingFields = [];
+      for (const [fieldName, fieldLabel] of Object.entries(requiredFields)) {
+        const $field = $('input[name="' + fieldName + '"], textarea[name="' + fieldName + '"]');
+        const value = $field.val() ? $field.val().trim() : '';
+        if (!value) {
+          missingFields.push(fieldLabel);
+        }
+      }
+
+      return {
+        isValid: missingFields.length === 0,
+        missingFields: missingFields
+      };
+    }
+
+    // Show validation error
+    function showValidationError(missingFields) {
+      let $banner = $('#validation-error-banner');
+      if ($banner.length === 0) {
+        $banner = $('<div id="validation-error-banner" style="display:none; background:#fef2f2; border:2px solid #ef4444; border-radius:10px; padding:18px 22px; margin-bottom:20px;"><div style="display:flex; align-items:flex-start; gap:12px;"><i class="fa fa-exclamation-triangle" style="color:#ef4444; font-size:22px; margin-top:2px;"></i><div style="flex:1;"><h5 style="margin:0 0 8px 0; color:#991b1b; font-size:14px; font-weight:700;">Missing Required Fields</h5><p style="margin:0 0 8px 0; color:#7f1d1d; font-size:13px;">Please fill in the following fields before proceeding:</p><ul id="validation-error-list" style="margin:0; padding-left:18px; color:#7f1d1d; font-size:13px; line-height:1.7;"></ul></div></div></div>');
+        $('#certificate-details-form').before($banner);
+      }
+      const $list = $('#validation-error-list');
+      $list.empty();
+      missingFields.forEach(function(field) {
+        $list.append('<li>' + field + '</li>');
+      });
+      $banner.show();
+      $('html, body').animate({ scrollTop: $banner.offset().top - 100 }, 300);
+    }
+
+    function hideValidationError() {
+      const $banner = $('#validation-error-banner');
+      if ($banner.length > 0) {
+        $banner.fadeOut();
+      }
+    }
+
+    // Preview button - opens preview in new tab
+    $('#preview-btn').on('click', function(e) {
+      e.preventDefault();
+
+      const validation = validateRequiredFields();
+      if (!validation.isValid) {
+        showValidationError(validation.missingFields);
+        return false;
+      }
+
+      hideValidationError();
+
+      // Debug: Log all hidden field values before preview
+      console.log('Hidden field values before preview:');
+      console.log('organization_name:', $('#organization_name_hidden').val());
+      console.log('plan_status:', $('#plan_status_hidden').val());
+      console.log('sim1_imsi:', $('#sim1_imsi_hidden').val());
+      console.log('sim1_profile_status:', $('#sim1_status_hidden').val());
+      console.log('sim2_imsi:', $('#sim2_imsi_hidden').val());
+      console.log('sim2_profile_status:', $('#sim2_status_hidden').val());
+
+      const form = document.getElementById('certificate-details-form');
+      const formData = new FormData(form);
+
+      // Create a temporary form to post the preview request
+      const tempForm = document.createElement('form');
+      tempForm.method = 'POST';
+      tempForm.action = '/user/device/{{ $device->id }}/certificate/preview';
+      tempForm.target = '_blank';
+
+      // Add all form data to the temporary form
+      for (const [key, value] of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        tempForm.appendChild(input);
+      }
+
+      // Add CSRF token
+      const token = $('input[name="_token"]').val();
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = '_token';
+      tokenInput.value = token;
+      tempForm.appendChild(tokenInput);
+
+      // Submit the form in a new tab
+      document.body.appendChild(tempForm);
+      tempForm.submit();
+      document.body.removeChild(tempForm);
+    });
+
+    // Save certificate button - submits the form
+    $('#save-certificate-btn').on('click', function(e) {
+      e.preventDefault();
+
+      const validation = validateRequiredFields();
+      if (!validation.isValid) {
+        showValidationError(validation.missingFields);
+        return false;
+      }
+
+      hideValidationError();
       $('#certificate-details-form').submit();
     });
 
@@ -1626,14 +2013,60 @@
                     .css('color', '#dc2626');
             return;
           }
-          // Auto-fill SIM 1 / SIM 2 fields
+          // Populate SIM display and hidden fields
           sims.forEach(function(sim, idx) {
             if (idx >= 2) return;
-            const opField = $('#certificate-details-form input[name="sim' + (idx + 1) + '_operator"]');
-            const msField = $('#certificate-details-form input[name="sim' + (idx + 1) + '_msisdn"]');
-            if (opField.length && sim.operator) opField.val(sim.operator).change();
-            if (msField.length && sim.msisdn)   msField.val(sim.msisdn).change();
+            const simNum = idx + 1;
+            const operator = sim.operator || null;
+            const msisdn = sim.msisdn || null;
+            const imsi = sim.imsi || null;
+            const status = sim.status || null;
+
+            // For display: use actual value or "—" if not available
+            const displayOperator = operator || '—';
+            const displayMsisdn = msisdn || '—';
+            const displayImsi = imsi || '—';
+            const displayStatus = status || '—';
+
+            // Display fields (using text for span elements)
+            $('#sim' + simNum + '_operator_display').text(displayOperator);
+            $('#sim' + simNum + '_msisdn_display').text(displayMsisdn);
+            $('#sim' + simNum + '_imsi_display').text(displayImsi);
+            $('#sim' + simNum + '_status_display').text(displayStatus);
+
+            // Hidden fields to submit with form (store actual values, empty string if null)
+            $('#sim' + simNum + '_operator_hidden').val(operator || '');
+            $('#sim' + simNum + '_msisdn_hidden').val(msisdn || '');
+            $('#sim' + simNum + '_imsi_hidden').val(imsi || '');
+            $('#sim' + simNum + '_status_hidden').val(status || '');
+
+            console.log('Updated hidden fields for SIM ' + simNum + ':', {operator, msisdn, imsi, status});
           });
+
+          // Populate plan-level information (ALWAYS update, even if value is null/empty)
+          if (response.organization !== undefined) {
+            $('#org_name_display').text(response.organization || '—');
+            $('#organization_name_hidden').val(response.organization || '');
+            console.log('Updated organization_name_hidden:', response.organization);
+          }
+          if (response.iccid) $('#iccid_display').text(response.iccid);
+          if (response.plan_status !== undefined) {
+            $('#plan_status_display').text(response.plan_status || '—');
+            $('#plan_status_hidden').val(response.plan_status || '');
+            console.log('Updated plan_status_hidden:', response.plan_status);
+          }
+
+          // Populate activation/expiry dates (plan-level, once)
+          if (response.activation_date) {
+            $('#activation_date_display').text(response.activation_date);
+            $('#sim1_activation_date_hidden').val(response.activation_date);
+            $('#sim2_activation_date_hidden').val(response.activation_date);
+          }
+          if (response.expiry_date) {
+            $('#expiry_date_display').text(response.expiry_date);
+            $('#sim1_expiry_date_hidden').val(response.expiry_date);
+            $('#sim2_expiry_date_hidden').val(response.expiry_date);
+          }
           $('#sim-form-row').show();
           statusEl.html('<i class="fa fa-check-circle"></i> Found ' + sims.length + ' SIM profile(s): '
                       + sims.map(s => s.operator + ' (' + s.msisdn + ')').join(', '))
@@ -1762,40 +2195,60 @@
                 '</tr>'
               );
 
-              // Auto-fill SIM form fields so values get saved with the certificate
+              // Populate SIM profile display fields (read-only)
               if (idx < 2) {
-                const opField       = $('#certificate-details-form input[name="sim' + (idx + 1) + '_operator"]');
-                const msField       = $('#certificate-details-form input[name="sim' + (idx + 1) + '_msisdn"]');
+                const simNum = idx + 1;
+                // Display fields (using text for span elements)
+                $('#sim' + simNum + '_operator_display').text(operator);
+                $('#sim' + simNum + '_msisdn_display').text(msisdn);
+                $('#sim' + simNum + '_imsi_display').text(imsi);
+                $('#sim' + simNum + '_status_display').text(status);
 
-                if (opField.length && sim.operator) opField.val(sim.operator).change();
-                if (msField.length && sim.msisdn)   msField.val(sim.msisdn).change();
-              }
+                // Hidden fields to submit with form (store actual values, empty string if '—')
+                $('#sim' + simNum + '_operator_hidden').val(operator !== '—' ? operator : '');
+                $('#sim' + simNum + '_msisdn_hidden').val(msisdn !== '—' ? msisdn : '');
+                $('#sim' + simNum + '_imsi_hidden').val(imsi !== '—' ? imsi : '');
+                $('#sim' + simNum + '_status_hidden').val(status !== '—' ? status : '');
 
-              // Populate activation and expiry dates from the top-level response fields (only once)
-              if (idx === 0) {
-                const activationField = $('#certificate-details-form input[name="activation_date"]');
-                const expiryField = $('#certificate-details-form input[name="expiry_date"]');
-
-                if (activationField.length && response.activation_date) {
-                  activationField.val(response.activation_date).change();
-                }
-                if (expiryField.length && response.expiry_date) {
-                  expiryField.val(response.expiry_date).change();
-                }
+                console.log('Updated hidden fields for SIM ' + simNum + ':', {operator, msisdn, imsi, status});
               }
             });
 
-            // Show SIM form section so user can verify/edit
-            $('#sim-form-row').show();
+            // Populate SIM/Plan level information (ALWAYS update, even if value is null/empty)
+            if (response.organization !== undefined) {
+              $('#org_name_display').text(response.organization || '—');
+              $('#organization_name_hidden').val(response.organization || '');
+              console.log('Updated organization_name_hidden:', response.organization);
+            }
+            if (response.iccid) $('#iccid_display').text(response.iccid);
+            if (response.plan_status !== undefined) {
+              $('#plan_status_display').text(response.plan_status || '—');
+              $('#plan_status_hidden').val(response.plan_status || '');
+              console.log('Updated plan_status_hidden:', response.plan_status);
+            }
+
+            // Activation and Expiry dates are plan-level, displayed once
+            if (response.activation_date) {
+              $('#activation_date_display').text(response.activation_date);
+              $('#sim1_activation_date_hidden').val(response.activation_date);
+              $('#sim2_activation_date_hidden').val(response.activation_date);
+            }
+            if (response.expiry_date) {
+              $('#expiry_date_display').text(response.expiry_date);
+              $('#sim1_expiry_date_hidden').val(response.expiry_date);
+              $('#sim2_expiry_date_hidden').val(response.expiry_date);
+            }
 
             let meta = [];
             if (response.organization)    meta.push('Org: <strong>' + response.organization + '</strong>');
             if (response.plan_status)     meta.push('Plan: <strong>' + response.plan_status + '</strong>');
             if (response.activation_date) meta.push('Activated: <strong>' + response.activation_date + '</strong>');
             if (response.expiry_date)     meta.push('Expires: <strong>' + response.expiry_date + '</strong>');
-            
-            $('#sim-meta').html(meta.join(' &nbsp;·&nbsp; '));
-            $('#sim-profiles-container').show();
+
+            if (meta.length > 0) {
+              $('#sim-meta').html(meta.join(' &nbsp;·&nbsp; '));
+              $('#sim-profiles-container').show();
+            }
           }
         },
         error: function(xhr) {

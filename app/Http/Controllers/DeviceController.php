@@ -361,30 +361,41 @@ class DeviceController extends Controller
      */
     private function certExtraFields(Request $request, Device $device, $vltdModel, $iccId): array
     {
-        $saved = [];
-        $cfg = json_decode($device->configurations, true);
-        if (is_array($cfg)) {
-            $saved = $cfg['certificate_details'] ?? [];
-        }
-
+        // Use ONLY request data, not saved configuration
+        // The form is the single source of truth
         return [
-            // Vendor Details
-            'vendor_name'      => $request->vendor_name    ?? ($saved['vendor_name']    ?? null),
-            'vendor_address'   => $request->vendor_address ?? ($saved['vendor_address'] ?? null),
-            'vendor_contact'   => $request->vendor_contact ?? ($saved['vendor_contact'] ?? null),
-            'vendor_email'     => $request->vendor_email   ?? ($saved['vendor_email']   ?? null),
-            'vendor_gst'       => $request->vendor_gst     ?? ($saved['vendor_gst']     ?? null),
-            // Owner Details
-            'owner_name'       => $request->owner_name     ?? ($saved['owner_name']     ?? null),
-            'owner_address'    => $request->owner_address  ?? ($saved['owner_address']  ?? null),
-            'owner_mobile'     => $request->owner_mobile   ?? ($saved['owner_mobile']   ?? null),
-            'owner_email'      => $request->owner_email    ?? ($saved['owner_email']    ?? null),
-            // Device Details
-            'vendor_id'        => $request->vendor_id        ?? ($saved['vendor_id']        ?? null),
-            'firmware_version' => $request->firmware_version ?? ($saved['firmware_version'] ?? null),
-            'device_imei'      => $request->device_imei  ?: ($saved['device_imei']  ?? $device->imei),
-            'device_iccid'     => $request->device_iccid ?: ($saved['device_iccid'] ?? ($request->vltd_icc_id ?: $iccId)),
-            'device_model'     => $request->device_model ?: ($saved['device_model'] ?? $vltdModel),
+            // Vendor Details - from request ONLY
+            'vendor_name'      => $request->vendor_name ?? null,
+            'vendor_address'   => $request->vendor_address ?? null,
+            'vendor_contact'   => $request->vendor_contact ?? null,
+            'vendor_email'     => $request->vendor_email ?? null,
+            'vendor_gst'       => $request->vendor_gst ?? null,
+            // Owner Details - from request ONLY
+            'owner_name'       => $request->owner_name ?? null,
+            'owner_address'    => $request->owner_address ?? null,
+            'owner_mobile'     => $request->owner_mobile ?? null,
+            'owner_email'      => $request->owner_email ?? null,
+            // Device Details - from request ONLY (with safe defaults for device-level data)
+            'vendor_id'        => $request->vendor_id ?? null,
+            'firmware_version' => $request->firmware_version ?? null,
+            'device_imei'      => $request->device_imei ?: $device->imei,
+            'device_iccid'     => $request->device_iccid ?: ($request->vltd_icc_id ?: $iccId),
+            'device_model'     => $request->device_model ?: $vltdModel,
+            // SIM & Plan Details - from request ONLY
+            'organization_name' => $request->organization_name ?? null,
+            'plan_status'       => $request->plan_status ?? null,
+            'sim1_operator'     => $request->sim1_operator ?? null,
+            'sim1_msisdn'       => $request->sim1_msisdn ?? null,
+            'sim1_imsi'         => $request->sim1_imsi ?? null,
+            'sim1_profile_status' => $request->sim1_profile_status ?? null,
+            'sim1_activation_date' => $request->sim1_activation_date ?? null,
+            'sim1_expiry_date'  => $request->sim1_expiry_date ?? null,
+            'sim2_operator'     => $request->sim2_operator ?? null,
+            'sim2_msisdn'       => $request->sim2_msisdn ?? null,
+            'sim2_imsi'         => $request->sim2_imsi ?? null,
+            'sim2_profile_status' => $request->sim2_profile_status ?? null,
+            'sim2_activation_date' => $request->sim2_activation_date ?? null,
+            'sim2_expiry_date'  => $request->sim2_expiry_date ?? null,
         ];
     }
 
@@ -542,12 +553,24 @@ class DeviceController extends Controller
             $qrImageDataUri = null;
         }
         $data['qr_image'] = $qrImageDataUri;
+
+        // Mark certificate as generated in database
+        try {
+            $device->is_certificate_generated = true;
+            $device->certificate_data = json_encode($data);
+            $device->update();
+        } catch (\Exception $e) {
+            \Log::error('Failed to save certificate data: ' . $e->getMessage());
+            // Continue with PDF generation even if data save fails
+        }
+
         $pdf = PDF::loadView('pdf.certificate', $data);
         return $pdf->download('certificate_' . $device->imei . '.pdf');
     }
 
     public function previewCertificate($id, Request $request)
     {
+
         $request->validate([
             'owner_name' => 'required|string|max:255',
             'owner_address' => 'required|string|max:500',
@@ -687,9 +710,34 @@ class DeviceController extends Controller
         if (is_array($deviceConfig)) {
             $iccId = $deviceConfig['ccid']['value'] ?? ($deviceConfig['iccid']['value'] ?? '');
         }
-        $config = json_decode($device->configurations, true) ?: [];
-        $saved = $config['certificate_details'] ?? null;
+        // Fetch certificate data from the dedicated certificate_data field ONLY
+        $saved = null;
+
+        if (!empty($device->certificate_data)) {
+            $saved = json_decode($device->certificate_data, true);
+        }
+
+        // If certificate_data is empty, try to migrate from old configuration location
+        if (empty($saved)) {
+            $config = json_decode($device->configurations, true) ?: [];
+            $oldSaved = $config['certificate_details'] ?? null;
+
+            if (!empty($oldSaved)) {
+                // Migrate old data to certificate_data field
+                $device->certificate_data = json_encode($oldSaved);
+                $device->update();
+                $saved = $oldSaved;
+            }
+        }
+
         $editMode = (int) $request->query('edit', 0) === 1;
+        $isCertificateGenerated = (bool) $device->is_certificate_generated;
+
+        // Prevent editing if certificate has been generated
+        if ($editMode && $isCertificateGenerated) {
+            return redirect('/device/' . $id . '/certificate')->with('warning', 'Certificate cannot be edited once it has been generated.');
+        }
+
         return view('certificate_page', [
             'device' => $device,
             'category_name' => $categoryName,
@@ -699,7 +747,8 @@ class DeviceController extends Controller
             'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId,
             'saved' => $saved,
-            'edit_mode' => $editMode,
+            'edit_mode' => $editMode && !$isCertificateGenerated,
+            'is_certificate_generated' => $isCertificateGenerated,
         ]);
     }
     public static function uniqueJson(Device $device, string $key, $value): bool
@@ -796,7 +845,7 @@ class DeviceController extends Controller
         $addressParts = explode(',', $ownerAddress);
         $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
 
-        $config['certificate_details'] = [
+        $certificateData = [
             'holder_name' => $request->owner_name,
             'authority_city' => $authorityCity,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
@@ -837,19 +886,32 @@ class DeviceController extends Controller
             'vendor_id'       => $request->vendor_id,
             'firmware_version' => $request->firmware_version,
             // SIM Details
+            'organization_name' => $request->organization_name ?? null,
+            'plan_status' => $request->plan_status ?? null,
             'sim1_operator'   => $request->sim1_operator ?? null,
             'sim1_msisdn'     => $request->sim1_msisdn ?? null,
+            'sim1_imsi' => $request->sim1_imsi ?? null,
+            'sim1_profile_status' => $request->sim1_profile_status ?? null,
+            'sim1_activation_date' => $request->sim1_activation_date ?? null,
+            'sim1_expiry_date' => $request->sim1_expiry_date ?? null,
             'sim2_operator'   => $request->sim2_operator ?? null,
             'sim2_msisdn'     => $request->sim2_msisdn ?? null,
+            'sim2_imsi' => $request->sim2_imsi ?? null,
+            'sim2_profile_status' => $request->sim2_profile_status ?? null,
+            'sim2_activation_date' => $request->sim2_activation_date ?? null,
+            'sim2_expiry_date' => $request->sim2_expiry_date ?? null,
         ];
+
+        // Keep backward compatibility: also save to configurations
+        $config['certificate_details'] = $certificateData;
+
         $device->configurations = json_encode($config);
-        // $device->certificate_vltd_serial_no = $request->vltd_serial_no;
-        // $device->certificate_vltd_icc_id = $request->vltd_icc_id;
-        // $device->certificate_vehicle_registration_no = $request->vehicle_registration_no;
-        // $device->certificate_chassis_no = $request->chassis_no;
-        // $device->certificate_engine_no = $request->engine_no;
+        // Save all certificate data to the new certificate_data field
+        $device->certificate_data = json_encode($certificateData);
+        // Mark certificate as generated when saved
+        $device->is_certificate_generated = true;
         $device->update();
-        return redirect('/user/device/' . $device->id . '/certificate/view');
+        return redirect('/device/' . $device->id . '/certificate/view');
     }
 
     public function uploadRC($id, Request $request)
@@ -880,6 +942,36 @@ class DeviceController extends Controller
             // completeness is enforced on the merged result in the browser.
             $requiredFields = ['vehicle_registration_no', 'chassis_no', 'engine_no', 'color', 'vehicle_model'];
             $missingLabels = \App\Services\OcrQualityHelper::missingFieldLabels($requiredFields, $extractedData);
+
+            // ── Duplicate RC Validation ───────────────────────────────────
+            // Check if a certificate already exists for this vehicle registration number
+            if (!empty($extractedData['vehicle_registration_no'])) {
+                $vehicleRegNo = $extractedData['vehicle_registration_no'];
+
+                // Check if another device has a certificate with this registration number
+                $duplicateExists = Device::where('id', '!=', $device->id)
+                    ->where(function ($query) use ($vehicleRegNo) {
+                        // Check in certificate_data field
+                        $query->whereRaw("JSON_EXTRACT(certificate_data, '$.vehicle_registration_no') = ?", [$vehicleRegNo])
+                        // Also check in configurations field for backward compatibility
+                        ->orWhereRaw("JSON_EXTRACT(configurations, '$.certificate_details.vehicle_registration_no') = ?", [$vehicleRegNo]);
+                    })
+                    ->where('is_certificate_generated', true)
+                    ->exists();
+
+                if ($duplicateExists) {
+                    // Clean up uploaded file
+                    if (isset($filePath) && file_exists(storage_path('app/' . $filePath))) {
+                        unlink(storage_path('app/' . $filePath));
+                    }
+
+                    return response()->json([
+                        'success' => false,
+                        'is_duplicate' => true,
+                        'error' => 'A certificate has already been generated for vehicle registration number: ' . $vehicleRegNo,
+                    ], 422);
+                }
+            }
 
             // Store RC file path in device config
             $config = json_decode($device->configurations, true) ?: [];
@@ -975,7 +1067,14 @@ class DeviceController extends Controller
             $detected = $service->extractPlateNumber($fullPath);
             $detectedNormalized = \App\Services\GoogleVisionRCService::normalizePlateNumber($detected);
 
-            if (file_exists($fullPath)) unlink($fullPath);
+            // Store plate image path in ocr_images for certificate display
+            $config = json_decode($device->configurations, true) ?: [];
+            if (!isset($config['ocr_images'])) {
+                $config['ocr_images'] = [];
+            }
+            $config['ocr_images']['plate'] = $filePath;
+            $device->configurations = json_encode($config);
+            $device->save();
 
             if (!$detectedNormalized) {
                 return response()->json([
@@ -1039,7 +1138,14 @@ class DeviceController extends Controller
             $service = new \App\Services\GoogleVisionRCService();
             $info    = $service->extractDeviceInfo($fullPath);
 
-            if (file_exists($fullPath)) unlink($fullPath);
+            // Store device image path in ocr_images for certificate display
+            $config = json_decode($device->configurations, true) ?: [];
+            if (!isset($config['ocr_images'])) {
+                $config['ocr_images'] = [];
+            }
+            $config['ocr_images']['device'] = $filePath;
+            $device->configurations = json_encode($config);
+            $device->save();
 
             if (empty($info['imei']) && empty($info['iccid'])) {
                 return response()->json([
@@ -1155,8 +1261,26 @@ class DeviceController extends Controller
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
             ->find($device->device_category_id);
         $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
-        $config = json_decode($device->configurations, true) ?: [];
-        $details = $config['certificate_details'] ?? null;
+        // Fetch certificate data from the dedicated certificate_data field ONLY
+        $details = null;
+
+        if (!empty($device->certificate_data)) {
+            $details = json_decode($device->certificate_data, true);
+        }
+
+        // If certificate_data is empty, try to migrate from old configuration location
+        if (empty($details)) {
+            $config = json_decode($device->configurations, true) ?: [];
+            $oldDetails = $config['certificate_details'] ?? null;
+
+            if (!empty($oldDetails)) {
+                // Migrate old data to certificate_data field
+                $device->certificate_data = json_encode($oldDetails);
+                $device->update();
+                $details = $oldDetails;
+            }
+        }
+
         if (!$details) {
             return redirect('/user/device/' . $device->id . '/certificate');
         }

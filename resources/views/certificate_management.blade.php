@@ -117,13 +117,27 @@ $currentEmail = Auth::user()->email;
                               <td>{{ $dev->name ?? 'N/A' }}</td>
                               <td>{{ $dev->imei ?? 'N/A' }}</td>
                               <td style="text-align: center;">
+                                @php
+                                  $statusClass = match($dev->certificate_status) {
+                                    'Generated' => 'btn-success',
+                                    'Saved' => 'btn-info',
+                                    'Pending' => 'btn-warning',
+                                    default => 'btn-secondary'
+                                  };
+                                  $statusIcon = match($dev->certificate_status) {
+                                    'Generated' => 'fa-certificate',
+                                    'Saved' => 'fa-save',
+                                    'Pending' => 'fa-clock',
+                                    default => 'fa-question-circle'
+                                  };
+                                @endphp
                                 <a href="{{ url('/' . $url_type . '/certificate/' . $dev->id) }}"
-                                   class="btn btn-sm {{ $dev->has_certificate ? 'btn-success' : 'btn-warning' }}"
+                                   class="btn btn-sm {{ $statusClass }}"
                                    title="Manage Certificate"
                                    style="position: relative;">
                                   <i class="fa fa-certificate"></i> Certificate
                                   <span style="display: inline-block; margin-left: 5px; font-size: 10px; padding: 2px 6px; border-radius: 3px; background-color: rgba(255,255,255,0.3);">
-                                    {{ $dev->has_certificate ? 'Completed' : 'Pending' }}
+                                    <i class="fa {{ $statusIcon }}" style="margin-right: 3px;"></i>{{ $dev->certificate_status }}
                                   </span>
                                 </a>
                               </td>

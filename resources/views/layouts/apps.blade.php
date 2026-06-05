@@ -3,7 +3,7 @@
 use App\Models\TicketModel;
 use App\Models\versionModel;
 
-$tickets = TicketModel::where('is_read', 0)->get();
+$tickets = TicketModel::where('is_read', 0)->where('type', '!=', 'alert')->get();
 $latestVersion = versionModel::latest('created_at')->first();
 
 $ticketCount = $tickets->count();

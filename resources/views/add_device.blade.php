@@ -342,7 +342,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     data: formData,
                     success: function(response) {
                         let result = JSON.parse(response);
-                        if (result.status = 200) {
+                        if (result.status == 200) {
                             $('.btn-disable-after-submit').attr("disabled", true);
                             $('.success_msg').append(result.status_message).show();
                             document.documentElement.scrollIntoView({
@@ -355,7 +355,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         console.error("Error:", xhr.responseText);
                         let errors = JSON.parse(xhr.responseText);
                         // Display specific errors in the error message container
-                        if (errors && errors.errors.imei) {
+                        if (errors && errors.errors && errors.errors.imei) {
                             $('.error_msg').append(errors.errors.imei[0]).show();
                         }
                         document.documentElement.scrollIntoView({

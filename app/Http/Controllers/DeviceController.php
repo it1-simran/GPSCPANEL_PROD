@@ -68,10 +68,12 @@ class DeviceController extends Controller
 
         foreach ($config as $key => $value) {
             if (is_array($value) && isset($value['value'])) {
-                if ($value['value'] === null || $value['value'] === "" || strtolower((string)$value['value']) === 'null') {
+                if ($value['value'] === null || $value['value'] === "" || (is_scalar($value['value']) && strtolower((string)$value['value']) === 'null')) {
                     $config[$key]['value'] = "";
                 }
-            } elseif ($value === null || $value === "" || strtolower((string)$value) === 'null') {
+            } elseif (is_array($value)) {
+                $config[$key] = $this->normalizeConfiguration($value);
+            } elseif ($value === null || $value === "" || (is_scalar($value) && strtolower((string)$value) === 'null')) {
                 $config[$key] = "";
             }
         }

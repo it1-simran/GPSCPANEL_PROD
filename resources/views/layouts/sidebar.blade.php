@@ -48,15 +48,21 @@
                     ?>
                         <li class=""><a href="<?php echo url('/reseller'); ?>" class="hvr-bounce-to-right-sidebar-parent {{($parent_uri=='reseller' && $child_uri=='') ? 'active' : '' }}"><span class='icon-sidebar icon-home fa-2x'></span><span>Dashboard</span></a>
                         </li>
+                        @if(auth()->user()->hasPermission('account_management.create') || auth()->user()->hasPermission('account_management.view') || auth()->user()->hasPermission('account_management.edit') || auth()->user()->hasPermission('account_management.delete'))
                         <li class='sub-menu'>
                             <a href="1" class="hvr-bounce-to-right-sidebar-parent {{($child_uri=='add-user' || $child_uri=='view-user') ? 'active' : '' }}"><span class='icon-sidebar pe-7s-user fa-2x'></span><span>Account Management</span></a>
                             <ul class='sub'>
+                                @if(auth()->user()->hasPermission('account_management.create'))
                                 <li class="{{($child_uri=='add-user') ? 'active' : '' }}"><a href="<?php echo url('/reseller/add-user'); ?>">Add Account</a>
                                 </li>
+                                @endif
+                                @if(auth()->user()->hasPermission('account_management.view') || auth()->user()->hasPermission('account_management.edit') || auth()->user()->hasPermission('account_management.delete'))
                                 <li class="{{($child_uri=='view-user') ? 'active' : '' }}"><a href="<?php echo url('reseller/view-user'); ?>">View Account</a>
                                 </li>
+                                @endif
                             </ul>
                         </li>
+                        @endif
                         <li class='sub-menu '>
                             <a href="1" class="hvr-bounce-to-right-sidebar-parent {{($child_uri=='add-device' || $child_uri=='view-device') ? 'active' : '' }}"><span class='icon-sidebar pe-7s-albums fa-2x'></span><span>Device Management</span></a>
                             <ul class='sub'>

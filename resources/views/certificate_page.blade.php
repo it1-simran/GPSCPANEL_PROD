@@ -188,6 +188,68 @@
   line-height: 1.6;
 }
 
+/* Date inputs — full width by default; fitment date is narrower */
+#certificate-details-form input[type="date"].form-control {
+  color-scheme: light;
+  cursor: pointer;
+  width: 100% !important;
+}
+
+#certificate-details-form .fitment-date-field input[type="date"].form-control {
+  max-width: 320px !important;
+}
+
+#certificate-details-form input[type="date"].form-control::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+#certificate-details-form input[type="date"].form-control:hover::-webkit-calendar-picker-indicator,
+#certificate-details-form input[type="date"].form-control:focus::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
+/* Override Bootstrap form-horizontal side-by-side label offset */
+#certificate-details-form.form-horizontal .form-group {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+#certificate-details-form.form-horizontal .control-label {
+  text-align: left !important;
+  padding-top: 0 !important;
+  float: none !important;
+}
+
+@media (min-width: 992px) {
+  #certificate-details-form .row > .col-lg-6 {
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+    width: 50% !important;
+  }
+}
+
+#certificate-details-form .field-hint-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 3px 9px;
+  border-radius: 20px;
+  margin-left: 8px;
+  text-transform: none;
+  letter-spacing: 0.2px;
+  vertical-align: middle;
+  border: 1px solid #e2e8f0;
+}
+
+#certificate-details-form .fitment-date-field small.form-text {
+  font-style: normal !important;
+  color: #64748b !important;
+}
+
 /* Select dropdowns */
 #certificate-details-form select.form-control {
   appearance: none;
@@ -433,6 +495,9 @@
 @endpush
 
 @section('content')
+@php
+  $certBase = $cert_base ?? '/' . ($url_type ?? 'user') . '/certificate/' . $device->id;
+@endphp
 <section id="main-content">
   <section class="wrapper">
     <div class="top-page-header">
@@ -523,7 +588,7 @@
               </div>
               <div class="row">
                 <div class="col-md-12" style="height:80vh;">
-                  <iframe src="/user/device/{{ $device->id }}/certificate/view" style="width:100%;height:100%;border:1px solid #ccc;border-radius:4px;"></iframe>
+                  <iframe src="{{ $certBase }}/view" style="width:100%;height:100%;border:1px solid #ccc;border-radius:4px;"></iframe>
                 </div>
               </div>
             @else
@@ -531,18 +596,12 @@
                 $formData = is_array($saved) ? $saved : [];
                 $deviceCfg    = json_decode($device->configurations ?? '', true) ?: [];
                 $autoImei     = is_string($device->imei ?? null) ? $device->imei : '';
-                $autoSerialNo = is_string($formData['vltd_serial_no'] ?? null) ? $formData['vltd_serial_no'] : (is_string($device->imei ?? null) ? $device->imei : '');
+                // VLTD Serial No - auto-generated as JSDE14A + zero-padded device id
+                // (e.g. device 54 => JSDE14A000054). Deterministic and unique per device.
+                $autoSerialNo = 'JSDE14A' . str_pad((string)($device->id ?? 0), 6, '0', STR_PAD_LEFT);
                 $autoIccid    = is_string($formData['vltd_icc_id'] ?? null) ? $formData['vltd_icc_id'] : (is_string($vltd_icc_id ?? null) ? $vltd_icc_id : (is_string($deviceCfg['ccid']['value'] ?? null) ? $deviceCfg['ccid']['value'] : (is_string($deviceCfg['iccid']['value'] ?? null) ? $deviceCfg['iccid']['value'] : '')));
                 $autoModel    = is_string($formData['vltd_model'] ?? null) ? $formData['vltd_model'] : (is_string($vltd_model ?? null) ? $vltd_model : (is_string($category_name ?? null) ? $category_name : ''));
 
-                // Firmware Version - check multiple possible locations in configuration
-                // Use is_string() to avoid returning arrays
-                $autoFirmware = is_string($formData['firmware_version'] ?? null) ? $formData['firmware_version'] :
-                               (is_string($deviceCfg['firmware_version'] ?? null) ? $deviceCfg['firmware_version'] :
-                               (is_string($deviceCfg['firmware_version']['value'] ?? null) ? $deviceCfg['firmware_version']['value'] :
-                               (is_string($deviceCfg['firmwareVersion'] ?? null) ? $deviceCfg['firmwareVersion'] :
-                               (is_string($deviceCfg['firmwareVersion']['value'] ?? null) ? $deviceCfg['firmwareVersion']['value'] :
-                               ''))));
 
                 // Vendor ID - check multiple possible locations in configuration
                 // Use is_string() to avoid returning arrays
@@ -552,6 +611,24 @@
                                (is_string($deviceCfg['vendorId'] ?? null) ? $deviceCfg['vendorId'] :
                                (is_string($deviceCfg['vendorId']['value'] ?? null) ? $deviceCfg['vendorId']['value'] :
                                ''))));
+
+                // ════════════════════════════════════════════════════════════
+                // FITMENT DATE AUTO-POPULATION
+                // Default to today's date (Y-m-d format for HTML5 date input)
+                // If a value was previously saved, use that instead
+                // ════════════════════════════════════════════════════════════
+                $autoFitmentDate = date('Y-m-d'); // Default: today
+                
+                if (!empty($formData['fitment_date'])) {
+                    // Try to parse and convert saved value to Y-m-d format
+                    try {
+                        $parsed = \Carbon\Carbon::parse($formData['fitment_date']);
+                        $autoFitmentDate = $parsed->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        // If parsing fails, use today's date
+                        $autoFitmentDate = date('Y-m-d');
+                    }
+                }
               @endphp
 
               <!-- Step 1: RC & Number Plate Verification -->
@@ -589,7 +666,7 @@
                     <div class="col-md-6">
                       <div class="form-group" style="margin-bottom:12px;">
                         <label style="font-weight:600; color:#333; display:block; margin-bottom:8px; font-size:13px;">
-                          <i class="fa fa-id-card-o" style="color:#76CF1C;margin-right:6px;"></i>RC Back Page <span style="color:#888; font-weight:400;">(optional)</span>
+                          <i class="fa fa-id-card-o" style="color:#76CF1C;margin-right:6px;"></i>RC Back Page <span style="color:#d32f2f;">*</span>
                         </label>
                         <input type="file" id="rc_file_back" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif" style="display:block; width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:6px; cursor:pointer; background:#f8fafc; font-size:13px; color:#475569; transition:border-color 0.2s;" />
                         <div id="rc-back-preview" style="display:none; margin-top:8px;">
@@ -745,7 +822,7 @@
 
               <!-- Step 3: Certificate Information Form -->
               <div class="wizard-content-step" id="wizard-step-3">
-                <form class="validator form-horizontal" id="certificate-details-form" method="post" action="/user/device/{{ $device->id }}/certificate/save" enctype="multipart/form-data">
+                <form class="validator form-horizontal" id="certificate-details-form" method="post" action="{{ $certBase }}/save" enctype="multipart/form-data">
                   @csrf
                   <div id="form-sections-container">
                     <!-- Certificate Details Section -->
@@ -754,16 +831,26 @@
                         <i class="fa fa-calendar" style="color:#76CF1C;margin-right:8px;"></i>Certificate Details
                       </h4>
 
-                      <div class="form-group" style="margin-bottom:20px;">
-                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
-                          Fitment Date <span class="require" style="color:#d32f2f;">*</span>
-                          <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— today or earlier only</span>
-                        </label>
-                        <input class="form-control" type="date" name="fitment_date" id="fitment_date_input"
-                          value="{{ old('fitment_date', date('Y-m-d')) }}"
-                          max="{{ date('Y-m-d') }}"
-                          required
-                          style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; max-width:300px;" />
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group fitment-date-field">
+                            <label class="control-label" for="fitment_date_input">
+                              Fitment Date <span class="require">*</span>
+                              <span class="field-hint-badge">Today or earlier</span>
+                            </label>
+                            <input
+                              class="form-control"
+                              type="date"
+                              name="fitment_date"
+                              id="fitment_date_input"
+                              value="{{ old('fitment_date', $autoFitmentDate) }}"
+                              max="{{ date('Y-m-d') }}"
+                              required />
+                            <small class="form-text text-muted">
+                              Pre-filled with today's date. You can change it if needed.
+                            </small>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -855,7 +942,7 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Owner Name <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="owner_name" placeholder="Enter owner name" value="{{ old('owner_name', $formData['owner_name'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="owner_name" placeholder="Auto-filled from RC" value="{{ old('owner_name', $formData['owner_name'] ?? '') }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
@@ -868,7 +955,7 @@
 
                       <div class="form-group" style="margin-bottom:20px;">
                         <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Owner Address <span class="require" style="color:#d32f2f;">*</span></label>
-                        <textarea class="form-control" name="owner_address" placeholder="Enter complete owner address" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; min-height:70px;">{{ old('owner_address', $formData['owner_address'] ?? '') }}</textarea>
+                        <textarea class="form-control" name="owner_address" placeholder="Auto-filled from RC" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; min-height:70px; background-color:#f8f8f8;">{{ old('owner_address', $formData['owner_address'] ?? '') }}</textarea>
                       </div>
 
                       <div class="row">
@@ -897,13 +984,13 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Registration No <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="vehicle_registration_no" placeholder="e.g., RJ18GB8351" value="{{ old('vehicle_registration_no', $formData['vehicle_registration_no'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="vehicle_registration_no" placeholder="Auto-filled from RC" value="{{ old('vehicle_registration_no', $formData['vehicle_registration_no'] ?? '') }}" required readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Chassis No <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="chassis_no" placeholder="Enter chassis number" value="{{ old('chassis_no', $formData['chassis_no'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="chassis_no" placeholder="Auto-filled from RC" value="{{ old('chassis_no', $formData['chassis_no'] ?? '') }}" required readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
                       </div>
@@ -912,13 +999,13 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Engine No <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="engine_no" placeholder="Enter engine number" value="{{ old('engine_no', $formData['engine_no'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="engine_no" placeholder="Auto-filled from RC" value="{{ old('engine_no', $formData['engine_no'] ?? '') }}" required readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Color <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="color" placeholder="e.g., White, Black" value="{{ old('color', $formData['color'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="color" placeholder="Auto-filled from RC" value="{{ old('color', $formData['color'] ?? '') }}" required readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
                       </div>
@@ -927,20 +1014,33 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Model <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="vehicle_model" placeholder="Enter vehicle model" value="{{ old('vehicle_model', $formData['vehicle_model'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="vehicle_model" placeholder="Auto-filled from RC" value="{{ old('vehicle_model', $formData['vehicle_model'] ?? '') }}" required readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vehicle Class <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="vehicle_class" placeholder="e.g., Truck, Bus" value="{{ old('vehicle_class', $formData['vehicle_class'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
+                            <input class="form-control" type="text" name="vehicle_class" placeholder="Auto-filled from RC" value="{{ old('vehicle_class', $formData['vehicle_class'] ?? '') }}" required readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
                       </div>
 
-                      <div class="form-group" style="margin-bottom:20px;">
-                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fuel Type <span class="require" style="color:#d32f2f;">*</span></label>
-                        <input class="form-control" type="text" name="fuel_type" placeholder="Petrol/Diesel/CNG/Electric" value="{{ old('fuel_type', $formData['fuel_type'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fuel Type <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="fuel_type" placeholder="Auto-filled from RC" value="{{ old('fuel_type', $formData['fuel_type'] ?? '') }}" required readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
+                        </div>
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                              Authority City <span class="require" style="color:#d32f2f;">*</span>
+                              <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— from RC back; editable</span>
+                            </label>
+                            <input class="form-control" type="text" name="authority_city" id="authority_city_input" placeholder="Auto-filled from RC back (editable)" value="{{ old('authority_city', $formData['authority_city'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -959,64 +1059,25 @@
                       </div>
                     </div>
 
-                    <!-- VLTD Details Section -->
+                    <!-- Consolidated Device Information Section -->
                     <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
                       <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
-                        <i class="fa fa-cogs" style="color:#76CF1C;margin-right:8px;"></i>VLTD Device Information
+                        <i class="fa fa-microchip" style="color:#76CF1C;margin-right:8px;"></i>Device Information
                       </h4>
 
                       <div class="row">
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
-                              VLTD Serial No <span class="require" style="color:#d32f2f;">*</span>
+                              IMEI Number <span class="require" style="color:#d32f2f;">*</span>
                             </label>
-                            <input class="form-control" type="text" name="vltd_serial_no" id="vltd_serial_no_input" placeholder="Auto-generated serial number" value="{{ old('vltd_serial_no', $autoSerialNo) }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f8f8f8; font-family: monospace; letter-spacing: 1px;" />
+                            <input class="form-control" type="text" name="device_imei" id="device_imei_input" placeholder="Auto-extracted from device label" value="{{ old('device_imei', $formData['device_imei'] ?? $autoImei) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8; font-family: monospace; letter-spacing: 1px;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">VLTD Make <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="vltd_make" value="{{ old('vltd_make', 'JSD Electronics India Pvt Ltd') }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="row">
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">VLTD Model <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="vltd_model" value="{{ old('vltd_model', $formData['vltd_model'] ?? ($vltd_model ?? $category_name)) }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
-                          </div>
-                        </div>
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
-                              VLTD ICCID
-                            </label>
-                            <input class="form-control" type="text" name="vltd_icc_id" id="vltd_icc_id_input" placeholder="Auto-fetched from device label" value="{{ old('vltd_icc_id', $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? '')) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; width:100%; background-color:#f8f8f8;" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Device Details Section -->
-                    <div style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
-                      <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
-                        <i class="fa fa-microchip" style="color:#76CF1C;margin-right:8px;"></i>Device Details
-                      </h4>
-
-                      <div class="row">
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">IMEI Number <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="device_imei" value="{{ old('device_imei', $formData['device_imei'] ?? $autoImei) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
-                          </div>
-                        </div>
-                        <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">ICCID Number <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="device_iccid" id="device_iccid_display" value="{{ old('device_iccid', $formData['device_iccid'] ?? $autoIccid) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">ICCID <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="device_iccid" id="device_iccid_display" placeholder="Auto-extracted from device label" value="{{ old('device_iccid', $formData['device_iccid'] ?? $autoIccid) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
                       </div>
@@ -1025,10 +1086,19 @@
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Device Model <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="device_model" value="{{ old('device_model', $formData['device_model'] ?? $autoModel) }}" readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                            <input class="form-control" type="text" name="device_model" value="{{ old('device_model', $formData['device_model'] ?? $autoModel) }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Device Manufacturer <span class="require" style="color:#d32f2f;">*</span></label>
+                            <input class="form-control" type="text" name="vltd_make" value="{{ old('vltd_make', 'JSD Electronics India Pvt Ltd') }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <div class="col-lg-12">
                           <div class="form-group" style="margin-bottom:20px;">
                             <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Vendor ID <span class="require" style="color:#d32f2f;">*</span></label>
                             <input class="form-control" type="text" name="vendor_id" value="{{ old('vendor_id', $autoVendorId) }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
@@ -1036,16 +1106,27 @@
                         </div>
                       </div>
 
-                      <div class="form-group" style="margin-bottom:20px;">
-                        <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Firmware Version <span style="font-weight:400; color:#94a3b8; font-size:11px;">(if applicable)</span></label>
-                        <input class="form-control" type="text" name="firmware_version" placeholder="e.g., v1.2.3" value="{{ old('firmware_version', $autoFirmware) }}" readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8fafc; color:#64748b;" />
+                      <div class="row">
+                        <div class="col-lg-6">
+                          <div class="form-group" style="margin-bottom:20px;">
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                              VLTD Serial No <span class="require" style="color:#d32f2f;">*</span>
+                              <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— auto-generated</span>
+                            </label>
+                            <input class="form-control" type="text" name="vltd_serial_no" id="vltd_serial_no_input" value="{{ old('vltd_serial_no', $autoSerialNo) }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8; font-family: monospace; letter-spacing: 1px;" />
+                          </div>
+                        </div>
                       </div>
+
+                      <!-- Hidden fields for backward compatibility with existing form logic -->
+                      <input type="hidden" name="vltd_model" value="{{ old('vltd_model', $formData['vltd_model'] ?? ($vltd_model ?? $category_name)) }}" />
+                      <input type="hidden" name="vltd_icc_id" id="vltd_icc_id_input" value="{{ old('vltd_icc_id', $formData['vltd_icc_id'] ?? ($vltd_icc_id ?? '')) }}" />
                     </div>
 
                     <!-- SIM & Plan Information Section -->
                     <div id="sim-form-row" style="border-top:2px solid #f0f0f0; padding-top:20px; margin-top:30px;">
                       <h4 style="color:#333; margin-bottom:20px; font-weight:600;">
-                        <i class="fa fa-sim-card" style="color:#76CF1C;margin-right:8px;"></i>SIM & Plan Information
+                        <i class="fa fa-sim-card" style="color:#76CF1C;margin-right:8px;"></i>eSIM Details
                       </h4>
 
                       <!-- SIM/Plan Details (Read-only) -->
@@ -1208,15 +1289,15 @@
 
                       <div class="row">
                         <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">ARAI TAC/COP No <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="arai_tac" value="{{ $arai_tac }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          <div class="form-group">
+                            <label class="control-label" for="arai_tac_input">ARAI TAC/COP No <span class="require">*</span></label>
+                            <input class="form-control" type="text" name="arai_tac" id="arai_tac_input" value="{{ $arai_tac }}" required readonly />
                           </div>
                         </div>
                         <div class="col-lg-6">
-                          <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">ARAI Date <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="date" name="arai_date" value="{{ $arai_date }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                          <div class="form-group">
+                            <label class="control-label" for="arai_date_input">ARAI Date <span class="require">*</span></label>
+                            <input class="form-control" type="date" name="arai_date" id="arai_date_input" value="{{ $arai_date }}" required readonly />
                           </div>
                         </div>
                       </div>
@@ -1225,13 +1306,15 @@
                   </div>
 
 
-                  <div class="wizard-buttons" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                    <button type="button" class="btn btn-default prev-step" data-step="3"><i class="fa fa-arrow-left"></i> Previous</button>
-                    <div style="display:flex; gap:10px; margin-left:auto;">
-                      <button type="button" class="btn btn-info" id="preview-btn" style="background-color:#3b82f6; border-color:#3b82f6; color:#fff; padding:10px 30px; font-weight:600;">
+                  <div class="wizard-buttons" style="display:flex; justify-content:space-between; align-items:center; gap:15px; padding:20px 0; margin-top:30px;">
+                    <button type="button" class="btn btn-secondary prev-step" data-step="3" style="padding:10px 25px; background-color:#6c757d; border-color:#6c757d; color:#fff; font-weight:500; border-radius:6px;">
+                      <i class="fa fa-arrow-left"></i> Previous
+                    </button>
+                    <div style="display:flex; gap:12px;">
+                      <button type="button" class="btn btn-info" id="preview-btn" style="background-color:#3b82f6; border-color:#3b82f6; color:#fff; padding:10px 28px; font-weight:600; border-radius:6px; transition:all 0.2s ease;">
                         <i class="fa fa-eye"></i> Preview Certificate
                       </button>
-                      <button type="button" class="btn btn-success" id="save-certificate-btn" style="background-color:#76CF1C; border-color:#76CF1C; color:#fff; padding:10px 40px; font-weight:700;">
+                      <button type="button" class="btn btn-success" id="save-certificate-btn" style="background-color:#76CF1C; border-color:#76CF1C; color:#fff; padding:10px 35px; font-weight:700; border-radius:6px; transition:all 0.2s ease;">
                         <i class="fa fa-save"></i> Save Certificate
                       </button>
                     </div>
@@ -1260,8 +1343,26 @@
     $('#serviceProvidersSelect').val('Growspace').prop('disabled', true).trigger('change.select2');
 
     // ═══════════════════════════════════════════════════════════════════
+    // FITMENT DATE — default to today when empty (editable by user)
+    // ═══════════════════════════════════════════════════════════════════
+    function setFitmentDateToday() {
+      var $fitmentInput = $('#fitment_date_input');
+      if (!$fitmentInput.length || $fitmentInput.val()) {
+        return;
+      }
+      var today = new Date();
+      var todayFormatted = today.getFullYear() + '-' +
+        String(today.getMonth() + 1).padStart(2, '0') + '-' +
+        String(today.getDate()).padStart(2, '0');
+      $fitmentInput.val(todayFormatted);
+    }
+
+    setFitmentDateToday();
+
+    // ═══════════════════════════════════════════════════════════════════
     // VLTD SERIAL AUTO-GENERATION
-    // Format: JSDE14A + 6-digit numeric counter (000001, 000002, etc.)
+    // Format: JSDE14A + zero-padded device id (e.g. device 54 => JSDE14A000054)
+    // Deterministic per device — generated client-side, no AJAX needed.
     // ═══════════════════════════════════════════════════════════════════
     function generateVltdSerial() {
       var deviceId = {{ (int)($device->id ?? 0) }};
@@ -1269,45 +1370,14 @@
         console.warn('Device ID not found');
         return;
       }
-
-      var $input = $('#vltd_serial_no_input');
-      var pathname = window.location.pathname.replace(/\/\d+$/, '/' + deviceId) + '/generate-vltd-serial?t=' + new Date().getTime();
-
-      $.ajax({
-        url: pathname,
-        type: 'GET',
-        dataType: 'json',
-        cache: false,
-        headers: {
-          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val()
-        },
-        success: function(response) {
-          console.log('Serial generation response:', response);
-          if (response && response.serial) {
-            console.log('Setting serial to:', response.serial);
-            $input.val(response.serial);
-            console.log('Current value:', $input.val());
-          } else {
-            console.warn('No serial in response:', response);
-          }
-        },
-        error: function(xhr, status, error) {
-          console.error('Failed to generate VLTD serial:', {status: xhr.status, statusText: xhr.statusText, error: error});
-          console.error('Response:', xhr.responseText);
-        }
-      });
+      var padded = ('000000' + deviceId).slice(-6); // zero-pad to 6 digits
+      $('#vltd_serial_no_input').val('JSDE14A' + padded);
     }
 
-    // Auto-generate on page load only if input is empty
+    // Generate on page load only if input is empty (server normally pre-fills it)
     var $serialInput = $('#vltd_serial_no_input');
-    console.log('Serial input element found:', $serialInput.length > 0);
-    console.log('Current value:', $serialInput.val());
-
     if (!$serialInput.val()) {
-      console.log('Triggering serial generation...');
       generateVltdSerial();
-    } else {
-      console.log('Serial already has value:', $serialInput.val());
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1330,6 +1400,9 @@
       }
 
       currentStep = step;
+      if (step === 3) {
+        setFitmentDateToday();
+      }
       window.scrollTo(0, 0);
     }
 
@@ -1356,6 +1429,7 @@
           issues.push('Device verification failed. The scanned IMEI must match the assigned device.');
         }
       } else if (step === 3) {
+        setFitmentDateToday();
         // Use the comprehensive validation function that checks ALL required fields
         const validation = validateRequiredFields();
         if (!validation.isValid) {
@@ -1392,6 +1466,38 @@
       showStep(step - 1);
     });
 
+    // ═══════════════════════════════════════════════════════════════════
+    // AUTO-NAVIGATION
+    // Silently advance to the next step once the current step's validations
+    // and actions are all successfully verified. The final step (3) is never
+    // auto-advanced — it always requires explicit user confirmation/submit.
+    // ═══════════════════════════════════════════════════════════════════
+    function isStepComplete(step) {
+      const state = window.verificationState;
+      if (step === 1) {
+        return state.rc_extracted === true && state.plate_verified === true;
+      } else if (step === 2) {
+        return state.device_verified === true;
+      }
+      return false; // step 3 is the last step — requires manual confirmation
+    }
+
+    function maybeAutoAdvance(step) {
+      // Only advance from the step the user is currently on, never past the last step,
+      // and only when every validation/action for that step has succeeded.
+      if (currentStep !== step || step >= 3 || !isStepComplete(step)) {
+        return;
+      }
+      showBlockingError([]); // clear any stale errors
+      // Brief delay so the user sees the success state before moving on.
+      setTimeout(function() {
+        // Re-check: state may have changed during the delay.
+        if (currentStep === step && isStepComplete(step)) {
+          showStep(step + 1);
+        }
+      }, 900);
+    }
+
     // Populate display fields with pre-saved values on page load
     function populateDisplayFieldsFromHidden() {
       const fields = [
@@ -1421,7 +1527,7 @@
       const formData = new FormData(form);
 
       $.ajax({
-        url: '/user/device/{{ $device->id }}/certificate/preview',
+        url: '{{ $certBase }}/preview',
         type: 'POST',
         data: formData,
         processData: false,
@@ -1429,40 +1535,10 @@
         headers: {
           'X-Requested-With': 'XMLHttpRequest'
         },
-        xhrFields: {
-          responseType: 'blob'
-        },
+        dataType: 'html',
         timeout: 300000,
-        success: function(blob) {
-          // Check if response is actually a PDF or an error
-          if (blob.type && blob.type.indexOf('application/pdf') > -1) {
-            // Create a local URL for the PDF blob
-            const url = URL.createObjectURL(blob);
-            $frame.html('<iframe src="' + url + '" style="width:100%; height:100%; border:none; background:#fff;"></iframe>');
-          } else {
-            // Response is not a PDF, likely an error
-            const reader = new FileReader();
-            reader.onload = function() {
-              try {
-                const response = JSON.parse(reader.result);
-                let errorMsg = '<div class="alert alert-danger"><strong>Error generating preview.</strong>';
-                if (response.errors) {
-                  errorMsg += '<br><strong>Validation Errors:</strong><ul style="margin: 10px 0; padding-left: 20px;">';
-                  for (const [field, messages] of Object.entries(response.errors)) {
-                    messages.forEach(msg => {
-                      errorMsg += `<li>${msg}</li>`;
-                    });
-                  }
-                  errorMsg += '</ul>';
-                }
-                errorMsg += '</div>';
-                $frame.html(errorMsg);
-              } catch(e) {
-                $frame.html('<div class="alert alert-danger"><strong>Error generating preview.</strong><br>Please ensure all required fields are filled correctly and try again.</div>');
-              }
-            };
-            reader.readAsText(blob);
-          }
+        success: function(html) {
+          $frame.html('<div class="certificate-preview-inline" style="height:100%; overflow:auto; background:#e2e8f0; padding:12px;">' + html + '</div>');
         },
         error: function(xhr, status, error) {
           console.error('Preview error:', {status, statusText: xhr.statusText, error});
@@ -1520,8 +1596,12 @@
         'vehicle_class': 'Vehicle Class',
         'fuel_type': 'Fuel Type',
         // Device Information
+        'device_imei': 'IMEI Number',
+        'device_iccid': 'ICCID',
+        'device_model': 'Device Model',
+        'vltd_make': 'Device Manufacturer',
+        'vendor_id': 'Vendor ID',
         'vltd_serial_no': 'VLTD Serial No (IMEI)',
-        'vltd_make': 'VLTD Make',
         'vltd_model': 'VLTD Model',
         'vltd_icc_id': 'ICCID',
         'fitment_date': 'Fitment Date'
@@ -1592,7 +1672,7 @@
       // Create a temporary form to post the preview request
       const tempForm = document.createElement('form');
       tempForm.method = 'POST';
-      tempForm.action = '/user/device/{{ $device->id }}/certificate/preview';
+      tempForm.action = '{{ $certBase }}/preview';
       tempForm.target = '_blank';
 
       // Add all form data to the temporary form
@@ -1717,7 +1797,7 @@
 
     function checkRCStatus() {
       $.ajax({
-        url: '/user/device/{{ $device->id }}/certificate/rc-status',
+        url: '{{ $certBase }}/rc-status',
         method: 'GET',
         success: function(response) {
           if (!response.tesseract_available) {
@@ -1832,7 +1912,7 @@
       }
     });
 
-    // ─── RC Upload Handler — extracts from FRONT (+ optionally BACK) ──
+    // ─── RC Upload Handler — extracts from FRONT and BACK (both required) ──
     $('#upload-rc-btn').on('click', function() {
       const frontFile = document.getElementById('rc_file_front').files[0];
       const backFile  = document.getElementById('rc_file_back').files[0];
@@ -1843,11 +1923,17 @@
         return;
       }
 
+      if (!backFile) {
+        $('#error-message').text('Please select the RC Back page (required).');
+        $('#rc-upload-error').show();
+        return;
+      }
+
       uploadRCDocuments(frontFile, backFile);
     });
 
     /**
-     * Upload front (required) and optionally back. Merges extracted fields
+     * Upload front (required) and back (required). Merges extracted fields
      * — front takes priority; back fills any blanks.
      */
     function uploadRCDocuments(frontFile, backFile) {
@@ -1913,6 +1999,7 @@
           uploadError.hide();
           uploadInfo.show();
           setTimeout(function() { uploadInfo.fadeOut(); }, 5000);
+          maybeAutoAdvance(1); // advances only if plate is also verified
         }
       }).catch(function(err) {
         uploadProgress.hide();
@@ -1934,7 +2021,7 @@
         if (rcType) formData.append('rc_type', rcType);
 
         $.ajax({
-          url: '/user/device/{{ $device->id }}/certificate/upload-rc',
+          url: '{{ $certBase }}/upload-rc',
           method: 'POST',
           data: formData,
           contentType: false,
@@ -1965,6 +2052,7 @@
         'vehicle_class':           '#certificate-details-form input[name="vehicle_class"]',
         'fuel_type':               '#certificate-details-form input[name="fuel_type"]',
         'color':                   '#certificate-details-form input[name="color"]',
+        'authority_city':          '#certificate-details-form input[name="authority_city"]',
       };
 
       Object.keys(fieldMappings).forEach(dataKey => {
@@ -2002,7 +2090,7 @@
       statusEl.text('Looking up ICCID...').css('color', '#0891b2');
 
       $.ajax({
-        url: '/user/certificate/{{ $device->id }}/lookup-iccid',
+        url: '{{ $certBase }}/lookup-iccid',
         type: 'POST',
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
         data: { iccid: iccid },
@@ -2104,7 +2192,7 @@
       formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
 
       $.ajax({
-        url: '/user/certificate/{{ $device->id }}/extract-device',
+        url: '{{ $certBase }}/extract-device',
         type: 'POST',
         data: formData,
         processData: false,
@@ -2158,6 +2246,7 @@
           // Show/clear blocker based on device verification result
           if (window.verificationState.device_verified === true) {
             showBlockingError([]);
+            maybeAutoAdvance(2); // advance to the final step (Certificate Info)
           } else if (window.verificationState.device_verified === false) {
             // Show blocking error with dynamic IMEI values
             const state = window.verificationState;
@@ -2253,10 +2342,41 @@
         },
         error: function(xhr) {
           $('#device-extract-progress').hide();
-          // A poor-quality image or missing IMEI/ICCID blocks the process.
+          // A poor-quality image, missing IMEI/ICCID, or an IMEI mismatch blocks the process.
           window.verificationState.device_verified = false;
-          let errorMsg = 'Failed to scan device label.';
-          if (xhr.responseJSON && xhr.responseJSON.error) errorMsg = xhr.responseJSON.error;
+
+          const resp = xhr.responseJSON || {};
+          let errorMsg = resp.error || 'Failed to scan device label.';
+
+          // On IMEI mismatch the backend performs NO external API calls and returns
+          // no SIM/ICCID data. Clear any previously rendered data so the user sees
+          // only the mismatch error, and keep them blocked from the next step.
+          if (resp.imei_mismatch) {
+            window.verificationState.extracted_imei = resp.imei || null;
+            window.verificationState.device_imei = resp.device_imei || null;
+
+            // Wipe any stale SIM / profile / plan data from an earlier successful scan.
+            $('#sim-profiles-container').hide();
+            $('#sim-profiles-tbody').empty();
+            $('#sim-meta').empty();
+            ['org_name', 'iccid', 'plan_status', 'activation_date', 'expiry_date',
+             'sim1_operator', 'sim1_msisdn', 'sim1_imsi', 'sim1_status',
+             'sim2_operator', 'sim2_msisdn', 'sim2_imsi', 'sim2_status'].forEach(function(k) {
+              $('#' + k + '_display').text('—');
+            });
+            ['organization_name', 'plan_status',
+             'sim1_operator', 'sim1_msisdn', 'sim1_imsi', 'sim1_status',
+             'sim2_operator', 'sim2_msisdn', 'sim2_imsi', 'sim2_status',
+             'sim1_activation_date', 'sim2_activation_date',
+             'sim1_expiry_date', 'sim2_expiry_date'].forEach(function(k) {
+              $('#' + k + '_hidden').val('');
+            });
+            // Also clear the auto-filled ICCID on the form (it belongs to the wrong device).
+            $('#certificate-details-form input[name="vltd_icc_id"]').val('').change();
+
+            showBlockingError([errorMsg]);
+          }
+
           $('#device-error-message').text(errorMsg);
           $('#device-extract-error').show();
         }
@@ -2292,7 +2412,7 @@
       formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
 
       $.ajax({
-        url: '/user/certificate/{{ $device->id }}/verify-plate',
+        url: '{{ $certBase }}/verify-plate',
         type: 'POST',
         data: formData,
         processData: false,
@@ -2306,6 +2426,7 @@
             );
             $('#plate-verify-success').show();
             showBlockingError([]); // clear any prior block
+            maybeAutoAdvance(1); // advances only if RC is also extracted
           } else {
             window.verificationState.plate_verified = false;
             $('#plate-error-message').html(response.message || 'Plate does not match.');
@@ -2382,7 +2503,7 @@
 
       var originalAction = form.getAttribute('action');
       var originalTarget = form.getAttribute('target');
-      form.setAttribute('action', '/user/device/{{ $device->id }}/certificate/preview');
+      form.setAttribute('action', '{{ $certBase }}/preview');
       form.setAttribute('target', '_blank');
       form.submit();
       // Restore so the normal Save flow is unaffected.

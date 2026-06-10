@@ -5,9 +5,11 @@ namespace App\Services;
 use App\User;
 use App\Permission;
 use App\PermissionAuditLog;
+use App\Events\PermissionChanged;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Event;
 
 class PermissionAssignmentService
 {
@@ -72,6 +74,15 @@ class PermissionAssignmentService
 
                 // Clear permission cache
                 \App\Helpers\PermissionHelper::flushCache();
+
+                // Fire event for real-time permission tracking
+                Event::dispatch(new PermissionChanged(
+                    $targetUser->id,
+                    'granted',
+                    $permission->key,
+                    $assigningUser->id,
+                    ['reason' => $reason]
+                ));
             }
 
             DB::commit();
@@ -117,11 +128,30 @@ class PermissionAssignmentService
         try {
             DB::beginTransaction();
 
+            // Get all dependent permissions (child permissions that depend on this permission)
+            $dependentPermissionIds = [];
+            if ($permission instanceof Permission) {
+                $dependentPermissionIds = $permission->getDependentPermissionIds();
+            } else {
+                $perm = Permission::find($permission);
+                if ($perm) {
+                    $dependentPermissionIds = $perm->getDependentPermissionIds();
+                }
+            }
+
             // Revoke from target user
             DB::table('user_permissions')
                 ->where('user_id', $targetUser->id)
                 ->where('permission_id', $permission->id)
                 ->delete();
+
+            // Also revoke all dependent/child permissions
+            if (!empty($dependentPermissionIds)) {
+                DB::table('user_permissions')
+                    ->where('user_id', $targetUser->id)
+                    ->whereIn('permission_id', $dependentPermissionIds)
+                    ->delete();
+            }
 
             // Log the revocation
             PermissionAuditLog::log(
@@ -132,13 +162,32 @@ class PermissionAssignmentService
                 $reason ?? 'Cascading revocation from parent'
             );
 
-            // Cascade revocation to all descendants
+            // Cascade revocation to all descendants (child users)
             $affectedCount = $this->cascadeRevoke($targetUser, $permission, $revokingUser);
+
+            // Also cascade dependent permissions to child users
+            if (!empty($dependentPermissionIds)) {
+                foreach ($dependentPermissionIds as $depPermId) {
+                    $depPerm = Permission::find($depPermId);
+                    if ($depPerm) {
+                        $this->cascadeRevoke($targetUser, $depPerm, $revokingUser);
+                    }
+                }
+            }
 
             DB::commit();
 
             // Clear permission cache
             \App\Helpers\PermissionHelper::flushCache();
+
+            // Fire event for real-time permission tracking
+            Event::dispatch(new PermissionChanged(
+                $targetUser->id,
+                'revoked',
+                $permission->key,
+                $revokingUser->id,
+                ['reason' => $reason, 'cascade_count' => $affectedCount]
+            ));
 
             $totalAffected = 1 + $affectedCount; // Include target user
             return [
@@ -287,6 +336,8 @@ class PermissionAssignmentService
 
         // Apply permission dependencies: add parent permissions if child is being added
         $permissionIds = $this->applyDependencies($permissionIds);
+        // Create and edit are paired — assigning one assigns the other
+        $permissionIds = $this->applyCreateEditPairing($permissionIds);
 
         if ($assigningUser && $assigningUser->user_type !== 'Admin') {
             $assignablePermissionIds = $this->getEffectiveAssignedPermissionIds($assigningUser);
@@ -329,8 +380,10 @@ class PermissionAssignmentService
         $toAdd    = array_values(array_diff($permissionIds, $currentPermIds));
         $toRemove = array_values(array_diff($currentPermIds, $permissionIds));
 
-        // When removing a permission, also remove all dependent permissions (children)
-        $toRemoveWithDependents = $this->getPermissionsWithDependents($toRemove);
+        // When removing a permission, also remove paired create/edit and dependent children
+        $toRemoveWithDependents = $this->getPermissionsWithDependents(
+            $this->applyCreateEditPairing($toRemove)
+        );
 
         try {
             // --- Single atomic sync: delete removed, insert added ---
@@ -513,6 +566,33 @@ class PermissionAssignmentService
      * @param array $permissionIds
      * @return array Updated permission IDs with parents included
      */
+    /**
+     * Pair create/edit permissions per module.
+     */
+    private function applyCreateEditPairing(array $permissionIds): array
+    {
+        $pairedIds = $permissionIds;
+
+        $permissions = Permission::whereIn('id', $permissionIds)
+            ->where('is_active', 1)
+            ->get();
+
+        foreach ($permissions as $permission) {
+            if (!preg_match('/^(.+)\.(create|edit)$/', $permission->key, $matches)) {
+                continue;
+            }
+
+            $pairKey = $matches[1] . ($matches[2] === 'create' ? '.edit' : '.create');
+            $pairId = Permission::where('key', $pairKey)->where('is_active', 1)->value('id');
+
+            if ($pairId) {
+                $pairedIds[] = (int) $pairId;
+            }
+        }
+
+        return array_values(array_unique($pairedIds));
+    }
+
     private function applyDependencies(array $permissionIds): array
     {
         $permissionsToAdd = [];

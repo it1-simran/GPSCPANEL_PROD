@@ -399,46 +399,13 @@ class DeviceController extends Controller
         ];
     }
 
-    /** Convert a stored (storage/app relative) image into a base64 data URI. */
-    private function imgDataUri(?string $relPath): ?string
-    {
-        if (empty($relPath)) return null;
-        $full = storage_path('app/' . $relPath);
-        if (!is_file($full)) return null;
-        $ext = strtolower(pathinfo($full, PATHINFO_EXTENSION));
-        // Only raster images can be embedded in the PDF (skip PDFs/other types).
-        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp'])) return null;
-        $data = @file_get_contents($full);
-        if ($data === false) return null;
-        $mime = $ext === 'png' ? 'image/png' : ($ext === 'gif' ? 'image/gif' : ($ext === 'bmp' ? 'image/bmp' : 'image/jpeg'));
-        return 'data:' . $mime . ';base64,' . base64_encode($data);
-    }
-
     /**
-     * Build base64 data URIs for the certificate images, sourced from the
-     * images the user already uploaded during OCR:
-     *   - device_image_uri ← device label scan
-     *   - rc_image_uri      ← RC document upload
-     *   - plate_image_uri   ← number plate verification
+     * Build base64 data URIs for certificate supporting images.
      * ($request kept for signature compatibility; no longer used.)
      */
     private function certImages(?Request $request, Device $device): array
     {
-        $cfg = json_decode($device->configurations, true) ?: [];
-        $ocr = $cfg['ocr_images'] ?? [];
-
-        // Support separate RC front and back, fallback to single RC image
-        $rcFrontPath = $ocr['rc_front'] ?? null;
-        $rcBackPath = $ocr['rc_back'] ?? null;
-        $rcPath = $ocr['rc'] ?? ($cfg['rc_details']['file_path'] ?? null);
-
-        return [
-            'device_image_uri' => $this->imgDataUri($ocr['device'] ?? null),
-            'rc_front_image_uri' => $this->imgDataUri($rcFrontPath ?: $rcPath),
-            'rc_back_image_uri'  => $this->imgDataUri($rcBackPath),
-            'rc_image_uri'       => $this->imgDataUri($rcPath),
-            'plate_image_uri'    => $this->imgDataUri($ocr['plate'] ?? null),
-        ];
+        return (new \App\Services\CertificateImageService())->forDevice($device);
     }
 
     public function generateCertificate($id, Request $request)
@@ -491,9 +458,14 @@ class DeviceController extends Controller
         $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
         $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
 
-        $ownerAddress = $request->owner_address;
-        $addressParts = explode(',', $ownerAddress);
-        $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        // Authority City: prefer the user-editable field; fall back to deriving
+        // from owner_address (last comma-separated part) only when left blank.
+        $authorityCity = trim((string) $request->input('authority_city', ''));
+        if ($authorityCity === '') {
+            $ownerAddress = (string) $request->owner_address;
+            $addressParts = explode(',', $ownerAddress);
+            $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        }
 
         $data = [
             'holder_name' => $request->owner_name,
@@ -619,9 +591,14 @@ class DeviceController extends Controller
         $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
         $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
 
-        $ownerAddress = $request->owner_address;
-        $addressParts = explode(',', $ownerAddress);
-        $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        // Authority City: prefer the user-editable field; fall back to deriving
+        // from owner_address (last comma-separated part) only when left blank.
+        $authorityCity = trim((string) $request->input('authority_city', ''));
+        if ($authorityCity === '') {
+            $ownerAddress = (string) $request->owner_address;
+            $addressParts = explode(',', $ownerAddress);
+            $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        }
 
         $data = [
             'holder_name' => $request->owner_name,
@@ -681,14 +658,12 @@ class DeviceController extends Controller
             $qrImageDataUri = null;
         }
         $data['qr_image'] = $qrImageDataUri;
-        $pdf = PDF::loadView('pdf.certificate', $data);
-        return response($pdf->output(), 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="certificate_' . $device->imei . '.pdf"',
-            'Cache-Control'       => 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma'              => 'no-cache',
-            'Expires'             => '0',
-        ]);
+
+        return response()
+            ->view('certificate_preview', $data)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
     public function certificatePage($id, Request $request)
@@ -735,8 +710,22 @@ class DeviceController extends Controller
 
         // Prevent editing if certificate has been generated
         if ($editMode && $isCertificateGenerated) {
-            return redirect('/device/' . $id . '/certificate')->with('warning', 'Certificate cannot be edited once it has been generated.');
+            $urlType = $this->getURLType();
+            return redirect('/' . $urlType . '/certificate/' . $id)->with('warning', 'Certificate cannot be edited once it has been generated.');
         }
+
+        // Auto-populate fitment_date: use saved value if exists, otherwise default to today
+        $autoFitmentDate = date('Y-m-d');
+        if ($saved && !empty($saved['fitment_date'])) {
+            try {
+                // Convert any format to Y-m-d for HTML5 date input
+                $autoFitmentDate = \Carbon\Carbon::parse($saved['fitment_date'])->format('Y-m-d');
+            } catch (\Exception $e) {
+                $autoFitmentDate = date('Y-m-d');
+            }
+        }
+
+        $urlType = $this->getURLType();
 
         return view('certificate_page', [
             'device' => $device,
@@ -749,15 +738,16 @@ class DeviceController extends Controller
             'saved' => $saved,
             'edit_mode' => $editMode && !$isCertificateGenerated,
             'is_certificate_generated' => $isCertificateGenerated,
+            'autoFitmentDate' => $autoFitmentDate,
+            'url_type' => $urlType,
+            'cert_base' => '/' . $urlType . '/certificate/' . $device->id,
         ]);
     }
     public static function uniqueJson(Device $device, string $key, $value): bool
     {
+        // Check uniqueness in certificate_data field ONLY (not in configurations)
         return !Device::where('id', '!=', $device->id)
-            ->where(function ($query) use ($key, $value) {
-                $query->whereJsonContains("configurations->certificate_details->$key", $value)
-                    ->orWhereJsonContains("configurations->$key", $value);
-            })
+            ->whereJsonContains("certificate_data->$key", $value)
             ->exists();
     }
     public function saveCertificateDetails($id, Request $request)
@@ -841,9 +831,14 @@ class DeviceController extends Controller
         }
         $config = json_decode($device->configurations, true) ?: [];
 
-        $ownerAddress = $request->owner_address;
-        $addressParts = explode(',', $ownerAddress);
-        $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        // Authority City: prefer the user-editable field; fall back to deriving
+        // from owner_address (last comma-separated part) only when left blank.
+        $authorityCity = trim((string) $request->input('authority_city', ''));
+        if ($authorityCity === '') {
+            $ownerAddress = (string) $request->owner_address;
+            $addressParts = explode(',', $ownerAddress);
+            $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        }
 
         $certificateData = [
             'holder_name' => $request->owner_name,
@@ -902,16 +897,19 @@ class DeviceController extends Controller
             'sim2_expiry_date' => $request->sim2_expiry_date ?? null,
         ];
 
-        // Keep backward compatibility: also save to configurations
-        $config['certificate_details'] = $certificateData;
+        $existingCert = !empty($device->certificate_data)
+            ? json_decode($device->certificate_data, true) : [];
 
-        $device->configurations = json_encode($config);
-        // Save all certificate data to the new certificate_data field
-        $device->certificate_data = json_encode($certificateData);
+        // Merge so OCR uploads (ocr_images, file_path, etc.) are preserved on save.
+        $device->certificate_data = json_encode(array_merge($existingCert, $certificateData));
         // Mark certificate as generated when saved
         $device->is_certificate_generated = true;
         $device->update();
-        return redirect('/device/' . $device->id . '/certificate/view');
+
+        $urlType = $this->getURLType();
+
+        return redirect('/' . $urlType . '/certificate/' . $device->id)
+            ->with('success', 'Certificate details saved successfully!');
     }
 
     public function uploadRC($id, Request $request)
@@ -948,14 +946,9 @@ class DeviceController extends Controller
             if (!empty($extractedData['vehicle_registration_no'])) {
                 $vehicleRegNo = $extractedData['vehicle_registration_no'];
 
-                // Check if another device has a certificate with this registration number
+                // Check ONLY in certificate_data field (not in configurations)
                 $duplicateExists = Device::where('id', '!=', $device->id)
-                    ->where(function ($query) use ($vehicleRegNo) {
-                        // Check in certificate_data field
-                        $query->whereRaw("JSON_EXTRACT(certificate_data, '$.vehicle_registration_no') = ?", [$vehicleRegNo])
-                        // Also check in configurations field for backward compatibility
-                        ->orWhereRaw("JSON_EXTRACT(configurations, '$.certificate_details.vehicle_registration_no') = ?", [$vehicleRegNo]);
-                    })
+                    ->whereRaw("JSON_EXTRACT(certificate_data, '$.vehicle_registration_no') = ?", [$vehicleRegNo])
                     ->where('is_certificate_generated', true)
                     ->exists();
 
@@ -973,27 +966,35 @@ class DeviceController extends Controller
                 }
             }
 
-            // Store RC file path in device config
-            $config = json_decode($device->configurations, true) ?: [];
-            $config['rc_details'] = array_merge(
+            // Store OCR-extracted RC data in certificate_data field ONLY
+            // Do NOT save to configurations - keep configurations for device operational parameters only
+            $rcDetailsData = array_merge(
                 $extractedData,
                 ['file_path' => $filePath, 'uploaded_at' => now()]
             );
 
-            // Also store in ocr_images with rc_front and rc_back keys for PDF display
-            if (!isset($config['ocr_images'])) {
-                $config['ocr_images'] = [];
+            // Get existing certificate data if any
+            $certData = !empty($device->certificate_data) ? json_decode($device->certificate_data, true) : [];
+
+            // Merge RC details into certificate data
+            $certData = array_merge($certData, $rcDetailsData);
+
+            // Store the uploaded RC image path in the correct ocr_images slot so it
+            // renders in the certificate's Supporting Images (rc_front / rc_back).
+            // Preserve any slot already set by a previous upload (front then back).
+            if (!isset($certData['ocr_images']) || !is_array($certData['ocr_images'])) {
+                $certData['ocr_images'] = [];
             }
             $rcType = $request->input('rc_type', 'front');
             if ($rcType === 'back') {
-                $config['ocr_images']['rc_back'] = $filePath;
+                $certData['ocr_images']['rc_back'] = $filePath;
             } else {
-                $config['ocr_images']['rc_front'] = $filePath;
-                // Legacy support: also store as 'rc'
-                $config['ocr_images']['rc'] = $filePath;
+                $certData['ocr_images']['rc_front'] = $filePath;
+                $certData['ocr_images']['rc'] = $filePath; // legacy single-RC fallback
             }
 
-            $device->configurations = json_encode($config);
+            // Save to certificate_data field only
+            $device->certificate_data = json_encode($certData);
             $device->save();
 
             return response()->json([
@@ -1067,13 +1068,14 @@ class DeviceController extends Controller
             $detected = $service->extractPlateNumber($fullPath);
             $detectedNormalized = \App\Services\GoogleVisionRCService::normalizePlateNumber($detected);
 
-            // Store plate image path in ocr_images for certificate display
-            $config = json_decode($device->configurations, true) ?: [];
-            if (!isset($config['ocr_images'])) {
-                $config['ocr_images'] = [];
+            // Store plate image path in certificate_data ONLY (not in configurations)
+            $certData = !empty($device->certificate_data)
+                ? json_decode($device->certificate_data, true) : [];
+            if (!isset($certData['ocr_images'])) {
+                $certData['ocr_images'] = [];
             }
-            $config['ocr_images']['plate'] = $filePath;
-            $device->configurations = json_encode($config);
+            $certData['ocr_images']['plate'] = $filePath;
+            $device->certificate_data = json_encode($certData);
             $device->save();
 
             if (!$detectedNormalized) {
@@ -1138,13 +1140,14 @@ class DeviceController extends Controller
             $service = new \App\Services\GoogleVisionRCService();
             $info    = $service->extractDeviceInfo($fullPath);
 
-            // Store device image path in ocr_images for certificate display
-            $config = json_decode($device->configurations, true) ?: [];
-            if (!isset($config['ocr_images'])) {
-                $config['ocr_images'] = [];
+            // Store device image path in certificate_data ONLY (not in configurations)
+            $certData = !empty($device->certificate_data)
+                ? json_decode($device->certificate_data, true) : [];
+            if (!isset($certData['ocr_images'])) {
+                $certData['ocr_images'] = [];
             }
-            $config['ocr_images']['device'] = $filePath;
-            $device->configurations = json_encode($config);
+            $certData['ocr_images']['device'] = $filePath;
+            $device->certificate_data = json_encode($certData);
             $device->save();
 
             if (empty($info['imei']) && empty($info['iccid'])) {
@@ -1203,8 +1206,13 @@ class DeviceController extends Controller
             return response()->json(['error' => 'Unauthorized access'], 403);
         }
 
-        $config = json_decode($device->configurations, true) ?: [];
-        $rcDetails = $config['rc_details'] ?? null;
+        // Read RC details from certificate_data field ONLY (not from configurations)
+        $rcDetails = null;
+        if (!empty($device->certificate_data)) {
+            $certData = json_decode($device->certificate_data, true) ?: [];
+            // RC details are stored in certificate data
+            $rcDetails = $certData;
+        }
 
         if (!$rcDetails) {
             return response()->json(['data' => null]);
@@ -2902,8 +2910,8 @@ class DeviceController extends Controller
 
     public function showConfigurations($id)
     {
-        // Permission check
-        if (!Auth::user()->hasPermission('device_management.edit')) {
+        // Permission check - only need VIEW permission to view configurations
+        if (!Auth::user()->hasPermission('device_management.view')) {
             abort(403, 'You do not have permission to view device configurations');
         }
 
@@ -2919,15 +2927,10 @@ class DeviceController extends Controller
             return in_array($userId, $chain);
         };
 
+        $deviceCategoryId = (int) $device->device_category_id;
+
         if ($currentUser->user_type == 'Reseller') {
             $checkUser = DB::table('devices')->where('master_id', $currentUser->id)->pluck('user_id')->toArray();
-            $users = DB::table('writers')
-                ->select('id', 'name')
-                ->where('user_type', '!=', 'Admin')
-                ->where('user_type', '!=', 'Support')
-                ->where('is_deleted', 0)
-                ->where('created_by', $currentUser->id)
-                ->get();
 
             // Allow access if: user is in assign_to_ids chain, OR assigned to this Reseller, OR user is current assignment
             $hasAccess = $isInChain($currentUser->id, $device->assign_to_ids)
@@ -2946,23 +2949,18 @@ class DeviceController extends Controller
             if (!$hasAccess) {
                 return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
             }
-            $users = DB::table('writers')
-                ->select('id', 'name')
-                ->where('user_type', '!=', 'Admin')
-                ->where('user_type', '!=', 'Support')
-                ->where('is_deleted', 0)
-                ->where('created_by', $currentUser->id)
-                ->get();
-        } else {
-            $users = DB::table('writers')
-                ->select('id', 'name')
-                ->where('is_deleted', 0)
-                ->where('user_type', '!=', 'Admin')
-                ->where('user_type', '!=', 'Support')
-                ->where('created_by', Auth::user()->id)
-                ->whereRaw('FIND_IN_SET(' . $device->device_category_id . ',device_category_id)')
-                ->get();
         }
+
+        // Only list accounts that have this device's category enabled on their profile
+        $users = DB::table('writers')
+            ->select('id', 'name')
+            ->where('is_deleted', 0)
+            ->where('user_type', '!=', 'Admin')
+            ->where('user_type', '!=', 'Support')
+            ->where('created_by', $currentUser->id)
+            ->whereRaw('FIND_IN_SET(?, device_category_id)', [$deviceCategoryId])
+            ->orderBy('name')
+            ->get();
         $uid = self::getAssignedUserIdForDevice($id);
         if ($uid == $currentUser->id || $device->user_id == $currentUser->id) {
             $uid = '';

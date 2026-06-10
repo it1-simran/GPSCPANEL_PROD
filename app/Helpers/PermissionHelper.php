@@ -99,7 +99,32 @@ class PermissionHelper
             return true;
         }
 
-        return in_array($permissionKey, $keys, true);
+        foreach (self::getEquivalentPermissionKeys($permissionKey) as $key) {
+            if (in_array($key, $keys, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Create and edit permissions are paired per module — either grants both.
+     *
+     * @return string[]
+     */
+    public static function getEquivalentPermissionKeys(string $permissionKey): array
+    {
+        if (preg_match('/^(.+)\.(create|edit)$/', $permissionKey, $matches)) {
+            $module = $matches[1];
+
+            return [
+                $module . '.create',
+                $module . '.edit',
+            ];
+        }
+
+        return [$permissionKey];
     }
 
     /**

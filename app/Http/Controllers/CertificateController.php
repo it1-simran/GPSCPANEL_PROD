@@ -69,9 +69,8 @@ class CertificateController extends Controller
                 $device->certificate_status = 'Generated';
                 $device->has_certificate = true;
             } else {
-                // Check if certificate details have been saved
-                $config = json_decode($device->configurations, true) ?: [];
-                if (!empty($config['certificate_details'])) {
+                // Check if certificate details have been saved (in certificate_data field ONLY)
+                if (!empty($device->certificate_data)) {
                     $device->certificate_status = 'Saved';
                     $device->has_certificate = true;
                 } else {
@@ -170,8 +169,22 @@ class CertificateController extends Controller
         $editMode = (int) $request->query('edit', 0) === 1;
         if ($editMode && $isCertificateGenerated) {
             // Redirect to view mode without edit parameter
-            return redirect('/user/certificate/' . $id)->with('warning', 'Certificate cannot be edited once it has been generated.');
+            $urlType = $this->getURLType();
+            return redirect('/' . $urlType . '/certificate/' . $id)->with('warning', 'Certificate cannot be edited once it has been generated.');
         }
+
+        // Auto-populate fitment_date: use saved value if exists, otherwise default to today
+        $autoFitmentDate = date('Y-m-d');
+        if ($saved && !empty($saved['fitment_date'])) {
+            try {
+                // Convert any format to Y-m-d for HTML5 date input
+                $autoFitmentDate = \Carbon\Carbon::parse($saved['fitment_date'])->format('Y-m-d');
+            } catch (\Exception $e) {
+                $autoFitmentDate = date('Y-m-d');
+            }
+        }
+
+        $urlType = $this->getURLType();
 
         return view('certificate_page', [
             'device' => $device,
@@ -184,6 +197,9 @@ class CertificateController extends Controller
             'saved' => $saved,
             'edit_mode' => $editMode && !$isCertificateGenerated,
             'is_certificate_generated' => $isCertificateGenerated,
+            'autoFitmentDate' => $autoFitmentDate,
+            'url_type' => $urlType,
+            'cert_base' => '/' . $urlType . '/certificate/' . $device->id,
         ]);
     }
 
@@ -275,6 +291,7 @@ class CertificateController extends Controller
             'vehicle_model' => 'required|string|max:255',
             'vehicle_class' => 'required|string|max:255',
             'fuel_type' => 'required|string|max:255',
+            'authority_city' => 'nullable|string|max:255',
 
             // VLTD Details (auto-generated/auto-filled)
             'vltd_serial_no' => 'nullable|string|max:255',
@@ -286,7 +303,7 @@ class CertificateController extends Controller
             'device_imei' => 'nullable|string|max:255',
             'device_iccid' => 'nullable|string|max:255',
             'device_model' => 'nullable|string|max:255',
-            'firmware_version' => 'nullable|string|max:255',
+            // 'firmware_version' => 'nullable|string|max:255',
 
             // Compliance
             'arai_tac' => 'nullable|string|max:255',
@@ -356,10 +373,14 @@ class CertificateController extends Controller
 
         $config = json_decode($device->configurations, true) ?: [];
 
-        // Extract city from owner_address (last part after comma) for authority_city
-        $ownerAddress = $request->owner_address;
-        $addressParts = explode(',', $ownerAddress);
-        $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        // Authority City: prefer the user-editable field; fall back to deriving
+        // from owner_address (last comma-separated part) only when left blank.
+        $authorityCity = trim((string) $request->input('authority_city', ''));
+        if ($authorityCity === '') {
+            $ownerAddress = (string) $request->owner_address;
+            $addressParts = explode(',', $ownerAddress);
+            $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        }
 
         $certificateData = [
             'holder_name' => $request->owner_name,
@@ -386,7 +407,7 @@ class CertificateController extends Controller
             'vehicle_class' => $request->vehicle_class,
             'fuel_type' => $request->fuel_type,
             'vltd_icc_id' => $request->vltd_icc_id,
-            'firmware_version' => $request->firmware_version ?? null,
+            // 'firmware_version' => $request->firmware_version ?? null,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
             'service_provider' => $serviceProvider,
@@ -414,17 +435,19 @@ class CertificateController extends Controller
             'generated_at' => null,
         ];
 
-        // Keep backward compatibility: also save to configurations
-        $config['certificate_details'] = $certificateData;
+        $existingCert = !empty($device->certificate_data)
+            ? json_decode($device->certificate_data, true) : [];
 
-        $device->configurations = json_encode($config);
-        // Save all certificate data to the new certificate_data field
-        $device->certificate_data = json_encode($certificateData);
+        // Merge so OCR uploads (ocr_images, file_path, etc.) are preserved on save.
+        $device->certificate_data = json_encode(array_merge($existingCert, $certificateData));
         // Mark certificate as generated when saved
         $device->is_certificate_generated = true;
         $device->update();
 
-        return redirect('/admin/certificate/' . $device->id . '/view')->with('success', 'Certificate details saved successfully!');
+        $urlType = $this->getURLType();
+
+        return redirect('/' . $urlType . '/certificate/' . $device->id)
+            ->with('success', 'Certificate details saved successfully!');
     }
 
     /**
@@ -464,6 +487,7 @@ class CertificateController extends Controller
             'vehicle_model' => 'required|string|max:255',
             'vehicle_class' => 'required|string|max:255',
             'fuel_type' => 'required|string|max:255',
+            'authority_city' => 'nullable|string|max:255',
 
             // VLTD Details (auto-generated/auto-filled)
             'vltd_serial_no' => 'nullable|string|max:255',
@@ -475,7 +499,7 @@ class CertificateController extends Controller
             'device_imei' => 'nullable|string|max:255',
             'device_iccid' => 'nullable|string|max:255',
             'device_model' => 'nullable|string|max:255',
-            'firmware_version' => 'nullable|string|max:255',
+            // 'firmware_version' => 'nullable|string|max:255',
 
             // Compliance
             'arai_tac' => 'nullable|string|max:255',
@@ -562,13 +586,17 @@ class CertificateController extends Controller
         $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
         $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
 
-        // Pull saved SIM/extra details from device config (captured via device label scan)
-        $savedCert = is_array($config) ? ($config['certificate_details'] ?? []) : [];
+        // Pull saved SIM/extra details from certificate_data field ONLY (not from configurations)
+        $savedCert = !empty($device->certificate_data) ? json_decode($device->certificate_data, true) : [];
 
-        // Extract city from owner_address (last part after comma) for authority_city
-        $ownerAddress = $request->owner_address;
-        $addressParts = explode(',', $ownerAddress);
-        $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        // Authority City: prefer the user-editable field; fall back to deriving
+        // from owner_address (last comma-separated part) only when left blank.
+        $authorityCity = trim((string) $request->input('authority_city', ''));
+        if ($authorityCity === '') {
+            $ownerAddress = (string) $request->owner_address;
+            $addressParts = explode(',', $ownerAddress);
+            $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        }
 
         $data = [
             'holder_name' => $request->owner_name,
@@ -588,7 +616,7 @@ class CertificateController extends Controller
             'vltd_serial_no' => $request->vltd_serial_no,
             'vltd_make' => $request->vltd_make,
             'vltd_model' => $vltdModel,
-            'firmware_version' => $request->firmware_version ?? null,
+            // 'firmware_version' => $request->firmware_version ?? null,
             'chassis_no' => $request->chassis_no,
             'engine_no' => $request->engine_no,
             'color' => $request->color,
@@ -624,34 +652,7 @@ class CertificateController extends Controller
             'sim2_expiry_date' => $request->sim2_expiry_date ?? ($savedCert['sim2_expiry_date'] ?? null),
         ];
 
-        // Attach images from storage if they exist in device config
-        // Skip image processing for AJAX previews to improve performance
-        $ocrImages = $config['ocr_images'] ?? [];
-        $imageFields = [
-            'device'   => 'device_image_uri',
-            'rc_front' => 'rc_front_image_uri',
-            'rc_back'  => 'rc_back_image_uri',
-            'plate'    => 'plate_image_uri',
-        ];
-
-        if (!$request->ajax()) {
-            // Only process images for non-AJAX requests (full PDF generation)
-            foreach ($imageFields as $slot => $viewKey) {
-                $path = $ocrImages[$slot] ?? null;
-                if ($path && file_exists(storage_path('app/' . $path))) {
-                    $fileContents = file_get_contents(storage_path('app/' . $path));
-                    $mimeType = mime_content_type(storage_path('app/' . $path));
-                    $data[$viewKey] = 'data:' . $mimeType . ';base64,' . base64_encode($fileContents);
-                } else {
-                    $data[$viewKey] = null;
-                }
-            }
-        } else {
-            // For AJAX preview, set images to null to skip processing
-            foreach ($imageFields as $slot => $viewKey) {
-                $data[$viewKey] = null;
-            }
-        }
+        $data = array_merge($data, (new \App\Services\CertificateImageService())->forDevice($device));
 
         $pdfLink = url('/AS9076.pdf');
         $qrText = $pdfLink;
@@ -677,16 +678,20 @@ class CertificateController extends Controller
 
         $data['qr_image'] = $qrImageDataUri;
 
-        // Save complete certificate data to database before generating PDF
+        // Save certificate metadata without embedding transient image data URIs
         try {
-            $config = json_decode($device->configurations, true) ?: [];
+            $existingCert = !empty($device->certificate_data)
+                ? json_decode($device->certificate_data, true) : [];
 
-            // Add generation metadata to certificate data
-            $data['certificate_generated'] = true;
-            $data['generated_at'] = Carbon::now()->format('Y-m-d H:i:s');
+            $transientKeys = [
+                'device_image_uri', 'rc_front_image_uri', 'rc_back_image_uri',
+                'rc_image_uri', 'plate_image_uri', 'qr_image',
+            ];
+            $persistData = array_merge($existingCert, array_diff_key($data, array_flip($transientKeys)));
+            $persistData['certificate_generated'] = true;
+            $persistData['generated_at'] = Carbon::now()->format('Y-m-d H:i:s');
 
-            // Store the complete certificate data
-            $device->certificate_data = json_encode($data);
+            $device->certificate_data = json_encode($persistData);
             $device->is_certificate_generated = true;
             $device->update();
         } catch (\Exception $e) {
@@ -736,6 +741,7 @@ class CertificateController extends Controller
             'vehicle_model' => 'required|string|max:255',
             'vehicle_class' => 'required|string|max:255',
             'fuel_type' => 'required|string|max:255',
+            'authority_city' => 'nullable|string|max:255',
 
             // VLTD Details (auto-generated/auto-filled)
             'vltd_serial_no' => 'nullable|string|max:255',
@@ -747,7 +753,7 @@ class CertificateController extends Controller
             'device_imei' => 'nullable|string|max:255',
             'device_iccid' => 'nullable|string|max:255',
             'device_model' => 'nullable|string|max:255',
-            'firmware_version' => 'nullable|string|max:255',
+            // 'firmware_version' => 'nullable|string|max:255',
 
             // Compliance
             'arai_tac' => 'nullable|string|max:255',
@@ -834,13 +840,17 @@ class CertificateController extends Controller
         $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
         $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
 
-        // Pull saved SIM/extra details from device config (captured via device label scan)
-        $savedCert = is_array($config) ? ($config['certificate_details'] ?? []) : [];
+        // Pull saved SIM/extra details from certificate_data field ONLY (not from configurations)
+        $savedCert = !empty($device->certificate_data) ? json_decode($device->certificate_data, true) : [];
 
-        // Extract city from owner_address (last part after comma) for authority_city
-        $ownerAddress = $request->owner_address;
-        $addressParts = explode(',', $ownerAddress);
-        $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        // Authority City: prefer the user-editable field; fall back to deriving
+        // from owner_address (last comma-separated part) only when left blank.
+        $authorityCity = trim((string) $request->input('authority_city', ''));
+        if ($authorityCity === '') {
+            $ownerAddress = (string) $request->owner_address;
+            $addressParts = explode(',', $ownerAddress);
+            $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        }
 
         $data = [
             'holder_name' => $request->owner_name,
@@ -860,7 +870,7 @@ class CertificateController extends Controller
             'vltd_serial_no' => $request->vltd_serial_no,
             'vltd_make' => $request->vltd_make,
             'vltd_model' => $vltdModel,
-            'firmware_version' => $request->firmware_version ?? null,
+            // 'firmware_version' => $request->firmware_version ?? null,
             'chassis_no' => $request->chassis_no,
             'engine_no' => $request->engine_no,
             'color' => $request->color,
@@ -896,65 +906,37 @@ class CertificateController extends Controller
             'sim2_expiry_date' => $request->sim2_expiry_date ?? ($savedCert['sim2_expiry_date'] ?? null),
         ];
 
-        // Attach images from storage if they exist in device config
-        // Skip image processing for AJAX previews to improve performance
-        $ocrImages = $config['ocr_images'] ?? [];
-        $imageFields = [
-            'device'   => 'device_image_uri',
-            'rc_front' => 'rc_front_image_uri',
-            'rc_back'  => 'rc_back_image_uri',
-            'plate'    => 'plate_image_uri',
-        ];
-
-        if (!$request->ajax()) {
-            // Only process images for non-AJAX requests (full PDF generation)
-            foreach ($imageFields as $slot => $viewKey) {
-                $path = $ocrImages[$slot] ?? null;
-                if ($path && file_exists(storage_path('app/' . $path))) {
-                    $fileContents = file_get_contents(storage_path('app/' . $path));
-                    $mimeType = mime_content_type(storage_path('app/' . $path));
-                    $data[$viewKey] = 'data:' . $mimeType . ';base64,' . base64_encode($fileContents);
-                } else {
-                    $data[$viewKey] = null;
-                }
-            }
-        } else {
-            // For AJAX preview, set images to null to skip processing
-            foreach ($imageFields as $slot => $viewKey) {
-                $data[$viewKey] = null;
-            }
-        }
+        $data = array_merge($data, (new \App\Services\CertificateImageService())->forDevice($device));
 
         $pdfLink = url('/AS9076.pdf');
         $qrText = $pdfLink;
         $qrImageDataUri = null;
 
-        // Skip QR generation for AJAX previews to significantly improve speed
-        if (!$request->ajax()) {
-            $client = new Client();
-            try {
-                $resp = $client->get('https://api.qrserver.com/v1/create-qr-code/', [
-                    'query' => [
-                        'size' => '150x150',
-                        'data' => $qrText
-                    ],
-                    'http_errors' => false,
-                    'timeout' => 5 // Reduced timeout
-                ]);
-                if ($resp->getStatusCode() === 200) {
-                    $body = $resp->getBody()->getContents();
-                    $qrImageDataUri = 'data:image/png;base64,' . base64_encode($body);
-                }
-            } catch (\Throwable $e) {
-                $qrImageDataUri = null;
+        $client = new Client();
+        try {
+            $resp = $client->get('https://api.qrserver.com/v1/create-qr-code/', [
+                'query' => [
+                    'size' => '150x150',
+                    'data' => $qrText
+                ],
+                'http_errors' => false,
+                'timeout' => 5
+            ]);
+            if ($resp->getStatusCode() === 200) {
+                $body = $resp->getBody()->getContents();
+                $qrImageDataUri = 'data:image/png;base64,' . base64_encode($body);
             }
+        } catch (\Throwable $e) {
+            $qrImageDataUri = null;
         }
 
         $data['qr_image'] = $qrImageDataUri;
 
-        // Force PDF generation for all requests to fix the binary display issue
-        $pdf = PDF::loadView('pdf.certificate', $data);
-        return $pdf->stream('certificate_' . $device->imei . '.pdf', ['Attachment' => false]);
+        return response()
+            ->view('certificate_preview', $data)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
     /**
@@ -1045,6 +1027,8 @@ class CertificateController extends Controller
             $data['arai_date'] = Carbon::parse($data['arai_date'])->format('d-m-Y');
         }
 
+        $data = array_merge($data, (new \App\Services\CertificateImageService())->forDevice($device));
+
         $pdfLink = url('/AS9076.pdf');
         $qrText = $pdfLink;
         $client = new Client();
@@ -1117,13 +1101,9 @@ class CertificateController extends Controller
                 $vehicleRegNo = $extractedData['vehicle_registration_no'];
 
                 // Check if another device has a certificate with this registration number
+                // Check ONLY in certificate_data field (not in configurations)
                 $duplicateExists = Device::where('id', '!=', $device->id)
-                    ->where(function ($query) use ($vehicleRegNo) {
-                        // Check in certificate_data field
-                        $query->whereRaw("JSON_EXTRACT(certificate_data, '$.vehicle_registration_no') = ?", [$vehicleRegNo])
-                        // Also check in configurations field for backward compatibility
-                        ->orWhereRaw("JSON_EXTRACT(configurations, '$.certificate_details.vehicle_registration_no') = ?", [$vehicleRegNo]);
-                    })
+                    ->whereRaw("JSON_EXTRACT(certificate_data, '$.vehicle_registration_no') = ?", [$vehicleRegNo])
                     ->where('is_certificate_generated', true)
                     ->exists();
 
@@ -1141,13 +1121,33 @@ class CertificateController extends Controller
                 }
             }
 
-            // Store RC file path in device config
-            $config = json_decode($device->configurations, true) ?: [];
-            $config['rc_details'] = array_merge(
+            // Store OCR-extracted RC data in certificate_data field ONLY
+            // Do NOT save to configurations - keep configurations for device operational parameters only
+            $rcDetailsData = array_merge(
                 $extractedData,
                 ['file_path' => $filePath, 'uploaded_at' => now()]
             );
-            $device->configurations = json_encode($config);
+
+            // Get existing certificate data if any
+            $certData = !empty($device->certificate_data) ? json_decode($device->certificate_data, true) : [];
+
+            // Merge RC details into certificate data
+            $certData = array_merge($certData, $rcDetailsData);
+
+            // Store RC image path for certificate Supporting Images section
+            if (!isset($certData['ocr_images']) || !is_array($certData['ocr_images'])) {
+                $certData['ocr_images'] = [];
+            }
+            $rcType = $request->input('rc_type', 'front');
+            if ($rcType === 'back') {
+                $certData['ocr_images']['rc_back'] = $filePath;
+            } else {
+                $certData['ocr_images']['rc_front'] = $filePath;
+                $certData['ocr_images']['rc'] = $filePath;
+            }
+
+            // Save to certificate_data field only
+            $device->certificate_data = json_encode($certData);
             $device->save();
 
             return response()->json([
@@ -1182,21 +1182,32 @@ class CertificateController extends Controller
 
     /**
      * Persist an OCR-uploaded image so it can be reused on the certificate.
-     * Stores the relative path under config->ocr_images->{slot} and removes
+     * Stores the relative path in certificate_data->{slot} and removes
      * any previously kept image for that slot.
      */
     private function persistOcrImage(Device $device, string $slot, string $relPath): void
     {
-        $config = json_decode($device->configurations, true) ?: [];
-        $old = $config['ocr_images'][$slot] ?? null;
+        // Read certificate data
+        $certData = !empty($device->certificate_data)
+            ? json_decode($device->certificate_data, true) : [];
+
+        // Initialize ocr_images array if not present
+        if (!isset($certData['ocr_images'])) {
+            $certData['ocr_images'] = [];
+        }
+
+        // Clean up old file if different
+        $old = $certData['ocr_images'][$slot] ?? null;
         if ($old && $old !== $relPath) {
             $oldFull = storage_path('app/' . $old);
             if (is_file($oldFull)) {
                 @unlink($oldFull);
             }
         }
-        $config['ocr_images'][$slot] = $relPath;
-        $device->configurations = json_encode($config);
+
+        // Save new file path to certificate_data (NOT configurations)
+        $certData['ocr_images'][$slot] = $relPath;
+        $device->certificate_data = json_encode($certData);
         $device->save();
     }
 
@@ -1372,14 +1383,30 @@ class CertificateController extends Controller
             // Keep the uploaded device label image for use on the certificate.
             $this->persistOcrImage($device, 'device', $filePath);
 
-            // Optionally check if extracted IMEI matches device's stored IMEI
+            // Check if extracted IMEI matches device's stored IMEI
             $deviceImei  = $device->imei ?? null;
             $imeiMatches = null;
             if ($info['imei'] && $deviceImei) {
                 $imeiMatches = (trim($info['imei']) === trim($deviceImei));
             }
 
-            // If ICCID detected, enrich with SIM info from GrowSpace API
+            // ── IMEI validation gate (BEFORE any external API call) ──────────
+            // If the extracted IMEI does NOT match the device's stored IMEI,
+            // stop immediately: do not call GrowSpace, do not return ICCID/SIM/
+            // profile data, and keep the user blocked from the next step.
+            if ($imeiMatches === false) {
+                return response()->json([
+                    'success'       => false,
+                    'imei_mismatch' => true,
+                    'imei'          => $info['imei'],
+                    'device_imei'   => $deviceImei,
+                    'imei_matches'  => false,
+                    'error'         => 'IMEI Mismatch. The uploaded device label does not belong to the selected device.',
+                ], 422);
+            }
+
+            // IMEI matches (or there is no stored IMEI to compare against).
+            // Only now enrich with SIM info from GrowSpace API.
             $simData = ['sims' => [], 'plan_status' => null, 'organization' => null];
             if (!empty($info['iccid'])) {
                 $growService = new \App\Services\GrowSpaceSimService();
@@ -1495,8 +1522,13 @@ class CertificateController extends Controller
             return response()->json(['error' => 'Certification is not enabled for this device category!'], 403);
         }
 
-        $config = json_decode($device->configurations, true) ?: [];
-        $rcDetails = $config['rc_details'] ?? null;
+        // Read RC details from certificate_data field ONLY (not from configurations)
+        $rcDetails = null;
+        if (!empty($device->certificate_data)) {
+            $certData = json_decode($device->certificate_data, true) ?: [];
+            // RC details are stored in certificate data
+            $rcDetails = $certData;
+        }
 
         if (!$rcDetails) {
             return response()->json(['data' => null]);
@@ -1557,11 +1589,9 @@ class CertificateController extends Controller
      */
     public static function uniqueJson(Device $device, string $key, $value): bool
     {
+        // Check uniqueness in certificate_data field ONLY (not in configurations)
         return !Device::where('id', '!=', $device->id)
-            ->where(function ($query) use ($key, $value) {
-                $query->whereJsonContains("configurations->certificate_details->$key", $value)
-                    ->orWhereJsonContains("configurations->$key", $value);
-            })
+            ->whereJsonContains("certificate_data->$key", $value)
             ->exists();
     }
 
@@ -1591,17 +1621,13 @@ class CertificateController extends Controller
         $prefix = 'JSDE14A';
 
         // Find the highest existing serial to determine the next number
+        // Read ONLY from certificate_data field (not from configurations)
         $latestSerial = Device::where('is_deleted', 0)
-            ->where(function ($query) use ($prefix) {
-                $query->whereJsonContains("configurations->certificate_details->vltd_serial_no", $prefix)
-                    ->orWhereJsonContains("configurations->vltd_serial_no", $prefix);
-            })
+            ->whereNotNull('certificate_data')
             ->get()
             ->map(function ($device) use ($prefix) {
-                $config = json_decode($device->configurations, true) ?: [];
-                $serial = $config['certificate_details']['vltd_serial_no']
-                    ?? $config['vltd_serial_no']
-                    ?? null;
+                $certData = !empty($device->certificate_data) ? json_decode($device->certificate_data, true) : [];
+                $serial = $certData['vltd_serial_no'] ?? null;
 
                 if ($serial && strpos($serial, $prefix) === 0) {
                     $numericPart = (int) substr($serial, strlen($prefix));

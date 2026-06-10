@@ -97,7 +97,7 @@
                                 <select id="childUserSelect" class="user-select" style="width: 100%; max-width: 400px;">
                                     <option value="">-- Choose a Child User --</option>
                                     @foreach($childUsers as $childUser)
-                                        <option value="{{ $childUser->id }}">{{ $childUser->name }} ({{ $childUser->email }})</option>
+                                        <option value="{{ $childUser->id }}" data-user-type="{{ $childUser->user_type }}">{{ $childUser->name }} ({{ $childUser->email }})</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -115,7 +115,7 @@
 
                         <div id="permissionsContainer" style="display:none;">
                             @foreach($modules as $module)
-                                <div class="module-section">
+                                <div class="module-section" data-module="{{ $module }}">
                                     <div class="module-title">
                                         {{ ucwords(str_replace('_', ' ', $module)) }}
                                     </div>
@@ -157,20 +157,64 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     let currentUserId = null;
+    let currentChildUserType = null;
     let permissionDependencies = {}; // child_id => parent_id
     let permissionDependents = {}; // parent_id => [child_id, ...]
+    const childUserTypes = @json($childUsers->pluck('user_type', 'id'));
+    @if(!empty($selectedUser))
+    childUserTypes[{{ $selectedUser->id }}] = @json($selectedUser->user_type);
+    @endif
+
+    function syncCreateEditPair(checkbox, isChecked) {
+        const permKey = $(checkbox).data('permission');
+        if (!permKey) return;
+        const match = permKey.match(/^(.+)\.(create|edit)$/);
+        if (!match) return;
+        const pairKey = match[1] + (match[2] === 'create' ? '.edit' : '.create');
+        const pairCheckbox = $('.permission-checkbox[data-permission="' + pairKey + '"]');
+        if (pairCheckbox.length) {
+            pairCheckbox.prop('checked', isChecked);
+        }
+    }
+
+    function resolveChildUserType(userId, responseUserType) {
+        if (responseUserType) {
+            return responseUserType;
+        }
+        if ($('#childUserSelect').length) {
+            const selectedType = $('#childUserSelect option:selected').data('user-type');
+            if (selectedType) {
+                return selectedType;
+            }
+        }
+        return childUserTypes[userId] || childUserTypes[String(userId)] || null;
+    }
+
+    function applyModuleVisibilityForChildUser(userType) {
+        currentChildUserType = userType;
+        const hideAccountManagement = userType === 'User';
+
+        $('.module-section[data-module="account_management"]').each(function() {
+            const $section = $(this);
+            if (hideAccountManagement) {
+                $section.hide();
+                $section.find('.permission-checkbox').prop('checked', false);
+            } else {
+                $section.show();
+            }
+        });
+    }
 
     $(document).ready(function() {
-        // Load permission dependencies
-        loadPermissionDependencies();
-
-        // Check if user_id is in query parameters
+        // Load permission dependencies first, then child permissions if pre-selected
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('user_id');
-        if (userId) {
-            currentUserId = userId;
-            loadChildUserPermissions(userId);
-        }
+        loadPermissionDependencies(function() {
+            if (userId) {
+                currentUserId = userId;
+                loadChildUserPermissions(userId);
+            }
+        });
 
         // Add change event listeners for permission checkboxes
         $(document).on('change', '.permission-checkbox', function() {
@@ -179,45 +223,56 @@
 
             if (isChecked) {
                 // If checking a child, also check its parent
-                if (permissionDependencies[permId]) {
+                if (permissionDependencies && permissionDependencies[permId]) {
                     const parentId = permissionDependencies[permId];
                     $('.permission-checkbox[value="' + parentId + '"]').prop('checked', true);
                 }
             } else {
                 // If unchecking a parent, also uncheck all its children
-                if (permissionDependents[permId]) {
+                if (permissionDependents && permissionDependents[permId]) {
                     permissionDependents[permId].forEach(childId => {
                         $('.permission-checkbox[value="' + childId + '"]').prop('checked', false);
                     });
                 }
             }
+
+            syncCreateEditPair(this, isChecked);
         });
     });
 
     $('#childUserSelect').on('change', function() {
         currentUserId = $(this).val();
         if (currentUserId) {
-            loadChildUserPermissions(currentUserId);
+            loadPermissionDependencies(function() {
+                loadChildUserPermissions(currentUserId);
+            });
         } else {
             $('#permissionsContainer').hide();
         }
     });
 
-    function loadPermissionDependencies() {
+    function loadPermissionDependencies(callback) {
         $.ajax({
-            url: '/admin/permissions/dependencies/get',
+            url: '/reseller/permissions/dependencies/get',
             type: 'GET',
             success: function(response) {
-                permissionDependencies = response.dependencies;
-                permissionDependents = response.dependents;
+                permissionDependencies = response.dependencies || {};
+                permissionDependents = response.dependents || {};
                 console.log('Permission dependencies loaded:', {
                     dependencies: permissionDependencies,
                     dependents: permissionDependents
                 });
+                if (typeof callback === 'function') {
+                    callback();
+                }
             },
             error: function(xhr, status, error) {
                 console.error('Error loading permission dependencies:', error);
-                // Continue even if dependencies fail to load
+                permissionDependencies = permissionDependencies || {};
+                permissionDependents = permissionDependents || {};
+                if (typeof callback === 'function') {
+                    callback();
+                }
             }
         });
     }
@@ -232,6 +287,9 @@
             success: function(response) {
                 console.log('Loaded child permissions:', response);
 
+                const childUserType = resolveChildUserType(userId, response.user_type);
+                applyModuleVisibilityForChildUser(childUserType);
+
                 // Server already filtered permissions to only assignable ones —
                 // all rendered .permission-row elements ARE assignable.
                 // Just need to set the checkbox state for permissions the child currently has.
@@ -242,7 +300,7 @@
 
                     // Also check parent permissions of any checked children
                     response.permissions.forEach(function(permId) {
-                        if (permissionDependencies[permId]) {
+                        if (permissionDependencies && permissionDependencies[permId]) {
                             // This is a child permission, add its parent
                             let parentId = permissionDependencies[permId];
                             if (!permissionsToCheck.includes(parentId)) {
@@ -254,6 +312,9 @@
                     // Check all the permissions
                     permissionsToCheck.forEach(function(permId) {
                         $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);
+                    });
+                    $('.permission-checkbox:checked').each(function() {
+                        syncCreateEditPair(this, true);
                     });
                 }
 
@@ -284,6 +345,10 @@
 
         const permissions = [];
         $('.permission-checkbox:checked').each(function() {
+            const $section = $(this).closest('.module-section');
+            if (currentChildUserType === 'User' && $section.data('module') === 'account_management') {
+                return;
+            }
             permissions.push($(this).val());
         });
 

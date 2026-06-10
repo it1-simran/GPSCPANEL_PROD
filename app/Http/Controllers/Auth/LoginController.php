@@ -14,7 +14,6 @@ use Illuminate\Support\Str;
 use App\Mail\OtpMail;
 use App\Mail\TwoFactorTokenMail;
 use App\Models\User;
-use App\Models\UserLogin;
 use App\Writer;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cache;
@@ -213,14 +212,6 @@ class LoginController extends Controller
 
             if (Auth::attempt($credentials, $request->filled('remember'))) {
                 $user = Auth::user();
-// Log login details and clean old logs
-UserLogin::where('logged_at', '<', now()->subDays(30))->delete();
-UserLogin::create([
-    'user_id' => $user->id,
-    'ip_address' => $request->ip(),
-    'user_agent' => $request->userAgent(),
-    'logged_at' => now(),
-]);
                 // dd($user);
                 // ✅ TWO FACTOR AUTHENTICATION
                 if ($user->twoFactorAuthentication) {
@@ -471,14 +462,6 @@ UserLogin::create([
 ]);
 
         if (Auth::guard('admin')->attempt(['email' => $request->email, 'password' => $request->password, 'user_type' => 'Admin'], $request->get('remember'))) {
-            // Log login details and clean old logs
-            UserLogin::where('logged_at', '<', now()->subDays(30))->delete();
-            UserLogin::create([
-                'user_id' => Auth::guard('admin')->id(),
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'logged_at' => now(),
-            ]);
             // Reset today_pings if outdated
             $todatPingsDate = DB::table('writers')->get();
             foreach ($todatPingsDate as $value) {

@@ -226,7 +226,8 @@ class PermissionManagementController extends Controller
 
         return response()->json([
             'permissions' => $childPermissions,
-            'assignable_permissions' => $allowedPermissionIds
+            'assignable_permissions' => $allowedPermissionIds,
+            'user_type' => $childUser->user_type,
         ]);
     }
 

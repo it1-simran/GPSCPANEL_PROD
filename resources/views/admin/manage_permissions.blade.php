@@ -142,6 +142,18 @@
     let permissionDependencies = {}; // child_id => parent_id
     let permissionDependents = {}; // parent_id => [child_id, ...]
 
+    function syncCreateEditPair(checkbox, isChecked) {
+        const permKey = $(checkbox).data('permission');
+        if (!permKey) return;
+        const match = permKey.match(/^(.+)\.(create|edit)$/);
+        if (!match) return;
+        const pairKey = match[1] + (match[2] === 'create' ? '.edit' : '.create');
+        const pairCheckbox = $('.permission-checkbox[data-permission="' + pairKey + '"]');
+        if (pairCheckbox.length) {
+            pairCheckbox.prop('checked', isChecked);
+        }
+    }
+
     $(document).ready(function() {
         // Load permission dependencies
         loadPermissionDependencies();
@@ -173,6 +185,8 @@
                     });
                 }
             }
+
+            syncCreateEditPair(this, isChecked);
         });
     });
 
@@ -234,6 +248,9 @@
                 // Check all the permissions
                 permissionsToCheck.forEach(function(permId) {
                     $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);
+                });
+                $('.permission-checkbox:checked').each(function() {
+                    syncCreateEditPair(this, true);
                 });
 
                 $('#loading').removeClass('active');

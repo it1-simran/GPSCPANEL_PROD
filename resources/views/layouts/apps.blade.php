@@ -585,7 +585,13 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
-                        @if (\App\Helpers\PermissionHelper::canAccessAccountManagement() && \App\Helpers\PermissionHelper::hasAnyModulePermission('account_management'))
+                        @php
+                            $resellerCanAddAccount = \App\Helpers\PermissionHelper::hasPermission('account_management.create');
+                            $resellerCanViewAccount = \App\Helpers\PermissionHelper::hasPermission('account_management.view')
+                                || \App\Helpers\PermissionHelper::hasPermission('account_management.edit')
+                                || \App\Helpers\PermissionHelper::hasPermission('account_management.delete');
+                        @endphp
+                        @if (\App\Helpers\PermissionHelper::canAccessAccountManagement() && ($resellerCanAddAccount || $resellerCanViewAccount))
                         <li
                             class='sub-menu {{ request()->is('reseller/add-user', 'reseller/view-user') ? 'active' : '' }}'>
                             <a href="#"
@@ -593,23 +599,27 @@ if ($userType === 'admin') {
                                 <span class='icon-sidebar pe-7s-user fa-2x'></span><span>Account Management</span>
                             </a>
                             <ul class='sub'>
+                                @if ($resellerCanAddAccount)
                                 <li class="{{ request()->is('reseller/add-user') ? 'active' : '' }}">
                                     <a href="{{ url('/reseller/add-user') }}"
                                         class="{{ request()->is('reseller/add-user') ? 'active' : '' }}">
                                         Add Account
                                     </a>
                                 </li>
+                                @endif
+                                @if ($resellerCanViewAccount)
                                 <li class="{{ request()->is('reseller/view-user') ? 'active' : '' }}">
                                     <a href="{{ url('reseller/view-user') }}"
                                         class="{{ request()->is('reseller/view-user') ? 'active' : '' }}">
                                         View Account
                                     </a>
                                 </li>
+                                @endif
                             </ul>
                         </li>
                         @endif
 
-                        @if (\App\Helpers\PermissionHelper::hasAnyModulePermission('device_management'))
+                        @if (\App\Helpers\PermissionHelper::hasPermission('device_management.view'))
                         <li
                             class='sub-menu {{ request()->is('reseller/view-device-assign', 'reseller/view-device-unassign') ? 'active' : '' }}'>
                             <a href="#"
@@ -617,6 +627,7 @@ if ($userType === 'admin') {
                                 <span class='icon-sidebar pe-7s-albums fa-2x'></span><span>Device Management</span>
                             </a>
                             <ul class='sub'>
+                                @if (\App\Helpers\PermissionHelper::hasPermission('device_management.view'))
                                 <li class="{{ request()->is('reseller/view-device-assign') ? 'active' : '' }}">
                                     <a href="{{ url('/reseller/view-device-assign') }}"
                                         class="{{ request()->is('reseller/view-device-assign') ? 'active' : '' }}">
@@ -629,6 +640,7 @@ if ($userType === 'admin') {
                                         Unassigned Devices
                                     </a>
                                 </li>
+                                @endif
                             </ul>
                         </li>
                         @endif
@@ -692,12 +704,14 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
+                        @if (\App\Helpers\PermissionHelper::hasPermission('account_management.view'))
                         <li class="{{ request()->is('reseller/manage-child-permissions') ? 'active' : '' }}">
                             <a href="{{ url('/reseller/manage-child-permissions') }}"
                                 class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/manage-child-permissions') ? 'active' : '' }}">
                                 <span class='icon-sidebar fa fa-lock fa-2x'></span><span>Manage Permissions</span>
                             </a>
                         </li>
+                        @endif
                         @else
                         @if (Auth::user()->user_type == 'User')
 

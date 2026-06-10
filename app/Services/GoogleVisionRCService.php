@@ -364,6 +364,31 @@ class GoogleVisionRCService
             ], 20);
         }
 
+        // ── Authority City (Registration / Registering Authority / RTO) ──
+        // On the RC the authority value (e.g. "LUDHIANA RTA") usually sits on
+        // the line BELOW the "Registration Authority" label, so a same-line
+        // match is not enough — capture the value whether it is on the same
+        // line or the next line. Best-effort; the field stays editable.
+        if (empty($data['authority_city'])) {
+            $authorityPatterns = [
+                '~(?:REGISTRATION|REGISTERING|REGN\.?|ISSUING)\s+AUTHORITY[^\S\r\n]*[:\-\.]*[\r\n]*[^\S\r\n]*([^\n\r]{2,40})~i',
+                '~(?:REGD|REG)\s*AT\b[^\S\r\n]*[:\-\.]*[\r\n]*[^\S\r\n]*([^\n\r]{2,40})~i',
+            ];
+            foreach ($authorityPatterns as $pattern) {
+                if (preg_match($pattern, $text, $m)) {
+                    $auth = trim(preg_replace('~\s+~', ' ', $m[1] ?? ''));
+                    // Strip common authority-type suffixes to leave the city name
+                    // (RTA, RTO, DTO, ARTO, MVD, SDM, RTO OFFICE, etc.).
+                    $auth = preg_replace('~\b(RTA|RTO|DTO|ARTO|MVD|SDM|OFFICE)\b~i', '', $auth);
+                    $auth = trim(preg_replace('~[\s,\-]+$~', '', preg_replace('~\s+~', ' ', $auth)));
+                    if ($auth !== '' && strlen($auth) > 1 && !$this->looksLikeLabel($auth)) {
+                        $data['authority_city'] = $auth;
+                        break;
+                    }
+                }
+            }
+        }
+
         // ── Owner Address ────────────────────────────────────────────────
         if (empty($data['owner_address'])) {
             $ownerAddress = null;
@@ -924,6 +949,7 @@ class GoogleVisionRCService
             'color'                   => 'color',
             'vehicle_class'           => 'vehicle_class',
             'fuel_type'               => 'fuel_type',
+            'authority_city'          => 'authority_city',
         ];
 
         $formData = [];

@@ -14,8 +14,11 @@ $getCanEnableByDeviceCategory = !empty($template_info['device_category_id'])
     : null;
 // dd($configurations);
 $canConfigurations = json_decode($template_info['can_configurations'], true);
-// dd($configurations);
-// dd($configurations['ping_interval']);
+$canEditSettings = Auth::user()->user_type === 'Admin'
+    || \App\Helpers\PermissionHelper::hasPermission('settings_management.edit');
+$templateAllowsEdit = Auth::user()->user_type === 'Admin'
+    || (isset($configurations['is_editable']['value']) && (int) $configurations['is_editable']['value'] === 1);
+$showTemplateEditControls = $canEditSettings && $templateAllowsEdit;
 ?>
 
 @extends('layouts.apps')
@@ -92,6 +95,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                     </div>
                                                 </div>
                                             </div>
+                                            @if($showTemplateEditControls)
                                             <div class="form-template-configuration" style="display:none; padding: 25px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px;">
                                                 <form class="validator form-horizontal " id="updateDeviceInfoConfiguration" method="post" action="{{ url($url_type . '/update-template-info-configurations/' . $template_info['id']) }}">
                                                     @method('PATCH')
@@ -166,8 +170,8 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                     </div>
                                                 </form>
                                             </div>
-                                            @if(Auth::user()->user_type != "Support")
-                                            @if(isset($configurations['is_editable']['value']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                            @endif
+                                            @if(Auth::user()->user_type != "Support" && $showTemplateEditControls)
                                             <div class="row mt-3">
                                                 <div class="col-lg-12 text-center">
                                                     <button type="button" class="btn btn-primary edit-template-btn" onclick="toggleEditTemplate()">
@@ -175,8 +179,6 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                     </button>
                                                 </div>
                                             </div>
-                                            @endif
-
                                             @endif
                                         </div>
                 </div>
@@ -230,18 +232,16 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                                     <!--{{ isset($configurations['ping_interval']) ? $configurations['ping_interval']['value'] : 0 }}-->
                                                                     <!--</p>-->
                                                                 </div>
-                                                                @if(Auth::user()->user_type != "Support")
-                                                                @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                                                @if(Auth::user()->user_type != "Support" && $showTemplateEditControls)
                                                                 <div class="col-lg-3">
                                                                     <button type="button" class="btn btn-primary edit-btn" onclick="toggleEdit()"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>
                                                                     </button>
                                                                 </div>
                                                                 @endif
-
-                                                                @endif
                                                             </div>
                                                         </div>
                                                         <!--{{$url_type}}-->
+                                                        @if($showTemplateEditControls)
                                                         <div id="form" style="display: none;">
                                                             <form action="{{ url($url_type . '/update-template-configurations/' . $template_info['id']) }}" method="POST">
                                                                 @csrf
@@ -257,6 +257,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                                 </div>
                                                             </form>
                                                         </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
@@ -268,7 +269,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                     <div class="vc-section-title"><i class="fa fa-microchip"></i> CAN Protocol Configurations</div>
                                         @empty($template_info['can_configurations'])
 
-                                        @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                        @if($showTemplateEditControls)
                                         <div class="row mt-3">
                                             <div class="col-lg-12 text-center">
                                                 <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')" style="background-color: #1e293b; border-color: #1e293b; color: white; padding: 8px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.2); transition: all 0.2s;">
@@ -279,8 +280,7 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                         @endif
                                         @else
                                         <?php echo CommonHelper::getCanProtocolTempConfigurationInput($template_info['device_category_id'], 0, $canConfigurations, $url_type, $template_info); ?>
-                                        @if(Auth::user()->user_type != "Support")
-                                        @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                        @if(Auth::user()->user_type != "Support" && $showTemplateEditControls)
                                         <div class="row mt-3">
                                             <div class="col-lg-12 text-center">
                                                 <button type="button" class="btn btn-primary edit-config-btn" onclick="canConfigToggleEdit('')" style="background-color: #1e293b; border-color: #1e293b; color: white; padding: 8px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.2); transition: all 0.2s;">
@@ -288,8 +288,6 @@ $canConfigurations = json_decode($template_info['can_configurations'], true);
                                                 </button>
                                             </div>
                                         </div>
-                                        @endif
-
                                         @endif
                                         @endempty
                 </div>

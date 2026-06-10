@@ -365,6 +365,7 @@ class RCExtractionService
             'color' => 'color',
             'vehicle_class' => 'vehicle_class',
             'fuel_type' => 'fuel_type',
+            'authority_city' => 'authority_city',
         ];
 
         $formData = [];

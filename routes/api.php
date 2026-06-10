@@ -22,7 +22,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 // Device Token Generation - requires device authentication
-Route::middleware('check.auth.token')->post('/generate-token', [DeviceApiController::class, 'generateToken']);
+Route::post('/generate-token', [DeviceApiController::class, 'generateToken']);
 
 Route::middleware('check.auth.token.jig')->post('/generate-token-jig', [AddDeviceThroughJigController::class, 'generateToken']);
 

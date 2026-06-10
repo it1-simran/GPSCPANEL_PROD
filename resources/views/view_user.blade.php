@@ -132,7 +132,7 @@
 <th>Delete</th>
 @endif
 <th>Link Account</th>
-@if(Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller')
+@if(Auth::user()->user_type == 'Admin' || (Auth::user()->user_type == 'Reseller' && Auth::user()->hasPermission('account_management.view')))
 <th>Manage Permissions</th>
 @endif
                     
@@ -199,7 +199,7 @@
                       <button style="margin-top:1px" data-uid="{{$contact['id']}}" data-cutype="{{$url_type}}" class="vu-btn-link linkReseller" type="button"><i class="fa fa-chain"></i> Link</button>
                       @endif
                     </td>
-                    @if(Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller')
+                    @if(Auth::user()->user_type == 'Admin' || (Auth::user()->user_type == 'Reseller' && Auth::user()->hasPermission('account_management.view')))
                     <td>
                       @if(Auth::user()->user_type == 'Admin' && $contact['user_type'] == 'Reseller')
                         <a href="/admin/manage-permissions?reseller_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>

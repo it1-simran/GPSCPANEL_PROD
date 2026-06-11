@@ -542,7 +542,15 @@ class DeviceApiController extends Controller
 
 		$filePath = public_path('fw' . DIRECTORY_SEPARATOR . $filename);
 		if (!file_exists($filePath)) {
-			return response('FAIL,FIRMWARE_NOT_EXIST;', 404)
+			Devicelog::create([
+				'device_id' => $device->id,
+				'user_id' => $device->user_id ?? 0,
+				'log' => "Firmware file not found on server. Firmware ID: {$firmware->id}, Expected file: {$filename}, Path: {$filePath}",
+				'action' => 'FirmwareDownload_Error',
+				'is_active' => 1
+			]);
+
+			return response('FAIL,FIRMWARE_FILE_NOT_EXIST,' . $filename . ';', 404)
 				->header('Content-Type', 'text/plain');
 		}
 
@@ -591,6 +599,7 @@ class DeviceApiController extends Controller
 		readfile($filePath);
 		exit; // stop Laravel execution
 	}
+
 
 	// public function downloadFirmware(Request $request, $deviceId)
 	// {

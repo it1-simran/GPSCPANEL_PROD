@@ -59,19 +59,18 @@
       <table class="detail">
         <tr>
           <td class="label">IMEI Number</td><td class="value">{{ $dImei ?: '—' }}</td>
+          <td class="label">Vehicle Registration No</td><td class="value">{{ $vehicle_registration_no ?? '—' }}</td>
+        </tr>
+        <tr>
           <td class="label">ICCID Number</td><td class="value">{{ $dIccid ?: '—' }}</td>
-        </tr>
-        <tr>
           <td class="label">Device Model</td><td class="value">{{ $dModel ?: '—' }}</td>
-          <td class="label">VLTD Make</td><td class="value">{{ $vltd_make ?? '—' }}</td>
         </tr>
-        <!-- <tr>
-          <td class="label">VLTD Serial No</td><td class="value">{{ $vltd_serial_no ?? '—' }}</td>
-          <td class="label">Firmware Version</td><td class="value">{{ $firmware_version ?? '—' }}</td>
-        </tr> -->
         <tr>
+          <td class="label">VLTD Make</td><td class="value">{{ $vltd_make ?? '—' }}</td>
           <td class="label">Service Provider</td><td class="value">{{ $provider ?? '—' }}</td>
-          <td class="label">ARAI TAC/COP</td><td class="value">{{ $arai_tac ?? '—' }}</td>
+        </tr>
+        <tr>
+          <td class="label">ARAI TAC/COP</td><td class="value" colspan="3">{{ $arai_tac ?? '—' }}</td>
         </tr>
       </table>
     </div>

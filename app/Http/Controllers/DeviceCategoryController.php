@@ -798,7 +798,23 @@ class DeviceCategoryController extends Controller
                 if (Auth::user()->user_type == 'Reseller') {
                     $getTemplateByDeviceCategory = Template::select('*')->where('templates.id_user', Auth::user()->id)->where('templates.is_deleted', '0')->where('verify', '2')->where(['device_category_id' => $category->id])->get();
                 } else {
-                    $getTemplateByDeviceCategory = Template::select('*')->where('templates.is_deleted', '0')->where('verify', '1')->where(['device_category_id' => $category->id])->get();
+                    $templateQuery = Template::select('*')
+                        ->where('templates.is_deleted', '0')
+                        ->where('device_category_id', $category->id);
+
+                    if ($request->has('userId') && $request->userId) {
+                        $templateQuery->where(function ($query) use ($request) {
+                            $query->where(function ($adminTemplates) {
+                                $adminTemplates->whereNull('templates.id_user')->where('verify', '1');
+                            })->orWhere(function ($userTemplates) use ($request) {
+                                $userTemplates->where('templates.id_user', $request->userId)->where('verify', '2');
+                            });
+                        });
+                    } else {
+                        $templateQuery->whereNull('templates.id_user')->where('verify', '1');
+                    }
+
+                    $getTemplateByDeviceCategory = $templateQuery->get();
                 }
 
                 $templates[] = $getTemplateByDeviceCategory;

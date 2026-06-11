@@ -49,25 +49,7 @@
             </div><!--/.c_title-->
             <div class="c_content" style="padding: 30px;">
               <div class="row" id="alert_msg">
-                @if ($message = Session::get('success'))
-                <div class="col-sm-12 alert alert-success" role="alert">
-                  {{ $message }}
-                </div>
-                @endif
-                @if ($message = Session::get('error'))
-                <div class="col-sm-12 alert alert-danger" role="alert">
-                  {{ $message }}
-                </div>
-                @endif
-                @if ($errors->any())
-                <div class="alert alert-danger">
-                  <ul>
-                    @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                  </ul>
-                </div>
-                @endif
+                @include('partials.gps-inline-alerts')
                 <div class="col-sm-12 alert alert-success success_msg" role="alert" style="display:none"></div>
                 <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
                 <form class="validator" id="commentForm" method="post" action="#" onsubmit="return false">
@@ -595,37 +577,36 @@
             type: "POST",
             data: formData,
             success: function(response) {
-              let result = JSON.parse(response);
-              $('.success_msg').append(result.success).show();
-
-              document.documentElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-              });
+              let result = typeof response === 'object' ? response : JSON.parse(response);
+              if (window.notifyGpsSuccess) {
+                window.notifyGpsSuccess(result.success || 'Account created successfully.');
+              } else {
+                $('.success_msg').append(result.success).show();
+              }
             },
             error: function(xhr) {
-              let errors = JSON.parse(xhr.responseText);
-              $('.error_msg').empty();
-              if (errors && errors.errors) {
-                $.each(errors.errors, function(key, value) {
-                  $('.error_msg').append(value[0] + '<br>').show();
-                });
+              if (window.notifyGpsFromXhr) {
+                window.notifyGpsFromXhr(xhr);
+              } else {
+                let errors = JSON.parse(xhr.responseText);
+                $('.error_msg').empty();
+                if (errors && errors.errors) {
+                  $.each(errors.errors, function(key, value) {
+                    $('.error_msg').append(value[0] + '<br>').show();
+                  });
+                }
               }
-              document.documentElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-              });
             },
             complete: function() {
               $('#loading').hide();
             }
           });
         } else {
-          $('.error_msg').text(error_msg).show();
-          document.documentElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
+          if (window.notifyGpsError) {
+            window.notifyGpsError(error_msg);
+          } else {
+            $('.error_msg').text(error_msg).show();
+          }
         }
       });
     });

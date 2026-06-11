@@ -712,7 +712,7 @@ class RegisterController extends Controller
     $writer->save();
     $writer->timestamps = true;
     // $writer->save();
-    return back();
+    return back()->with('success', 'Account configurations updated successfully.');
   }
   public function updateCanProtocolConfigurations(Request $request, $id)
   {
@@ -791,7 +791,7 @@ class RegisterController extends Controller
     // dd($updatedConfigurationsJson);
     $writer->can_configurations = $updatedConfigurationsJson;
     $writer->save();
-    return back();
+    return back()->with('success', 'Account CAN protocol configurations updated successfully.');
   }
   public function updateWriterInformation(Request $request, $id, $userType)
   {
@@ -826,7 +826,7 @@ class RegisterController extends Controller
         self::manageEditDelAccs($id, $request->all(), 'edit');
       }
     }
-    return back();
+    return back()->with('success', 'Account information updated successfully.');
   }
   public function viewUncategorized()
   {

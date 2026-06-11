@@ -50,6 +50,9 @@ $showTemplateEditControls = $canEditSettings && $templateAllowsEdit;
                         </h4>
                     </div>
                     <div class="card-body body-custom">
+                <div class="row" id="alert_msg">
+                    @include('partials.gps-inline-alerts')
+                </div>
                 <div class="user-info no-accordion mb-4">
                     <div class="vc-section-title"><i class="fa fa-file-text-o"></i> Template Information</div>
                                         <div class='row bgx-configurations vtc-info-layout'>

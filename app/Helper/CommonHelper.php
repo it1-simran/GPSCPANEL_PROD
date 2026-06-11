@@ -132,14 +132,16 @@ class CommonHelper
             $html .= '<button class="btn btn-info btn-sm template-responsive" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/assigtemplateAll">Assign Setting Template</button>';
             $html .= '</div>';
             if ((Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller') && $show_acc_wise) {
-                $filterAction = '/' . $urlType . '/view-device-unassign';
+                $filterAction = '/' . $urlType . '/view-device-assign';
+                $selectedAccountId = (string) request('username', '0');
                 $html .= '<div class="vdc-tab-toolbar-right" style="display:flex;align-items:center;flex-shrink:0;margin-left:auto;">';
                 $html .= '<form method="get" action="' . $filterAction . '" class="vdc-filter-form" style="display:flex;align-items:center;gap:8px;margin:0;flex-wrap:nowrap;">';
                 $html .= '<select class="form-control input-sm btn-sm" id="searchUser' . $category->id . '" name="username" style="height:33px;min-width:160px;max-width:280px;width:auto;margin:0;flex:0 1 auto;">';
                 if (count($getUser) > 0) {
-                    $html .= '<option value="0">Account Wise list</option>';
+                    $html .= '<option value="0"' . ($selectedAccountId === '0' ? ' selected' : '') . '>Account Wise list</option>';
                     foreach ($getUser as $user) {
-                        $html .= '<option value="' . $user->id . '" >' . htmlspecialchars($user->name, ENT_QUOTES, 'UTF-8') . '</option>';
+                        $isSelected = $selectedAccountId === (string) $user->id ? ' selected' : '';
+                        $html .= '<option value="' . $user->id . '"' . $isSelected . '>' . htmlspecialchars($user->name, ENT_QUOTES, 'UTF-8') . '</option>';
                     }
                 }
                 $html .= '</select><button type="submit" class="btn btn-success btn-sm" style="margin-top: 1px;">Filter</button></form></div>';

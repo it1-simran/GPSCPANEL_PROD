@@ -58,21 +58,7 @@
                      </div><!--/.c_title-->
                      <div class="c_content">
                          <div class="row" id="alert_msg">
-                             @if ($message = Session::get('success'))
-                             <div class="col-sm-12 alert alert-success" role="alert">
-                                 {{ $message }}
-                             </div>
-                             @endif
-                             @if ($message = Session::get('error'))
-                             <div class="col-sm-12 alert alert-danger" role="alert">
-                                 {{ $message }}
-                             </div>
-                             @endif
-                             @if ($errors->any())
-                             <div class="col-sm-12 alert alert-danger" role="alert">
-                                 {{ $errors->first() }}
-                             </div>
-                             @endif
+                             @include('partials.gps-inline-alerts')
                          </div>
                          <div class="col-sm-12 alert alert-success success_msg" role="alert" style="display:none"></div>
                          <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
@@ -265,11 +251,11 @@
              // Prevent form submission if validation fails
              if (!isValidIMEI(imei)) {
                  event.preventDefault();
-                 $('.error_msg').append('Imei No is Invalid').show();
-                 document.documentElement.scrollIntoView({
-                     behavior: 'smooth',
-                     block: 'start'
-                 });
+                 if (window.notifyGpsError) {
+                     window.notifyGpsError('IMEI number is invalid.');
+                 } else {
+                     $('.error_msg').append('Imei No is Invalid').show();
+                 }
                  return;
              }
          });

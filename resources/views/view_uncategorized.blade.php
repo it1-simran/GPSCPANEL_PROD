@@ -36,21 +36,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     </div><!--/.c_title-->
                     <div class="c_content">
                         <div class="row" id="alert_msg">
-                            @if ($message = Session::get('success'))
-                                <div class="col-sm-12 alert alert-success" role="alert">
-                                    {{ $message }}
-                                </div>
-                            @endif
-                            @if ($message = Session::get('error'))
-                                <div class="col-sm-12 alert alert-danger" role="alert">
-                                    {{ $message }}
-                                </div>
-                            @endif
-                            @if ($errors->any())
-                                <div class="col-sm-12 alert alert-danger" role="alert">
-                                    {{ $errors->first() }}
-                                </div>
-                            @endif
+                            @include('partials.gps-inline-alerts')
                         </div>
                         <table id="datatable1232" class="table table-bordered table-striped table-condensed cf" style="border-spacing: 0; width: 100%; font-size: 14px;">
                         <?php

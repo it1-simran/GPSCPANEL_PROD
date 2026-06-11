@@ -62,23 +62,8 @@ $get_default_template = DB::table('templates')
           </div>
           <!--/.c_title-->
           <div class="c_content">
-            @if ($message = Session::get('error'))
-            <div class="col-sm-12 alert alert-danger" role="alert">
-              {{ $message }}
-            </div>
-            @endif
-            @if ($errors->any())
-            <div class="col-sm-12 alert alert-danger" role="alert">
-              {{ $errors->first() }}
-            </div>
-            @endif
-          </div>
           <div class="row" id="alert_msg" style='padding: 0px 20px;'>
-            @if ($message = Session::get('success'))
-            <div class="col-sm-12 alert alert-success" role="alert">
-              {{ $message }}
-            </div>
-            @endif
+            @include('partials.gps-inline-alerts')
             <div class="col-sm-12 alert alert-success success_msg" role="alert" style="display:none"></div>
 
             <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
@@ -277,7 +262,7 @@ $get_default_template = DB::table('templates')
                           <select class="form-control inputType" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }}>
                             <!-- <option value="">Please Select</option> -->
                             @foreach($validationConfig['selectOptions'] as $configkey => $option)
-                            <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]) && $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : '' }}>{{ $option }}</option>
+                            <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]) && $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : (!isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value']) && isset($input['default']) && strtolower($validationConfig['selectValues'][$configkey]) == strtolower($input['default']) ? 'selected' : '') }}>{{ $option }}</option>
                             @endforeach
                           </select>
                         </div>
@@ -352,7 +337,7 @@ $get_default_template = DB::table('templates')
                           <input class="form-control {{$addClassTextArray}} {{$addClassIpUrl}}" type="{{ $input['type'] == 'number' ? 'number' : 'text' }}"
                             {!! $input['type']=='number' ? 'min="' . ($input['numberRange']['min'] ?? '' ) . '" max="' . ($input['numberRange']['max'] ?? '' ) . '"' : '' !!}
                             placeholder="Enter {{ isset($input['key']) ? $input['key'] :''  }}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]"
-                            value="{{ isset($configurationValue) && isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'])  ? $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] : '' }}"
+                            value="{{ isset($configurationValue) && isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value']) && $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] !== '' ? $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] : ($input['default'] ?? '') }}"
                             {{ $input['requiredFieldInput'] ? 'required' : '' }}>
                         </div>
                       </div>
@@ -1216,36 +1201,40 @@ $get_default_template = DB::table('templates')
           type: "POST",
           data: formData,
           success: function(response) {
-            $(".success_msg").text("updated Successfully!").show();
-            document.documentElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start'
-            });
-            // window.location.reload();
+            let result = typeof response === 'object' ? response : null;
+            if (!result && typeof response === 'string') {
+              try { result = JSON.parse(response); } catch (e) { result = null; }
+            }
+            var message = (result && result.success) ? result.success : 'Account updated successfully.';
+            if (window.notifyGpsSuccess) {
+              window.notifyGpsSuccess(message);
+            } else {
+              $(".success_msg").text(message).show();
+            }
           },
           error: function(xhr) {
-            let errors = JSON.parse(xhr.responseText);
-            $('.error_msg').empty();
-            if (errors && errors.errors) {
-              $.each(errors.errors, function(key, value) {
-                $('.error_msg').append(value[0] + '<br>').show();
-              });
+            if (window.notifyGpsFromXhr) {
+              window.notifyGpsFromXhr(xhr);
+            } else {
+              let errors = JSON.parse(xhr.responseText);
+              $('.error_msg').empty();
+              if (errors && errors.errors) {
+                $.each(errors.errors, function(key, value) {
+                  $('.error_msg').append(value[0] + '<br>').show();
+                });
+              }
             }
-            document.documentElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start'
-            });
           },
           complete: function() {
             $('#loading').hide();
           }
         });
       } else {
-        $('.error_msg').text(error_msg).show();
-        document.documentElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
+        if (window.notifyGpsError) {
+          window.notifyGpsError(error_msg);
+        } else {
+          $('.error_msg').text(error_msg).show();
+        }
       }
     });
   });
@@ -1266,14 +1255,17 @@ $get_default_template = DB::table('templates')
         return this.value;
       }).get();
 
-      let newCheckedValues = checkedValues.filter(val => !existingCheckedValues.includes(val));
+      let newCheckedValues = checkedValues.filter(function(val) {
+        return !existingCheckedValues.map(String).includes(String(val));
+      });
       // Send all selected device category ids to the server
       $.ajax({
         url: actionUrl,
         type: "POST",
         data: {
           ids: newCheckedValues,
-          userId: userId
+          userId: userId,
+          _token: "{{ csrf_token() }}"
         },
         success: function(response) {
           let result = JSON.parse(response);
@@ -1286,24 +1278,28 @@ $get_default_template = DB::table('templates')
 
             let inputFields = JSON.parse(result.device);
             let templates = JSON.parse(result.templates);
-            let configValue = <?= json_encode($enhancedInputs) ?>;
-            const offset = existingCheckedValues.length;
+            let defaultTemplatesToTrigger = [];
             inputFields.forEach((data, adjustedIndex) => {
-              const index = offset + 1;
+              const categoryId = data.id;
               let input = JSON.parse(data.inputs);
               let canEnable = data.is_can_protocol == 1 ? true : false;
-              htmlContent += '<div class="device-category-fields card device-category-block-' + deviceCategoryId + '">';
+              htmlContent += '<div class="device-category-fields card device-category-block-' + categoryId + '">';
               htmlContent += '<div class="card-title"><h4 >' + data.device_category_name + '</h4></div>';
               htmlContent += '<div class="card-details">';
               htmlContent += '<div class="row">';
               htmlContent += '<div class="col-lg-6">';
-              htmlContent += '<div class="form-group"><label for="curl" class="control-label col-lg-3">Templates <span class="require">*</span></label><div class="col-lg-8"><select class="form-control userAccType" id="templates' + deviceCategoryId + '" name="configuration[' + deviceCategoryId + '][template]" class="select2" onchange="changeTemplate(' + index + ')">';
-              if (templates[adjustedIndex].length > 0) {
+              htmlContent += '<div class="form-group"><label for="curl" class="control-label col-lg-3">Templates <span class="require">*</span></label><div class="col-lg-8"><select class="form-control userAccType" id="templates' + categoryId + '" name="configuration[' + categoryId + '][template]" onchange="changeTemplate(' + categoryId + ')">';
+              if (templates[adjustedIndex] && templates[adjustedIndex].length > 0) {
+                let selectedTemplate = templates[adjustedIndex].find(function(temp) {
+                  return temp.default_template == 1;
+                }) || templates[adjustedIndex][0];
+                defaultTemplatesToTrigger.push({
+                  index: categoryId,
+                  id: selectedTemplate.id,
+                  inputs: input
+                });
                 templates[adjustedIndex].forEach((temp) => {
-                  // if (temp.default_template == 1) {
-                  //   changeTemplate(index, temp.id)
-                  // }
-                  htmlContent += '<option ' + (temp.default_template == 1 ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + '' + (temp.default_template == 1 ? ' (Default)' : '') + '</option>';
+                  htmlContent += '<option ' + (temp.id === selectedTemplate.id ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + '' + (temp.default_template == 1 ? ' (Default)' : '') + '</option>';
                 });
               }
               // htmlContent += '<option>No Template Found</option>';
@@ -1311,20 +1307,23 @@ $get_default_template = DB::table('templates')
 
               input.forEach((input, index1) => {
                 let validation = JSON.parse(input.validationConfig);
+                let configVal = input.default || '';
                 if (index1 % 2 === 0) {
                   htmlContent += '<div class="row">';
                 }
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<input class="form-control inputType" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + deviceCategoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
+                htmlContent += '<input class="form-control inputType" type="hidden" placeholder="Enter ' + input.key + '" name="idParameters[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + input.id + '" />';
                 if (input.type == 'select') {
                   htmlContent += '<div class="form-group">';
                   htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                   htmlContent += '<div class="col-lg-8">';
-                  htmlContent += '<select class="form-control inputType" name="configuration[' + deviceCategoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']["value"]" ' + (input.requiredFieldInput ? '' : '') + '>';
+                  htmlContent += '<select class="form-control inputType" name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
                   // htmlContent += '<option value="">Please Select</option>';
 
                   validation?.selectOptions.forEach((option, optIndex) => {
-                    htmlContent += '<option  value="' + validation?.selectValues[optIndex] + '">' + option + '</option>';
+                    let optionValue = validation?.selectValues[optIndex];
+                    let isSelected = String(optionValue).toLowerCase() === String(configVal).toLowerCase() ? ' selected' : '';
+                    htmlContent += '<option value="' + optionValue + '"' + isSelected + '>' + option + '</option>';
                   });
 
                   htmlContent += '</select>';
@@ -1334,18 +1333,20 @@ $get_default_template = DB::table('templates')
                   htmlContent += '<div class="form-group">';
                   htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                   htmlContent += '<div class="col-lg-8">';
-                  htmlContent += '<select class="inputType" id="configval' + deviceCategoryId + '" name="configuration[' + deviceCategoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? '' : '') + ' multiple>';
+                  htmlContent += '<select class="inputType" id="configval' + categoryId + '" name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? '' : '') + ' multiple>';
                   // htmlContent += '<option value="">Please Select</option>';
 
                   validation?.selectOptions.forEach((option, optIndex) => {
-                    htmlContent += '<option  value="' + validation?.selectValues[optIndex] + '">' + option + '</option>';
+                    let optionValue = validation?.selectValues[optIndex];
+                    let isSelected = String(optionValue).toLowerCase() === String(configVal).toLowerCase() ? ' selected' : '';
+                    htmlContent += '<option value="' + optionValue + '"' + isSelected + '>' + option + '</option>';
                   });
 
                   htmlContent += '</select>';
                   htmlContent += '</div>';
                   htmlContent += '</div>';
                   setTimeout(() => {
-                    $('#configval' + deviceCategoryId).select2({
+                    $('#configval' + categoryId).select2({
                       placeholder: 'Select options',
                       allowClear: true,
                       width: '100%'
@@ -1356,7 +1357,7 @@ $get_default_template = DB::table('templates')
                     htmlContent += '<div class="form-group">';
                     htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                     htmlContent += '<div class="col-lg-8">';
-                    htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + deviceCategoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
+                    htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + String(configVal).replace(/"/g, '&quot;') + '" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                     htmlContent += '</div>';
                     htmlContent += '</div>';
                   } else {
@@ -1373,7 +1374,8 @@ $get_default_template = DB::table('templates')
                         'min="' + validation.numberInput.min + '" max="' + validation.numberInput.max + '" ' :
                         '') +
                       'placeholder="Enter ' + input.key + '" ' +
-                      'name="configuration[' + deviceCategoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' +
+                      'name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' +
+                      'value="' + String(configVal).replace(/"/g, '&quot;') + '" ' +
                       (input.requiredFieldInput ?
                         'required' :
                         (validation?.maxValueInput ? 'maxlength="' + validation.maxValueInput + '"' : '')) +
@@ -1396,37 +1398,37 @@ $get_default_template = DB::table('templates')
               htmlContent += '<div class="col-lg-6"><div class="form-group">';
               htmlContent += '<label for="curl" class="control-label col-lg-3">Ping Interval <span class="require">*</span></label>';
               htmlContent += '<div class="col-lg-8">';
-              htmlContent += '<input type="number" name="configuration[' + deviceCategoryId + '][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value=""/>';
+              htmlContent += '<input type="number" name="configuration[' + categoryId + '][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value=""/>';
               htmlContent += '</div></div></div>';
               htmlContent += '<div class="col-lg-6">';
               htmlContent += '<div class="form-group">';
               htmlContent += '<label for="curl" class="control-label col-lg-3">Device Edit Permission<span class="require">*</span></label>';
               htmlContent += '<div class="col-lg-6">';
-              htmlContent += '<label class="padding-10">Enable</label><input checked type="radio" name="configuration[' + deviceCategoryId + '][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>';
-              htmlContent += '<label class="padding-10">Disable</label><input type="radio" name="configuration[' + deviceCategoryId + '][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>';
+              htmlContent += '<label class="padding-10">Enable</label><input checked type="radio" name="configuration[' + categoryId + '][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>';
+              htmlContent += '<label class="padding-10">Disable</label><input type="radio" name="configuration[' + categoryId + '][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>';
 
               htmlContent += '</div></div></div>';
               if (canEnable) {
                 htmlContent += `
                 <div class="row" style="padding: 0 15px;">
                   <div class="col-lg-12">
-                    <div class="can-config-box isCanEnable${deviceCategoryId}">
+                    <div class="can-config-box isCanEnable${categoryId}">
                       <label class="can-config-label"><i class="fa fa-cogs"></i> CAN Configuration <span class="require">*</span></label>
                       <div class="can-config-input-wrap">
-                        <input type="text" class="form-control can-config-input" name="canConfigurationArr[${deviceCategoryId}]" id="canConfigurationArr${deviceCategoryId}" value="" readonly />
-                        <button type="button" class="can-copy-btn" onclick="copyCanConfig('canConfigurationArr${deviceCategoryId}')" title="Copy to clipboard">
+                        <input type="text" class="form-control can-config-input" name="canConfigurationArr[${categoryId}]" id="canConfigurationArr${categoryId}" value="" readonly />
+                        <button type="button" class="can-copy-btn" onclick="copyCanConfig('canConfigurationArr${categoryId}')" title="Copy to clipboard">
                           <i class="fa fa-copy"></i>
                         </button>
                       </div>
                       <div class="alert alert-danger modelName_error" role="alert" style="display: none;"></div>
-                      <button type="button" class="btn btn-primary can-config-btn" onclick="openCanModal1(${deviceCategoryId})">
+                      <button type="button" class="btn btn-primary can-config-btn" onclick="openCanModal1(${categoryId})">
                         <i class="fa fa-sliders" style="margin-right:6px;"></i> Configure CAN Protocol
                       </button>
                     </div>
                   </div>
                 </div>`;
                 htmlContent += `
-                    <div class="modal can-modal" id="canModal1${deviceCategoryId}" aria-hidden="true">
+                    <div class="modal can-modal" id="canModal1${categoryId}" aria-hidden="true">
                       <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content can-modal-content">
                           <div class="can-accent-bar"></div>
@@ -1439,7 +1441,7 @@ $get_default_template = DB::table('templates')
                             </div>
                             <div class="can-field-group">
                               <label class="can-label"><i class="fa fa-plug"></i> CAN Channel <span class="require">*</span></label>
-                              <select class="form-control" id="can_channel${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_channel]" required>
+                              <select class="form-control" id="can_channel${categoryId}" name="canConfiguration[${categoryId}][can_channel]" required>
                                 <option value="">-- Select CAN Channel --</option>
                                 <option value="1">CAN 1</option>
                                 <option value="2">CAN 2</option>
@@ -1449,7 +1451,7 @@ $get_default_template = DB::table('templates')
                             </div>
                             <div class="can-field-group">
                               <label class="can-label"><i class="fa fa-tachometer"></i> CAN Baud Rate <span class="require">*</span></label>
-                              <select id="can_baud_rate${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_baud_rate]" class="form-control" required>
+                              <select id="can_baud_rate${categoryId}" name="canConfiguration[${categoryId}][can_baud_rate]" class="form-control" required>
                                 <option value="">-- Select Baud Rate --</option>
                                 <option value="500">500 kbps</option>
                                 <option value="250">250 kbps</option>
@@ -1457,7 +1459,7 @@ $get_default_template = DB::table('templates')
                             </div>
                             <div class="can-field-group">
                               <label class="can-label"><i class="fa fa-tag"></i> CAN ID Type <span class="require">*</span></label>
-                              <select id="can_id_type${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_id_type]" class="form-control" required>
+                              <select id="can_id_type${categoryId}" name="canConfiguration[${categoryId}][can_id_type]" class="form-control" required>
                                 <option value="">-- Select CAN ID --</option>
                                 <option value="0">Standard</option>
                                 <option value="1">Extended</option>
@@ -1465,17 +1467,17 @@ $get_default_template = DB::table('templates')
                             </div>
                             <div class="can-field-group">
                               <label class="can-label"><i class="fa fa-cogs"></i> CAN Protocol <span class="require">*</span></label>
-                              <select id="can_protocol${deviceCategoryId}" name="canConfiguration[${deviceCategoryId}][can_protocol]" class="form-control" onchange="selectedCanProtocol1(${deviceCategoryId})">
+                              <select id="can_protocol${categoryId}" name="canConfiguration[${categoryId}][can_protocol]" class="form-control" onchange="selectedCanProtocol1(${categoryId})">
                                 <option value="">-- Select Protocol --</option>
                                 <option value="1">J1979</option>
                                 <option value="2">J1939</option>
                                 <option value="3">Custom CAN</option>
                               </select>
                             </div>
-                            <div class="can-dynamic-fields" id="dynamicCanFields1${deviceCategoryId}"></div>
+                            <div class="can-dynamic-fields" id="dynamicCanFields1${categoryId}"></div>
                             <div class="can-actions">
                               <button type="button" class="btn can-btn-cancel" data-dismiss="modal">Cancel</button>
-                              <button type="button" class="btn can-btn-submit" onclick="generateJSON1(${deviceCategoryId})">
+                              <button type="button" class="btn can-btn-submit" onclick="generateJSON1(${categoryId})">
                                 <i class="fa fa-check"></i> Submit
                               </button>
                             </div>
@@ -1492,7 +1494,23 @@ $get_default_template = DB::table('templates')
 
             });
 
-            $('#deviceCategoryInputFields').html(htmlContent);
+            $('#deviceCategoryInputFields').append(htmlContent);
+            newCheckedValues.forEach(function(val) {
+              if (!existingCheckedValues.map(String).includes(String(val))) {
+                existingCheckedValues.push(String(val));
+              }
+            });
+
+            defaultTemplatesToTrigger.forEach(function(task) {
+              $('.device-category-block-' + task.index).data('categoryInputs', task.inputs);
+            });
+
+            setTimeout(function() {
+              defaultTemplatesToTrigger.forEach(function(task) {
+                applyInputDefaults(task.index, task.inputs);
+                changeTemplate(task.index, task.id);
+              });
+            }, 300);
           } else {
             $('#deviceCategoryInputFields').html('<p>No input fields found.</p>');
             alert(result.message);
@@ -1509,46 +1527,158 @@ $get_default_template = DB::table('templates')
     }
   }
 
-  // Event handler for checkbox change
-  $('.bgx-checkbox-category').change(function() {
-    getDeviceCategoryInput();
-  });
+  // Checkbox handled via onclick on each input.
 
-  function changeTemplate(index, id = '') {
-    let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-template') }}";
-    if (id == '') {
-      let value = $("#templates" + index).val();
-      id = value;
+  function applyInputDefaults(categoryId, inputs) {
+    if (!inputs || !inputs.length) {
+      return;
     }
+
+    inputs.forEach(function(input) {
+      if (input.default === undefined || input.default === null || input.default === '') {
+        return;
+      }
+
+      let key = input.key.replace(/\s+/g, '_').toLowerCase();
+      let field = $("input[name='configuration[" + categoryId + "][" + key + "]'], select[name='configuration[" + categoryId + "][" + key + "]'], select[name='configuration[" + categoryId + "][" + key + "][]']");
+      if (!field.length) {
+        return;
+      }
+
+      if (field.is(':radio') || field.is(':checkbox')) {
+        field.filter('[value="' + input.default + '"]').prop('checked', true);
+        return;
+      }
+
+      if (!field.val() || field.val() === '') {
+        field.val(input.default);
+        if (field.is('select')) {
+          field.trigger('change');
+        }
+      }
+    });
+  }
+
+  function changeTemplate(index, id = '', categoryInputs = null) {
+    let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-template') }}";
+    let templateId = id;
+    if (templateId === '') {
+      templateId = $("#templates" + index).val();
+    } else {
+      $("#templates" + index).val(templateId);
+    }
+
     $.ajax({
       url: actionUrl,
       type: "POST",
       data: {
-        id: id
+        id: templateId,
+        _token: "{{ csrf_token() }}"
       },
       success: function(response) {
-        let result = JSON.parse(response);
-        if (result.status == 200) {
-          let template = JSON.parse(result.template);
-          Object.keys(template).forEach(function(key) {
-            let element = $("input[name='configuration[" + index + "][" + key + "]'], select[name='configuration[" + index + "][" + key + "]']");
-            if (element.is('input')) {
-              element.val(template[key]['value']);
-            } else if (element.is('select') && key != 'template') {
-              element.val(template[key]['value']);
+        let result;
+        try {
+          result = (typeof response === 'string') ? JSON.parse(response) : response;
+        } catch (e) {
+          console.error('Failed to parse template response', e, response);
+          return;
+        }
+
+        if (result.status != 200) {
+          console.error(result.message);
+          return;
+        }
+
+        let template = result.template;
+        try {
+          let unwrapCount = 0;
+          while (typeof template === 'string' && unwrapCount < 5) {
+            template = JSON.parse(template);
+            unwrapCount++;
+          }
+        } catch (e) {
+          console.error('Failed to parse template configurations', e, result.template);
+          return;
+        }
+
+        if (!template || typeof template !== 'object') {
+          return;
+        }
+
+        Object.keys(template).filter(function(key) {
+          return key !== 'template';
+        }).forEach(function(key) {
+          let rawVal = template[key];
+          let val = rawVal;
+          if (rawVal && typeof rawVal === 'object' && 'value' in rawVal) {
+            val = rawVal.value;
+          }
+
+          let normKey = key.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
+
+          $('input, select').each(function() {
+            let name = $(this).attr('name');
+            if (!name || !name.startsWith('configuration[' + index + ']')) {
+              return;
+            }
+
+            let matches = name.match(/\[([^\]]+)\]$/) || name.match(/\[([^\]]+)\]\[\]$/);
+            if (!matches || !matches[1]) {
+              return;
+            }
+
+            let fieldPart = matches[1];
+            let normFieldPart = fieldPart.toLowerCase().replace(/\s+/g, '_').replace(/_\(sec\)$/, '').replace(/_sec$/, '').replace(/[^a-z0-9]/g, '');
+
+            if (normFieldPart !== normKey && fieldPart.toLowerCase() !== key.toLowerCase() && fieldPart.toLowerCase().replace(/\s+/g, '_') !== key.toLowerCase().replace(/\s+/g, '_')) {
+              return;
+            }
+
+            if ($(this).is(':radio') || $(this).is(':checkbox')) {
+              if ($(this).val() == val) {
+                $(this).prop('checked', true);
+              }
+              return;
+            }
+
+            let finalVal = val;
+            if ($(this).attr('multiple')) {
+              if (typeof val === 'string') {
+                try {
+                  let cleanStr = val.startsWith('{') && val.endsWith('}') ? '[' + val.substring(1, val.length - 1) + ']' : val;
+                  finalVal = JSON.parse(cleanStr);
+                } catch (e) {
+                  finalVal = val.split(',');
+                }
+              } else if (!Array.isArray(val) && val != null) {
+                finalVal = [val];
+              }
+            }
+
+            if (finalVal !== undefined && finalVal !== null && finalVal !== '') {
+              $(this).val(finalVal);
+              if ($(this).is('select')) {
+                $(this).trigger('change');
+              }
             }
           });
-          // Handle the response data as needed
+        });
+
+        if (categoryInputs) {
+          applyInputDefaults(index, categoryInputs);
         } else {
-          console.error(result.message);
+          let block = $('.device-category-block-' + index);
+          let storedInputs = block.data('categoryInputs');
+          if (storedInputs) {
+            applyInputDefaults(index, storedInputs);
+          }
         }
       },
       error: function(xhr) {
         console.log('Error:', xhr.responseText);
-        // Handle the error if AJAX request fails
       },
       complete: function() {
-        $('#loading').hide(); // Hide loading indicator regardless of success or error
+        $('#loading').hide();
       }
     });
   }

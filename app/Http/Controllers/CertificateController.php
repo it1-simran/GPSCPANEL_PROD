@@ -701,7 +701,7 @@ class CertificateController extends Controller
 
         header('Content-Type: application/pdf');
         $pdf = PDF::loadView('pdf.certificate', $data);
-        return $pdf->download('certificate_' . $device->imei . '.pdf');
+        return $pdf->download(\App\Support\CertificatePdf::filename($device, $request->vehicle_registration_no));
     }
 
     /**
@@ -1053,7 +1053,8 @@ class CertificateController extends Controller
 
         $data['qr_image'] = $qrImageDataUri;
         $pdf = PDF::loadView('pdf.certificate', $data);
-        return $pdf->stream('certificate_' . $device->imei . '.pdf');
+        $pdfFilename = \App\Support\CertificatePdf::filename($device, $data['vehicle_registration_no'] ?? null);
+        return $pdf->stream($pdfFilename);
     }
 
     /**

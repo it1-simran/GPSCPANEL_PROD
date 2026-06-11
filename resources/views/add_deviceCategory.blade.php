@@ -30,21 +30,7 @@
                     </div><!--/.c_title-->
                     <div class="c_content">
                         <div class="row" id="alert_msg">
-                            @if ($message = Session::get('success'))
-                            <div class="col-sm-12 alert alert-success" role="alert">
-                                {{ $message }}
-                            </div>
-                            @endif
-                            @if ($message = Session::get('error'))
-                            <div class="col-sm-12 alert alert-danger" role="alert">
-                                {{ $message }}
-                            </div>
-                            @endif
-                            @if ($errors->any())
-                            <div class="col-sm-12 alert alert-danger" role="alert">
-                                {{ $errors->first() }}
-                            </div>
-                            @endif
+                            @include('partials.gps-inline-alerts')
                         </div>
                         <form class="validator form-horizontal" id="addDeviceCategory" name="addDeviceCategory" method="post" action="#" onsubmit="return false;">
                             @csrf

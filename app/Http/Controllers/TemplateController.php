@@ -601,7 +601,7 @@ class TemplateController extends Controller
         $template->save();
 
         return redirect("{$url_type}/view-template-configurations/{$id}")
-            ->with('success', 'Device Updated Successfully!');
+            ->with('success', 'Template updated successfully.');
     }
 
     // public function updateConfigurations(Request $request, $id)
@@ -810,7 +810,7 @@ class TemplateController extends Controller
                 ]);
         }
 
-        return back()->with('success', "Device Updated Successfully!");
+        return back()->with('success', 'Template information updated successfully.');
     }
 
     // public function updateTemplateInfoConfigurations(Request $request, $id)
@@ -902,7 +902,7 @@ class TemplateController extends Controller
         $template->updated_at = Carbon::now('UTC')->toDateTimeString();
         $template->save();
 
-        return back();
+        return back()->with('success', 'Template CAN protocol configurations updated successfully.');
     }
 
     public function editDeviceTemplateBulk(Request $request)

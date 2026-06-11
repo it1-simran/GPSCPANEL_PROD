@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\PacketAlert;
 use App\Models\ImeiLog;
-use App\Models\TicketModel;
 use Illuminate\Support\Facades\Log;
 
 class AlertService
@@ -137,17 +136,9 @@ class AlertService
         $description .= "Conditions Satisfied:\n" . implode("\n", $satisfiedConditions);
         $description .= "\n\nRaw Data Context: " . ($log ? $log->raw_packet : 'N/A');
 
-        // Create a Ticket (Notification)
-        TicketModel::create([
-            'type' => 'alert',
+        Log::info("Packet Alert Triggered", [
             'subject' => $subject,
             'description' => $description,
-            'is_read' => 0,
-            'status' => 'open',
-            'created_by' => 0 // System generated
-        ]);
-
-        Log::info("Packet Alert Triggered", [
             'alert_id' => $alert->id,
             'packet_type_id' => $alert->packet_type_id,
             'imei' => $imei,

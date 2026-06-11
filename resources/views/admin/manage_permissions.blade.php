@@ -49,17 +49,9 @@
                     </div>
 
                     <div class="c_content">
-                        @if ($message = Session::get('success'))
-                            <div class="row">
-                                <div class="col-sm-12 alert alert-success" role="alert">{{ $message }}</div>
-                            </div>
-                        @endif
-
-                        @if ($message = Session::get('error'))
-                            <div class="row">
-                                <div class="col-sm-12 alert alert-danger" role="alert">{{ $message }}</div>
-                            </div>
-                        @endif
+                        <div class="row" id="alert_msg">
+                            @include('partials.gps-inline-alerts')
+                        </div>
 
                         @if(request()->query('reseller_id'))
                             {{-- Display selected reseller info when passed via URL --}}
@@ -266,15 +258,40 @@
                 } else if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMsg = xhr.responseJSON.error;
                 }
-                alert(errorMsg);
+                notifyPermissionMessage('error', errorMsg);
                 $('#loading').removeClass('active');
             }
         });
     }
 
+    function notifyPermissionMessage(type, message) {
+        if (!message) return;
+        if (type === 'success' && window.notifyGpsSuccess) {
+            window.notifyGpsSuccess(message);
+            return;
+        }
+        if (type === 'error' && window.notifyGpsError) {
+            window.notifyGpsError(message);
+            return;
+        }
+        if (type === 'warning' && window.notifyGpsWarning) {
+            window.notifyGpsWarning(message);
+            return;
+        }
+        var cssClass = type === 'success' ? 'alert-success' : (type === 'warning' ? 'alert-warning' : 'alert-danger');
+        var alertHtml = '<div class="col-sm-12 alert ' + cssClass + ' gps-js-inline-alert" role="alert">' + message + '</div>';
+        var host = document.getElementById('alert_msg');
+        if (host) {
+            var existing = host.querySelector('.gps-js-inline-alert');
+            if (existing) existing.remove();
+            host.insertAdjacentHTML('afterbegin', alertHtml);
+            host.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
     function savePermissions() {
         if (!currentResellerId) {
-            alert('Please select a reseller');
+            notifyPermissionMessage('warning', 'Please select a reseller.');
             return;
         }
 
@@ -283,12 +300,35 @@
             permissions.push($(this).val());
         });
 
+        if (typeof Swal === 'undefined') {
+            submitPermissions(permissions);
+            return;
+        }
+
+        Swal.fire({
+            title: 'Save permissions?',
+            text: 'Are you sure you want to save these permission changes for this reseller?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#76CF1C',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, save',
+            cancelButtonText: 'Cancel',
+            background: '#1e293b',
+            color: '#f8fafc'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                submitPermissions(permissions);
+            }
+        });
+    }
+
+    function submitPermissions(permissions) {
         console.log('=== SAVING PERMISSIONS ===');
         console.log('Reseller ID:', currentResellerId);
         console.log('Permissions to save:', permissions);
         console.log('Total permissions count:', permissions.length);
 
-        // Show loading state
         const saveBtn = $('button[onclick="savePermissions()"]');
         const originalText = saveBtn.html();
         saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
@@ -307,11 +347,11 @@
             success: function(response) {
                 console.log('✓ SUCCESS - Response received:', response);
 
-                // Show success message
-                const message = 'Permissions saved successfully! ' +
-                    '(Added: ' + (response.debug.added || 0) + ', ' +
-                    'Removed: ' + (response.debug.removed || 0) + ')';
-                showSuccessAlert(message);
+                const added = response.debug ? (response.debug.added || 0) : 0;
+                const removed = response.debug ? (response.debug.removed || 0) : 0;
+                const message = response.message ||
+                    ('Permissions saved successfully! (Added: ' + added + ', Removed: ' + removed + ')');
+                notifyPermissionMessage('success', message);
                 saveBtn.prop('disabled', false).html(originalText);
 
                 // Reload permissions to confirm changes
@@ -345,39 +385,10 @@
                     errorMsg = 'Error: ' + xhr.responseText.substring(0, 200);
                 }
 
-                showErrorAlert(errorMsg);
+                notifyPermissionMessage('error', errorMsg);
                 saveBtn.prop('disabled', false).html(originalText);
             }
         });
-    }
-
-    function showSuccessAlert(message) {
-        const alertHtml = '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
-            '<i class="fa fa-check-circle" style="margin-right: 8px;"></i>' + message +
-            '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
-            '</div>';
-
-        if ($('#alert_container').length) {
-            $('#alert_container').html(alertHtml);
-        } else {
-            $('#permissionsContainer').before('<div id="alert_container">' + alertHtml + '</div>');
-        }
-
-        // Auto-close after 5 seconds
-        setTimeout(() => $('.alert').fadeOut(), 5000);
-    }
-
-    function showErrorAlert(message) {
-        const alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
-            '<i class="fa fa-exclamation-circle" style="margin-right: 8px;"></i>' + message +
-            '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
-            '</div>';
-
-        if ($('#alert_container').length) {
-            $('#alert_container').html(alertHtml);
-        } else {
-            $('#permissionsContainer').before('<div id="alert_container">' + alertHtml + '</div>');
-        }
     }
 </script>
 

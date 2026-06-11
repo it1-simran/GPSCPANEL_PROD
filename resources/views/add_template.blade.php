@@ -36,21 +36,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     <!--/.c_title-->
                     <div class="c_content">
                         <div class="row" id="alert_msg">
-                            @if ($message = Session::get('success'))
-                            <div class="col-sm-12 alert alert-success" role="alert">
-                                {{ $message }}
-                            </div>
-                            @endif
-                            @if ($message = Session::get('error'))
-                            <div class="col-sm-12 alert alert-danger" role="alert">
-                                {{ $message }}
-                            </div>
-                            @endif
-                            @if ($errors->any())
-                            <div class="col-sm-12 alert alert-danger" role="alert">
-                                {{ $errors->first() }}
-                            </div>
-                            @endif
+                            @include('partials.gps-inline-alerts')
                         </div>
                         <div class="col-sm-12 alert alert-success success_msg" role="alert" style="display:none"></div>
                         <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
@@ -670,8 +656,10 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           let deviceCategory = $('#deviceCategory').val();
    
           if (!deviceCategory) {
-              alert("Please select a device category.");
-              return; 
+              if (window.notifyGpsWarning) {
+                  window.notifyGpsWarning("Please select a device category.");
+              }
+              return;
           }
           let formIsValid = true;
               $(this).find('input[required], select[required]').each(function() {
@@ -723,30 +711,30 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       let result = response;
                       if(result.status == 200){
                           $('.btn-disable-after-submit').attr("disabled",true);
-                          $('.success_msg').append(result.status_msg).show();
-                          document.documentElement.scrollIntoView({
-                              behavior: 'smooth',
-                              block: 'start'
-                          });
-                          // window.location.reload();
+                          if (window.notifyGpsSuccess) {
+                              window.notifyGpsSuccess(result.status_msg || 'Settings saved successfully.');
+                          } else {
+                              $('.success_msg').append(result.status_msg).show();
+                          }
                       }
                   },
-                  error: function(xhr, status, error){
-                      let errors = JSON.parse(xhr.responseText);  
-                      $('.error_msg').append(errors.errors).show();
-                      document.documentElement.scrollIntoView({
-                              behavior: 'smooth',
-                              block: 'start'
-                          });
-   
+                  error: function(xhr){
+                      if (window.notifyGpsFromXhr) {
+                          window.notifyGpsFromXhr(xhr);
+                      } else {
+                          let errors = JSON.parse(xhr.responseText);
+                          if (errors && errors.errors) {
+                              window.notifyGpsValidationErrors && window.notifyGpsValidationErrors(errors.errors);
+                          }
+                      }
                   }
               });
           } else {
-              $('.error_msg').text(error_msg).show();
-              document.documentElement.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'start'
-              });
+              if (window.notifyGpsError) {
+                  window.notifyGpsError(error_msg);
+              } else {
+                  $('.error_msg').text(error_msg).show();
+              }
               }
       });
    });

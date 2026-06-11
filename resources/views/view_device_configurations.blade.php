@@ -119,6 +119,9 @@ $errors = json_decode($device['errors'], true);
                                         </h4>
                                     </div>
                                     <div class="card-body body-custom">
+                                        <div class="row" id="alert_msg">
+                                            @include('partials.gps-inline-alerts')
+                                        </div>
                                         @if($errors && count($errors) > 0)
                                             @foreach($errors as $error)
                                                 <div class="col-sm-12 alert alert-danger" role="alert">

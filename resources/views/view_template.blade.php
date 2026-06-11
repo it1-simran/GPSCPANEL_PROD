@@ -42,21 +42,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           </div>
           <div class="vt-card-body">
             <div class="row" id="alert_msg">
-              @if ($message = Session::get('success'))
-                <div class="col-sm-12 alert alert-success" role="alert">
-                  {{ $message }}
-                </div>
-              @endif
-              @if ($message = Session::get('error'))
-                <div class="col-sm-12 alert alert-danger" role="alert">
-                  {{ $message }}
-                </div>
-              @endif
-              @if ($errors->any())
-                <div class="col-sm-12 alert alert-danger" role="alert">
-                  {{ $errors->first() }}
-                </div>
-              @endif
+              @include('partials.gps-inline-alerts')
             </div>
             <div class="vt-view-toolbar">
               <div class="vt-category-tabs" role="tablist">
@@ -105,7 +91,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         @if(Auth::user()->user_type == "Admin")
                           <th>Apply Setting</th>
                         @endif
-                        <th>Delete</th>
+                        @if(auth()->user()->hasPermission('settings_management.delete') || auth()->user()->user_type == 'Admin')
+                          <th>Delete</th>
+                        @endif
                       </tr>
                     </thead>
                     <tbody>
@@ -190,8 +178,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                           <a href="/{{$url_type}}/edit-template/{{$contactValue->id}}" class="btn btn-primary btn-sm">Edit</a>
                                           @endif
                                         </td> -->
+                                          @if(auth()->user()->hasPermission('settings_management.delete') || auth()->user()->user_type == 'Admin')
                                           <td>
-                                            @if(auth()->user()->hasPermission('settings_management.edit') || auth()->user()->user_type == 'Admin')
                                               <form id="delete-form-{{$contactValue->id}}"
                                                 action="/{{$url_type}}/delete-template/{{$contactValue->id}}" method="post">
                                                 @csrf
@@ -203,8 +191,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                                       class="fa fa-trash"></i> Delete</button>
                                                 @endif
                                               </form>
-                                            @endif
                                           </td>
+                                          @endif
                                         </tr>
                                         <?php
                         $i++;

@@ -276,6 +276,18 @@ class DeviceController extends Controller
             });
         }
 
+        $filterUserId = $request->input('username');
+        if (!empty($filterUserId) && $filterUserId !== '0') {
+            if ($user->user_type == 'Admin') {
+                $devicesQuery->where(function ($query) use ($filterUserId) {
+                    $query->where('devices.user_id', $filterUserId)
+                        ->orWhereRaw('FIND_IN_SET(?, devices.assign_to_ids)', [$filterUserId]);
+                });
+            } else {
+                $devicesQuery->where('devices.user_id', $filterUserId);
+            }
+        }
+
         $devices = $devicesQuery->get();
         $childUsersQuery = DB::table('writers')->select('id', 'name')->where('is_deleted', '0');
         // dd(Auth::user()->id);
@@ -351,7 +363,7 @@ class DeviceController extends Controller
         $url_type = self::getURLType();
 
 
-        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => false]);
+        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => true]);
     }
 
     /**
@@ -537,7 +549,7 @@ class DeviceController extends Controller
         }
 
         $pdf = PDF::loadView('pdf.certificate', $data);
-        return $pdf->download('certificate_' . $device->imei . '.pdf');
+        return $pdf->download(\App\Support\CertificatePdf::filename($device, $request->vehicle_registration_no));
     }
 
     public function previewCertificate($id, Request $request)
@@ -1351,9 +1363,10 @@ class DeviceController extends Controller
         }
         $data['qr_image'] = $qrImageDataUri;
         $pdf = PDF::loadView('pdf.certificate', $data);
+        $pdfFilename = \App\Support\CertificatePdf::filename($device, $data['vehicle_registration_no'] ?? null);
         return response($pdf->output(), 200, [
             'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="certificate_' . $device->imei . '.pdf"',
+            'Content-Disposition' => 'inline; filename="' . $pdfFilename . '"',
             'Cache-Control'       => 'no-store, no-cache, must-revalidate, max-age=0',
             'Pragma'              => 'no-cache',
             'Expires'             => '0',
@@ -1585,7 +1598,7 @@ class DeviceController extends Controller
             //     }
         }
         $url_type = self::getURLType();
-        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => true]);
+        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => false]);
     }
     /**
      * Show the form for editing the specified resource.
@@ -1810,9 +1823,15 @@ class DeviceController extends Controller
         $user_configurations = json_decode($user_info->configurations, true);
         // dd($user_configurations);
         $device_category_id = 0;
+        $errors = [];
+        $successfulUpdates = [];
 
         foreach ($devices as $id) {
             $device_info = Device::find($id);
+            if (!$device_info) {
+                $errors[] = $id;
+                continue;
+            }
 
             $device_category_id = $device_info->device_category_id;
             $device_uid = self::getAssignedUserIdForDevice($id);
@@ -1904,8 +1923,6 @@ class DeviceController extends Controller
                 $models = DB::table('modals')->where('user_id', $assign_ids[1])->where('firmware_id', $configurations['firmware_id']['value'])->first();
             }
             // dd($models);
-            $errors = [];
-            $successfulUpdates = [];
             if ($models) {
                 $configurations['modelName']['value'] = $models->name;
                 $device_array['configurations'] = json_encode($configurations);
@@ -3138,7 +3155,7 @@ class DeviceController extends Controller
             ]);
         }
 
-        return back();
+        return redirect()->back()->with('success', 'Device configurations updated successfully.');
     }
     public function updateCanProtocolConfigurations(Request $request, $id)
     {
@@ -3216,7 +3233,7 @@ class DeviceController extends Controller
             ]);
         }
 
-        return back();
+        return redirect()->back()->with('success', 'CAN protocol configurations updated successfully.');
     }
     public function updateDeviceInfoConfigurations(Request $request, $id)
     {
@@ -3494,9 +3511,9 @@ class DeviceController extends Controller
             //     'is_active' => 1
             // ]);
         } else {
-            return redirect()->back()->with('error', 'you do not have permission to update');
+            return redirect()->back()->with('error', 'You do not have permission to update this device.');
         }
-        return back();
+        return redirect()->back()->with('success', 'Device information updated successfully.');
     }
     public function viewUncategorized()
     {

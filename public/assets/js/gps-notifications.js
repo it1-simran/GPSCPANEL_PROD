@@ -1,7 +1,7 @@
 /**
- * GPS Control Panel — site-wide toast notifications.
- * Server: set window.__GPS_PAGE_FLASH__ from Blade (see layouts.apps).
- * Client: window.showGpsToast('success'|'error'|'warning'|'info', title, message, { durationMs })
+ * GPS Control Panel — site-wide toast + inline notifications.
+ * Server: window.__GPS_PAGE_FLASH__ from partials/gps-flash-scripts.blade.php
+ * Client: showGpsToast, notifyGps, notifyGpsFromXhr, notifyGpsValidationErrors
  */
 (function (global) {
     'use strict';
@@ -52,11 +52,79 @@
         return 'info';
     }
 
+    function scrollToFeedback(scope) {
+        var root = scope && scope.querySelector ? scope : document;
+        var target =
+            root.querySelector('#alert_msg') ||
+            root.querySelector('.success_msg:visible') ||
+            root.querySelector('.error_msg:visible') ||
+            root.querySelector('#main-content') ||
+            document.documentElement;
+        if (target && target.scrollIntoView) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function updateInlineAlerts(type, message, opts) {
+        opts = opts || {};
+        var scope = opts.scope || document;
+        type = normalizeType(type);
+        var cssClass =
+            type === 'success'
+                ? 'alert-success'
+                : type === 'warning'
+                  ? 'alert-warning'
+                  : type === 'info'
+                    ? 'alert-info'
+                    : 'alert-danger';
+
+        if (opts.inline === false) {
+            return;
+        }
+
+        var msgHtml = escapeHtml(String(message || '')).replace(/\n/g, '<br>');
+
+        if (type === 'success' && scope.querySelector) {
+            var successBox = scope.querySelector('.success_msg');
+            if (successBox) {
+                successBox.innerHTML = msgHtml;
+                successBox.style.display = '';
+                successBox.classList.remove('d-none');
+            }
+        }
+
+        if (type !== 'success' && scope.querySelector) {
+            var errorBox = scope.querySelector('.error_msg');
+            if (errorBox) {
+                errorBox.innerHTML = msgHtml;
+                errorBox.style.display = '';
+                errorBox.classList.remove('d-none');
+            }
+        }
+
+        var alertHost = scope.querySelector ? scope.querySelector('#alert_msg') : null;
+        if (alertHost && message) {
+            var existing = alertHost.querySelector('.gps-js-inline-alert');
+            if (existing) {
+                existing.parentNode.removeChild(existing);
+            }
+            var alertEl = document.createElement('div');
+            alertEl.className = 'col-sm-12 alert ' + cssClass + ' gps-js-inline-alert';
+            alertEl.setAttribute('role', 'alert');
+            alertEl.innerHTML = msgHtml;
+            alertHost.insertBefore(alertEl, alertHost.firstChild);
+        }
+
+        if (opts.scroll !== false) {
+            scrollToFeedback(scope);
+        }
+    }
+
     /**
      * @param {string} type success|error|warning|info
      * @param {string} title
      * @param {string} [message]
-     * @param {{ durationMs?: number }} [opts]
+     * @param {{ durationMs?: number, inline?: boolean, scroll?: boolean, scope?: ParentNode }} [opts]
      */
     function showGpsToast(type, title, message, opts) {
         opts = opts || {};
@@ -90,9 +158,7 @@
             '<div class="gps-site-toast__title">' +
             safeTitle +
             '</div>' +
-            (rawMsg
-                ? '<p class="gps-site-toast__msg">' + safeMsg + '</p>'
-                : '') +
+            (rawMsg ? '<p class="gps-site-toast__msg">' + safeMsg + '</p>' : '') +
             '</div>' +
             '<button type="button" class="gps-site-toast__close" aria-label="Dismiss">&times;</button>' +
             '</div>' +
@@ -122,6 +188,122 @@
         return el;
     }
 
+    /**
+     * Unified notification: toast + optional inline alert regions.
+     */
+    function notifyGps(type, message, title, opts) {
+        opts = opts || {};
+        type = normalizeType(type);
+        var body = message != null ? String(message) : '';
+        if (!body.trim()) return;
+
+        showGpsToast(type, title || TITLES[type], body, opts);
+        updateInlineAlerts(type, body, opts);
+    }
+
+    function notifyGpsSuccess(message, opts) {
+        notifyGps('success', message, TITLES.success, opts);
+    }
+
+    function notifyGpsError(message, opts) {
+        notifyGps('error', message, TITLES.error, opts);
+    }
+
+    function notifyGpsWarning(message, opts) {
+        notifyGps('warning', message, TITLES.warning, opts);
+    }
+
+    function notifyGpsValidationErrors(errors, opts) {
+        opts = opts || {};
+        var list = [];
+
+        if (Array.isArray(errors)) {
+            list = errors.map(String).filter(Boolean);
+        } else if (errors && typeof errors === 'object') {
+            Object.keys(errors).forEach(function (key) {
+                var val = errors[key];
+                if (Array.isArray(val)) {
+                    val.forEach(function (item) {
+                        if (item) list.push(String(item));
+                    });
+                } else if (val) {
+                    list.push(String(val));
+                }
+            });
+        }
+
+        if (!list.length) {
+            notifyGpsError('Please correct the highlighted fields.', opts);
+            return;
+        }
+
+        notifyGpsError(list.join('\n'), 'Validation Error', opts);
+    }
+
+    function parseAjaxPayload(payload) {
+        if (payload == null || payload === '') return null;
+        if (typeof payload === 'object') return payload;
+        if (typeof payload === 'string') {
+            try {
+                return JSON.parse(payload);
+            } catch (e) {
+                return { message: payload };
+            }
+        }
+        return null;
+    }
+
+    function extractSuccessMessage(data) {
+        if (!data || typeof data !== 'object') return '';
+        return (
+            data.success ||
+            data.status_message ||
+            data.status_msg ||
+            data.message ||
+            (data.status === 200 || data.status === '200' ? data.msg : '') ||
+            ''
+        );
+    }
+
+    function extractErrorMessage(data, fallback) {
+        if (!data) return fallback || 'Something went wrong. Please try again.';
+        if (typeof data === 'string') return data;
+        if (typeof data !== 'object') return fallback || 'Something went wrong. Please try again.';
+
+        if (data.errors) return '';
+        return (
+            data.error ||
+            data.message ||
+            data.status_message ||
+            data.status_msg ||
+            fallback ||
+            'Something went wrong. Please try again.'
+        );
+    }
+
+    function notifyGpsFromXhr(xhr, opts) {
+        opts = opts || {};
+        var data = parseAjaxPayload(xhr && xhr.responseText);
+        if (data && data.errors) {
+            notifyGpsValidationErrors(data.errors, opts);
+            return;
+        }
+        var message = extractErrorMessage(data, xhr && xhr.statusText);
+        notifyGpsError(message, TITLES.error, opts);
+    }
+
+    function notifyGpsAjaxSuccess(response, opts) {
+        opts = opts || {};
+        var data = parseAjaxPayload(response);
+        var message = extractSuccessMessage(data);
+        if (!message && typeof response === 'string' && response.trim()) {
+            message = response.trim();
+        }
+        if (message) {
+            notifyGpsSuccess(message, opts);
+        }
+    }
+
     function coerceString(v) {
         if (v == null) return '';
         if (typeof v === 'string') return v;
@@ -140,32 +322,22 @@
             var str = coerceString(val);
             if (!str) return;
 
-            var type = key === 'success' ? 'success' : key === 'warning' ? 'warning' : key === 'info' ? 'info' : 'error';
+            var type =
+                key === 'success'
+                    ? 'success'
+                    : key === 'warning'
+                      ? 'warning'
+                      : key === 'info'
+                        ? 'info'
+                        : 'error';
             if (key === 'message' || key === 'status') type = 'info';
 
-            var lines = str.split(/\r?\n/).map(function (l) {
-                return l.trim();
-            }).filter(Boolean);
-            var title = TITLES[type];
-            var body = '';
-            if (lines.length >= 2) {
-                title = lines[0];
-                body = lines.slice(1).join('\n');
-            } else {
-                body = str;
-            }
-
-            if (key === 'success' && lines.length < 2) {
-                title = TITLES.success;
-                body = str;
-            }
-            if (key === 'error' && lines.length < 2) {
-                title = TITLES.error;
-                body = str;
-            }
-
-            showGpsToast(type, title, body);
+            notifyGps(type, str, TITLES[type], { inline: false, scroll: false });
         });
+
+        if (Array.isArray(raw.validation_errors) && raw.validation_errors.length) {
+            notifyGpsValidationErrors(raw.validation_errors, { inline: false, scroll: false });
+        }
     }
 
     function init() {
@@ -179,4 +351,11 @@
     }
 
     global.showGpsToast = showGpsToast;
+    global.notifyGps = notifyGps;
+    global.notifyGpsSuccess = notifyGpsSuccess;
+    global.notifyGpsError = notifyGpsError;
+    global.notifyGpsWarning = notifyGpsWarning;
+    global.notifyGpsValidationErrors = notifyGpsValidationErrors;
+    global.notifyGpsFromXhr = notifyGpsFromXhr;
+    global.notifyGpsAjaxSuccess = notifyGpsAjaxSuccess;
 })(window);

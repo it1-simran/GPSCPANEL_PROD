@@ -92,6 +92,13 @@ class DeviceController extends Controller
      */
     public function create(Request $request)
     {
+        if (!$this->deviceCategoryAccess()->userHasCategory(Auth::user(), $request->deviceCategory)) {
+            return response()->json([
+                'status' => 403,
+                'status_message' => 'You do not have access to this device category. Please contact your administrator.',
+            ], 403);
+        }
+
         $request->validate([
             'imei' => "unique:devices|min:15|max:15",
             'firmware' => 'required',
@@ -288,6 +295,7 @@ class DeviceController extends Controller
             }
         }
 
+        $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, $user);
         $devices = $devicesQuery->get();
         $childUsersQuery = DB::table('writers')->select('id', 'name')->where('is_deleted', '0');
         // dd(Auth::user()->id);
@@ -444,6 +452,9 @@ class DeviceController extends Controller
             'service_providers' => 'nullable',
         ]);
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -577,6 +588,9 @@ class DeviceController extends Controller
             'service_providers' => 'nullable',
         ]);
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -681,6 +695,9 @@ class DeviceController extends Controller
     public function certificatePage($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -765,6 +782,9 @@ class DeviceController extends Controller
     public function saveCertificateDetails($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -927,6 +947,9 @@ class DeviceController extends Controller
     public function uploadRC($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return response()->json(['error' => 'Unauthorized access'], 403);
@@ -1045,6 +1068,9 @@ class DeviceController extends Controller
     public function verifyNumberPlate($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -1129,6 +1155,9 @@ class DeviceController extends Controller
     public function extractDeviceInfo($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -1213,6 +1242,9 @@ class DeviceController extends Controller
     public function getRCData($id)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return response()->json(['error' => 'Unauthorized access'], 403);
@@ -1239,6 +1271,9 @@ class DeviceController extends Controller
     public function getRCStatus($id)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return response()->json(['error' => 'Unauthorized access'], 403);
@@ -1273,6 +1308,9 @@ class DeviceController extends Controller
     public function viewCertificate($id)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -1530,12 +1568,13 @@ class DeviceController extends Controller
         } else {
             // Reseller: devices that are assigned TO this reseller (user_id = reseller_id)
             // These are devices Reseller can manage and reassign/unassign
-            $devices = DB::table('devices')
+            $devicesQuery = DB::table('devices')
                 ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
                 ->select('devices.*')
                 ->where('devices.is_deleted', '0')
-                ->where('devices.user_id', $master_id)  // Currently assigned to this Reseller
-                ->get();
+                ->where('devices.user_id', $master_id);
+            $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, Auth::user());
+            $devices = $devicesQuery->get();
         }
 
         $users = DB::table('writers')->select('id', 'name')->where('writers.created_by', Auth::user()->id)->where('writers.is_deleted', '0')->where('user_type', '!=', 'Support')->get();
@@ -1609,6 +1648,10 @@ class DeviceController extends Controller
     {
         $currentUser = auth()->user();
         $device_info = Device::findOrFail($id);
+
+        if ($denied = $this->authorizeDeviceCategoryAccess($device_info)) {
+            return $denied;
+        }
 
         // Check if user has permission to edit devices
         $hasPermission = DB::table('user_permissions as up')
@@ -1690,11 +1733,15 @@ class DeviceController extends Controller
             ], 403);
         }
 
+        $contact_id = $request->input('id');
+        if ($denied = $this->authorizeDeviceCategoryAccess($contact_id)) {
+            return $denied;
+        }
+
         $uid = Auth::user()->id;
         $request->validate([
             'imei' => "unique:devices,imei,{$request->input('id')}|max:15|min:15"
         ]);
-        $contact_id = $request->input('id');
         $is_editable = DB::table('devices')->where('id', $contact_id)->first();
         $prev_uid = $request->input('prev_uid');
         if (Auth::user()->user_type != 'Admin' && Auth::user()->user_type != 'Support' && $is_editable->is_editable == '1') {
@@ -1790,6 +1837,9 @@ class DeviceController extends Controller
             if (!$device_data) {
                 return redirect()->back()->with('error', 'Device not found.');
             }
+            if ($denied = $this->authorizeDeviceCategoryAccess($device_data)) {
+                return $denied;
+            }
             $device_data->is_deleted = '1';
             $device_data->delete();
 
@@ -1800,8 +1850,29 @@ class DeviceController extends Controller
     }
     public function deleteAll(Request $request)
     {
-        $ids = $request->ids;
-        $deleteAll = DB::table("devices")->whereIn('id', explode(",", $ids))->delete();
+        $ids = array_values(array_filter(array_map('trim', explode(',', (string) ($request->ids ?? '')))));
+        if (empty($ids)) {
+            return response()->json(['error' => 'No devices selected.'], 422);
+        }
+
+        $deleted = 0;
+        $denied = 0;
+        foreach ($ids as $id) {
+            $device = Device::find($id);
+            if (!$device || !$this->deviceCategoryAccess()->userCanAccessDevice(Auth::user(), $device)) {
+                $denied++;
+                continue;
+            }
+            DB::table('devices')->where('id', $device->id)->delete();
+            $deleted++;
+        }
+
+        if ($deleted === 0 && $denied > 0) {
+            return response()->json([
+                'error' => 'You do not have access to the selected device category.',
+            ], 403);
+        }
+
         return response()->json(['success' => "Device Deleted successfully."]);
     }
     public function userassignAll(Request $request)
@@ -1829,6 +1900,10 @@ class DeviceController extends Controller
         foreach ($devices as $id) {
             $device_info = Device::find($id);
             if (!$device_info) {
+                $errors[] = $id;
+                continue;
+            }
+            if (!$this->deviceCategoryAccess()->userCanAccessDevice(Auth::user(), $device_info)) {
                 $errors[] = $id;
                 continue;
             }
@@ -2016,6 +2091,10 @@ class DeviceController extends Controller
         $successfulUpdates = [];
         $updatedConfigurations = [];
         foreach ($devices as $device) {
+            if (!$this->deviceCategoryAccess()->userCanAccessDevice(Auth::user(), $device)) {
+                $errors[] = $device->imei;
+                continue;
+            }
             $deviceConfig = json_decode($device->configurations, true);
             if (!$deviceConfig) {
                 continue;
@@ -2114,17 +2193,18 @@ class DeviceController extends Controller
     public function showUserDevice()
     {
         if (Auth::user()->user_type == 'Support') {
-            $devices = DB::table('devices')
+            $devicesQuery = DB::table('devices')
                 ->leftJoin('writers', function ($join) {
                     $join->on('writers.id', '=', 'devices.user_id')
                         ->where('writers.is_deleted', '=', '0');
                 })
                 ->select('devices.*', 'writers.name as username')
-                ->where('devices.is_deleted', '0')
-                ->get();
+                ->where('devices.is_deleted', '0');
+            $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, Auth::user());
+            $devices = $devicesQuery->get();
         } else {
             $authId = auth()->id();
-            $devices = DB::table('devices')
+            $devicesQuery = DB::table('devices')
                 ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
                 ->select('devices.*', 'writers.name as username')
                 ->where('devices.is_deleted', '0')
@@ -2132,8 +2212,9 @@ class DeviceController extends Controller
                     $q->where('devices.user_id', $authId)
                         ->orWhere('devices.master_id', $authId)
                         ->orWhereRaw("FIND_IN_SET(?, devices.assign_to_ids)", [$authId]);
-                })
-                ->get();
+                });
+            $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, Auth::user());
+            $devices = $devicesQuery->get();
         }
         $users = DB::table('writers')
             ->select('id', 'name')
@@ -2932,7 +3013,11 @@ class DeviceController extends Controller
             abort(403, 'You do not have permission to view device configurations');
         }
 
-        $device = Device::Find($id);
+        $device = Device::find($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
+
         $url_type = self::getURLType();
         $currentUser = Auth::user();
 
@@ -3029,6 +3114,9 @@ class DeviceController extends Controller
 
         // Ownership validation
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         // Check ownership based on user type
@@ -3159,6 +3247,10 @@ class DeviceController extends Controller
     }
     public function updateCanProtocolConfigurations(Request $request, $id)
     {
+        if ($denied = $this->authorizeDeviceCategoryAccess($id)) {
+            return $denied;
+        }
+
         $params = $request->canConfiguration;
         $dataFields = DataFields::select("*")->where(['is_can_protocol' => 1])->get()->keyBy(function ($item) {
             // Convert field names to lowercase snake_case as key
@@ -3240,6 +3332,10 @@ class DeviceController extends Controller
         // Permission check
         if (!Auth::user()->hasPermission('device_management.edit')) {
             return response()->json(['status' => 403, 'message' => 'You do not have permission to update device information'], 403);
+        }
+
+        if ($denied = $this->authorizeDeviceCategoryAccess($id)) {
+            return $denied;
         }
 
         // dd($request);

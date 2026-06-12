@@ -53,6 +53,7 @@ class CertificateController extends Controller
             $devicesQuery->where('devices.user_id', $user->id);
         }
 
+        $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, $user);
         $devices = $devicesQuery->orderBy('devices.device_category_id')->get();
 
         // Group devices by category
@@ -103,6 +104,9 @@ class CertificateController extends Controller
         }
 
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         // Ownership validation: ensure user owns the device
@@ -214,6 +218,9 @@ class CertificateController extends Controller
         }
 
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         // Ownership validation: ensure user owns the device
@@ -550,6 +557,9 @@ class CertificateController extends Controller
         ]);
 
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -804,6 +814,9 @@ class CertificateController extends Controller
         ]);
 
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -945,6 +958,9 @@ class CertificateController extends Controller
     public function viewCertificate($id)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -1063,6 +1079,9 @@ class CertificateController extends Controller
     public function uploadRC($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -1222,6 +1241,9 @@ class CertificateController extends Controller
     public function verifyNumberPlate($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -1324,6 +1346,9 @@ class CertificateController extends Controller
     public function extractDeviceInfo($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -1450,6 +1475,9 @@ class CertificateController extends Controller
     public function lookupIccid($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -1511,6 +1539,9 @@ class CertificateController extends Controller
     public function getRCData($id)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -1547,6 +1578,9 @@ class CertificateController extends Controller
     public function getRCStatus($id)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
 
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
@@ -1611,6 +1645,9 @@ class CertificateController extends Controller
         $device = Device::find($id);
         if (!$device) {
             return response()->json(['error' => 'Device not found'], 404);
+        }
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
         }
 
         // Certification enabled check: device category must have certification enabled

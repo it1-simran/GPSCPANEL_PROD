@@ -2,6 +2,21 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('edit-user') }}">
+<style>
+  .device-config-view-only .device-config-field,
+  .device-config-view-only input[name^="configuration"]:not([type="hidden"]) {
+    background-color: #f7f7f7;
+    cursor: not-allowed;
+  }
+  .device-config-view-only select.device-config-field:disabled {
+    background-color: #f7f7f7;
+    cursor: not-allowed;
+  }
+  .ping-interval-readonly {
+    background-color: #f7f7f7 !important;
+    cursor: not-allowed;
+  }
+</style>
 @endpush
 @section('content')
 <?php
@@ -15,8 +30,12 @@ $timeZones = TimezoneModel::all();
 use App\Template;
 use App\DataFields;
 
-$deviceCategoryIds = explode(',', $contact->device_category_id);
-
+$deviceCategoryIds = array_values(array_filter(array_map('trim', explode(',', $contact->device_category_id ?? ''))));
+$categoryConfigMap = $categoryConfigMap ?? [];
+$categoryViewConfigMap = $categoryViewConfigMap ?? [];
+$categoryDefaultTemplateMap = $categoryDefaultTemplateMap ?? [];
+$categoryCanViewConfigMap = $categoryCanViewConfigMap ?? [];
+$categoryAdminPingIntervalMap = $categoryAdminPingIntervalMap ?? [];
 $configurations = json_decode($contact->configurations, true);
 $canConfigurations = json_decode($contact->can_configurations, true);
 
@@ -32,6 +51,10 @@ $get_default_template = DB::table('templates')
   ->select('templates.*')
   ->where('templates.default_template', '1')
   ->first();
+
+$deviceConfigViewOnly = Auth::id() != $contact->id;
+$isAdminUser = Auth::user()->user_type === 'Admin';
+$showAdminConfigFields = $isAdminUser;
 ?>
 
 <!--main content start-->
@@ -181,18 +204,21 @@ $get_default_template = DB::table('templates')
                       <label class='bgx-label-category'>{{$deviceCategory->device_category_name}}</label>
                     </div>
                     <div class="col-xs-6 col-sm-6 col-md-4 text-right">
-                      <input type="checkbox" {{ in_array($deviceCategory->id, $deviceCategoryIds) ? 'checked' : '' }} class="bgx-checkbox-category" name="deviceCategory[]" value="{{ $deviceCategory->id }}" onclick="getDeviceCategoryInput({{$contact->id}},{{$deviceCategory->id}})">
+                      <input type="checkbox" {{ in_array((string) $deviceCategory->id, array_map('strval', $deviceCategoryIds), true) ? 'checked' : '' }} class="bgx-checkbox-category" name="deviceCategory[]" value="{{ $deviceCategory->id }}" data-user-id="{{ $contact->id }}">
                     </div>
                   </div>
                   @endforeach
                 </div>
               </div>
               @foreach($getDeviceCategoryconfig as $key => $category)
-              @if(in_array($category->id,$deviceCategoryIds))
+              @if(in_array((string) $category->id, array_map('strval', $deviceCategoryIds), true))
 
-              <div class="device-category-fields card device-category-block-{{ $category->id }}">
+              <div class="device-category-fields card device-category-block-{{ $category->id }}{{ $deviceConfigViewOnly ? ' device-config-view-only' : '' }}" data-pre-enabled="1">
                 <div class="card-title">
                   <h4>{{ CommonHelper::getDeviceCategoryName($category->id) }}</h4>
+                  @if($deviceConfigViewOnly)
+                  <small class="text-muted" style="display:block;margin-top:4px;"><i class="fa fa-eye"></i> Device configuration is view only</small>
+                  @endif
                 </div>
                 <div class="card-details">
                   @php
@@ -200,17 +226,26 @@ $get_default_template = DB::table('templates')
                   $totalInputs = count($inputs);
                   $inputIds = collect($inputs)->pluck('id')->toArray();
                   $dataFields = DataFields::whereIn('id', $inputIds)->get()->keyBy('id');
-                  $user = Auth::user();
-
                   $templates = Template::where('device_category_id', $category->id)
-                  ->where(function ($query) use ($user) {
-                  if ($user->user_type == 'Admin') {
-                  $query->whereNull('id_user');
-                  } else {
-                  $query->where('id_user', $user->id);
-                  }
-                  })
+                  ->where('id_user', $contact->id)
+                  ->where('is_deleted', 0)
+                  ->where('verify', 2)
+                  ->orderByDesc('default_template')
+                  ->orderBy('template_name')
                   ->get();
+
+                  $configurationValue = !empty($categoryViewConfigMap[$category->id])
+                    ? $categoryViewConfigMap[$category->id]
+                    : ($categoryConfigMap[$category->id] ?? null);
+                  $selectedTemplateId = null;
+                  if (!empty($categoryDefaultTemplateMap[$category->id])) {
+                    $selectedTemplateId = (int) $categoryDefaultTemplateMap[$category->id]->id;
+                  } elseif (!empty($configurationValue['template']['value'])) {
+                    $selectedTemplateId = (int) $configurationValue['template']['value'];
+                  } elseif ($templates->isNotEmpty()) {
+                    $defaultTemplate = $templates->firstWhere('default_template', 1);
+                    $selectedTemplateId = $defaultTemplate ? $defaultTemplate->id : $templates->first()->id;
+                  }
                   $enhancedInputs = collect($inputs)->map(function ($input) use ($dataFields) {
                   $input['validationConfig'] = $dataFields[$input['id']]->validationConfig ?? null;
                   return $input;
@@ -223,29 +258,27 @@ $get_default_template = DB::table('templates')
                           Templates <span class="require">*</span>
                         </label>
                         <div class="col-lg-8">
-                          <select class="userAccType form-control"
+                          <select class="userAccType form-control device-config-field"
                             id="templates<?= $category->id ?>"
                             name="configuration[<?= $category->id ?>][template]"
-                            onchange="changeTemplate(<?= $category->id ?>)">
-                            <?php if (!empty($templates)): ?>
-                              <?php foreach ($templates as $temp): ?>
-                                <option value="<?= $temp['id'] ?>">
-                                  <?= htmlspecialchars($temp['template_name']) ?>
-                                  <?= $temp['default_template'] == 1 ? ' (Default)' : '' ?>
-                                </option>
-                              <?php endforeach; ?>
-                            <?php else: ?>
-                              <option>No Template Found</option>
-                            <?php endif; ?>
+                            onchange="changeTemplate(<?= $category->id ?>)"
+                            {{ $deviceConfigViewOnly ? 'disabled' : '' }}>
+                            <option value="">Select Template</option>
+                            <?php foreach ($templates as $temp): ?>
+                              <option value="<?= $temp->id ?>" <?= $selectedTemplateId == $temp->id ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($temp->template_name) ?>
+                                <?= $temp->default_template == 1 ? ' (Default)' : '' ?>
+                              </option>
+                            <?php endforeach; ?>
                           </select>
+                          @if($deviceConfigViewOnly && $selectedTemplateId)
+                          <input type="hidden" name="configuration[{{ $category->id }}][template]" value="{{ $selectedTemplateId }}">
+                          @endif
                         </div>
                       </div>
                     </div>
                   </div>
                   @foreach($enhancedInputs as $index => $input)
-                  @php
-                  $configurationValue = isset($configurations[$key]) ? $configurations[$key]: null;
-                  @endphp
 
                   @if($index % 2 === 0)
                   <div class="row">
@@ -259,7 +292,7 @@ $get_default_template = DB::table('templates')
                       <div class="form-group">
                         <label class="control-label col-lg-3">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
                         <div class="col-lg-8">
-                          <select class="form-control inputType" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] ? 'required' : '' }}>
+                          <select class="form-control inputType device-config-field" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]" {{ $input['requiredFieldInput'] && !$deviceConfigViewOnly ? 'required' : '' }} {{ $deviceConfigViewOnly ? 'disabled' : '' }}>
                             <!-- <option value="">Please Select</option> -->
                             @foreach($validationConfig['selectOptions'] as $configkey => $option)
                             <option value="{{ $validationConfig['selectValues'][$configkey] }}" {{ isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]) && $configurationValue && strtolower($validationConfig['selectValues'][$configkey]) == $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] ? 'selected' : (!isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value']) && isset($input['default']) && strtolower($validationConfig['selectValues'][$configkey]) == strtolower($input['default']) ? 'selected' : '') }}>{{ $option }}</option>
@@ -276,7 +309,7 @@ $get_default_template = DB::table('templates')
                           {{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}
                         </label>
                         <div class="col-lg-8">
-                          <select class="inputType" id="configval{{$category->id}}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}][]" multiple {{ $input['requiredFieldInput'] ? 'required' : '' }}>
+                          <select class="inputType device-config-field" id="configval{{$category->id}}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}][]" multiple {{ $input['requiredFieldInput'] && !$deviceConfigViewOnly ? 'required' : '' }} {{ $deviceConfigViewOnly ? 'disabled' : '' }}>
                             @foreach($validationConfig['selectOptions'] as $configkey => $option)
                             @php
                             $inputKey = str_replace(' ', '_', strtolower($input['key']));
@@ -334,11 +367,12 @@ $get_default_template = DB::table('templates')
                         @endphp
                         <label class="control-label col-lg-3">{{ $input['key'] }}{!! $input['requiredFieldInput'] ? ' <span class="require">*</span>' : '' !!}</label>
                         <div class="col-lg-8">
-                          <input class="form-control {{$addClassTextArray}} {{$addClassIpUrl}}" type="{{ $input['type'] == 'number' ? 'number' : 'text' }}"
+                          <input class="form-control device-config-field {{$addClassTextArray}} {{$addClassIpUrl}}" type="{{ $input['type'] == 'number' ? 'number' : 'text' }}"
                             {!! $input['type']=='number' ? 'min="' . ($input['numberRange']['min'] ?? '' ) . '" max="' . ($input['numberRange']['max'] ?? '' ) . '"' : '' !!}
                             placeholder="Enter {{ isset($input['key']) ? $input['key'] :''  }}" name="configuration[{{ $category->id }}][{{ str_replace(' ', '_', strtolower($input['key'])) }}]"
                             value="{{ isset($configurationValue) && isset($configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value']) && $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] !== '' ? $configurationValue[str_replace(' ', '_', strtolower($input['key']))]['value'] : ($input['default'] ?? '') }}"
-                            {{ $input['requiredFieldInput'] ? 'required' : '' }}>
+                            {{ $input['requiredFieldInput'] && !$deviceConfigViewOnly ? 'required' : '' }}
+                            {{ $deviceConfigViewOnly ? 'readonly' : '' }}>
                         </div>
                       </div>
                       @endif
@@ -347,62 +381,69 @@ $get_default_template = DB::table('templates')
                   </div>
                   @endif
                   @endforeach
-                  @if(Auth::user()->user_type =='Admin')
+                  @php
+                  $pingIntervalValue = $categoryAdminPingIntervalMap[$category->id] ?? 4;
+                  if (!empty($configurationValue['ping_interval']['value'])) {
+                    $pingIntervalValue = $configurationValue['ping_interval']['value'];
+                  }
+                  $isEditableValue = $configurationValue['is_editable']['value'] ?? '1';
+                  @endphp
                   <div class="row">
+                    @if($showAdminConfigFields)
                     <div class="col-lg-6">
                       <div class="form-group">
-                        <label for="curl" class="control-label col-lg-3">Ping Interval <span class="require">*</span></label>
+                        <label for="curl" class="control-label col-lg-3">Ping Interval</label>
                         <div class="col-lg-8">
-                          <input type="number" name="configuration[{{ $category->id }}][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['ping_interval']['value'])  ? $configurationValue['ping_interval']['value'] : '' }}" />
+                          <input type="number" class="form-control device-config-field admin-config-field" name="configuration[{{ $category->id }}][ping_interval]" value="{{ $pingIntervalValue }}" min="1" step="1">
                         </div>
                       </div>
                     </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label for="curl" class="control-label col-lg-3">Device Edit Permission<span class="require">*</span></label>
-                        <div class="col-lg-6">
-                          <label class="padding-10">Enable</label>
-                          <input checked type="radio" name="configuration[{{ $category->id }}][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>
-                          <label class="padding-10">Disable</label>
-                          <input type="radio" name="configuration[{{ $category->id }}][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>
-                        </div>
-                      </div>
-                    </div>
-
+                    @else
+                    <input type="hidden" name="configuration[{{ $category->id }}][ping_interval]" value="{{ $pingIntervalValue }}">
+                    @endif
+                    <input type="hidden" name="configuration[{{ $category->id }}][is_editable]" value="{{ $isEditableValue }}">
                   </div>
-                  @else
-                  <input type="hidden" name="configuration[{{ $category->id }}][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['ping_interval']['value'])  ? $configurationValue['ping_interval']['value'] : '' }}" />
-                  <input type="hidden" name="configuration[{{ $category->id }}][is_editable]" class="form-control inputType" placeholder="Ping Interval" value="{{ isset($configurationValue) && isset($configurationValue['is_editable']['value'])  ? $configurationValue['is_editable']['value'] : '' }}" />
-                  @endif
                   @if( $category->is_can_protocol == 1 )
                   <div class="row" style="padding: 0 15px;">
                     <div class="col-lg-12">
                       <div class="can-config-box isCanEnable{{$category->id}}">
                         <label class="can-config-label"><i class="fa fa-cogs"></i> CAN Configuration <span class="require">*</span></label>
                         @php
-                        $value = isset($canConfigurations[$category->id] ) ?$canConfigurations[$category->id]: [];
-                        $result = is_array($value) ? json_encode($value) : $value;
+                        if ($deviceConfigViewOnly && !empty($categoryCanViewConfigMap[$category->id])) {
+                          $value = $categoryCanViewConfigMap[$category->id];
+                        } elseif (!empty($canConfigurations[$category->id])) {
+                          $value = $canConfigurations[$category->id];
+                          if (is_string($value)) {
+                            $decoded = json_decode($value, true);
+                            $value = is_array($decoded) ? $decoded : [];
+                          }
+                        } elseif (!empty($categoryCanViewConfigMap[$category->id])) {
+                          $value = $categoryCanViewConfigMap[$category->id];
+                        } else {
+                          $value = [];
+                        }
+                        $canConfigForInput = is_array($value) ? $value : (json_decode($value, true) ?: []);
+                        $result = json_encode($canConfigForInput, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT);
                         @endphp
                         <div class="can-config-input-wrap">
-                          <input type="text" class="form-control can-config-input" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value="{{$result}}" readonly />
+                          <input type="text" class="form-control can-config-input" name="canConfigurationArr[{{$category->id}}]" id="canConfigurationArr{{$category->id}}" value='{{ $result }}' readonly />
                           <button type="button" class="can-copy-btn" onclick="copyCanConfig('canConfigurationArr{{$category->id}}')" title="Copy to clipboard">
                             <i class="fa fa-copy"></i>
                           </button>
                         </div>
                         <div class="alert alert-danger modelName_error" role="alert" style="display: none;"></div>
                         <button type="button" class="btn btn-primary can-config-btn" onclick="openCanModal('{{ $category->id }}')">
-                          <i class="fa fa-sliders" style="margin-right:6px;"></i> Configure CAN Protocol
+                          <i class="fa fa-sliders" style="margin-right:6px;"></i> {{ $deviceConfigViewOnly ? 'View CAN Protocol' : 'Configure CAN Protocol' }}
                         </button>
                       </div>
                     </div>
                   </div>
-                  @endif
-                </div>
                 <div class="modal can-modal" id="canModal{{$category->id}}">
                   <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content can-modal-content">
                       <div class="can-accent-bar"></div>
                       <button type="button" class="can-close" data-dismiss="modal">&times;</button>
+                      <div class="can-scroll-wrap">
                       <div class="can-body">
                         <div class="can-hero">
                           <div class="can-icon-ring"><i class="fa fa-sliders"></i></div>
@@ -411,7 +452,7 @@ $get_default_template = DB::table('templates')
                         </div>
                         <div class="can-field-group">
                           <label class="can-label"><i class="fa fa-plug"></i> CAN Channel <span class="require">*</span></label>
-                          <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]" class="form-control">
+                          <select id="can_channel{{$category->id}}" name="canConfiguration[{{$category->id}}][can_channel]" class="form-control can-field-select">
                             <option value="">-- Select CAN Channel --</option>
                             <option value="1">CAN 1</option>
                             <option value="2">CAN 2</option>
@@ -421,7 +462,7 @@ $get_default_template = DB::table('templates')
                         </div>
                         <div class="can-field-group">
                           <label class="can-label"><i class="fa fa-tachometer"></i> CAN Baud Rate <span class="require">*</span></label>
-                          <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control">
+                          <select id="can_baud_rate{{$category->id}}" name="canConfiguration[{{$category->id}}][can_baud_rate]" class="form-control can-field-select">
                             <option value="">-- Select Baud Rate --</option>
                             <option value="500">500 kbps</option>
                             <option value="250">250 kbps</option>
@@ -429,7 +470,7 @@ $get_default_template = DB::table('templates')
                         </div>
                         <div class="can-field-group">
                           <label class="can-label"><i class="fa fa-tag"></i> CAN ID Type <span class="require">*</span></label>
-                          <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control">
+                          <select id="can_id_type{{$category->id}}" name="canConfiguration[{{$category->id}}][can_id_type]" class="form-control can-field-select">
                             <option value="">-- Select CAN ID --</option>
                             <option value="0">Standard</option>
                             <option value="1">Extended</option>
@@ -437,7 +478,7 @@ $get_default_template = DB::table('templates')
                         </div>
                         <div class="can-field-group">
                           <label class="can-label"><i class="fa fa-cogs"></i> CAN Protocol <span class="require">*</span></label>
-                          <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control" onchange="selectedCanProtocol('{{$category->id}}')">
+                          <select id="can_protocol{{$category->id}}" name="canConfiguration[{{$category->id}}][can_protocol]" class="form-control can-field-select">
                             <option value="">-- Select Protocol --</option>
                             <option value="1">J1979</option>
                             <option value="2">J1939</option>
@@ -445,15 +486,18 @@ $get_default_template = DB::table('templates')
                           </select>
                         </div>
                         <div class="can-dynamic-fields" id="dynamicCanFields{{$category->id}}"></div>
-                        <div class="can-actions">
-                          <button type="button" class="btn can-btn-cancel" data-dismiss="modal">Cancel</button>
-                          <button type="button" class="btn can-btn-submit" onclick="generateJSON('{{$category->id}}')">
-                            <i class="fa fa-check"></i> Submit
-                          </button>
-                        </div>
+                      </div>
+                      </div>
+                      <div class="can-actions">
+                        <button type="button" class="btn can-btn-cancel" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn can-btn-submit" onclick="generateJSON('{{$category->id}}')">
+                          <i class="fa fa-check"></i> Submit
+                        </button>
                       </div>
                     </div>
                   </div>
+                </div>
+                  @endif
                 </div>
               </div>
               @endif
@@ -495,25 +539,280 @@ $get_default_template = DB::table('templates')
     });
   }
 
-  function openCanModal(index) {
-    $('#canModal' + index).modal('show');
+  function setCanModalViewOnly(modal, viewOnly) {
+    modal.toggleClass('is-view-only', !!viewOnly);
+    modal.find('select, input:not([type="hidden"]), button.add-text-input, button.remove-text-input').prop('disabled', !!viewOnly);
+    modal.find('.can-btn-submit').toggle(!viewOnly);
+    modal.find('.can-title').text(viewOnly ? 'View CAN Protocol Configuration' : 'CAN Protocol Configuration');
+    modal.find('.can-subtitle').text(viewOnly
+      ? 'Review CAN bus parameters for this device category'
+      : modal.find('.can-subtitle').data('default-subtitle') || modal.find('.can-subtitle').text());
+    const $icon = modal.find('.can-icon-ring i');
+    if (!$icon.data('default-class')) {
+      $icon.data('default-class', $icon.attr('class'));
+    }
+    $icon.attr('class', viewOnly ? 'fa fa-eye' : $icon.data('default-class'));
+    const $cancel = modal.find('.can-btn-cancel');
+    if (!$cancel.data('default-text')) {
+      $cancel.data('default-text', $.trim($cancel.text()) || 'Cancel');
+    }
+    $cancel.text(viewOnly ? 'Close' : $cancel.data('default-text'));
+    if (viewOnly) {
+      modal.find('.select2-container').addClass('can-select2-readonly');
+    } else {
+      modal.find('.select2-container').removeClass('can-select2-readonly');
+    }
+  }
 
-    const config = JSON.parse(document.getElementById(`canConfigurationArr${index}`).value);
-    // const config1 = JSON.parse(config);
-    const canProtocolEl = $('#can_protocol' + index);
-    canProtocolEl.one('change', function() {
-      for (let field in config) {
-        const value = config[field]?.value;
-        if (document.getElementById(field)) {
-          document.getElementById(field).value = value;
+  function normalizeCanProtocolValue(value) {
+    const map = {
+      '1': '1', '2': '2', '3': '3',
+      'J1979': '1', 'J1939': '2', 'Custom CAN': '3', 'custom can': '3'
+    };
+    const key = String(value ?? '').trim();
+    return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : key;
+  }
+
+  function extractCanFieldValue(entry) {
+    if (entry === undefined || entry === null || entry === '') {
+      return null;
+    }
+    if (typeof entry === 'object' && entry !== null && 'value' in entry) {
+      return entry.value;
+    }
+    return entry;
+  }
+
+  function hasCanConfigValue(value) {
+    return value !== undefined && value !== null && value !== '';
+  }
+
+  function resolveRawConfigEntry(rawConfig, base, categoryId) {
+    const id = String(categoryId);
+    const preferredKeys = [base + id, base];
+    let i;
+    for (i = 0; i < preferredKeys.length; i++) {
+      const key = preferredKeys[i];
+      if (rawConfig[key] !== undefined && rawConfig[key] !== null && rawConfig[key] !== '') {
+        return rawConfig[key];
+      }
+    }
+    const matchingKeys = Object.keys(rawConfig).filter(function(key) {
+      if (key === base) {
+        return true;
+      }
+      if (key.indexOf(base) !== 0) {
+        return false;
+      }
+      const suffix = key.slice(base.length);
+      return suffix === '' || /^\d+$/.test(suffix);
+    });
+    if (matchingKeys.indexOf(base + id) !== -1) {
+      return rawConfig[base + id];
+    }
+    if (matchingKeys.length === 1) {
+      return rawConfig[matchingKeys[0]];
+    }
+    for (i = 0; i < matchingKeys.length; i++) {
+      const candidate = extractCanFieldValue(rawConfig[matchingKeys[i]]);
+      if (hasCanConfigValue(candidate) || candidate === 0 || candidate === '0') {
+        return rawConfig[matchingKeys[i]];
+      }
+    }
+    return null;
+  }
+
+  function normalizeCanConfigForCategory(rawConfig, categoryId) {
+    if (!rawConfig || typeof rawConfig !== 'object') {
+      return {};
+    }
+    const id = String(categoryId);
+    const baseFields = ['can_channel', 'can_baud_rate', 'can_id_type', 'can_protocol'];
+    const normalized = {};
+
+    baseFields.forEach(function(base) {
+      const suffixedKey = base + id;
+      const entry = resolveRawConfigEntry(rawConfig, base, categoryId);
+      if (entry === undefined || entry === null || entry === '') {
+        return;
+      }
+      if (typeof entry === 'object' && entry !== null && 'value' in entry) {
+        let val = entry.value;
+        if (base === 'can_protocol') {
+          val = normalizeCanProtocolValue(val);
         }
+        normalized[suffixedKey] = { id: entry.id, value: val };
+      } else {
+        let val = entry;
+        if (base === 'can_protocol') {
+          val = normalizeCanProtocolValue(val);
+        }
+        normalized[suffixedKey] = { id: null, value: val };
       }
     });
-    canProtocolEl.val(config['can_protocol' + index]['value']).trigger('change');
+
+    Object.keys(rawConfig).forEach(function(key) {
+      if (baseFields.indexOf(key) !== -1 || baseFields.some(function(b) { return key === b + id; })) {
+        return;
+      }
+      if (baseFields.some(function(b) { return key.indexOf(b) === 0 && /^\d+$/.test(key.slice(b.length)); })) {
+        return;
+      }
+      normalized[key] = rawConfig[key];
+    });
+
+    return normalized;
+  }
+
+  function getCanConfigFieldValue(config, fieldId) {
+    const entry = config[fieldId];
+    if (entry && typeof entry === 'object' && 'value' in entry) {
+      return entry.value;
+    }
+    if (entry !== undefined && entry !== null && typeof entry !== 'object') {
+      return entry;
+    }
+    return '';
+  }
+
+  function applyCanBaseFieldValues(index, config) {
+    ['can_channel', 'can_baud_rate', 'can_id_type'].forEach(function(base) {
+      const key = base + index;
+      const value = getCanConfigFieldValue(config, key);
+      if (hasCanConfigValue(value) || value === 0 || value === '0') {
+        $('#' + key).val(String(value));
+      }
+    });
+    const protocolKey = 'can_protocol' + index;
+    const protocolValue = getCanConfigFieldValue(config, protocolKey);
+    if (hasCanConfigValue(protocolValue)) {
+      $('#can_protocol' + index).val(normalizeCanProtocolValue(protocolValue));
+    }
+  }
+
+  function applyCanDynamicFieldValues(config, categoryId, viewOnly, modal) {
+    Object.keys(config).forEach(function(fieldKey) {
+      if (['can_channel', 'can_baud_rate', 'can_id_type', 'can_protocol'].some(function(base) {
+        return fieldKey === base || fieldKey === base + categoryId;
+      })) {
+        return;
+      }
+      const value = getCanConfigFieldValue(config, fieldKey);
+      if (value === undefined || value === null || value === '') {
+        return;
+      }
+      const fieldEl = document.getElementById(fieldKey);
+      if (!fieldEl) {
+        return;
+      }
+      const $field = $(fieldEl);
+      if ($field.hasClass('can-multiselect')) {
+        let values = value;
+        if (typeof values === 'string' && values.charAt(0) === '{') {
+          values = values.replace(/[{}]/g, '').split(',').filter(Boolean);
+        }
+        if (!Array.isArray(values)) {
+          values = [values];
+        }
+        if ($field.data('select2')) {
+          $field.select2('val', values);
+        } else {
+          $field.val(values);
+        }
+      } else {
+        fieldEl.value = value;
+      }
+    });
+  }
+
+  function getCanProtocolModalContext(index) {
+    const $select = $('#can_protocol' + index);
+    const $modal = $select.closest('.can-modal');
+    const modalId = $modal.attr('id') || '';
+    const fieldsSuffix = modalId.indexOf('canModal1') === 0 ? '1' : '';
+    return {
+      modal: $modal,
+      fieldsSuffix: fieldsSuffix,
+      modalPrefix: fieldsSuffix
+    };
+  }
+
+  function bindCanProtocolLoader(index, fieldsSuffix, modalPrefix, viewOnly, modal, config) {
+    const canProtocolEl = $('#can_protocol' + index);
+    canProtocolEl.off('change.canProtocolLoad');
+    canProtocolEl.on('change.canProtocolLoad', function() {
+      const protocolVal = normalizeCanProtocolValue($(this).val());
+      if (protocolVal !== $(this).val()) {
+        $(this).val(protocolVal);
+      }
+      loadCanProtocolFields(index, fieldsSuffix, modalPrefix, function() {
+        applyCanDynamicFieldValues(config, index, viewOnly, modal);
+      });
+    });
+  }
+
+  function populateCanModalFromStoredConfig(index, modalPrefix, viewOnly) {
+    const modal = $('#canModal' + modalPrefix + index);
+    const fieldsSuffix = modalPrefix || '';
+    const dynamicSelector = fieldsSuffix
+      ? '#dynamicCanFields' + fieldsSuffix + index
+      : '#dynamicCanFields' + index;
+    const rawValue = (document.getElementById('canConfigurationArr' + index) || {}).value || '{}';
+    let config = {};
+
+    try {
+      config = normalizeCanConfigForCategory(JSON.parse(rawValue), index);
+    } catch (e) {
+      config = {};
+    }
+
+    if (!modal.find('.can-subtitle').data('default-subtitle')) {
+      modal.find('.can-subtitle').data('default-subtitle', modal.find('.can-subtitle').text());
+    }
+
+    ['can_channel', 'can_baud_rate', 'can_id_type', 'can_protocol'].forEach(function(base) {
+      $('#' + base + index).val('');
+    });
+    $(dynamicSelector).empty();
+
+    applyCanBaseFieldValues(index, config);
+    bindCanProtocolLoader(index, fieldsSuffix, modalPrefix, viewOnly, modal, config);
+
+    const protocolKey = 'can_protocol' + index;
+    const protocolValue = getCanConfigFieldValue(config, protocolKey);
+    const finishPopulate = function() {
+      applyCanBaseFieldValues(index, config);
+      applyCanDynamicFieldValues(config, index, viewOnly, modal);
+      setCanModalViewOnly(modal, viewOnly);
+    };
+
+    if (hasCanConfigValue(protocolValue)) {
+      loadCanProtocolFields(index, fieldsSuffix, modalPrefix, finishPopulate);
+    } else {
+      finishPopulate();
+    }
+  }
+
+  function relocateCanModalsToBody() {
+    $('.can-modal').each(function() {
+      if (!$(this).parent().is('body')) {
+        $(this).appendTo('body');
+      }
+    });
+  }
+
+  function openCanModal(index) {
+    const $modal = $('#canModal' + index);
+    relocateCanModalsToBody();
+    $modal.modal('show');
+    populateCanModalFromStoredConfig(index, '', deviceConfigViewOnly);
   }
 
   function openCanModal1(index) {
-    $('#canModal1' + index).modal('show');
+    const $modal = $('#canModal1' + index);
+    relocateCanModalsToBody();
+    $modal.modal('show');
+    populateCanModalFromStoredConfig(index, '1', deviceConfigViewOnly);
   }
 
 
@@ -532,12 +831,248 @@ $get_default_template = DB::table('templates')
   //   }
   // }
 
-  function selectedCanProtocol(index) {
-    let canProtocolValue = $('#can_protocol' + index).val();
-    if (!canProtocolValue) return;
+  function getCanFieldIcon(fieldName, inputType) {
+    const name = String(fieldName || '').toLowerCase();
+    if (name.indexOf('mode') !== -1) return 'fa-list';
+    if (name.indexOf('pid') !== -1) return 'fa-barcode';
+    if (name.indexOf('address') !== -1) return 'fa-map-marker';
+    if (inputType === 'select' || inputType === 'multiselect') return 'fa-list-ul';
+    if (inputType === 'number' || inputType === 'hex') return 'fa-hashtag';
+    return 'fa-pencil';
+  }
 
-    let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-can-protocol-fields') }}";
+  function initCanMultiselect($select) {
+    if (!$select || !$select.length || typeof $.fn.select2 !== 'function') {
+      return;
+    }
+    if ($select.data('select2')) {
+      $select.select2('destroy');
+    }
+    $select.removeClass('form-control inputType');
+    const maxSel = parseInt($select.data('max-select'), 10) || 0;
+    const placeholder = $select.data('placeholder') || 'Select options';
+    $select.select2({ placeholder: placeholder, width: '100%' });
+    if (maxSel > 0) {
+      $select.off('change.euMaxSelect').on('change.euMaxSelect', function() {
+        let selected = $(this).select2('val') || [];
+        if (selected.length > maxSel) {
+          selected.splice(maxSel);
+          $(this).select2('val', selected);
+          alert('You can only select up to ' + maxSel + ' options.');
+        }
+      });
+    }
+  }
 
+  function initCanMultiselects(index, fieldsSuffix) {
+    const selector = fieldsSuffix
+      ? '#dynamicCanFields' + fieldsSuffix + index
+      : '#dynamicCanFields' + index;
+    $(selector).find('select.can-multiselect').each(function() {
+      initCanMultiselect($(this));
+    });
+  }
+
+  function buildCanDynamicFieldsHtml(index, fields) {
+    let config = {};
+    try {
+      config = normalizeCanConfigForCategory(
+        JSON.parse($('#canConfigurationArr' + index).val() || '{}'),
+        index
+      );
+    } catch (e) {
+      config = {};
+    }
+
+    let html = '<p class="can-protocol-section-label">Protocol-specific settings</p>';
+
+    fields.forEach(function(field) {
+      const fieldId = field.fieldName.replace(/\s+/g, '_').toLowerCase();
+      const inputType = field.inputType;
+      let validation = {};
+      try {
+        validation = JSON.parse(field.validationConfig || '{}');
+      } catch (e) {
+        validation = {};
+      }
+      const value = getCanConfigFieldValue(config, fieldId);
+      const escapedValue = String(value).replace(/"/g, '&quot;');
+      const fieldLabel = String(field.fieldName).replace(/"/g, '&quot;');
+      let inputHtml = `<input type="hidden" name="idCanParameters[${index}][${fieldId}]" value="${field.id}" />`;
+      inputHtml += `<input type="hidden" name="CanParametersType[${index}][${fieldId}]" value="${inputType}" />`;
+      let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control can-field-input" placeholder="Enter ${fieldLabel}" value="${escapedValue}"`;
+      let selectAttr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control can-field-select"`;
+
+      if (inputType === 'number') {
+        if (validation.numberInput) {
+          attr += ` min="${validation.numberInput.min}" max="${validation.numberInput.max}"`;
+        }
+        inputHtml += `<input type="number" ${attr} />`;
+      } else if (inputType === 'select') {
+        const selectedValue = getCanConfigFieldValue(config, fieldId);
+        inputHtml += `<select ${selectAttr}><option value="">-- Select --</option>`;
+        if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
+          validation.selectOptions.forEach(function(option) {
+            const isSelected = option === selectedValue ? 'selected' : '';
+            inputHtml += `<option value="${option}" ${isSelected}>${option}</option>`;
+          });
+        } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
+          Object.entries(validation.selectOptions).forEach(function(entry) {
+            const key = entry[0];
+            const label = entry[1];
+            const optValue = validation.selectValues && validation.selectValues[key] !== undefined
+              ? validation.selectValues[key]
+              : key;
+            const isSelected = String(key) === String(selectedValue) || String(optValue) === String(selectedValue) ? 'selected' : '';
+            inputHtml += `<option value="${optValue}" ${isSelected}>${label}</option>`;
+          });
+        }
+        inputHtml += `</select>`;
+      } else if (inputType === 'multiselect') {
+        let selectedValue = getCanConfigFieldValue(config, fieldId);
+        if (typeof selectedValue === 'string' && selectedValue.charAt(0) === '{') {
+          selectedValue = selectedValue.replace(/[{}]/g, '').split(',').filter(Boolean);
+        }
+        const selectedArray = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
+        const maxSel = validation.maxSelectValue || 0;
+        inputHtml += `<div class="can-multiselect-wrap"><select id="${fieldId}" name="canConfiguration[${index}][${fieldId}][]" class="can-multiselect" multiple data-max-select="${maxSel}" data-placeholder="${fieldLabel}">`;
+        if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
+          validation.selectOptions.forEach(function(option, key) {
+            const optValue = validation.selectValues && validation.selectValues[key] !== undefined
+              ? validation.selectValues[key]
+              : option;
+            const isSelected = selectedArray.includes(option) || selectedArray.includes(optValue) ? 'selected' : '';
+            inputHtml += `<option value="${optValue}" ${isSelected}>${option}</option>`;
+          });
+        } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
+          Object.entries(validation.selectOptions).forEach(function(entry) {
+            const key = entry[0];
+            const label = entry[1];
+            const isSelected = selectedArray.includes(key) ? 'selected' : '';
+            inputHtml += `<option value="${key}" ${isSelected}>${label}</option>`;
+          });
+        }
+        inputHtml += `</select></div>`;
+      } else if (inputType === 'text_array') {
+        const maxValue = validation.maxValueInput || 0;
+        const values = [''];
+        inputHtml += `<div id="${fieldId}_wrapper_${index}" class="text-array-wrapper">`;
+        values.forEach(function(val, i) {
+          inputHtml += `<div class="text-array-item">
+            <input type="text" maxlength="8" id="${fieldId}${index}${i}" name="canConfiguration[${index}][${fieldId}][]" class="form-control can-field-input" placeholder="Enter ${fieldLabel}" value="${String(val).trim()}" />
+            <button type="button" class="btn can-array-btn can-array-btn-remove remove-text-input"><i class="fa fa-minus"></i></button>
+          </div>`;
+        });
+        inputHtml += `<button type="button" class="btn can-array-btn can-array-btn-add add-text-input"><i class="fa fa-plus"></i> Add</button></div>`;
+        inputHtml += `<input type="hidden" id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" />`;
+        setTimeout(function() {
+          const wrapper = $('#' + fieldId + '_wrapper_' + index);
+          const addButton = wrapper.find('.add-text-input');
+          wrapper.on('click', '.add-text-input', function() {
+            const count = wrapper.find('.text-array-item').length;
+            if (maxValue && count >= maxValue) {
+              alert('You can only add up to ' + maxValue + ' inputs for ' + field.fieldName + '.');
+              addButton.prop('disabled', true);
+              return;
+            }
+            const newInput = `<div class="text-array-item">
+              <input type="text" id="${fieldId}${index}${count}" name="canConfiguration[${index}][${fieldId}][]" class="form-control can-field-input" placeholder="Enter ${fieldLabel}" />
+              <button type="button" class="btn can-array-btn can-array-btn-remove remove-text-input"><i class="fa fa-minus"></i></button>
+            </div>`;
+            $(this).before(newInput);
+            if (maxValue && wrapper.find('.text-array-item').length >= maxValue) {
+              addButton.prop('disabled', true);
+            }
+            updateHiddenValue();
+          });
+          wrapper.on('click', '.remove-text-input', function() {
+            $(this).closest('.text-array-item').remove();
+            if (maxValue && wrapper.find('.text-array-item').length < maxValue) {
+              addButton.prop('disabled', false);
+            }
+            updateHiddenValue();
+          });
+          wrapper.on('input', 'input[type=text]', updateHiddenValue);
+          function updateHiddenValue() {
+            const values = [];
+            wrapper.find('input[type=text]').each(function() {
+              const val = $(this).val().trim();
+              if (val) values.push(val);
+            });
+            $('#' + fieldId).val('{' + values.join(',') + '}');
+          }
+          updateHiddenValue();
+        }, 100);
+      } else if (inputType === 'hex') {
+        let hexAttr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control can-field-input" value="${escapedValue}"`;
+        if (validation.maxValueInput) {
+          hexAttr += ` maxlength="${validation.maxValueInput}"`;
+        }
+        inputHtml += `<input type="text" ${hexAttr} />`;
+      } else {
+        if (validation.maxValueInput) {
+          attr += ` maxlength="${validation.maxValueInput}"`;
+        }
+        inputHtml += `<input type="text" ${attr} />`;
+      }
+
+      const icon = getCanFieldIcon(field.fieldName, inputType);
+      html += `<div class="can-field-group">
+        <label class="can-label" for="${fieldId}"><i class="fa ${icon}"></i> ${field.fieldName} <span class="require">*</span></label>
+        ${inputHtml}
+        <div class="can-field-error alert alert-danger ${fieldId}_error" role="alert" style="display:none"></div>
+      </div>`;
+    });
+
+    return html;
+  }
+
+  function renderCanProtocolFields(index, fields, fieldsSuffix, modalSuffix, afterRender) {
+    const containerSelector = fieldsSuffix
+      ? '#dynamicCanFields' + fieldsSuffix + index
+      : '#dynamicCanFields' + index;
+    const modalSelector = modalSuffix
+      ? '#canModal' + modalSuffix + index
+      : '#canModal' + index;
+    if (!Array.isArray(fields)) {
+      fields = [];
+    }
+    const html = buildCanDynamicFieldsHtml(index, fields);
+    $(containerSelector).html(html).show();
+    initCanMultiselects(index, fieldsSuffix || '');
+    let config = {};
+    try {
+      config = normalizeCanConfigForCategory(
+        JSON.parse($('#canConfigurationArr' + index).val() || '{}'),
+        index
+      );
+    } catch (e) {
+      config = {};
+    }
+    setTimeout(function() {
+      applyCanBaseFieldValues(index, config);
+      const $modal = $(modalSelector);
+      applyCanDynamicFieldValues(config, index, deviceConfigViewOnly, $modal);
+      if (deviceConfigViewOnly) {
+        setCanModalViewOnly($modal, true);
+      }
+      if (typeof afterRender === 'function') {
+        afterRender();
+      }
+    }, 250);
+  }
+
+  function loadCanProtocolFields(index, fieldsSuffix, modalSuffix, afterLoad) {
+    const dynamicSelector = fieldsSuffix
+      ? '#dynamicCanFields' + fieldsSuffix + index
+      : '#dynamicCanFields' + index;
+    const canProtocolValue = normalizeCanProtocolValue($('#can_protocol' + index).val());
+    if (!canProtocolValue) {
+      $(dynamicSelector).empty();
+      return;
+    }
+    $('#can_protocol' + index).val(canProtocolValue);
+    const actionUrl = "{{ url($url_type . '/get-can-protocol-fields') }}";
     $.ajax({
       url: actionUrl,
       type: 'POST',
@@ -546,448 +1081,31 @@ $get_default_template = DB::table('templates')
         _token: '{{ csrf_token() }}'
       },
       success: function(fields) {
-        let html = '<div class="row">';
-
-        fields.forEach(field => {
-          const fieldId = field.fieldName.replace(/\s+/g, '_').toLowerCase();
-          const inputType = field.inputType;
-          let config = {};
-          try {
-            config = JSON.parse($("#canConfigurationArr" + index).val());
-          } catch (e) {
-            console.warn("Invalid JSON, using empty config.");
-          }
-          let validation = {};
-          console.log("config ==>", config);
-          try {
-            validation = JSON.parse(field.validationConfig || '{}');
-          } catch (e) {
-            console.warn('Invalid JSON in validationConfig for field:', field.fieldName);
-          }
-          let value = config[fieldId]?.value ?? '';
-
-          // Escape for input fields
-          let escapedValue = String(value).replace(/"/g, '&quot;');
-          let inputHtml = `<input type="hidden" name="idCanParameters[${index}][${fieldId}]" value="${field.id}" />`;
-          inputHtml += `<input type="hidden" name="CanParametersType[${index}][${fieldId}]" value="${inputType}" />`;
-          let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control"  placeholder="Enter ${field.fieldName}" value="${escapedValue}"`;
-          if (inputType === 'number') {
-            if (validation.numberInput) {
-              attr += ` min="${validation.numberInput.min}" max="${validation.numberInput.max}"`;
-            }
-            inputHtml += `<input type="number" ${attr} />`;
-          } else if (inputType === 'select') {
-            inputHtml += `<select ${attr}>`;
-
-            const selectedValue = config[fieldId]?.value ?? '';
-
-            if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
-              validation.selectOptions.forEach(option => {
-                const isSelected = option === selectedValue ? 'selected' : '';
-                inputHtml += `<option value="${option}" ${isSelected}>${option}</option>`;
-              });
-            } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
-              Object.entries(validation.selectOptions).forEach(([key, value]) => {
-                const isSelected = key == selectedValue ? 'selected' : '';
-                inputHtml += `<option value="${key}" ${isSelected}>${value}</option>`;
-              });
-            } else {
-              inputHtml += `<option value="">-- Select --</option>`;
-            }
-
-            inputHtml += `</select>`;
-          } else if (inputType === 'multiselect') {
-            inputHtml += `<select id="${fieldId}" placeholder="Enter ${field.fieldName}" multiple name="canConfiguration[${index}][${fieldId}][]">`;
-
-            const selectedValue = config[fieldId]?.value ?? [];
-            // Ensure selectedValue is always an array
-            const selectedArray = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
-
-            if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
-              validation.selectOptions.forEach((option, key) => {
-                const isSelected = selectedArray.includes(option) ? 'selected' : '';
-                inputHtml += `<option value="${validation.selectValues[key]}" ${isSelected}>${option}</option>`;
-              });
-            } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
-              Object.entries(validation.selectOptions).forEach(([key, value]) => {
-                const isSelected = selectedArray.includes(key) ? 'selected' : '';
-                inputHtml += `<option value="${key}" ${isSelected}>${value}</option>`;
-              });
-            } else {
-              inputHtml += `<option value="">-- Select --</option>`;
-            }
-
-            inputHtml += `</select>`;
-
-            // Apply Select2
-            setTimeout(() => {
-              $(document).ready(function() {
-                var $select = $('#' + fieldId);
-                $select.select2({
-                  placeholder: "Select up to 3 options",
-                  width: "100%"
-                });
-                $select.on("change", function() {
-                  var selected = $(this).select2("val");
-                  if (selected && selected.length > validation.maxSelectValue) {
-                    selected.splice(validation.maxSelectValue);
-                    $(this).select2("val", selected);
-                    alert("You can only select up to " + validation.maxSelectValue + " options.");
-                  }
-                });
-              });
-            }, 100);
-          } else if (inputType === 'text_array') {
-            let values = [""];
-            let maxValue = validation.maxValueInput || 0;
-            console.log("maxValue ==>", maxValue);
-            inputHtml += `
-              <div id="${fieldId}_wrapper_${index}" class="text-array-wrapper">
-                ${values.map((val, i) => `
-                  <div class="text-array-item d-flex align-items-center mb-2">
-                    <input type="text"
-                      maxlength='8'
-                      id="${fieldId}${index}${i}" 
-                      name="canConfiguration[${index}][${fieldId}][]" 
-                      class="form-control text-array-space me-2" 
-                      placeholder="Enter ${field.fieldName}" 
-                      value="${val.trim()}" />
-                    <button type="button" class="btn btn-sm btn-danger remove-text-input">
-                      <i class="fa fa-minus"></i>
-                    </button>
-                  </div>
-                `).join('')}
-                <button type="button" class="btn btn-sm btn-primary add-text-input mt-1">
-                  <i class="fa fa-plus"></i> Add
-                </button>
-              </div>
-            `;
-            inputHtml += `
-              <input type="hidden" 
-                id="${fieldId}" 
-                name="canConfiguration[${index}][${fieldId}]" />
-            `;
-            setTimeout(function() {
-              const wrapper = $("#" + fieldId + "_wrapper_" + index);
-              const addButton = wrapper.find(".add-text-input");
-              console.log("maxValue ==>", maxValue);
-              wrapper.on("click", ".add-text-input", function() {
-                const count = wrapper.find(".text-array-item").length;
-                if (maxValue && count >= maxValue) {
-                  alert("You can only add up to " + maxValue + " inputs for " + field.fieldName + ".");
-                  addButton.prop("disabled", true);
-                  return;
-                }
-
-                const newInput = `
-                  <div class="text-array-item d-flex align-items-center mb-2">
-                    <input type="text" 
-                      id="${fieldId}${index}${count}" 
-                      name="canConfiguration[${index}][${fieldId}][]" 
-                      class="form-control text-array-space me-2" 
-                      placeholder="Enter ${field.fieldName}" />
-                    <button type="button" class="btn btn-sm btn-danger remove-text-input">
-                      <i class="fa fa-minus"></i>
-                    </button>
-                  </div>
-                `;
-                $(this).before(newInput);
-                const newCount = wrapper.find(".text-array-item").length;
-                if (maxValue && newCount >= maxValue) {
-                  addButton.prop("disabled", true);
-                }
-                updateHiddenValue();
-              });
-              wrapper.on("click", ".remove-text-input", function() {
-                $(this).closest(".text-array-item").remove();
-                const count = wrapper.find(".text-array-item").length;
-                if (maxValue && count < maxValue) {
-                  addButton.prop("disabled", false);
-                }
-                updateHiddenValue();
-              });
-              wrapper.on("input", "input[type=text]", function() {
-                updateHiddenValue();
-              });
-
-              function updateHiddenValue() {
-                const values = [];
-                wrapper.find("input[type=text]").each(function() {
-                  const val = $(this).val().trim();
-                  if (val) values.push(val);
-                });
-                $("#" + fieldId).val("{" + values.join(",") + "}");
-              }
-              updateHiddenValue();
-            }, 100);
-          } else if (inputType === 'hex') {
-            
-            let attr1 = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control text-array-space me-2"`;
-            let maxValue = validation.maxValueInput || 0;
-            if (validation.maxValueInput) {
-              attr1 += `maxlength="${validation.maxValueInput}"`;
-            }
-            inputHtml += `<input type="text" ${attr1} value="${escapedValue}"/>`;
-
-          } else {
-            if (validation.maxValueInput) {
-              attr += ` maxlength="${validation.maxValueInput}"`;
-            }
-            inputHtml += `<input type="text" ${attr} />`;
-          }
-
-          html += `<div class="col-md-12">
-                    <div class="form-group" id="modalInput">
-                        <label for="${fieldId}" class="control-label padding-left-14">
-                            ${field.fieldName} <span class="require">*</span>
-                        </label>
-                        <div class="col-lg-12">
-                            ${inputHtml}
-                            <div class="col-sm-12 alert alert-danger ${fieldId}_error" role="alert" style="display:none"></div>
-                        </div>
-                    </div></div>`;
-        });
-        html += '</div>';
-        $('#dynamicCanFields' + index).html(html).show();
+        renderCanProtocolFields(index, fields, fieldsSuffix, modalSuffix, afterLoad);
       },
       error: function(xhr) {
-        console.error("Error fetching CAN protocol fields", xhr);
+        console.error('Error fetching CAN protocol fields', xhr);
+        $(dynamicSelector).html(
+          '<p class="can-field-error alert alert-danger" style="display:block">Unable to load protocol fields. Please try again.</p>'
+        );
       }
     });
   }
 
+  function selectedCanProtocol(index) {
+    const ctx = getCanProtocolModalContext(index);
+    loadCanProtocolFields(index, ctx.fieldsSuffix, ctx.modalPrefix);
+  }
+
   function selectedCanProtocol1(index) {
-    let canProtocolValue = $('#can_protocol' + index).val();
-    if (!canProtocolValue) return;
-
-    let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-can-protocol-fields') }}";
-
-    $.ajax({
-      url: actionUrl,
-      type: 'POST',
-      data: {
-        protocol: canProtocolValue,
-        _token: '{{ csrf_token() }}'
-      },
-      success: function(fields) {
-        let html = '<div class="row">';
-
-        fields.forEach(field => {
-          const fieldId = field.fieldName.replace(/\s+/g, '_').toLowerCase();
-          const inputType = field.inputType;
-          let config = {};
-          try {
-            config = JSON.parse($("#canConfigurationArr" + index).val());
-          } catch (e) {
-            console.warn("Invalid JSON, using empty config.");
-          }
-          let validation = {};
-          console.log("config ==>", config);
-          try {
-            validation = JSON.parse(field.validationConfig || '{}');
-          } catch (e) {
-            console.warn('Invalid JSON in validationConfig for field:', field.fieldName);
-          }
-          let value = config[fieldId]?.value ?? '';
-
-          // Escape for input fields
-          let escapedValue = String(value).replace(/"/g, '&quot;');
-          let inputHtml = `<input type="hidden" name="idCanParameters[${index}][${fieldId}]" value="${field.id}" />`;
-          inputHtml += `<input type="hidden" name="CanParametersType[${index}][${fieldId}]" value="${inputType}" />`;
-          let attr = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control"  placeholder="Enter ${field.fieldName}" value="${escapedValue}"`;
-          console.log('inputType ==>', field.fieldName, inputType);
-          if (inputType === 'number') {
-            if (validation.numberInput) {
-              attr += ` min="${validation.numberInput.min}" max="${validation.numberInput.max}"`;
-            }
-            inputHtml += `<input type="number" ${attr} />`;
-          } else if (inputType === 'select') {
-            inputHtml += `<select ${attr}>`;
-            const selectedValue = config[fieldId]?.value ?? '';
-
-            if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
-              validation.selectOptions.forEach((option, key) => {
-                const isSelected = option === selectedValue ? 'selected' : '';
-                inputHtml += `<option value="${option}" ${isSelected}>${option}</option>`;
-              });
-            } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
-              Object.entries(validation.selectOptions).forEach(([key, value]) => {
-                const isSelected = key == selectedValue ? 'selected' : '';
-                inputHtml += `<option value="${validation.selectValues[key]}" ${isSelected}>${value}</option>`;
-              });
-            } else {
-              inputHtml += `<option value="">-- Select --</option>`;
-            }
-
-            inputHtml += `</select>`;
-          } else if (inputType === 'multiselect') {
-            inputHtml += `<select id="${fieldId}" placeholder="Enter ${field.fieldName}" multiple name="canConfiguration[${index}][${fieldId}][]">`;
-
-            const selectedValue = config[fieldId]?.value ?? [];
-
-            console.log("selectedValue =>", selectedValue);
-
-            // Ensure selectedValue is always an array
-            const selectedArray = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
-
-            if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
-              validation.selectOptions.forEach(option => {
-                const isSelected = selectedArray.includes(option) ? 'selected' : '';
-                inputHtml += `<option value="${option}" ${isSelected}>${option}</option>`;
-              });
-            } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
-              Object.entries(validation.selectOptions).forEach(([key, value]) => {
-                const isSelected = selectedArray.includes(key) ? 'selected' : '';
-                inputHtml += `<option value="${key}" ${isSelected}>${value}</option>`;
-              });
-            } else {
-              inputHtml += `<option value="">-- Select --</option>`;
-            }
-
-            inputHtml += `</select>`;
-
-            // Apply Select2
-
-            setTimeout(() => {
-
-              $(document).ready(function() {
-                var $select = $('#' + fieldId);
-                $select.select2({
-                  placeholder: "Select up to 3 options",
-                  width: "100%"
-                });
-                $select.on("change", function() {
-                  var selected = $(this).select2("val");
-                  if (selected && selected.length > validation.maxSelectValue) {
-                    selected.splice(validation.maxSelectValue);
-                    $(this).select2("val", selected);
-                    alert("You can only select up to " + validation.maxSelectValue + " options.");
-                  }
-                });
-              });
-            }, 100);
-          } else if (inputType === 'text_array') {
-            let values = [""];
-            let maxValue = validation.maxValueInput || 0;
-            console.log("maxValue ==>", maxValue);
-            inputHtml += `
-              <div id="${fieldId}_wrapper_${index}" class="text-array-wrapper">
-                ${values.map((val, i) => `
-                  <div class="text-array-item d-flex align-items-center mb-2">
-                    <input type="text"
-                      maxlength='8'
-                      id="${fieldId}${index}${i}" 
-                      name="canConfiguration[${index}][${fieldId}][]" 
-                      class="form-control text-array-space me-2" 
-                      placeholder="Enter ${field.fieldName}" 
-                      value="${val.trim()}" />
-                    <button type="button" class="btn btn-sm btn-danger remove-text-input">
-                      <i class="fa fa-minus"></i>
-                    </button>
-                  </div>
-                `).join('')}
-                <button type="button" class="btn btn-sm btn-primary add-text-input mt-1">
-                  <i class="fa fa-plus"></i> Add
-                </button>
-              </div>
-            `;
-            inputHtml += `
-              <input type="hidden" 
-                id="${fieldId}" 
-                name="canConfiguration[${index}][${fieldId}]" />
-            `;
-            setTimeout(function() {
-              const wrapper = $("#" + fieldId + "_wrapper_" + index);
-              const addButton = wrapper.find(".add-text-input");
-              console.log("maxValue ==>", maxValue);
-              wrapper.on("click", ".add-text-input", function() {
-                const count = wrapper.find(".text-array-item").length;
-                if (maxValue && count >= maxValue) {
-                  alert("You can only add up to " + maxValue + " inputs for " + field.fieldName + ".");
-                  addButton.prop("disabled", true);
-                  return;
-                }
-
-                const newInput = `
-                  <div class="text-array-item d-flex align-items-center mb-2">
-                    <input type="text" 
-                      id="${fieldId}${index}${count}" 
-                      name="canConfiguration[${index}][${fieldId}][]" 
-                      class="form-control text-array-space me-2" 
-                      placeholder="Enter ${field.fieldName}" />
-                    <button type="button" class="btn btn-sm btn-danger remove-text-input">
-                      <i class="fa fa-minus"></i>
-                    </button>
-                  </div>
-                `;
-                $(this).before(newInput);
-                const newCount = wrapper.find(".text-array-item").length;
-                if (maxValue && newCount >= maxValue) {
-                  addButton.prop("disabled", true);
-                }
-                updateHiddenValue();
-              });
-              wrapper.on("click", ".remove-text-input", function() {
-                $(this).closest(".text-array-item").remove();
-                const count = wrapper.find(".text-array-item").length;
-                if (maxValue && count < maxValue) {
-                  addButton.prop("disabled", false);
-                }
-                updateHiddenValue();
-              });
-              wrapper.on("input", "input[type=text]", function() {
-                updateHiddenValue();
-              });
-
-              function updateHiddenValue() {
-                const values = [];
-                wrapper.find("input[type=text]").each(function() {
-                  const val = $(this).val().trim();
-                  if (val) values.push(val);
-                });
-                $("#" + fieldId).val("{" + values.join(",") + "}");
-              }
-              updateHiddenValue();
-            }, 100);
-          } else if (inputType === 'hex') {
-            let attr1 = `id="${fieldId}" name="canConfiguration[${index}][${fieldId}]" class="form-control text-array-space me-2"`;
-            let maxValue = validation.maxValueInput || 0;
-            if (validation.maxValueInput) {
-              attr1 += `maxlength="${validation.maxValueInput}"`;
-            }
-            inputHtml += `<input type="text" ${attr1}  value="${escapedValue}"/>`;
-
-          } else {
-            if (validation.maxValueInput) {
-              attr += ` maxlength="${validation.maxValueInput}"`;
-            }
-            inputHtml += `<input type="text" ${attr} />`;
-          }
-
-          html += `<div class="col-md-12 padding-3 padding-top-10">
-                    <div class="form-group" id="modalInput">
-                        <label for="${fieldId}" class="control-label padding-left-14">
-                            ${field.fieldName} <span class="require">*</span>
-                        </label>
-                        <div class="col-lg-12">
-                            ${inputHtml}
-                            <div class="col-sm-12 alert alert-danger ${fieldId}_error" role="alert" style="display:none"></div>
-                        </div>
-                    </div></div>`;
-        });
-        html += '</div>';
-        $('#dynamicCanFields1' + index).html(html).show();
-      },
-      error: function(xhr) {
-        console.error("Error fetching CAN protocol fields", xhr);
-      }
-    });
+    loadCanProtocolFields(index, '1', '1');
   }
 
   function generateJSON(index) {
     let canConfigData = {};
+    const $modal = $('#canModal' + index);
 
-    $('input[name^="canConfiguration["], select[name^="canConfiguration["]').each(function() {
+    $modal.find('input[name^="canConfiguration["], select[name^="canConfiguration["]').each(function() {
       let fieldId = $(this).attr('id');
       let value = $(this).val(); // could be string or array
       console.log("fieldId ==>", fieldId, " ====", value);
@@ -1042,8 +1160,9 @@ $get_default_template = DB::table('templates')
 
   function generateJSON1(index) {
     let canConfigData = {};
+    const $modal = $('#canModal1' + index);
 
-    $('input[name^="canConfiguration["], select[name^="canConfiguration["]').each(function() {
+    $modal.find('input[name^="canConfiguration["], select[name^="canConfiguration["]').each(function() {
       let fieldId = $(this).attr('id');
       let value = $(this).val();
 
@@ -1087,12 +1206,57 @@ $get_default_template = DB::table('templates')
           }
         }
       }
-      $('#canConfigurationArr' + index).val(JSON.stringify(canConfigData));
-      $('#canModal1' + index).modal('hide');
     });
+
+    $('#canConfigurationArr' + index).val(JSON.stringify(canConfigData));
+    $('#canModal1' + index).modal('hide');
   }
 
-  let existingCheckedValues = <?= json_encode($deviceCategoryIds) ?>;
+  let existingCheckedValues = <?= json_encode(array_map('strval', $deviceCategoryIds)) ?>;
+  const preEnabledCategoryIds = existingCheckedValues.slice();
+  const getCategoriesUrl = "{{ url($url_type . '/get-multiple-categories') }}";
+  const csrfToken = "{{ csrf_token() }}";
+  const deviceConfigViewOnly = @json($deviceConfigViewOnly);
+  const showAdminConfigFields = @json($showAdminConfigFields);
+  const categoryAdminPingIntervalMap = @json($categoryAdminPingIntervalMap);
+
+  function isPreEnabledCategory(categoryId) {
+    return preEnabledCategoryIds.map(String).includes(String(categoryId));
+  }
+
+  function isCategoryBlockViewOnly(categoryId) {
+    return deviceConfigViewOnly && isPreEnabledCategory(categoryId);
+  }
+
+  function applyDeviceConfigViewOnlyToBlock(categoryId) {
+    if (!isCategoryBlockViewOnly(categoryId)) {
+      return;
+    }
+    const $block = $('.device-category-block-' + categoryId);
+    if (!$block.length) {
+      return;
+    }
+    $block.addClass('device-config-view-only');
+    $block.find('select:not(.admin-config-field)').prop('disabled', true);
+    $block.find('input:not([type="hidden"]):not(.admin-config-field), textarea:not(.admin-config-field)').each(function() {
+      const $input = $(this);
+      if ($input.attr('name') && $input.attr('name').indexOf('[is_editable]') !== -1) {
+        return;
+      }
+      if ($input.is(':radio') || $input.is(':checkbox')) {
+        $input.prop('disabled', true);
+      } else {
+        $input.prop('readonly', true).prop('disabled', true);
+      }
+    });
+    if (!showAdminConfigFields) {
+      $block.find('.admin-config-field').prop('readonly', true).prop('disabled', true);
+      $block.find('input[name*="[is_editable]"]').prop('disabled', true);
+    } else {
+      $block.find('.admin-config-field').prop('readonly', false).prop('disabled', false);
+      $block.find('input[name*="[is_editable]"]').prop('disabled', false);
+    }
+  }
 
   function handleSupportActiveVisibility() {
     let val = $('.userAccType').val();
@@ -1132,7 +1296,29 @@ $get_default_template = DB::table('templates')
   });
 
   $(document).ready(function() {
+    relocateCanModalsToBody();
 
+    if ($.fn.validate && $('#commentForm').length) {
+      $('#commentForm').validate({
+        submitHandler: function() {
+          return false;
+        }
+      });
+    }
+
+    $('.bgx-checkbox-category').on('change', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      getDeviceCategoryInput($(this).data('user-id'), $(this).val());
+    });
+
+    $('select[id^="can_protocol"]').each(function() {
+      const index = this.id.replace('can_protocol', '');
+      const ctx = getCanProtocolModalContext(index);
+      if (ctx.modal.length) {
+        bindCanProtocolLoader(index, ctx.fieldsSuffix, ctx.modalPrefix, deviceConfigViewOnly, ctx.modal, {});
+      }
+    });
 
     $('.templates').each(function() {
       // Get the ID of each element
@@ -1147,26 +1333,53 @@ $get_default_template = DB::table('templates')
         event.preventDefault(); // Prevent the space from being entered
       }
     });
+
+    @foreach($categoryDefaultTemplateMap as $catId => $defaultTemplate)
+    if ($('.device-category-block-{{ $catId }}[data-pre-enabled="1"]').length) {
+      changeTemplate({{ $catId }}, {{ $defaultTemplate->id }});
+    }
+    @endforeach
+
+    if (deviceConfigViewOnly) {
+      preEnabledCategoryIds.forEach(function(catId) {
+        applyDeviceConfigViewOnlyToBlock(catId);
+      });
+    }
   })
   $(document).ready(function() {
     $('#commentForm').submit(function(event) {
-      //event.preventDefault();
+      event.preventDefault();
       $('.error_msg').html('').hide();
       $('.success_msg').html('').hide();
       let error_msg = "";
       let formIsValid = true;
 
+      let checkedCategories = $('input.bgx-checkbox-category:checked').map(function() {
+        return String(this.value);
+      }).get();
+      let loadedCategoryBlocks = $('.device-category-fields').map(function() {
+        const match = (this.className || '').match(/device-category-block-(\d+)/);
+        return match ? match[1] : null;
+      }).get().filter(Boolean);
 
-      $(this).find('input[required], select[required]').each(function() {
-        let inputValue = $(this).val();
-        let inputType = $(this).attr('type');
-        let inputName = $(this).attr('name');
-        let label = $(this).closest('.form-group').find('.control-label').text();
+      if (checkedCategories.length > 0) {
+        let missingBlocks = checkedCategories.filter(function(categoryId) {
+          return loadedCategoryBlocks.indexOf(String(categoryId)) === -1;
+        });
+        if (missingBlocks.length > 0) {
+          error_msg = 'Device category settings are still loading. Please wait a moment after enabling a category, then try saving again.';
+          formIsValid = false;
+        }
+      }
 
+      function validateRequiredField($field) {
+        let inputValue = $field.val();
+        let inputType = $field.attr('type');
+        let label = $field.closest('.form-group').find('.control-label').text();
 
         if (inputType === 'number') {
-          let minVal = parseFloat($(this).attr('min'));
-          let maxVal = parseFloat($(this).attr('max'));
+          let minVal = parseFloat($field.attr('min'));
+          let maxVal = parseFloat($field.attr('max'));
           let numericValue = parseFloat(inputValue);
 
           if (!isNaN(minVal) && numericValue < minVal) {
@@ -1175,7 +1388,6 @@ $get_default_template = DB::table('templates')
             return false;
           }
 
-
           if (!isNaN(maxVal) && numericValue > maxVal) {
             error_msg = 'Validation Error: ' + label + ' should be less than or equal to ' + maxVal;
             formIsValid = false;
@@ -1183,13 +1395,32 @@ $get_default_template = DB::table('templates')
           }
         }
 
-
         if (inputValue === '') {
           error_msg = 'Validation Error: ' + label + ' is required';
           formIsValid = false;
           return false;
         }
-      });
+      }
+
+      if (!deviceConfigViewOnly) {
+        $(this).find('input[required], select[required]').each(function() {
+          if (validateRequiredField($(this)) === false) {
+            return false;
+          }
+        });
+      } else {
+        $('.device-category-fields').each(function() {
+          const match = (this.className || '').match(/device-category-block-(\d+)/);
+          if (!match || isPreEnabledCategory(match[1])) {
+            return;
+          }
+          $(this).find('input[required], select[required]').each(function() {
+            if (validateRequiredField($(this)) === false) {
+              return false;
+            }
+          });
+        });
+      }
 
       if (formIsValid) {
         let selectedUserType = $('#userType').length ? $('#userType').val() : "{{$contact->user_type}}";
@@ -1199,6 +1430,7 @@ $get_default_template = DB::table('templates')
         $.ajax({
           url: actionUrl,
           type: "POST",
+          dataType: 'json',
           data: formData,
           success: function(response) {
             let result = typeof response === 'object' ? response : null;
@@ -1240,32 +1472,57 @@ $get_default_template = DB::table('templates')
   });
 
   function getDeviceCategoryInput(userId, deviceCategoryId) {
-    // Get all checked checkbox values
-    let actionUrl = "{{ url((Auth::user()->user_type == 'Admin' ? 'admin' : 'reseller') . '/get-multiple-categories') }}";
-
-    const isChecked = $(`input.bgx-checkbox-category[value="${deviceCategoryId}"]`).is(':checked');
+    const checkbox = $(`input.bgx-checkbox-category[value="${deviceCategoryId}"]`);
+    const isChecked = checkbox.is(':checked');
 
     if (!isChecked) {
-      existingCheckedValues = existingCheckedValues.filter(val => val != deviceCategoryId);
-      $(`.device-category-block-${deviceCategoryId}`).remove(); // Remove section
-    } else {
-
-
-      let checkedValues = $('input.bgx-checkbox-category:checked').map(function() {
-        return this.value;
-      }).get();
-
-      let newCheckedValues = checkedValues.filter(function(val) {
-        return !existingCheckedValues.map(String).includes(String(val));
+      Swal.fire({
+        title: 'Disable Device Category?',
+        html: '<strong>Warning:</strong> Disabling this device category will remove access to it for all child accounts. Any templates associated with this device category for child accounts will also be permanently deleted. This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, disable',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#d33',
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          existingCheckedValues = existingCheckedValues.filter(function(val) {
+            return String(val) !== String(deviceCategoryId);
+          });
+          $(`.device-category-block-${deviceCategoryId}`).remove();
+        } else {
+          checkbox.prop('checked', true);
+        }
       });
-      // Send all selected device category ids to the server
-      $.ajax({
-        url: actionUrl,
+      return;
+    }
+
+    if ($(`.device-category-block-${deviceCategoryId}`).length > 0) {
+      if (!existingCheckedValues.map(String).includes(String(deviceCategoryId))) {
+        existingCheckedValues.push(String(deviceCategoryId));
+      }
+      return;
+    }
+
+    loadDeviceCategoryBlocks(userId, [deviceCategoryId]);
+  }
+
+  function loadDeviceCategoryBlocks(userId, categoryIds) {
+    const newCheckedValues = categoryIds.filter(function(val) {
+      return !existingCheckedValues.map(String).includes(String(val));
+    });
+
+    if (!newCheckedValues.length) {
+      return;
+    }
+
+    $.ajax({
+        url: getCategoriesUrl,
         type: "POST",
         data: {
           ids: newCheckedValues,
           userId: userId,
-          _token: "{{ csrf_token() }}"
+          _token: csrfToken
         },
         success: function(response) {
           let result = JSON.parse(response);
@@ -1278,31 +1535,48 @@ $get_default_template = DB::table('templates')
 
             let inputFields = JSON.parse(result.device);
             let templates = JSON.parse(result.templates);
+            let parentTemplates = result.parentTemplates ? JSON.parse(result.parentTemplates) : [];
+            let parentCanConfigs = result.parentCanConfigs ? JSON.parse(result.parentCanConfigs) : {};
+            let templatesAreParentSourced = result.templatesAreParentSourced ? JSON.parse(result.templatesAreParentSourced) : [];
             let defaultTemplatesToTrigger = [];
             inputFields.forEach((data, adjustedIndex) => {
               const categoryId = data.id;
               let input = JSON.parse(data.inputs);
               let canEnable = data.is_can_protocol == 1 ? true : false;
-              htmlContent += '<div class="device-category-fields card device-category-block-' + categoryId + '">';
-              htmlContent += '<div class="card-title"><h4 >' + data.device_category_name + '</h4></div>';
+              const categoryTemplates = templates[adjustedIndex] || [];
+              const parentTemplate = parentTemplates[adjustedIndex] || null;
+              const isParentSourced = templatesAreParentSourced[adjustedIndex] === true;
+              const selectedTemplate = categoryTemplates.find(function(temp) {
+                return temp.default_template == 1;
+              }) || categoryTemplates[0] || parentTemplate;
+              htmlContent += '<div class="device-category-fields card device-category-block-' + categoryId + '" data-pre-enabled="0"' + (isParentSourced && selectedTemplate ? ' data-parent-template-id="' + selectedTemplate.id + '"' : '') + '>';
+              htmlContent += '<div class="card-title"><h4 >' + data.device_category_name + '</h4>';
+              if (isParentSourced && categoryTemplates.length > 0) {
+                htmlContent += '<small class="text-muted" style="display:block;margin-top:4px;"><i class="fa fa-copy"></i> Parent account templates — select one, edit below, then save to create this user\'s template</small>';
+              } else if (!isParentSourced && categoryTemplates.length > 0) {
+                htmlContent += '<small class="text-muted" style="display:block;margin-top:4px;"><i class="fa fa-list"></i> User templates for this device category</small>';
+              }
+              htmlContent += '</div>';
               htmlContent += '<div class="card-details">';
               htmlContent += '<div class="row">';
               htmlContent += '<div class="col-lg-6">';
-              htmlContent += '<div class="form-group"><label for="curl" class="control-label col-lg-3">Templates <span class="require">*</span></label><div class="col-lg-8"><select class="form-control userAccType" id="templates' + categoryId + '" name="configuration[' + categoryId + '][template]" onchange="changeTemplate(' + categoryId + ')">';
-              if (templates[adjustedIndex] && templates[adjustedIndex].length > 0) {
-                let selectedTemplate = templates[adjustedIndex].find(function(temp) {
-                  return temp.default_template == 1;
-                }) || templates[adjustedIndex][0];
+              htmlContent += '<div class="form-group"><label for="curl" class="control-label col-lg-3">Templates <span class="require">*</span></label><div class="col-lg-8"><select class="form-control userAccType device-config-field template-select-' + categoryId + '" id="templates' + categoryId + '" name="configuration[' + categoryId + '][template]" onchange="changeTemplate(' + categoryId + ')"' + (categoryTemplates.length > 0 ? ' required' : '') + '>';
+              htmlContent += '<option value="">Select Template</option>';
+              if (categoryTemplates.length > 0) {
                 defaultTemplatesToTrigger.push({
                   index: categoryId,
                   id: selectedTemplate.id,
-                  inputs: input
+                  inputs: input,
+                  isParentTemplate: isParentSourced
                 });
-                templates[adjustedIndex].forEach((temp) => {
-                  htmlContent += '<option ' + (temp.id === selectedTemplate.id ? "selected" : "") + '  value="' + temp.id + '">' + temp.template_name + '' + (temp.default_template == 1 ? ' (Default)' : '') + '</option>';
+                categoryTemplates.forEach((temp) => {
+                  const labelSuffix = (temp.default_template == 1 ? ' (Default)' : '') + (isParentSourced ? ' (Parent)' : '');
+                  htmlContent += '<option ' + (temp.id === selectedTemplate.id ? "selected" : "") + ' value="' + temp.id + '">' + temp.template_name + labelSuffix + '</option>';
                 });
+                if (isParentSourced) {
+                  htmlContent += '<input type="hidden" name="configuration[' + categoryId + '][template_source]" value="parent">';
+                }
               }
-              // htmlContent += '<option>No Template Found</option>';
               htmlContent += '</select></div></div></div></div>';
 
               input.forEach((input, index1) => {
@@ -1317,7 +1591,7 @@ $get_default_template = DB::table('templates')
                   htmlContent += '<div class="form-group">';
                   htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                   htmlContent += '<div class="col-lg-8">';
-                  htmlContent += '<select class="form-control inputType" name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? '' : '') + '>';
+                  htmlContent += '<select class="form-control inputType device-config-field" name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                   // htmlContent += '<option value="">Please Select</option>';
 
                   validation?.selectOptions.forEach((option, optIndex) => {
@@ -1333,7 +1607,7 @@ $get_default_template = DB::table('templates')
                   htmlContent += '<div class="form-group">';
                   htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                   htmlContent += '<div class="col-lg-8">';
-                  htmlContent += '<select class="inputType" id="configval' + categoryId + '" name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? '' : '') + ' multiple>';
+                  htmlContent += '<select class="inputType device-config-field" id="configval' + categoryId + '" name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + '][]" ' + (input.requiredFieldInput ? 'required' : '') + ' multiple>';
                   // htmlContent += '<option value="">Please Select</option>';
 
                   validation?.selectOptions.forEach((option, optIndex) => {
@@ -1357,7 +1631,7 @@ $get_default_template = DB::table('templates')
                     htmlContent += '<div class="form-group">';
                     htmlContent += '<label class="control-label col-lg-3">' + input.key + (input.requiredFieldInput ? ' <span class="require">*</span>' : '') + '</label>';
                     htmlContent += '<div class="col-lg-8">';
-                    htmlContent += '<input class="form-control passwordInputValidation" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + String(configVal).replace(/"/g, '&quot;') + '" ' + (input.requiredFieldInput ? 'required' : '') + '>';
+                    htmlContent += '<input class="form-control passwordInputValidation device-config-field" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'minlength="' + validation?.numberInput?.min + '" maxlength="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + categoryId + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" value="' + String(configVal).replace(/"/g, '&quot;') + '" ' + (input.requiredFieldInput ? 'required' : '') + '>';
                     htmlContent += '</div>';
                     htmlContent += '</div>';
                   } else {
@@ -1368,7 +1642,7 @@ $get_default_template = DB::table('templates')
                     htmlContent += '<div class="col-lg-8">';
                     // htmlContent += '<input class="form-control inputType" type="' + (input.type == 'number' ? 'number' : 'text') + '" ' + (input.type == 'number' ? 'min="' + validation?.numberInput?.min + '" max="' + validation?.numberInput?.max + '"' : '') + ' placeholder="Enter ' + input.key + '" name="configuration[' + index + '][' + input.key.replace(/\s+/g, '_').toLowerCase() + ']" ' + (input.requiredFieldInput ? 'required' : '" maxlength="' + validation?.maxValueInput') + '>';
                     htmlContent +=
-                      '<input class="form-control inputType ' + addClassTextArray + ' ' + addClassIpUrl + '" type="' +
+                      '<input class="form-control inputType device-config-field ' + addClassTextArray + ' ' + addClassIpUrl + '" type="' +
                       (input.type === 'number' ? 'number' : 'text') + '" ' +
                       (input.type === 'number' && validation?.numberInput ?
                         'min="' + validation.numberInput.min + '" max="' + validation.numberInput.max + '" ' :
@@ -1394,20 +1668,19 @@ $get_default_template = DB::table('templates')
               //   htmlContent += '<div class="form-group"><label for="curl" class="control-label col-lg-3">Ping Interval <span class="require">*</span></label><div class="col-lg-8">
               //   htmlContent += '<input type="number" name="configuration[`ping_interval`][`value`]" place holder="Ping Inteval" value=""/>';
               //   htmlContent +='</div></div>';
+              const pingIntervalValue = categoryAdminPingIntervalMap[categoryId] ?? categoryAdminPingIntervalMap[String(categoryId)] ?? 4;
               htmlContent += '<div class="row">';
+              if (showAdminConfigFields) {
               htmlContent += '<div class="col-lg-6"><div class="form-group">';
-              htmlContent += '<label for="curl" class="control-label col-lg-3">Ping Interval <span class="require">*</span></label>';
+              htmlContent += '<label class="control-label col-lg-3">Ping Interval</label>';
               htmlContent += '<div class="col-lg-8">';
-              htmlContent += '<input type="number" name="configuration[' + categoryId + '][ping_interval]" class="form-control inputType" placeholder="Ping Interval" value=""/>';
+              htmlContent += '<input type="number" class="form-control device-config-field admin-config-field" name="configuration[' + categoryId + '][ping_interval]" value="' + pingIntervalValue + '" min="1" step="1">';
               htmlContent += '</div></div></div>';
-              htmlContent += '<div class="col-lg-6">';
-              htmlContent += '<div class="form-group">';
-              htmlContent += '<label for="curl" class="control-label col-lg-3">Device Edit Permission<span class="require">*</span></label>';
-              htmlContent += '<div class="col-lg-6">';
-              htmlContent += '<label class="padding-10">Enable</label><input checked type="radio" name="configuration[' + categoryId + '][is_editable]" value="1" style="height:20px; width:20px; vertical-align: middle;" required>';
-              htmlContent += '<label class="padding-10">Disable</label><input type="radio" name="configuration[' + categoryId + '][is_editable]" value="0" style="height:20px; width:20px; vertical-align: middle;" required>';
-
-              htmlContent += '</div></div></div>';
+              } else {
+              htmlContent += '<input type="hidden" name="configuration[' + categoryId + '][ping_interval]" value="' + pingIntervalValue + '">';
+              }
+              htmlContent += '<input type="hidden" name="configuration[' + categoryId + '][is_editable]" value="1">';
+              htmlContent += '</div>';
               if (canEnable) {
                 htmlContent += `
                 <div class="row" style="padding: 0 15px;">
@@ -1433,6 +1706,7 @@ $get_default_template = DB::table('templates')
                         <div class="modal-content can-modal-content">
                           <div class="can-accent-bar"></div>
                           <button type="button" class="can-close" data-dismiss="modal">&times;</button>
+                          <div class="can-scroll-wrap">
                           <div class="can-body">
                             <div class="can-hero">
                               <div class="can-icon-ring"><i class="fa fa-sliders"></i></div>
@@ -1441,7 +1715,7 @@ $get_default_template = DB::table('templates')
                             </div>
                             <div class="can-field-group">
                               <label class="can-label"><i class="fa fa-plug"></i> CAN Channel <span class="require">*</span></label>
-                              <select class="form-control" id="can_channel${categoryId}" name="canConfiguration[${categoryId}][can_channel]" required>
+                              <select class="form-control can-field-select" id="can_channel${categoryId}" name="canConfiguration[${categoryId}][can_channel]" required>
                                 <option value="">-- Select CAN Channel --</option>
                                 <option value="1">CAN 1</option>
                                 <option value="2">CAN 2</option>
@@ -1451,7 +1725,7 @@ $get_default_template = DB::table('templates')
                             </div>
                             <div class="can-field-group">
                               <label class="can-label"><i class="fa fa-tachometer"></i> CAN Baud Rate <span class="require">*</span></label>
-                              <select id="can_baud_rate${categoryId}" name="canConfiguration[${categoryId}][can_baud_rate]" class="form-control" required>
+                              <select id="can_baud_rate${categoryId}" name="canConfiguration[${categoryId}][can_baud_rate]" class="form-control can-field-select" required>
                                 <option value="">-- Select Baud Rate --</option>
                                 <option value="500">500 kbps</option>
                                 <option value="250">250 kbps</option>
@@ -1459,7 +1733,7 @@ $get_default_template = DB::table('templates')
                             </div>
                             <div class="can-field-group">
                               <label class="can-label"><i class="fa fa-tag"></i> CAN ID Type <span class="require">*</span></label>
-                              <select id="can_id_type${categoryId}" name="canConfiguration[${categoryId}][can_id_type]" class="form-control" required>
+                              <select id="can_id_type${categoryId}" name="canConfiguration[${categoryId}][can_id_type]" class="form-control can-field-select" required>
                                 <option value="">-- Select CAN ID --</option>
                                 <option value="0">Standard</option>
                                 <option value="1">Extended</option>
@@ -1467,7 +1741,7 @@ $get_default_template = DB::table('templates')
                             </div>
                             <div class="can-field-group">
                               <label class="can-label"><i class="fa fa-cogs"></i> CAN Protocol <span class="require">*</span></label>
-                              <select id="can_protocol${categoryId}" name="canConfiguration[${categoryId}][can_protocol]" class="form-control" onchange="selectedCanProtocol1(${categoryId})">
+                              <select id="can_protocol${categoryId}" name="canConfiguration[${categoryId}][can_protocol]" class="form-control can-field-select">
                                 <option value="">-- Select Protocol --</option>
                                 <option value="1">J1979</option>
                                 <option value="2">J1939</option>
@@ -1475,12 +1749,13 @@ $get_default_template = DB::table('templates')
                               </select>
                             </div>
                             <div class="can-dynamic-fields" id="dynamicCanFields1${categoryId}"></div>
-                            <div class="can-actions">
-                              <button type="button" class="btn can-btn-cancel" data-dismiss="modal">Cancel</button>
-                              <button type="button" class="btn can-btn-submit" onclick="generateJSON1(${categoryId})">
-                                <i class="fa fa-check"></i> Submit
-                              </button>
-                            </div>
+                          </div>
+                          </div>
+                          <div class="can-actions">
+                            <button type="button" class="btn can-btn-cancel" data-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn can-btn-submit" onclick="generateJSON1(${categoryId})">
+                              <i class="fa fa-check"></i> Submit
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -1495,6 +1770,18 @@ $get_default_template = DB::table('templates')
             });
 
             $('#deviceCategoryInputFields').append(htmlContent);
+            relocateCanModalsToBody();
+            newCheckedValues.forEach(function(val) {
+              const categoryId = String(val);
+              const canVal = parentCanConfigs[categoryId] || parentCanConfigs[val];
+              if (canVal && typeof canVal === 'object' && Object.keys(canVal).length) {
+                $('#canConfigurationArr' + categoryId).val(JSON.stringify(canVal));
+              }
+              const ctx = getCanProtocolModalContext(categoryId);
+              if (ctx.modal.length) {
+                bindCanProtocolLoader(categoryId, ctx.fieldsSuffix, ctx.modalPrefix, false, ctx.modal, {});
+              }
+            });
             newCheckedValues.forEach(function(val) {
               if (!existingCheckedValues.map(String).includes(String(val))) {
                 existingCheckedValues.push(String(val));
@@ -1524,10 +1811,7 @@ $get_default_template = DB::table('templates')
           $('#loading').hide();
         }
       });
-    }
   }
-
-  // Checkbox handled via onclick on each input.
 
   function applyInputDefaults(categoryId, inputs) {
     if (!inputs || !inputs.length) {
@@ -1568,6 +1852,10 @@ $get_default_template = DB::table('templates')
       $("#templates" + index).val(templateId);
     }
 
+    if (!templateId) {
+      return;
+    }
+
     $.ajax({
       url: actionUrl,
       type: "POST",
@@ -1606,7 +1894,7 @@ $get_default_template = DB::table('templates')
         }
 
         Object.keys(template).filter(function(key) {
-          return key !== 'template';
+          return key !== 'template' && key !== 'ping_interval';
         }).forEach(function(key) {
           let rawVal = template[key];
           let val = rawVal;
@@ -1656,6 +1944,9 @@ $get_default_template = DB::table('templates')
             }
 
             if (finalVal !== undefined && finalVal !== null && finalVal !== '') {
+              if ($(this).is(':disabled') || $(this).prop('readonly')) {
+                return;
+              }
               $(this).val(finalVal);
               if ($(this).is('select')) {
                 $(this).trigger('change');
@@ -1663,6 +1954,10 @@ $get_default_template = DB::table('templates')
             }
           });
         });
+
+        if (isCategoryBlockViewOnly(index)) {
+          applyDeviceConfigViewOnlyToBlock(index);
+        }
 
         if (categoryInputs) {
           applyInputDefaults(index, categoryInputs);

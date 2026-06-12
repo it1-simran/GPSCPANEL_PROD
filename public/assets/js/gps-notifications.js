@@ -265,19 +265,41 @@
         );
     }
 
+    function humanizeTechnicalMessage(message) {
+        if (!message || typeof message !== 'string') {
+            return 'Something went wrong. Please try again.';
+        }
+
+        var trimmed = message.trim();
+        if (!trimmed) {
+            return 'Something went wrong. Please try again.';
+        }
+
+        if (
+            trimmed.length > 500 ||
+            /<html[\s>]/i.test(trimmed) ||
+            /SQLSTATE|foreach\(\)|Stack trace|vendor\\/i.test(trimmed) ||
+            /must be of type|Undefined array key|Integrity constraint violation/i.test(trimmed)
+        ) {
+            return 'We could not complete your request. Please refresh the page, check your entries, and try again.';
+        }
+
+        return trimmed;
+    }
+
     function extractErrorMessage(data, fallback) {
-        if (!data) return fallback || 'Something went wrong. Please try again.';
-        if (typeof data === 'string') return data;
-        if (typeof data !== 'object') return fallback || 'Something went wrong. Please try again.';
+        if (!data) return humanizeTechnicalMessage(fallback || 'Something went wrong. Please try again.');
+        if (typeof data === 'string') return humanizeTechnicalMessage(data);
+        if (typeof data !== 'object') return humanizeTechnicalMessage(fallback || 'Something went wrong. Please try again.');
 
         if (data.errors) return '';
-        return (
+        return humanizeTechnicalMessage(
             data.error ||
-            data.message ||
-            data.status_message ||
-            data.status_msg ||
-            fallback ||
-            'Something went wrong. Please try again.'
+                data.message ||
+                data.status_message ||
+                data.status_msg ||
+                fallback ||
+                'Something went wrong. Please try again.'
         );
     }
 

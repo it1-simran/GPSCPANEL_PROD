@@ -75,11 +75,24 @@ class CommonHelper
     {
         $currentUser = Auth::user();
         if ($currentUser->user_type != 'Admin') {
-            $deviceCategoryIdsArray = explode(',',  $currentUser->device_category_id);
-            $getDeviceCategory = DeviceCategory::select('id', 'device_category_name', 'is_certification_enable')->whereIn('id', $deviceCategoryIdsArray)->where('is_deleted', 0)->get();
+            $deviceCategoryIdsArray = array_values(array_filter(array_map('trim', explode(',', $currentUser->device_category_id ?? ''))));
+            $getDeviceCategory = empty($deviceCategoryIdsArray)
+                ? collect()
+                : DeviceCategory::select('id', 'device_category_name', 'is_certification_enable')
+                    ->whereIn('id', $deviceCategoryIdsArray)
+                    ->where('is_deleted', 0)
+                    ->get();
         } else {
             $getDeviceCategory = DeviceCategory::select('id', 'device_category_name', 'is_certification_enable')->where('is_deleted', 0)->get();
         }
+
+        if ($currentUser->user_type != 'Admin' && $getDeviceCategory->isEmpty()) {
+            return '<div class="alert alert-info vd-no-category-msg" style="margin:24px 0;padding:20px;text-align:center;">'
+                . '<i class="fa fa-info-circle" style="margin-right:8px;"></i>'
+                . 'You don\'t have enabled device category. Please contact with the administrator regarding this.'
+                . '</div>';
+        }
+
         $html = '<div class="tabs">';
         foreach ($getDeviceCategory as $key => $category) {
             // dd($deviceCategoryId); 
@@ -295,6 +308,10 @@ class CommonHelper
     public static function unassignDevices($device_category_id)
     {
         $user = Auth::user();
+        $accessService = app(\App\Services\DeviceCategoryAccessService::class);
+        if (!$accessService->userHasCategory($user, $device_category_id)) {
+            return '';
+        }
         if ($user->user_type == 'Admin') {
             $unassignedDevices = Device::select('id', 'imei', 'device_category_id')
                 ->where('device_category_id', $device_category_id)

@@ -163,6 +163,8 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::post('/admin/update-configurations/{id}', [RegisterController::class, 'updateConfigurations'])->middleware('check.permission:account_management.edit');
     Route::post('/admin/update-canprotocolWriter-configurations/{id}', [RegisterController::class, 'updateCanProtocolConfigurations'])->middleware('check.permission:account_management.edit');
     Route::patch('/admin/update-user/{id}/{user_type}', [RegisterController::class, 'updateWriter'])->middleware('check.permission:account_management.edit')->name('writer.update');
+    Route::post('/admin/enable-account-device-category', [RegisterController::class, 'enableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
+    Route::post('/admin/disable-account-device-category', [RegisterController::class, 'disableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
     Route::patch('/admin/update-user-info/{id}/{user_type}', [RegisterController::class, 'updateWriterInformation'])->middleware('check.permission:account_management.edit')->name('writer.updateWriterInformation');
     Route::delete('/admin/delete-user/{id}', [RegisterController::class, 'deleteWriter'])->middleware('check.permission:account_management.delete')->name('writer.delete');
     Route::post('/admin/getusers', [RegisterController::class, 'getuserinfo'])->name('user.getinfo');
@@ -346,6 +348,8 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::post('/register/writer', [RegisterController::class, 'createWriter'])->middleware('check.permission:account_management.create')->name('register.writer');
     Route::get('/edit-user/{user_type}/{id}', [RegisterController::class, 'editWriter'])->middleware('check.permission:account_management.edit')->name('rwriter.edit');
     Route::patch('/update-user/{id}/{user_type}', [RegisterController::class, 'updateWriter'])->middleware('check.permission:account_management.edit')->name('rwriter.update');
+    Route::post('/enable-account-device-category', [RegisterController::class, 'enableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
+    Route::post('/disable-account-device-category', [RegisterController::class, 'disableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
     Route::patch('/update-user-info/{id}/{user_type}', [RegisterController::class, 'updateWriterInformation'])->middleware('check.permission:account_management.edit')->name('writer.updateWriterInformation');
     Route::delete('/delete-user/{id}', [RegisterController::class, 'deleteWriter'])->middleware('check.permission:account_management.delete')->name('rwriter.delete');
 

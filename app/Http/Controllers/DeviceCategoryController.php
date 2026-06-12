@@ -12,6 +12,7 @@ use App\Template;
 use App\Writer;
 use PDO;
 use App\DataFields;
+use App\Services\AccountDeviceCategoryService;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx\Rels;
 
 class DeviceCategoryController extends Controller
@@ -666,8 +667,15 @@ class DeviceCategoryController extends Controller
 
     public function getDeviceCategory(Request $request)
     {
-        $device_category = DeviceCategory::find($request->id);
         $authUser = Auth::user();
+        if ($authUser->user_type !== 'Admin' && !app(\App\Services\DeviceCategoryAccessService::class)->userHasCategory($authUser, $request->id)) {
+            return response()->json([
+                'status' => 403,
+                'message' => 'You do not have access to this device category. Please contact your administrator.',
+            ], 403);
+        }
+
+        $device_category = DeviceCategory::find($request->id);
 
         $firmwareQuery = Firmware::query()
             ->where('device_category_id', $request->id)
@@ -729,6 +737,14 @@ class DeviceCategoryController extends Controller
     }
     public function getDeviceCategorySupport(Request $request)
     {
+        $authUser = Auth::user();
+        if ($authUser->user_type !== 'Admin' && !app(\App\Services\DeviceCategoryAccessService::class)->userHasCategory($authUser, $request->id)) {
+            return response()->json([
+                'status' => 403,
+                'message' => 'You do not have access to this device category. Please contact your administrator.',
+            ], 403);
+        }
+
         $device_category = DeviceCategory::find($request->id);
         $firmware = DB::table('firmware')->select('*')->where('device_category_id', $request->id)->get();
         if ($device_category) {
@@ -767,24 +783,46 @@ class DeviceCategoryController extends Controller
     }
     public function getMultipleDeviceCategory(Request $request)
     {
-
         $device_category = [];
         $configurations = '';
-        if ($request->has('userId')) {
-            $getConfiguations = Writer::find($request->userId);
-            $configurations = $getConfiguations->configurations;
+        $account = null;
+
+        if ($request->has('userId') && $request->userId) {
+            $account = Writer::find($request->userId);
+            if ($account) {
+                $configurations = $account->configurations;
+            }
         }
+
         foreach ($request->ids as $deviceId) {
             $device_category[] = DeviceCategory::find($deviceId);
         }
+
         if ($device_category) {
             $templates = [];
+            $parentTemplates = [];
+            $parentCanConfigs = [];
+            $templatesAreParentSourced = [];
             $firmwares = [];
             $selectFields = DB::table('data_fields')->where('inputType', 'select')->get();
-            foreach ($device_category as $category) {
+            $categoryService = app(AccountDeviceCategoryService::class);
+
+            if ($account) {
+                $templatePayload = $categoryService->buildMultipleCategoryTemplatePayload(
+                    $account,
+                    array_map(function ($category) {
+                        return $category->id;
+                    }, $device_category)
+                );
+                $templates = $templatePayload['templates'];
+                $parentTemplates = $templatePayload['parentTemplates'];
+                $parentCanConfigs = $templatePayload['parentCanConfigs'];
+                $templatesAreParentSourced = $templatePayload['templatesAreParentSourced'];
+            }
+
+            foreach ($device_category as $index => $category) {
                 $inputs = json_decode($category->inputs, true);
                 $inputIds = collect($inputs)->pluck('id')->toArray();
-                // Fetch matching DataFields using left join-style behavior
                 $dataFields = DataFields::whereIn('id', $inputIds)->get()->keyBy('id');
                 $enhancedInputs = collect($inputs)->map(function ($input) use ($dataFields) {
                     $input['validationConfig'] = $dataFields[$input['id']]->validationConfig ?? null;
@@ -792,37 +830,53 @@ class DeviceCategoryController extends Controller
                 });
                 $category->inputs = json_encode($enhancedInputs);
 
-                // Fetch firmwares for this category
                 $firmwares[] = DB::table('firmware')->select('*')->where('device_category_id', $category->id)->get();
 
-                if (Auth::user()->user_type == 'Reseller') {
-                    $getTemplateByDeviceCategory = Template::select('*')->where('templates.id_user', Auth::user()->id)->where('templates.is_deleted', '0')->where('verify', '2')->where(['device_category_id' => $category->id])->get();
-                } else {
-                    $templateQuery = Template::select('*')
-                        ->where('templates.is_deleted', '0')
-                        ->where('device_category_id', $category->id);
-
-                    if ($request->has('userId') && $request->userId) {
-                        $templateQuery->where(function ($query) use ($request) {
-                            $query->where(function ($adminTemplates) {
-                                $adminTemplates->whereNull('templates.id_user')->where('verify', '1');
-                            })->orWhere(function ($userTemplates) use ($request) {
-                                $userTemplates->where('templates.id_user', $request->userId)->where('verify', '2');
-                            });
-                        });
+                if (!$account) {
+                    if (Auth::user()->user_type == 'Reseller') {
+                        $getTemplateByDeviceCategory = Template::select('*')->where('templates.id_user', Auth::user()->id)->where('templates.is_deleted', '0')->where('verify', '2')->where(['device_category_id' => $category->id])->get();
                     } else {
-                        $templateQuery->whereNull('templates.id_user')->where('verify', '1');
+                        $getTemplateByDeviceCategory = Template::select('*')
+                            ->whereNull('templates.id_user')
+                            ->where('templates.is_deleted', '0')
+                            ->where('verify', '1')
+                            ->where('device_category_id', $category->id)
+                            ->orderByDesc('default_template')
+                            ->get();
                     }
+                    $templates[$index] = $getTemplateByDeviceCategory;
+                    $parentTemplates[$index] = null;
+                }
+            }
 
-                    $getTemplateByDeviceCategory = $templateQuery->get();
+            $parentTemplatePayload = array_map(function ($template) {
+                if (!$template) {
+                    return null;
                 }
 
-                $templates[] = $getTemplateByDeviceCategory;
-            }
-            return json_encode(['status' => 200, 'message' => 'catgory inputs fetched', 'device' => json_encode($device_category), 'configurations' =>  $configurations, 'templates' => json_encode($templates), 'firmware' => json_encode($firmwares), 'dataFields' => json_encode($selectFields)]);
-        } else {
-            return json_encode(['status' => 403, 'message' => 'Error Occured!!']);
+                return [
+                    'id' => $template->id,
+                    'template_name' => $template->template_name,
+                    'default_template' => $template->default_template,
+                    'device_category_id' => $template->device_category_id,
+                ];
+            }, $parentTemplates);
+
+            return json_encode([
+                'status' => 200,
+                'message' => 'catgory inputs fetched',
+                'device' => json_encode($device_category),
+                'configurations' => $configurations,
+                'templates' => json_encode($templates),
+                'parentTemplates' => json_encode($parentTemplatePayload),
+                'parentCanConfigs' => json_encode($parentCanConfigs),
+                'templatesAreParentSourced' => json_encode($templatesAreParentSourced),
+                'firmware' => json_encode($firmwares),
+                'dataFields' => json_encode($selectFields),
+            ]);
         }
+
+        return json_encode(['status' => 403, 'message' => 'Error Occured!!']);
     }
     public function getTemplateValue(Request $request)
     {

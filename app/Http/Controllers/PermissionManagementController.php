@@ -6,6 +6,7 @@ use App\Permission;
 use App\Role;
 use App\Writer;
 use App\Services\PermissionAssignmentService;
+use App\Services\PermissionSyncImpactService;
 use Illuminate\Http\Request;
 use Auth;
 use DB;
@@ -124,6 +125,8 @@ class PermissionManagementController extends Controller
             return response()->json(['error' => $result['message']], 422);
         }
 
+        app(PermissionSyncImpactService::class)->applyImpact($reseller, $permissions, $user);
+
         return response()->json([
             'success' => true,
             'message' => $result['message'],
@@ -167,7 +170,8 @@ class PermissionManagementController extends Controller
             }
         }
 
-        $availablePermissions = $this->getAssignablePermissionsForUser($user, $selectedUser);
+        // Always render the reseller's full assignable matrix; JS hides modules per child user type.
+        $availablePermissions = $this->getAssignablePermissionsForUser($user, null);
 
         // Group by module
         $permissionsByModule = $availablePermissions
@@ -220,16 +224,39 @@ class PermissionManagementController extends Controller
             ->toArray();
 
         $allowedPermissionIds = null;
+        $permissionsByModule = collect([]);
+        $availableCount = 0;
+
         if ($user->user_type === 'Reseller') {
-            $allowedPermissionIds = $this->getAssignablePermissionIds($user, $childUser);
+            $assignablePermissions = $this->getAssignablePermissionsForUser($user, $childUser);
+            $allowedPermissionIds = $assignablePermissions
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->toArray();
+            $permissionsByModule = $assignablePermissions->groupBy('module');
+            $availableCount = $assignablePermissions->count();
             $childPermissions = array_values(array_intersect($childPermissions, $allowedPermissionIds));
         }
 
         return response()->json([
             'permissions' => $childPermissions,
             'assignable_permissions' => $allowedPermissionIds,
+            'permissions_by_module' => $permissionsByModule->map(function ($permissions) {
+                return $permissions->map(function ($permission) {
+                    return [
+                        'id' => (int) $permission->id,
+                        'label' => $permission->label,
+                        'key' => $permission->key,
+                        'module' => $permission->module,
+                    ];
+                })->values();
+            }),
+            'modules' => $permissionsByModule->keys()->values(),
+            'available_count' => $availableCount,
             'user_type' => $childUser->user_type,
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+          ->header('Pragma', 'no-cache')
+          ->header('Expires', '0');
     }
 
     /**
@@ -289,6 +316,8 @@ class PermissionManagementController extends Controller
             return response()->json(['error' => $result['message']], 422);
         }
 
+        app(PermissionSyncImpactService::class)->applyImpact($childUser, $permissions, $user);
+
         // Get updated permissions count
         $afterCount = DB::table('user_permissions')
             ->where('user_id', $userId)
@@ -334,7 +363,7 @@ class PermissionManagementController extends Controller
             if (!in_array($permId, $parentAccessiblePermissions)) {
                 $permission = DB::table('permissions')->find($permId);
                 $permName = $permission ? $permission->label : "Permission #$permId";
-                return "Cannot assign '$permName' - this permission is beyond your access level";
+                return "Cannot assign '$permName' - this permission is beyond your access level.\nPlease refresh the page.";
             }
         }
 
@@ -492,6 +521,8 @@ class PermissionManagementController extends Controller
             return response()->json(['error' => $result['message']], 422);
         }
 
+        app(PermissionSyncImpactService::class)->applyImpact($targetUser, $permissions, $user);
+
         return response()->json([
             'success' => true,
             'message' => $result['message'],
@@ -513,6 +544,89 @@ class PermissionManagementController extends Controller
 
         return response()->json([
             'modules' => $modules
+        ]);
+    }
+
+    /**
+     * Preview permission sync impact for a reseller (Admin)
+     */
+    public function previewResellerPermissionImpact(Request $request, $resellerId)
+    {
+        $user = Auth::user();
+
+        if ($user->user_type !== 'Admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $reseller = Writer::find($resellerId);
+        if (!$reseller || $reseller->user_type !== 'Reseller') {
+            return response()->json(['error' => 'Reseller not found'], 404);
+        }
+
+        return $this->buildPermissionImpactResponse($reseller, $request->input('permissions', []), $user);
+    }
+
+    /**
+     * Preview permission sync impact for a user (Admin)
+     */
+    public function previewUserPermissionImpact(Request $request, $userId)
+    {
+        $user = Auth::user();
+
+        if ($user->user_type !== 'Admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $targetUser = Writer::find($userId);
+        if (!$targetUser || $targetUser->user_type !== 'User') {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        return $this->buildPermissionImpactResponse($targetUser, $request->input('permissions', []), $user);
+    }
+
+    /**
+     * Preview permission sync impact for a child user (Reseller or Admin)
+     */
+    public function previewChildUserPermissionImpact(Request $request, $userId)
+    {
+        $user = Auth::user();
+        $childUser = Writer::find($userId);
+
+        if (!$childUser) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        if ($user->user_type === 'Reseller') {
+            if (!$this->canManageChildUser($user, $childUser)) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+            $hierarchyError = $this->validatePermissionHierarchy($user, $childUser, $request->input('permissions', []));
+            if ($hierarchyError) {
+                return response()->json(['error' => $hierarchyError], 422);
+            }
+        } elseif ($user->user_type !== 'Admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        return $this->buildPermissionImpactResponse($childUser, $request->input('permissions', []), $user);
+    }
+
+    private function buildPermissionImpactResponse(Writer $targetUser, array $permissions, $assigningUser)
+    {
+        $impactService = app(PermissionSyncImpactService::class);
+        $result = $impactService->previewImpact($targetUser, $permissions, $assigningUser);
+
+        if (!$result['success']) {
+            return response()->json(['error' => $result['message']], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'hasImpact' => $result['hasImpact'],
+            'childUsers' => $result['childUsers'],
+            'removingSettingsView' => $result['removingSettingsView'] ?? false,
+            'removingDeviceView' => $result['removingDeviceView'] ?? false,
         ]);
     }
 

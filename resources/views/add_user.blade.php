@@ -10,10 +10,20 @@
 
   $getDeviceCategory = CommonHelper::getDeviceCategory();
   $currentUser =  Auth::user();
+  $categoryConfigMap = [];
+  $canConfigurations = [];
   if ($currentUser->user_type == 'Reseller') {
     $getDeviceCategoryId = $currentUser->device_category_id;
     $deviceCategoryArr = explode(",", $getDeviceCategoryId);
-    $configurations = json_decode($currentUser->configurations, true);
+    $configurations = json_decode($currentUser->configurations, true) ?: [];
+    $canConfigurations = json_decode($currentUser->can_configurations, true) ?: [];
+
+    foreach ($deviceCategoryArr as $configIndex => $categoryId) {
+      $categoryId = (int) trim($categoryId);
+      if ($categoryId && isset($configurations[$configIndex])) {
+        $categoryConfigMap[$categoryId] = $configurations[$configIndex];
+      }
+    }
   }
 
   ?>
@@ -118,12 +128,12 @@
 
                   <div class="form-group" style="margin-top: 10px; margin-bottom: 30px;">
                     <label style="font-weight: 700; color: #334155; font-size: 16px; margin-bottom: 16px; display: block; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Device Categories <span style="color: #ef4444;">*</span></label>
-                    <div class="row" style="margin-top: 16px;">
+                    <div style="margin-top: 16px; display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 15px;">
                       @foreach($getDeviceCategory as $deviceCategory)
-                      <div class="col-md-3 col-sm-6" style="margin-bottom: 15px;">
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
-                          <label class="bgx-label-category" style="margin: 0; font-weight: 600; color: #475569; cursor: pointer;">{{$deviceCategory->device_category_name}}</label>
-                          <input type="checkbox" class="bgx-checkbox-category " name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput()" style="width: 18px; height: 18px; margin: 0; cursor: pointer;">
+                      <div style="flex: 0 0 auto; min-width: 200px; max-width: 280px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; width: 100%; transition: all 0.2s ease;">
+                          <input type="checkbox" id="deviceCategory{{$deviceCategory->id}}" class="bgx-checkbox-category" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput()" style="width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0;">
+                          <label for="deviceCategory{{$deviceCategory->id}}" class="bgx-label-category" style="margin: 0; margin-left: 12px; font-weight: 600; color: #475569; cursor: pointer; flex: 1; text-align: right;">{{$deviceCategory->device_category_name}}</label>
                         </div>
                       </div>
                       @endforeach
@@ -133,13 +143,13 @@
                   @if($currentUser->user_type == 'Reseller')
                   <div class="form-group" style="margin-top: 10px; margin-bottom: 30px;">
                     <label style="font-weight: 700; color: #334155; font-size: 16px; margin-bottom: 16px; display: block; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Device Categories <span style="color: #ef4444;">*</span></label>
-                    <div class="row" style="margin-top: 16px;">
+                    <div style="margin-top: 16px; display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 15px;">
                       @foreach($getDeviceCategory as $deviceCategory)
                       @if(in_array($deviceCategory->id,$deviceCategoryArr))
-                      <div class="col-md-3 col-sm-6" style="margin-bottom: 15px;">
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
-                          <label class="bgx-label-category" style="margin: 0; font-weight: 600; color: #475569; cursor: pointer;">{{$deviceCategory->device_category_name}}</label>
-                          <input type="checkbox" {{ in_array($deviceCategory->id, $deviceCategoryArr) ? 'checked' : '' }} class="bgx-checkbox-category bgx-checkbox-category-{{$deviceCategory->id}}" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput({{Auth::user()->id}},{{$deviceCategory->id}})" style="width: 18px; height: 18px; margin: 0; cursor: pointer;">
+                      <div style="flex: 0 0 auto; min-width: 200px; max-width: 280px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; width: 100%; transition: all 0.2s ease;">
+                          <input type="checkbox" id="deviceCategory{{$deviceCategory->id}}" {{ in_array($deviceCategory->id, $deviceCategoryArr) ? 'checked' : '' }} class="bgx-checkbox-category bgx-checkbox-category-{{$deviceCategory->id}}" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput({{Auth::user()->id}},{{$deviceCategory->id}})" style="width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0;">
+                          <label for="deviceCategory{{$deviceCategory->id}}" class="bgx-label-category" style="margin: 0; margin-left: 12px; font-weight: 600; color: #475569; cursor: pointer; flex: 1; text-align: right;">{{$deviceCategory->device_category_name}}</label>
                         </div>
                       </div>
                       @endif
@@ -165,6 +175,7 @@
                       });
                       $user = Auth::user();
                       $templates = Template::where('device_category_id', $category->id)
+                      ->where('is_deleted', '0')
                       ->where(function ($query) use ($user) {
                       if ($user->user_type == 'Admin') {
                       $query->whereNull('id_user');
@@ -172,7 +183,16 @@
                       $query->where('id_user', $user->id);
                       }
                       })
+                      ->orderByDesc('default_template')
                       ->get();
+                      if ($templates->isEmpty() && $user->user_type !== 'Admin') {
+                        $templates = Template::where('device_category_id', $category->id)
+                          ->whereNull('id_user')
+                          ->where('is_deleted', '0')
+                          ->where('verify', 1)
+                          ->orderByDesc('default_template')
+                          ->get();
+                      }
                       @endphp
                       <div class="row">
                         <div class="col-md-6">
@@ -255,9 +275,8 @@
                         @if(isset($input['key']))
                         @php
 
-                        // Check if $configurations is defined and has the current index
-                        $config = json_decode($currentUser['configurations'],true);
-                        $configurationValue = isset($configurations[$key]) ? $configurations[$key]: null;
+                        // Map parent configuration by device category id (not global category list index).
+                        $configurationValue = $categoryConfigMap[$category->id] ?? null;
                         @endphp
                         @if($index % 2 === 0)
                         <div class="row">

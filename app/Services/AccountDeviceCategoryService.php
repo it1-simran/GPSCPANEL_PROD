@@ -37,6 +37,7 @@ class AccountDeviceCategoryService
         return Template::where('device_category_id', $categoryId)
             ->where('is_deleted', '0')
             ->where('verify', 1)
+            ->whereNull('id_user')
             ->orderByDesc('default_template')
             ->orderBy('template_name')
             ->first();
@@ -228,19 +229,40 @@ class AccountDeviceCategoryService
         }
 
         $canConfigurations = json_decode($writer->can_configurations, true) ?: [];
+        $resolvedConfigurations = [];
+        $categoriesUpdated = false;
 
-        foreach ($categoryConfigMap as $categoryId => $configuration) {
-            if ($this->hasAnyTemplateForCategory($writer->id, (int) $categoryId)) {
-                continue;
-            }
-
+        foreach ($this->parseCategoryIds($writer->device_category_id) as $categoryId) {
+            $categoryId = (int) $categoryId;
             $category = DeviceCategory::where('id', $categoryId)->where('is_deleted', 0)->first();
             if (!$category) {
                 continue;
             }
 
+            $resolvedConfiguration = $this->resolveConfigurationForCategory($writer, $category);
+            $resolvedConfigurations[] = $resolvedConfiguration;
+
             $canConfig = $canConfigurations[$categoryId] ?? $canConfigurations[(string) $categoryId] ?? null;
-            $this->upsertDefaultTemplate($writer, $category, $configuration, $canConfig);
+            if ($this->isCanConfigurationEmpty($canConfig)) {
+                $canConfig = $this->resolveCanConfigurationForCategory($writer, $categoryId);
+            }
+
+            $defaultTemplate = $this->getDefaultTemplateForCategory($writer->id, $categoryId);
+            $needsTemplate = !$defaultTemplate;
+            if ($defaultTemplate) {
+                $existingTemplateConfig = json_decode($defaultTemplate->configurations, true) ?: [];
+                $needsTemplate = $this->isConfigurationEmpty($existingTemplateConfig, $category);
+            }
+
+            if ($needsTemplate) {
+                $this->upsertDefaultTemplate($writer, $category, $resolvedConfiguration, $canConfig);
+                $categoriesUpdated = true;
+            }
+        }
+
+        if ($categoriesUpdated) {
+            $writer->configurations = json_encode($resolvedConfigurations);
+            $writer->save();
         }
     }
 
@@ -261,42 +283,220 @@ class AccountDeviceCategoryService
         });
     }
 
-    protected function resolveConfigurationForCategory(Writer $writer, DeviceCategory $category): array
+    /**
+     * Ensure a newly created account has fully populated writer configurations,
+     * CAN settings, and per-category default templates regardless of UI permissions.
+     */
+    public function provisionDefaultTemplatesForNewAccount(Writer $writer, array $canConfiguration = []): void
     {
-        $existingMap = $this->buildCategoryConfigMap($writer);
-        if (!empty($existingMap[$category->id])) {
-            return $this->applyAdminPingIntervalToConfiguration((int) $category->id, $existingMap[$category->id]);
+        $resolvedConfigurations = [];
+
+        foreach ($this->parseCategoryIds($writer->device_category_id) as $categoryId) {
+            $category = DeviceCategory::where('id', (int) $categoryId)->where('is_deleted', 0)->first();
+            if (!$category) {
+                continue;
+            }
+
+            $configuration = $this->resolveConfigurationForCategory($writer, $category);
+            $resolvedConfigurations[] = $configuration;
+
+            $canConfig = $canConfiguration[$categoryId]
+                ?? $canConfiguration[(string) $categoryId]
+                ?? null;
+            if ($this->isCanConfigurationEmpty($canConfig)) {
+                $canConfig = $this->resolveCanConfigurationForCategory($writer, (int) $categoryId);
+            }
+
+            $this->upsertDefaultTemplate(
+                $writer,
+                $category,
+                $configuration,
+                $this->isCanConfigurationEmpty($canConfig) ? null : $canConfig,
+                'default'
+            );
         }
 
-        if ($writer->created_by) {
-            $parent = Writer::where('id', $writer->created_by)->where('is_deleted', 0)->first();
-            if ($parent) {
-                $parentMap = $this->buildCategoryConfigMap($parent);
-                if (!empty($parentMap[$category->id])) {
-                    return $this->applyAdminPingIntervalToConfiguration((int) $category->id, $parentMap[$category->id]);
-                }
+        $writer->configurations = json_encode($resolvedConfigurations);
+
+        $existingCan = json_decode($writer->can_configurations, true) ?: [];
+        foreach ($this->parseCategoryIds($writer->device_category_id) as $categoryId) {
+            $categoryId = (int) $categoryId;
+            $hasCan = !empty($existingCan[$categoryId]) || !empty($existingCan[(string) $categoryId]);
+            if ($hasCan) {
+                continue;
+            }
+
+            $resolvedCan = $this->resolveCanConfigurationForCategory($writer, $categoryId);
+            if (!$this->isCanConfigurationEmpty($resolvedCan)) {
+                $existingCan[$categoryId] = $resolvedCan;
             }
         }
 
+        $writer->can_configurations = json_encode($existingCan);
+        $writer->save();
+    }
+
+    protected function resolveConfigurationForCategory(Writer $writer, DeviceCategory $category): array
+    {
+        $baseConfiguration = $this->resolveBaseConfigurationForCategory($writer, $category);
+        $existingMap = $this->buildCategoryConfigMap($writer);
+        $submitted = $existingMap[$category->id] ?? [];
+
+        if (!empty($submitted)) {
+            return $this->mergeConfigurations($baseConfiguration, $submitted, (int) $category->id);
+        }
+
+        return $baseConfiguration;
+    }
+
+    protected function resolveBaseConfigurationForCategory(Writer $writer, DeviceCategory $category): array
+    {
+        foreach ($this->collectAncestorWriters($writer) as $ancestor) {
+            $templateConfig = $this->configurationFromTemplate(
+                $this->getDefaultTemplateForCategory((int) $ancestor->id, (int) $category->id),
+                $category
+            );
+            if ($templateConfig !== null) {
+                return $this->applyAdminPingIntervalToConfiguration((int) $category->id, $templateConfig);
+            }
+
+            $ancestorMap = $this->buildCategoryConfigMap($ancestor);
+            $ancestorConfig = $ancestorMap[$category->id] ?? [];
+            $referencedTemplateId = $ancestorConfig['template']['value'] ?? null;
+            if ($referencedTemplateId) {
+                $referencedTemplate = Template::where('id', (int) $referencedTemplateId)
+                    ->where('is_deleted', '0')
+                    ->first();
+                $referencedConfig = $this->configurationFromTemplate($referencedTemplate, $category);
+                if ($referencedConfig !== null) {
+                    return $this->applyAdminPingIntervalToConfiguration((int) $category->id, $referencedConfig);
+                }
+            }
+
+            if (!empty($ancestorConfig) && !$this->isConfigurationEmpty($ancestorConfig, $category)) {
+                return $this->applyAdminPingIntervalToConfiguration((int) $category->id, $ancestorConfig);
+            }
+        }
+
+        $adminTemplateConfig = $this->configurationFromTemplate(
+            $this->getAdminDefaultTemplateForCategory((int) $category->id),
+            $category
+        );
+        if ($adminTemplateConfig !== null) {
+            return $this->applyAdminPingIntervalToConfiguration((int) $category->id, $adminTemplateConfig);
+        }
+
         return $this->buildDefaultConfiguration($category);
+    }
+
+    protected function mergeConfigurations(array $base, array $submitted, int $categoryId): array
+    {
+        $merged = $base;
+
+        foreach ($submitted as $key => $field) {
+            if ($key === 'template') {
+                continue;
+            }
+
+            $value = $this->configurationFieldValue($submitted, (string) $key);
+            if ($value === null || $value === '' || $value === []) {
+                continue;
+            }
+
+            if (is_array($field) && array_key_exists('value', $field)) {
+                $merged[$key] = $field;
+            } else {
+                $merged[$key] = [
+                    'id' => $merged[$key]['id'] ?? null,
+                    'value' => $field,
+                ];
+            }
+        }
+
+        return $this->applyAdminPingIntervalToConfiguration($categoryId, $merged);
+    }
+
+    /**
+     * @return Writer[]
+     */
+    protected function collectAncestorWriters(Writer $writer): array
+    {
+        $ancestors = [];
+        $visited = [];
+        $currentId = $writer->created_by;
+
+        while ($currentId && !isset($visited[$currentId])) {
+            $visited[$currentId] = true;
+            $ancestor = Writer::where('id', $currentId)->where('is_deleted', 0)->first();
+            if (!$ancestor) {
+                break;
+            }
+
+            $ancestors[] = $ancestor;
+            $currentId = $ancestor->created_by;
+        }
+
+        return $ancestors;
+    }
+
+    protected function getCategoryInputKeys(DeviceCategory $category): array
+    {
+        $inputs = json_decode($category->inputs, true) ?: [];
+        $keys = [];
+
+        foreach ($inputs as $input) {
+            $key = strtolower(str_replace(' ', '_', $input['key'] ?? ''));
+            if ($key !== '') {
+                $keys[] = $key;
+            }
+        }
+
+        return $keys;
+    }
+
+    protected function configurationFieldValue(array $configuration, string $key): mixed
+    {
+        if (!array_key_exists($key, $configuration)) {
+            return null;
+        }
+
+        $field = $configuration[$key];
+        if (is_array($field) && array_key_exists('value', $field)) {
+            return $field['value'];
+        }
+
+        return $field;
     }
 
     protected function resolveCanConfigurationForCategory(Writer $writer, int $categoryId): array
     {
         $canConfigurations = json_decode($writer->can_configurations, true) ?: [];
         $existing = $canConfigurations[$categoryId] ?? $canConfigurations[(string) $categoryId] ?? null;
-        if (!empty($existing)) {
+        if (!$this->isCanConfigurationEmpty($existing)) {
             return is_array($existing) ? $existing : (json_decode($existing, true) ?: []);
         }
 
-        if ($writer->created_by) {
-            $parent = Writer::where('id', $writer->created_by)->where('is_deleted', 0)->first();
-            if ($parent) {
-                $parentCan = json_decode($parent->can_configurations, true) ?: [];
-                $parentValue = $parentCan[$categoryId] ?? $parentCan[(string) $categoryId] ?? null;
-                if (!empty($parentValue)) {
-                    return is_array($parentValue) ? $parentValue : (json_decode($parentValue, true) ?: []);
+        foreach ($this->collectAncestorWriters($writer) as $ancestor) {
+            $ancestorTemplate = $this->getDefaultTemplateForCategory((int) $ancestor->id, $categoryId);
+            if ($ancestorTemplate && !empty($ancestorTemplate->can_configurations)) {
+                $templateCan = json_decode($ancestorTemplate->can_configurations, true);
+                if (is_array($templateCan) && !$this->isCanConfigurationEmpty($templateCan)) {
+                    return $templateCan;
                 }
+            }
+
+            $ancestorCan = json_decode($ancestor->can_configurations, true) ?: [];
+            $ancestorValue = $ancestorCan[$categoryId] ?? $ancestorCan[(string) $categoryId] ?? null;
+            if (!$this->isCanConfigurationEmpty($ancestorValue)) {
+                return is_array($ancestorValue) ? $ancestorValue : (json_decode($ancestorValue, true) ?: []);
+            }
+        }
+
+        $adminTemplate = $this->getAdminDefaultTemplateForCategory($categoryId);
+        if ($adminTemplate && !empty($adminTemplate->can_configurations)) {
+            $adminCan = json_decode($adminTemplate->can_configurations, true);
+            if (is_array($adminCan) && !$this->isCanConfigurationEmpty($adminCan)) {
+                return $adminCan;
             }
         }
 
@@ -348,9 +548,10 @@ class AccountDeviceCategoryService
         Writer $writer,
         DeviceCategory $category,
         array $configuration,
-        $canConfiguration = null
+        $canConfiguration = null,
+        ?string $templateName = null
     ): Template {
-        if (empty($configuration)) {
+        if (empty($configuration) || $this->isConfigurationEmpty($configuration, $category)) {
             $configuration = $this->resolveConfigurationForCategory($writer, $category);
         }
 
@@ -382,10 +583,12 @@ class AccountDeviceCategoryService
             ->orderByDesc('id')
             ->first();
 
+        $resolvedTemplateName = $templateName ?? ($category->device_category_name . ' Default');
+
         if ($softDeletedTemplate) {
             $restorePayload = [
                 'configurations' => json_encode($configuration),
-                'template_name' => $category->device_category_name . ' Default',
+                'template_name' => $resolvedTemplateName,
                 'default_template' => 1,
                 'verify' => 2,
                 'is_deleted' => '0',
@@ -412,7 +615,7 @@ class AccountDeviceCategoryService
 
         return Template::create([
             'id_user' => $writer->id,
-            'template_name' => $category->device_category_name . ' Default',
+            'template_name' => $resolvedTemplateName,
             'device_category_id' => $category->id,
             'configurations' => json_encode($configuration),
             'can_configurations' => $encodedCan,
@@ -791,6 +994,79 @@ class AccountDeviceCategoryService
         }
 
         $writer->can_configurations = json_encode($existingCan);
+    }
+
+    protected function configurationFromTemplate(?Template $template, ?DeviceCategory $category = null): ?array
+    {
+        if (!$template || empty($template->configurations)) {
+            return null;
+        }
+
+        $config = json_decode($template->configurations, true);
+        if (!is_array($config) || $this->isConfigurationEmpty($config, $category)) {
+            return null;
+        }
+
+        return $config;
+    }
+
+    protected function isConfigurationEmpty(array $configuration, ?DeviceCategory $category = null): bool
+    {
+        if ($category) {
+            $inputKeys = $this->getCategoryInputKeys($category);
+            if (!empty($inputKeys)) {
+                foreach ($inputKeys as $key) {
+                    $value = $this->configurationFieldValue($configuration, $key);
+                    if ($value !== null && $value !== '' && $value !== []) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        $metadataKeys = [
+            'template',
+            'ping_interval',
+            'is_editable',
+            'template_source',
+            'firmware_id',
+            'modelName',
+            'vendorId',
+            'fota',
+        ];
+
+        foreach ($configuration as $key => $field) {
+            if (in_array($key, $metadataKeys, true)) {
+                continue;
+            }
+
+            $value = $this->configurationFieldValue($configuration, (string) $key);
+            if ($value !== null && $value !== '' && $value !== []) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function isCanConfigurationEmpty($canConfiguration): bool
+    {
+        if ($canConfiguration === null || $canConfiguration === '') {
+            return true;
+        }
+
+        if (is_string($canConfiguration)) {
+            $decoded = json_decode($canConfiguration, true);
+            if (!is_array($decoded)) {
+                return trim($canConfiguration) === '' || trim($canConfiguration) === '{}';
+            }
+
+            $canConfiguration = $decoded;
+        }
+
+        return !is_array($canConfiguration) || empty($canConfiguration);
     }
 
     protected function parseCategoryIds(?string $deviceCategoryIds): array

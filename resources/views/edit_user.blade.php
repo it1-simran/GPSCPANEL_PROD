@@ -197,17 +197,17 @@ $showAdminConfigFields = $isAdminUser;
               <div class="is-support-active" style="display: none;"></div>
               <div class="form-group bgx-margin-bottom row">
                 <label for="curl" class="control-label col-lg-3">Device Categories<span class="require">*</span></label>
-                <div class="col-lg-6 bgx-margin-top row ">
+                <div class="col-lg-9">
+                  <div style="margin-top: 8px; display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 15px;">
                   @foreach($getDeviceCategory as $deviceCategory)
-                  <div class="row col-md-6">
-                    <div class="col-xs-6 col-sm-6 col-md-4">
-                      <label class='bgx-label-category'>{{$deviceCategory->device_category_name}}</label>
-                    </div>
-                    <div class="col-xs-6 col-sm-6 col-md-4 text-right">
-                      <input type="checkbox" {{ in_array((string) $deviceCategory->id, array_map('strval', $deviceCategoryIds), true) ? 'checked' : '' }} class="bgx-checkbox-category" name="deviceCategory[]" value="{{ $deviceCategory->id }}" data-user-id="{{ $contact->id }}">
+                  <div style="flex: 0 0 auto; min-width: 200px; max-width: 280px;">
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                      <input type="checkbox" id="deviceCategory{{ $deviceCategory->id }}" {{ in_array((string) $deviceCategory->id, array_map('strval', $deviceCategoryIds), true) ? 'checked' : '' }} class="bgx-checkbox-category" name="deviceCategory[]" value="{{ $deviceCategory->id }}" data-user-id="{{ $contact->id }}" style="width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0;">
+                      <label for="deviceCategory{{ $deviceCategory->id }}" class="bgx-label-category" style="margin: 0; margin-left: 12px; cursor: pointer; flex: 1; text-align: right;">{{$deviceCategory->device_category_name}}</label>
                     </div>
                   </div>
                   @endforeach
+                  </div>
                 </div>
               </div>
               @foreach($getDeviceCategoryconfig as $key => $category)
@@ -1570,7 +1570,7 @@ $showAdminConfigFields = $isAdminUser;
                   isParentTemplate: isParentSourced
                 });
                 categoryTemplates.forEach((temp) => {
-                  const labelSuffix = (temp.default_template == 1 ? ' (Default)' : '') + (isParentSourced ? '' : '');
+                  const labelSuffix = (temp.default_template == 1 ? ' (Default)' : '') + (isParentSourced ? 'http://127.0.0.1:8000/reseller/manage-child-permissions?user_id=38' : '');
                   htmlContent += '<option ' + (temp.id === selectedTemplate.id ? "selected" : "") + ' value="' + temp.id + '">' + temp.template_name + labelSuffix + '</option>';
                 });
                 if (isParentSourced) {

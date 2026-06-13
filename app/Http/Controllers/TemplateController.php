@@ -1016,7 +1016,11 @@ class TemplateController extends Controller
                         // dd($configuration);
                         $dataVal->can_configurations = json_encode($canConverted);
                         $dataVal->configurations = json_encode($configuration);
-                        $dataVal->update();
+                        $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
+                        $dataVal->timestamps = false;
+                        $dataVal->updated_at = $utcTime;
+                        $dataVal->save();
+                        $dataVal->timestamps = true;
                         $updatedCount++;
                     }
                 }

@@ -23,25 +23,6 @@
     .loading { display: none; text-align: center; padding: 20px; }
     .loading.active { display: block; }
     .info-box { background-color: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 4px; margin-bottom: 20px; color: #166534; }
-    .permission-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-    }
-    .refresh-button {
-        background-color: #1e293b;
-        color: white;
-        padding: 10px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-    .refresh-button:hover { background-color: #334155; }
-    .refresh-button:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
 @endpush
 
@@ -94,7 +75,7 @@
                             {{-- Display dropdown when no user_id in URL --}}
                             <div style="margin-bottom: 20px;">
                                 <label style="font-weight: 600; display: block; margin-bottom: 10px;">Select User:</label>
-                                <select id="userSelect" class="user-select" style="width: 100%; max-width: 400px;">
+                                <select id="userSelect" class="user-select select2-hidden-accessible" style="width: 100%; max-width: 400px;">
                                     <option value="">-- Choose a User --</option>
                                     @foreach($users as $usr)
                                         <option value="{{ $usr->id }}">{{ $usr->name }} ({{ $usr->email }})</option>
@@ -114,11 +95,6 @@
                         </div>
 
                         <div id="permissionsContainer" style="display:none;">
-                            <div class="permission-toolbar">
-                                <button type="button" id="refreshPermissionsBtn" class="refresh-button" onclick="refreshPermissions()">
-                                    <i class="fa fa-refresh"></i> Refresh
-                                </button>
-                            </div>
                             @foreach($modules as $module)
                                 <div class="module-section">
                                     <div class="module-title">
@@ -160,6 +136,7 @@
 </section>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@include('partials.permission-save-confirm')
 <script>
     let currentUserId = null;
     let permissionDependencies = {}; // child_id => parent_id
@@ -221,22 +198,6 @@
         }
     }
 
-    function getActiveUserId() {
-        return currentUserId || $('#userSelect').val() || null;
-    }
-
-    function refreshPermissions() {
-        const userId = getActiveUserId();
-        if (!userId) {
-            notifyPermissionMessage('warning', 'Please select a user first.');
-            return;
-        }
-
-        clearTimeout(permissionSaveTimer);
-        $('#refreshPermissionsBtn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Refreshing...');
-        window.location.href = '/admin/manage-user-permissions?user_id=' + encodeURIComponent(userId) + '&t=' + Date.now();
-    }
-
     $(document).ready(function() {
         // Load permission dependencies
         loadPermissionDependencies();
@@ -270,7 +231,6 @@
             }
 
             syncCreateEditPair(this, isChecked);
-            schedulePermissionSave();
         });
     });
 
@@ -364,7 +324,21 @@
         }
 
         clearTimeout(permissionSaveTimer);
-        submitPermissions(collectCheckedPermissions(), { auto: false });
+
+        const runSave = function(permissions) {
+            submitPermissions(permissions, { auto: false });
+        };
+
+        if (typeof confirmPermissionsBeforeSave !== 'function') {
+            runSave(collectCheckedPermissions());
+            return;
+        }
+
+        confirmPermissionsBeforeSave({
+            previewUrl: '/admin/permissions/user/' + currentUserId + '/preview',
+            collectPermissions: collectCheckedPermissions,
+            onConfirm: runSave
+        });
     }
 
     function submitPermissions(permissions, options) {

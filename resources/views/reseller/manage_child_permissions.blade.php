@@ -59,18 +59,8 @@
         margin-bottom: 20px;
     }
     .permission-toolbar .permission-search-wrap { margin-bottom: 0; flex: 1; min-width: 220px; }
-    .refresh-button {
-        background-color: #1e293b;
-        color: white;
-        padding: 10px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-    .refresh-button:hover { background-color: #334155; }
-    .refresh-button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .child-user-select-wrap { max-width: 400px; }
+    .child-user-select-wrap .select2-container { width: 100% !important; }
 </style>
 @endpush
 
@@ -106,42 +96,24 @@
                             <i class="fa fa-info-circle"></i> <strong>Permission Inheritance:</strong> Child users can only receive permissions that you (the parent) have assigned. You can only assign a subset of your own permissions.
                         </div>
 
-                        @if(!empty($availablePermissions))
-                            <div style="margin-bottom: 20px; padding: 10px; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 4px; color: #92400e;">
-                                <i class="fa fa-key" style="margin-right: 5px;"></i>
-                                <strong>Your Available Permissions:</strong> {{ $availablePermissions->count() }} permission(s)
-                            </div>
-                        @endif
+                        <div id="availablePermissionsBox" class="{{ empty($availablePermissions) ? 'd-none' : '' }}" style="margin-bottom: 20px; padding: 10px; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 4px; color: #92400e;">
+                            <i class="fa fa-key" style="margin-right: 5px;"></i>
+                            <strong>Your Available Permissions:</strong> <span id="availablePermissionsCount">{{ $availablePermissions->count() }}</span> permission(s)
+                        </div>
 
-                        @if(request()->query('user_id'))
-                            {{-- Display selected user info when passed via URL --}}
-                            @php
-                                $selectedUser = null;
-                                foreach($childUsers as $childUser) {
-                                    if($childUser->id == request()->query('user_id')) {
-                                        $selectedUser = $childUser;
-                                        break;
-                                    }
-                                }
-                            @endphp
-                            @if($selectedUser)
-                                <div style="margin-bottom: 20px; padding: 12px; background: #f0fdf4; border-left: 4px solid #76CF1C; border-radius: 4px;">
-                                    <label style="font-weight: 600; color: #166534; display: block; margin-bottom: 5px;">Selected Child User:</label>
-                                    <div style="color: #166534; font-size: 14px;">{{ $selectedUser->name }} ({{ $selectedUser->email }})</div>
-                                </div>
-                            @endif
-                        @else
-                            {{-- Display dropdown when no user_id in URL --}}
-                            <div style="margin-bottom: 20px;">
-                                <label style="font-weight: 600; display: block; margin-bottom: 10px;">Select Child User:</label>
-                                <select id="childUserSelect" class="user-select" style="width: 100%; max-width: 400px;">
-                                    <option value="">-- Choose a Child User --</option>
-                                    @foreach($childUsers as $childUser)
-                                        <option value="{{ $childUser->id }}" data-user-type="{{ $childUser->user_type }}">{{ $childUser->name }} ({{ $childUser->email }})</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
+                        <div class="child-user-select-wrap" style="margin-bottom: 20px;">
+                            <label style="font-weight: 600; display: block; margin-bottom: 10px;">Select Child User:</label>
+                            <select id="childUserSelect" class="user-select" style="width: 100%;">
+                                <option value="">-- Choose a Child User --</option>
+                                @foreach($childUsers as $childUser)
+                                    <option value="{{ $childUser->id }}"
+                                        data-user-type="{{ $childUser->user_type }}"
+                                        {{ (string) request()->query('user_id') === (string) $childUser->id || (!empty($selectedUser) && (string) $selectedUser->id === (string) $childUser->id) ? 'selected' : '' }}>
+                                        {{ $childUser->name }} ({{ $childUser->email }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
                         @if(count($childUsers) == 0)
                             <div class="alert alert-info">
@@ -159,14 +131,14 @@
                                     <i class="fa fa-search search-icon"></i>
                                     <input type="text" id="permissionSearch" placeholder="Search permissions or modules..." autocomplete="off">
                                 </div>
-                                <button type="button" id="refreshPermissionsBtn" class="refresh-button" onclick="refreshPermissions()">
-                                    <i class="fa fa-refresh"></i> Refresh
-                                </button>
                             </div>
                             <div id="permissionNoResults" class="permission-no-results">
                                 <i class="fa fa-search" style="margin-right: 6px;"></i>No permissions match your search.
                             </div>
                             @foreach($modules as $module)
+                                @if(empty($permissionsByModule[$module]) || count($permissionsByModule[$module]) === 0)
+                                    @continue
+                                @endif
                                 <div class="module-section" data-module="{{ $module }}">
                                     <div class="module-title">
                                         {{ ucwords(str_replace('_', ' ', $module)) }}
@@ -207,6 +179,7 @@
 </section>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@include('partials.permission-save-confirm')
 <script>
     let currentUserId = null;
     let currentChildUserType = null;
@@ -311,33 +284,115 @@
         });
     }
 
-    function getActiveChildUserId() {
-        return currentUserId || $('#childUserSelect').val() || null;
+    function escapeHtml(text) {
+        return $('<div>').text(text || '').html();
     }
 
-    function refreshPermissions() {
-        const userId = getActiveChildUserId();
-        if (!userId) {
-            notifyPermissionMessage('warning', 'Please select a child user first.');
+    function formatModuleTitle(module) {
+        return module.replace(/_/g, ' ').replace(/\b\w/g, function(char) {
+            return char.toUpperCase();
+        });
+    }
+
+    function updateAvailablePermissionsCount(count) {
+        const $box = $('#availablePermissionsBox');
+        const $count = $('#availablePermissionsCount');
+
+        if (!$box.length || !$count.length) {
             return;
         }
 
-        clearTimeout(permissionSaveTimer);
+        $count.text(count);
+        if (count > 0) {
+            $box.removeClass('d-none').show();
+        } else {
+            $box.addClass('d-none').hide();
+        }
+    }
 
-        const $btn = $('#refreshPermissionsBtn');
-        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Refreshing...');
+    function renderPermissionsMatrix(permissionsByModule, modules) {
+        $('#permissionsContainer .module-section').remove();
 
-        window.location.href = '/reseller/manage-child-permissions?user_id=' + encodeURIComponent(userId) + '&t=' + Date.now();
+        const moduleList = modules && modules.length
+            ? modules
+            : Object.keys(permissionsByModule || {});
+        const $saveBtn = $('#permissionsContainer .save-button');
+
+        moduleList.forEach(function(module) {
+            const permissions = permissionsByModule[module];
+            if (!permissions || permissions.length === 0) {
+                return;
+            }
+
+            let rowsHtml = '';
+            permissions.forEach(function(permission) {
+                rowsHtml += '<tr class="permission-row" data-permission-id="' + permission.id + '">' +
+                    '<td style="text-align: left;">' + escapeHtml(permission.label) + '</td>' +
+                    '<td>' +
+                        '<label class="toggle-switch">' +
+                            '<input type="checkbox" class="permission-checkbox" value="' + permission.id + '" data-permission="' + escapeHtml(permission.key) + '">' +
+                            '<span class="toggle-slider"></span>' +
+                        '</label>' +
+                    '</td>' +
+                '</tr>';
+            });
+
+            const sectionHtml = '<div class="module-section" data-module="' + escapeHtml(module) + '">' +
+                '<div class="module-title">' + escapeHtml(formatModuleTitle(module)) + '</div>' +
+                '<table class="permission-matrix">' +
+                    '<thead>' +
+                        '<tr>' +
+                            '<th style="text-align: left;">Permission</th>' +
+                            '<th>Enabled</th>' +
+                        '</tr>' +
+                    '</thead>' +
+                    '<tbody>' + rowsHtml + '</tbody>' +
+                '</table>' +
+            '</div>';
+
+            $saveBtn.before(sectionHtml);
+        });
+    }
+
+    function initChildUserSelect2() {
+        const $select = $('#childUserSelect');
+        if (!$select.length || $select.hasClass('select2-hidden-accessible')) {
+            return;
+        }
+
+        $select.select2({
+            placeholder: '-- Choose a Child User --',
+            allowClear: true,
+            width: '100%',
+            minimumResultsForSearch: 0
+        });
     }
 
     $(document).ready(function() {
-        // Load permission dependencies first, then child permissions if pre-selected
+        initChildUserSelect2();
+
         const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('user_id');
+        const userId = urlParams.get('user_id') || $('#childUserSelect').val() || null;
+
         loadPermissionDependencies(function() {
             if (userId) {
                 currentUserId = userId;
+                if ($('#childUserSelect').length) {
+                    $('#childUserSelect').select2('val', userId);
+                }
                 loadChildUserPermissions(userId);
+            }
+        });
+
+        $('#childUserSelect').on('change', function() {
+            currentUserId = $(this).val();
+            if (currentUserId) {
+                loadPermissionDependencies(function() {
+                    loadChildUserPermissions(currentUserId);
+                });
+            } else {
+                $('#permissionsContainer').hide();
+                $('#permissionSearch').val('');
             }
         });
 
@@ -362,20 +417,7 @@
             }
 
             syncCreateEditPair(this, isChecked);
-            schedulePermissionSave();
         });
-    });
-
-    $('#childUserSelect').on('change', function() {
-        currentUserId = $(this).val();
-        if (currentUserId) {
-            loadPermissionDependencies(function() {
-                loadChildUserPermissions(currentUserId);
-            });
-        } else {
-            $('#permissionsContainer').hide();
-            $('#permissionSearch').val('');
-        }
     });
 
     $('#permissionSearch').on('input', function() {
@@ -450,6 +492,12 @@
 
     function loadChildUserPermissions(userId, options) {
         options = options || {};
+        const finish = function() {
+            if (typeof options.onComplete === 'function') {
+                options.onComplete();
+            }
+        };
+
         if (!options.silent) {
             $('#loading').addClass('active');
         }
@@ -461,17 +509,25 @@
             success: function(response) {
                 const childUserType = resolveChildUserType(userId, response.user_type);
 
-                if (!options.silent) {
-                    $('#permissionSearch').val('');
-                    $('#permissionNoResults').removeClass('active');
-                    $('.module-section tbody tr').show();
+                if (response.permissions_by_module) {
+                    renderPermissionsMatrix(response.permissions_by_module, response.modules || []);
                 }
+
+                if (typeof response.available_count !== 'undefined') {
+                    updateAvailablePermissionsCount(response.available_count);
+                }
+
+                $('#permissionSearch').val('');
+                $('#permissionNoResults').removeClass('active');
+                $('.module-section').show();
+                $('.module-section tbody tr').show();
 
                 $('#loading').removeClass('active');
                 $('#permissionsContainer').show();
 
                 applyModuleVisibilityForChildUser(childUserType);
                 applyPermissionsState(response.permissions || []);
+                finish();
             },
             error: function(xhr, status, error) {
                 console.error('Error details:', {xhr, status, error});
@@ -485,6 +541,7 @@
                 }
                 notifyPermissionMessage('error', errorMsg);
                 $('#loading').removeClass('active');
+                finish();
             }
         });
     }
@@ -521,7 +578,21 @@
         }
 
         clearTimeout(permissionSaveTimer);
-        submitPermissions(collectCheckedPermissions(), { auto: false });
+
+        const runSave = function(permissions) {
+            submitPermissions(permissions, { auto: false });
+        };
+
+        if (typeof confirmPermissionsBeforeSave !== 'function') {
+            runSave(collectCheckedPermissions());
+            return;
+        }
+
+        confirmPermissionsBeforeSave({
+            previewUrl: '/reseller/permissions/child/' + currentUserId + '/preview',
+            collectPermissions: collectCheckedPermissions,
+            onConfirm: runSave
+        });
     }
 
     function submitPermissions(permissions, options) {

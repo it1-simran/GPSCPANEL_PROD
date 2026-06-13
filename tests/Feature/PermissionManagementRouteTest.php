@@ -125,7 +125,14 @@ class PermissionManagementRouteTest extends TestCase
             ->getJson("/reseller/permissions/child/{$this->userType->id}");
 
         $response->assertStatus(200);
-        $response->assertJsonStructure(['permissions']);
+        $response->assertJsonStructure([
+            'permissions',
+            'assignable_permissions',
+            'permissions_by_module',
+            'modules',
+            'available_count',
+            'user_type',
+        ]);
     }
 
     /** @test */

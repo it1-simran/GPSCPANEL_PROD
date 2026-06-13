@@ -323,7 +323,12 @@ class PermissionAssignmentService
      * @param mixed|null $assigningUser
      * @return array ['success' => bool, 'message' => string, 'added' => int, 'removed' => int]
      */
-    public function syncPermissions(
+    /**
+     * Compute permission sync diff without persisting changes.
+     *
+     * @return array{success:bool,message?:string,toAdd?:int[],toRemove?:int[],toRemoveWithDependents?:int[],finalPermissionIds?:int[]}
+     */
+    public function prepareSyncPlan(
         $targetUser,
         array $permissionIds,
         $assigningUser = null
@@ -333,10 +338,7 @@ class PermissionAssignmentService
         }
 
         $permissionIds = array_values(array_unique(array_map('intval', $permissionIds)));
-
-        // Apply permission dependencies: add parent permissions if child is being added
         $permissionIds = $this->applyDependencies($permissionIds);
-        // Create and edit are paired — assigning one assigns the other
         $permissionIds = $this->applyCreateEditPairing($permissionIds);
 
         if ($assigningUser && $assigningUser->user_type !== 'Admin') {
@@ -349,12 +351,11 @@ class PermissionAssignmentService
 
                 return [
                     'success' => false,
-                    'message' => "Cannot assign '{$permName}' - this permission is beyond your access level"
+                    'message' => "Cannot assign '{$permName}' - this permission is beyond your access level.\nPlease refresh the page.",
                 ];
             }
         }
 
-        // Validation: User type cannot have account_management
         if ($targetUser->user_type === 'User') {
             $accountMgmtPerms = DB::table('permissions')
                 ->whereIn('id', $permissionIds)
@@ -364,26 +365,51 @@ class PermissionAssignmentService
             if ($accountMgmtPerms > 0) {
                 return [
                     'success' => false,
-                    'message' => 'User type cannot have Account Management permissions'
+                    'message' => 'User type cannot have Account Management permissions',
                 ];
             }
         }
 
-        // Get current permissions before any changes
         $currentPermIds = DB::table('user_permissions')
             ->where('user_id', $targetUser->id)
             ->pluck('permission_id')
             ->map(fn($id) => (int) $id)
             ->toArray();
 
-        // Permissions to add and remove
-        $toAdd    = array_values(array_diff($permissionIds, $currentPermIds));
+        $toAdd = array_values(array_diff($permissionIds, $currentPermIds));
         $toRemove = array_values(array_diff($currentPermIds, $permissionIds));
-
-        // When removing a permission, also remove paired create/edit and dependent children
         $toRemoveWithDependents = $this->getPermissionsWithDependents(
             $this->applyCreateEditPairing($toRemove)
         );
+
+        return [
+            'success' => true,
+            'toAdd' => $toAdd,
+            'toRemove' => $toRemove,
+            'toRemoveWithDependents' => $toRemoveWithDependents,
+            'finalPermissionIds' => $permissionIds,
+        ];
+    }
+
+    public function syncPermissions(
+        $targetUser,
+        array $permissionIds,
+        $assigningUser = null
+    ): array {
+        if (!$assigningUser) {
+            $assigningUser = auth()->user();
+        }
+
+        $plan = $this->prepareSyncPlan($targetUser, $permissionIds, $assigningUser);
+        if (!$plan['success']) {
+            return [
+                'success' => false,
+                'message' => $plan['message'],
+            ];
+        }
+
+        $toAdd = $plan['toAdd'];
+        $toRemoveWithDependents = $plan['toRemoveWithDependents'];
 
         try {
             // --- Single atomic sync: delete removed, insert added ---

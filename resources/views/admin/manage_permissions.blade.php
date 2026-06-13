@@ -58,18 +58,8 @@
         margin-bottom: 20px;
     }
     .permission-toolbar .permission-search-wrap { margin-bottom: 0; flex: 1; min-width: 220px; }
-    .refresh-button {
-        background-color: #1e293b;
-        color: white;
-        padding: 10px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-    .refresh-button:hover { background-color: #334155; }
-    .refresh-button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .reseller-select-wrap { max-width: 400px; }
+    .reseller-select-wrap .select2-container { width: 100% !important; }
 </style>
 @endpush
 
@@ -120,9 +110,9 @@
                             @endif
                         @else
                             {{-- Display dropdown when no reseller_id in URL --}}
-                            <div style="margin-bottom: 20px;">
+                            <div class="reseller-select-wrap" style="margin-bottom: 20px;">
                                 <label style="font-weight: 600; display: block; margin-bottom: 10px;">Select Reseller:</label>
-                                <select id="resellerSelect" class="reseller-select" style="width: 100%; max-width: 400px;">
+                                <select id="resellerSelect" class="reseller-select" style="width: 100%;">
                                     <option value="">-- Choose a Reseller --</option>
                                     @foreach($resellers as $reseller)
                                         <option value="{{ $reseller->id }}">{{ $reseller->name }} ({{ $reseller->email }})</option>
@@ -141,9 +131,6 @@
                                     <i class="fa fa-search search-icon"></i>
                                     <input type="text" id="permissionSearch" placeholder="Search permissions or modules..." autocomplete="off">
                                 </div>
-                                <button type="button" id="refreshPermissionsBtn" class="refresh-button" onclick="refreshPermissions()">
-                                    <i class="fa fa-refresh"></i> Refresh
-                                </button>
                             </div>
                             <div id="permissionNoResults" class="permission-no-results">
                                 <i class="fa fa-search" style="margin-right: 6px;"></i>No permissions match your search.
@@ -189,6 +176,7 @@
 </section>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@include('partials.permission-save-confirm')
 <script>
     let currentResellerId = null;
     let permissionDependencies = {}; // child_id => parent_id
@@ -255,23 +243,23 @@
         }
     }
 
-    function getActiveResellerId() {
-        return currentResellerId || $('#resellerSelect').val() || null;
-    }
-
-    function refreshPermissions() {
-        const resellerId = getActiveResellerId();
-        if (!resellerId) {
-            notifyPermissionMessage('warning', 'Please select a reseller first.');
+    function initResellerSelect2() {
+        const $select = $('#resellerSelect');
+        if (!$select.length || $select.hasClass('select2-hidden-accessible')) {
             return;
         }
 
-        clearTimeout(permissionSaveTimer);
-        $('#refreshPermissionsBtn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Refreshing...');
-        window.location.href = '/admin/manage-permissions?reseller_id=' + encodeURIComponent(resellerId) + '&t=' + Date.now();
+        $select.select2({
+            placeholder: '-- Choose a Reseller --',
+            allowClear: true,
+            width: '100%',
+            minimumResultsForSearch: 0
+        });
     }
 
     $(document).ready(function() {
+        initResellerSelect2();
+
         // Load permission dependencies
         loadPermissionDependencies();
 
@@ -280,8 +268,21 @@
         const resellerId = urlParams.get('reseller_id');
         if (resellerId) {
             currentResellerId = resellerId;
+            if ($('#resellerSelect').length) {
+                $('#resellerSelect').select2('val', resellerId);
+            }
             loadResellerPermissions(resellerId);
         }
+
+        $('#resellerSelect').on('change', function() {
+            currentResellerId = $(this).val();
+            if (currentResellerId) {
+                loadResellerPermissions(currentResellerId);
+            } else {
+                $('#permissionsContainer').hide();
+                $('#permissionSearch').val('');
+            }
+        });
 
         // Add change event listeners for permission checkboxes
         $(document).on('change', '.permission-checkbox', function() {
@@ -304,7 +305,6 @@
             }
 
             syncCreateEditPair(this, isChecked);
-            schedulePermissionSave();
         });
     });
 
@@ -326,16 +326,6 @@
             }
         });
     }
-
-    $('#resellerSelect').on('change', function() {
-        currentResellerId = $(this).val();
-        if (currentResellerId) {
-            loadResellerPermissions(currentResellerId);
-        } else {
-            $('#permissionsContainer').hide();
-            $('#permissionSearch').val('');
-        }
-    });
 
     $('#permissionSearch').on('input', function() {
         filterPermissions($(this).val());
@@ -441,7 +431,21 @@
         }
 
         clearTimeout(permissionSaveTimer);
-        submitPermissions(collectCheckedPermissions(), { auto: false });
+
+        const runSave = function(permissions) {
+            submitPermissions(permissions, { auto: false });
+        };
+
+        if (typeof confirmPermissionsBeforeSave !== 'function') {
+            runSave(collectCheckedPermissions());
+            return;
+        }
+
+        confirmPermissionsBeforeSave({
+            previewUrl: '/admin/permissions/' + currentResellerId + '/preview',
+            collectPermissions: collectCheckedPermissions,
+            onConfirm: runSave
+        });
     }
 
     function submitPermissions(permissions, options) {

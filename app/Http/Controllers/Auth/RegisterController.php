@@ -113,12 +113,11 @@ class RegisterController extends Controller
     }
 
     $formatted = [];
+    $formattedByCategory = [];
 
-    foreach ($configuration as $index => $config) {
+    foreach ($configuration as $categoryId => $config) {
       $formattedRow = [];
-      $keys = array_keys($config);
-      $idSet = $idParameters[$index] ?? [];
-      $keyIndex = 0;
+      $idSet = $idParameters[$categoryId] ?? $idParameters[(string) $categoryId] ?? [];
       foreach ($config as $key => $value) {
         if ($key === 'template') continue;
 
@@ -126,26 +125,32 @@ class RegisterController extends Controller
           'id' => $idSet[$key] ?? null,
           'value' => $value
         ];
-        $keyIndex++;
       }
 
       $commonFields = DB::table("data_fields")->where("is_common", 1)->get();
-      foreach ($commonFields as $index => $value) {
-        $key = strtolower(str_replace(' ', '_', $value->fieldName));
+      foreach ($commonFields as $commonField) {
+        $key = strtolower(str_replace(' ', '_', $commonField->fieldName));
         if ($key == 'ping_interval' || $key == 'is_editable') {
           $formattedRow[$key] = [
-            'id' => $value->id,
+            'id' => $commonField->id,
             'value' => $config[$key] ?? ''
           ];
         }
       }
-      $formatted[] = (object)$formattedRow;
+
+      $formattedByCategory[(int) $categoryId] = $formattedRow;
     }
+
     if (is_string($request->deviceCategory)) {
       $device_category = json_decode($request->deviceCategory, true);
     } else {
       $device_category = $request->deviceCategory;
     }
+
+    foreach ($device_category as $categoryId) {
+      $formatted[] = (object) ($formattedByCategory[(int) $categoryId] ?? []);
+    }
+
     $device_category_id = implode(',', $device_category);
     // dd($device_category_id);
     if (Auth::user()->user_type == "Reseller") {
@@ -269,32 +274,8 @@ class RegisterController extends Controller
       ->getDefaultPermissionIdsForNewAccount(Auth::user(), $request->user_type);
     $writer->permissions()->sync($defaultPermissions);
 
-    foreach ($formatted as $key => $format) {
-      $format->ping_interval = ["id" => 77, "value" => 4];
-      $format->is_editable = ["id" => 78, "value" => 1];
-
-      $deviceCatId = $device_category[$key] ?? null;
-
-      // Skip template creation if no device category matched this configuration row
-      // (templates.device_category_id is NOT NULL — see migration).
-      if (empty($deviceCatId)) {
-        \Log::warning('Skipped template creation for writer ' . $writer->id . ' row ' . $key . ' — no matching device category');
-        continue;
-      }
-
-      $temp = [
-        'id_user' => $writer->id,
-        'template_name' => 'default',
-        'device_category_id' => $deviceCatId,
-        'configurations' => json_encode($format),
-        'can_configurations' => isset($canConfiguration[$deviceCatId])
-          ? json_encode($canConfiguration[$deviceCatId])
-          : null,
-        'default_template' => 1,
-        'verify' => 2
-      ];
-      Template::create($temp);
-    }
+    app(AccountDeviceCategoryService::class)
+      ->provisionDefaultTemplatesForNewAccount($writer, $canConfiguration);
 
     return json_encode(['success' => $request->email . ' Added Successfully']);
   }

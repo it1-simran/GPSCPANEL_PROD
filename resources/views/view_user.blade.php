@@ -191,7 +191,7 @@
                         <a href="/admin/manage-permissions?reseller_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
                       @elseif(Auth::user()->user_type == 'Admin' && $contact['user_type'] == 'User')
                         <a href="/admin/manage-user-permissions?user_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
-                      @elseif(Auth::user()->user_type == 'Reseller' && $contact['user_type'] == 'User')
+                      @elseif(Auth::user()->user_type == 'Reseller' && in_array($contact['user_type'], ['User', 'Reseller'], true))
                         <a href="/reseller/manage-child-permissions?user_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
                       @endif
                     </td>
@@ -264,21 +264,29 @@
 <!--****** End Modal Responsive******-->
 @stop
 <script>
-  function open_asign(id) {
-    var $modal = $("#modal-responsive" + id);
-    $modal.find(".assign-user-id").val(id);
-
-    var $select = $modal.find(".assignDevices");
-    if ($select.length && !$select.hasClass("select2-hidden-accessible")) {
-      $select.select2({
-        placeholder: 'Select and Search ',
-        width: '100%',
-        dropdownParent: $modal
-      });
+  function initAssignDeviceSelect($modal) {
+    var $select = $modal.find('.assignDevices');
+    if (!$select.length) {
+      return;
     }
 
+    if ($select.hasClass('select2-hidden-accessible')) {
+      $select.select2('destroy');
+    }
+
+    $select.val(null);
+    $select.select2({
+      placeholder: 'Select and Search',
+      width: '100%',
+      dropdownParent: $modal
+    });
+  }
+
+  function open_asign(id) {
+    var $modal = $('#modal-responsive' + id);
+    $modal.find('.assign-user-id').val(id);
     $modal.modal('show');
-  };
+  }
 
   function openConfigurations(id) {
     $("#view-Configurations" + id).modal('show');
@@ -303,11 +311,14 @@
         pageLength: 25
     });
 
-    $('.assignDevices').each(function() {
-      // Select2 is initialized on modal open to avoid hidden-width alignment bugs.
+    $('.assign-device-modal').on('shown.bs.modal', function() {
+      initAssignDeviceSelect($(this));
+    }).on('hidden.bs.modal', function() {
+      var $select = $(this).find('.assignDevices');
+      if ($select.hasClass('select2-hidden-accessible')) {
+        $select.select2('destroy');
+      }
     });
-
-
   });
 
   function togglePasswordShow(id) {

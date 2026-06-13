@@ -322,6 +322,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
 
         // More specific user routes BEFORE generic reseller routes (important for route matching)
         Route::get('/admin/permissions/user/{userId}', [PermissionManagementController::class, 'getUserPermissions']);
+        Route::post('/admin/permissions/user/{userId}/preview', [PermissionManagementController::class, 'previewUserPermissionImpact']);
         Route::post('/admin/permissions/user/{userId}/update', [PermissionManagementController::class, 'updateUserPermissions']);
 
         // Permission dependencies
@@ -329,6 +330,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
 
         // Generic reseller routes
         Route::get('/admin/permissions/{resellerId}', [PermissionManagementController::class, 'getResellerPermissions']);
+        Route::post('/admin/permissions/{resellerId}/preview', [PermissionManagementController::class, 'previewResellerPermissionImpact']);
         Route::post('/admin/permissions/{resellerId}/update', [PermissionManagementController::class, 'updateResellerPermissions']);
     });
 });
@@ -420,6 +422,7 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
         Route::get('/manage-child-permissions', [PermissionManagementController::class, 'resellerManageChildPermissions'])->middleware('check.permission:account_management.view')->name('reseller.manage-child-permissions');
         Route::get('/permissions/dependencies/get', [PermissionManagementController::class, 'getPermissionDependencies']);
         Route::get('/permissions/child/{userId}', [PermissionManagementController::class, 'getChildUserPermissions']);
+        Route::post('/permissions/child/{userId}/preview', [PermissionManagementController::class, 'previewChildUserPermissionImpact']);
         Route::post('/permissions/child/{userId}/update', [PermissionManagementController::class, 'updateChildUserPermissions']);
     });
 });

@@ -447,6 +447,12 @@ class PermissionAssignmentService
             'message' => 'Permissions synced successfully',
             'added'   => count($toAdd),
             'removed' => count($toRemoveWithDependents),
+            'permissions' => DB::table('user_permissions')
+                ->where('user_id', $targetUser->id)
+                ->pluck('permission_id')
+                ->map(fn($id) => (int) $id)
+                ->values()
+                ->toArray(),
         ];
     }
 
@@ -507,6 +513,39 @@ class PermissionAssignmentService
         }
 
         return ['valid' => true, 'message' => 'Permission assignment is valid'];
+    }
+
+    /**
+     * Default permissions for a newly created account.
+     * Admin-created accounts use system defaults; reseller-created children inherit parent permissions.
+     */
+    public function getDefaultPermissionIdsForNewAccount($creator, string $targetUserType): array
+    {
+        if ($creator && $creator->user_type === 'Reseller') {
+            $permissionIds = $this->getEffectiveAssignedPermissionIds($creator);
+
+            if ($targetUserType === 'User') {
+                $permissionIds = Permission::whereIn('id', $permissionIds)
+                    ->where('module', '!=', 'account_management')
+                    ->pluck('id')
+                    ->map(fn($id) => (int) $id)
+                    ->toArray();
+            }
+
+            return $this->applyDependencies(
+                $this->applyCreateEditPairing($permissionIds)
+            );
+        }
+
+        $permissionIds = Permission::where('is_active', 1)
+            ->where('key', '!=', 'certificate_management.view')
+            ->pluck('id')
+            ->map(fn($id) => (int) $id)
+            ->toArray();
+
+        return $this->applyDependencies(
+            $this->applyCreateEditPairing($permissionIds)
+        );
     }
 
     /**

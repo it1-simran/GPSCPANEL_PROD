@@ -8,6 +8,7 @@ use App\Writer;
 use App\DeviceCategory;
 use App\Helper\CommonHelper;
 use App\Mail\SendAccountRequestMail;
+use App\Services\PermissionAssignmentService;
 use App\Template;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -235,19 +236,25 @@ class GuestUserController extends Controller
             }
             $writerConfigArr[] = $finalConfig;
 
+            $targetUserType = (strtolower($user->userType) == 'manufacturer' ? 'Reseller' : 'User');
             $writer = Writer::create([
                 'name'              => $user->name,
                 'email'             => $user->email,
                 'mobile'            => $user->phone,
-                'user_type'         => (strtolower($user->userType) == 'manufacturer' ? 'Reseller' : 'User'),
+                'user_type'         => $targetUserType,
                 'timezone'          => $user->timezone,
                 'password'          => Hash::make('123456'),
                 'LoginPassword'     => '123456',
                 'showLoginPassword' => '123456',
                 'device_category_id' => $user->deviceCategory,
                 'configurations'    => json_encode($writerConfigArr),
-                'created_by'        => Auth::id()
+                'created_by'        => Auth::id(),
+                'parent_user_id'    => Auth::user()->user_type === 'Reseller' ? Auth::id() : null,
             ]);
+
+            $defaultPermissions = app(PermissionAssignmentService::class)
+                ->getDefaultPermissionIdsForNewAccount(Auth::user(), $targetUserType);
+            $writer->permissions()->sync($defaultPermissions);
 
             // ✅ Create default template for this user (mirrors Add User logic)
             Template::create([

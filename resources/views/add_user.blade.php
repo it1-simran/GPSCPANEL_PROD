@@ -784,13 +784,7 @@
                   htmlContent += '<div>';
                   htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" placeholder="Ping Interval" value=""/>';
                   htmlContent += '</div></div></div>';
-                  htmlContent += '<div class="col-lg-6">';
-                  htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
-                  htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Device Edit Permission<span class="require">*</span></label>';
-                  htmlContent += '<div style="display: flex; gap: 16px; align-items: center; margin-top: 8px;">';
-                  htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Enable</label>';
-                  htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Disable</label>';
-                  htmlContent += '</div></div></div>';
+                  htmlContent += '<input type="hidden" name="configuration[' + index + '][is_editable]" value="1">';
                   htmlContent += '</div>';
                   htmlContent += '</div></div></div>';
                   // Close device-category-fields
@@ -1018,13 +1012,7 @@
                 htmlContent += '<div>';
                 htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" placeholder="Ping Interval" value=""/>';
                 htmlContent += '</div></div></div>';
-                htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
-                htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Device Edit Permission<span class="require">*</span></label>';
-                htmlContent += '<div style="display: flex; gap: 16px; align-items: center; margin-top: 8px;">';
-                htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Enable</label>';
-                htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Disable</label>';
-                htmlContent += '</div></div></div>';
+                htmlContent += '<input type="hidden" name="configuration[' + index + '][is_editable]" value="1">';
                 if (canEnable) {
                   htmlContent += `
                 <div class="col-lg-12 isCanEnable` + index + `" style="padding: 0px 15px; margin-bottom: 24px;">

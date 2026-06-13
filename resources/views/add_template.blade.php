@@ -349,14 +349,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
               _token: '{{ csrf_token() }}'
           },
           success: function(fields) {
-              let html = `<style>
-.custom-multiselect-container { position: relative; width: 100%; }
-.custom-multiselect-header { border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 15px; min-height: 42px; background-color: #fff; color: #64748b; cursor: pointer; font-size: 14px; }
-.custom-multiselect-options { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 6px 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-height: 180px; overflow-y: auto; z-index: 1000; scrollbar-width: thin; }
-.custom-option { padding: 10px 15px; border-bottom: 1px solid #f8fafc; color: #475569; font-size: 14px; cursor: pointer; }
-.custom-option:hover { background-color: #f1f5f9; }
-.custom-option.selected { background: #eaf5e1 linear-gradient(0deg, #eaf5e1 0%, #eaf5e1 100%); color: #334155; font-weight: 500; }
-</style><div class="row">`;
+              let html = `<div class="row">`;
    
               fields.forEach(field => {
                   const fieldId = field.fieldName.replace(/\s+/g, '_').toLowerCase();
@@ -394,72 +387,44 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                       }
                       inputHtml += `</select>`;
                     }  else if (inputType == 'multiselect') {
-                        inputHtml += `<select id="${fieldId}" style="display:none;" multiple name="canConfiguration[${fieldId}][]">`;
+                        const maxSelect = validation.maxSelectValue || 3;
+                        inputHtml += `<select id="${fieldId}" class="can-multiselect" multiple name="canConfiguration[${fieldId}][]">`;
                 
-                        let optionsHtml = '';
                         if (validation.selectOptions && Array.isArray(validation.selectOptions)) {
-                            validation.selectOptions.forEach((option,index) => {
+                            validation.selectOptions.forEach((option, index) => {
                                 inputHtml += `<option value="${validation.selectValues[index]}">${option}</option>`;
-                                optionsHtml += `<div class="custom-option" data-value="${validation.selectValues[index]}">${option}</div>`;
                             });
                         } else if (validation.selectOptions && typeof validation.selectOptions === 'object') {
                             Object.entries(validation.selectOptions).forEach(([key, value]) => {
                                 inputHtml += `<option value="${key}">${value}</option>`;
-                                optionsHtml += `<div class="custom-option" data-value="${key}">${value}</div>`;
                             });
                         } else {
                             inputHtml += `<option value="">-- Select --</option>`;
-                            optionsHtml += `<div class="custom-option" data-value="">-- Select --</div>`;
                         }
                 
                         inputHtml += `</select>`;
 
-                        // Add custom UI
-                        inputHtml += `
-                        <div class="custom-multiselect-container" id="custom_${fieldId}">
-                            <div class="custom-multiselect-header">Select ${field.fieldName}</div>
-                            <div class="custom-multiselect-options" style="display:none;">
-                                ${optionsHtml}
-                            </div>
-                        </div>`;
-                
-                        // Apply custom multiselect logic
                         setTimeout(() => {
                             var $select = $('#' + fieldId);
-                            var $container = $('#custom_' + fieldId);
-                            var $header = $container.find('.custom-multiselect-header');
-                            var $optionsList = $container.find('.custom-multiselect-options');
-                            
-                            $header.on('click', function(e) {
-                                e.stopPropagation();
-                                $('.custom-multiselect-options').not($optionsList).hide();
-                                $optionsList.toggle();
+                            if (!$select.length || !$.fn.select2) {
+                                return;
+                            }
+
+                            $select.select2({
+                                placeholder: 'Select up to ' + maxSelect + ' options',
+                                width: '100%',
+                                dropdownCssClass: 'at-can-select2-drop'
                             });
-                            
-                            $optionsList.on('click', '.custom-option', function(e) {
-                                e.stopPropagation();
-                                var val = $(this).data('value');
-                                var $option = $select.find('option[value="' + val + '"]');
-                                
-                                if ($(this).hasClass('selected')) {
-                                    $(this).removeClass('selected');
-                                    $option.prop('selected', false);
-                                } else {
-                                    var currentSelected = $select.val() || [];
-                                    if (currentSelected.length >= validation.maxSelectValue) {
-                                        alert("You can only select up to " + validation.maxSelectValue + " options.");
-                                        return;
-                                    }
-                                    $(this).addClass('selected');
-                                    $option.prop('selected', true);
+
+                            $select.on('change', function() {
+                                var selected = $(this).select2('val') || [];
+                                if (!Array.isArray(selected)) {
+                                    selected = selected ? [selected] : [];
                                 }
-                                $select.trigger('change');
-                            });
-                            
-                            // Close on outside click
-                            $(document).on('click', function(e) {
-                                if (!$(e.target).closest('#custom_' + fieldId).length) {
-                                    $optionsList.hide();
+                                if (selected.length > maxSelect) {
+                                    selected = selected.slice(0, maxSelect);
+                                    $(this).select2('val', selected);
+                                    alert('You can only select up to ' + maxSelect + ' options.');
                                 }
                             });
                         }, 100);

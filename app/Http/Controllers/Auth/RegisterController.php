@@ -18,6 +18,7 @@ use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use App\Services\AccountDeviceCategoryService;
+use App\Services\PermissionAssignmentService;
 use Svg\Tag\Rect;
 
 class RegisterController extends Controller
@@ -259,15 +260,13 @@ class RegisterController extends Controller
       'configurations' => json_encode($formatted),
       'can_configurations' => json_encode($canConfiguration),
       'created_by' => Auth::user()->id,
+      'parent_user_id' => Auth::user()->user_type === 'Reseller' ? Auth::user()->id : null,
       'is_support_active' => $request->has('is_support_active') && $request->get('is_support_active') === 'on' ? 1 : 0,
       'timezone' => $request->timezone,
     ]);
 
-    // Assign default permissions to new users (all except certificate.view)
-    $defaultPermissions = \App\Permission::where('is_active', 1)
-      ->where('key', '!=', 'certificate_management.view')
-      ->pluck('id')
-      ->toArray();
+    $defaultPermissions = app(PermissionAssignmentService::class)
+      ->getDefaultPermissionIdsForNewAccount(Auth::user(), $request->user_type);
     $writer->permissions()->sync($defaultPermissions);
 
     foreach ($formatted as $key => $format) {
@@ -316,20 +315,59 @@ class RegisterController extends Controller
   }
   public function getResellersList(Request $request)
   {
-    $uid = $request->get('uid');
-    $where = [];
-    $where[] = ['id', '!=', $uid];
-    //$where[] = ['user_type', '=', 'Reseller'];
-    $where[] = ['created_by', '=', Auth::user()->id];
-    $where[] = ['is_deleted', '=', 0];
-    $users = Writer::where($where)->get();
-    $resellers = array();
-    if (count($users) > 0) {
-      foreach ($users as $user) {
-        $resellers[] = array('id' => $user['id'], 'text' => $user['name']);
+    $uid = (int) $request->get('uid');
+    if (!$uid) {
+      return json_encode(['resellers' => []]);
+    }
+
+    $parentAccount = Writer::where('id', $uid)->where('is_deleted', 0)->first();
+    if (!$parentAccount) {
+      return json_encode(['resellers' => []]);
+    }
+
+    $authUser = Auth::user();
+    if ($authUser->user_type !== 'Admin') {
+      $canManageParent = (int) $parentAccount->id === (int) $authUser->id
+        || (int) $parentAccount->created_by === (int) $authUser->id
+        || (int) $parentAccount->parent_user_id === (int) $authUser->id;
+
+      if (!$canManageParent) {
+        return json_encode(['resellers' => []]);
       }
     }
-    return json_encode(array('resellers' => $resellers));
+
+    $this->childAcounts = [];
+    $childAccounts = self::getAllChildAccounts($uid);
+    $childIds = array_map(fn($child) => (int) $child['uid'], $childAccounts);
+    $parentLinkedIds = Writer::where('parent_user_id', $uid)
+      ->where('is_deleted', 0)
+      ->pluck('id')
+      ->map(fn($id) => (int) $id)
+      ->toArray();
+
+    $excludeIds = array_values(array_unique(array_merge([$uid], $childIds, $parentLinkedIds)));
+
+    $query = Writer::where('is_deleted', 0)
+      ->whereNotIn('id', $excludeIds)
+      ->whereNotIn('user_type', ['Admin', 'Support'])
+      ->orderBy('name');
+
+    if ($authUser->user_type !== 'Admin') {
+      $query->where('created_by', $authUser->id);
+    }
+
+    $users = $query->get();
+
+    $resellers = [];
+    foreach ($users as $user) {
+      $typeLabel = $user->user_type === 'Reseller' ? 'Manufacturer' : 'Dealer';
+      $resellers[] = [
+        'id' => $user->id,
+        'text' => $user->name . ' (' . $typeLabel . ')',
+      ];
+    }
+
+    return json_encode(['resellers' => $resellers]);
   }
   public function showWriter(Request $request)
   {

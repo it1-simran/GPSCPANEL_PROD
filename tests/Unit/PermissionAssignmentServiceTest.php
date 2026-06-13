@@ -20,6 +20,7 @@ class PermissionAssignmentServiceTest extends TestCase
     protected User $child;
     protected User $grandchild;
     protected Permission $viewPermission;
+    protected Permission $editPermission;
     protected Permission $accountMgmtPermission;
 
     public function setUp(): void
@@ -54,6 +55,72 @@ class PermissionAssignmentServiceTest extends TestCase
             'module' => 'account_management',
             'action' => 'view'
         ]);
+
+        $this->editPermission = Permission::factory()->create([
+            'key' => 'device_management.edit',
+            'module' => 'device_management',
+            'action' => 'edit'
+        ]);
+    }
+
+    /** @test */
+    public function admin_created_account_gets_system_default_permissions()
+    {
+        Permission::factory()->create([
+            'key' => 'settings_management.view',
+            'module' => 'settings_management',
+            'action' => 'view'
+        ]);
+        Permission::factory()->create([
+            'key' => 'certificate_management.view',
+            'module' => 'certificate_management',
+            'action' => 'view'
+        ]);
+
+        $permissionIds = $this->service->getDefaultPermissionIdsForNewAccount($this->admin, 'User');
+
+        $this->assertContains($this->viewPermission->id, $permissionIds);
+        $this->assertContains($this->editPermission->id, $permissionIds);
+        $this->assertNotContains(
+            Permission::where('key', 'certificate_management.view')->value('id'),
+            $permissionIds
+        );
+    }
+
+    /** @test */
+    public function reseller_created_child_gets_parent_permissions_only()
+    {
+        DB::table('user_permissions')->insert([
+            ['user_id' => $this->reseller->id, 'permission_id' => $this->viewPermission->id, 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $this->reseller->id, 'permission_id' => $this->editPermission->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $settingsPermission = Permission::factory()->create([
+            'key' => 'settings_management.view',
+            'module' => 'settings_management',
+            'action' => 'view'
+        ]);
+
+        $permissionIds = $this->service->getDefaultPermissionIdsForNewAccount($this->reseller, 'User');
+
+        $this->assertContains($this->viewPermission->id, $permissionIds);
+        $this->assertContains($this->editPermission->id, $permissionIds);
+        $this->assertNotContains($settingsPermission->id, $permissionIds);
+        $this->assertNotContains($this->accountMgmtPermission->id, $permissionIds);
+    }
+
+    /** @test */
+    public function reseller_created_user_child_excludes_account_management_even_if_parent_has_it()
+    {
+        DB::table('user_permissions')->insert([
+            ['user_id' => $this->reseller->id, 'permission_id' => $this->accountMgmtPermission->id, 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $this->reseller->id, 'permission_id' => $this->viewPermission->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $permissionIds = $this->service->getDefaultPermissionIdsForNewAccount($this->reseller, 'User');
+
+        $this->assertContains($this->viewPermission->id, $permissionIds);
+        $this->assertNotContains($this->accountMgmtPermission->id, $permissionIds);
     }
 
     /** @test */

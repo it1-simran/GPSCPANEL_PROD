@@ -2,9 +2,18 @@
 
 use App\Models\TicketModel;
 use App\Models\versionModel;
+use Illuminate\Support\Facades\Schema;
 
-$tickets = TicketModel::where('is_read', 0)->where('type', '!=', 'alert')->get();
-$latestVersion = versionModel::latest('created_at')->first();
+$tickets = collect();
+$latestVersion = null;
+
+if (Schema::hasTable('ticket')) {
+    $tickets = TicketModel::where('is_read', 0)->where('type', '!=', 'alert')->get();
+}
+
+if (Schema::hasTable('version_control')) {
+    $latestVersion = versionModel::latest('created_at')->first();
+}
 
 $ticketCount = $tickets->count();
 $userType = Auth::check() ? strtolower(trim((string) Auth::user()->user_type)) : '';
@@ -155,13 +164,15 @@ if ($userType === 'admin') {
             <!--logo end-->
             <div class="top-nav">
                 <ul class="nav navbar-nav navbar-right">
+                    @if($latestVersion)
                     <li class="nav-item dropdown">
                         <div class="d-flex align-items-center px-3 py-2 rounded bg-primary text-white shadow-sm">
                             <i class="fa fa-code-branch mr-2"></i>
                             <span
-                                class="font-weight-bold padding-left-6 padding-right-6">v{{$latestVersion->version}}</span>
+                                class="font-weight-bold padding-left-6 padding-right-6">v{{ $latestVersion->version }}</span>
                         </div>
                     </li>
+                    @endif
 
                     <!-- 🔔 Notification Dropdown -->
                     @if(Auth::user()->user_type == 'Admin')

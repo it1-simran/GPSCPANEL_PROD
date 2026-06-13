@@ -22,7 +22,55 @@
     .save-button:hover { background-color: #5fb815; }
     .loading { display: none; text-align: center; padding: 20px; }
     .loading.active { display: block; }
+    .permission-search-wrap { margin-bottom: 20px; position: relative; }
+    .permission-search-wrap input {
+        width: 100%;
+        max-width: 400px;
+        padding: 10px 12px 10px 36px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    .permission-search-wrap .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        pointer-events: none;
+    }
+    .permission-no-results {
+        display: none;
+        text-align: center;
+        padding: 24px;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+    .permission-no-results.active { display: block; }
     .info-box { background-color: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 4px; margin-bottom: 20px; color: #166534; }
+    .permission-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    .permission-toolbar .permission-search-wrap { margin-bottom: 0; flex: 1; min-width: 220px; }
+    .refresh-button {
+        background-color: #1e293b;
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .refresh-button:hover { background-color: #334155; }
+    .refresh-button:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
 @endpush
 
@@ -106,6 +154,18 @@
                         </div>
 
                         <div id="permissionsContainer" style="display:none;">
+                            <div class="permission-toolbar">
+                                <div class="permission-search-wrap">
+                                    <i class="fa fa-search search-icon"></i>
+                                    <input type="text" id="permissionSearch" placeholder="Search permissions or modules..." autocomplete="off">
+                                </div>
+                                <button type="button" id="refreshPermissionsBtn" class="refresh-button" onclick="refreshPermissions()">
+                                    <i class="fa fa-refresh"></i> Refresh
+                                </button>
+                            </div>
+                            <div id="permissionNoResults" class="permission-no-results">
+                                <i class="fa fa-search" style="margin-right: 6px;"></i>No permissions match your search.
+                            </div>
                             @foreach($modules as $module)
                                 <div class="module-section" data-module="{{ $module }}">
                                     <div class="module-title">
@@ -152,10 +212,64 @@
     let currentChildUserType = null;
     let permissionDependencies = {}; // child_id => parent_id
     let permissionDependents = {}; // parent_id => [child_id, ...]
+    let isSyncingPermissions = false;
+    let permissionSaveTimer = null;
     const childUserTypes = @json($childUsers->pluck('user_type', 'id'));
     @if(!empty($selectedUser))
     childUserTypes[{{ $selectedUser->id }}] = @json($selectedUser->user_type);
     @endif
+
+    function collectCheckedPermissions() {
+        const permissions = [];
+        $('.permission-checkbox:checked').each(function() {
+            const $section = $(this).closest('.module-section');
+            if (currentChildUserType === 'User' && $section.data('module') === 'account_management') {
+                return;
+            }
+            permissions.push($(this).val());
+        });
+        return permissions;
+    }
+
+    function applyPermissionsState(permissionIds) {
+        isSyncingPermissions = true;
+
+        let permissionsToCheck = (permissionIds || []).map(String);
+        (permissionIds || []).forEach(function(permId) {
+            if (permissionDependencies && permissionDependencies[permId]) {
+                const parentId = String(permissionDependencies[permId]);
+                if (!permissionsToCheck.includes(parentId)) {
+                    permissionsToCheck.push(parentId);
+                }
+            }
+        });
+
+        $('.permission-checkbox').prop('checked', false);
+        permissionsToCheck.forEach(function(permId) {
+            $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);
+        });
+        $('.permission-checkbox:checked').each(function() {
+            syncCreateEditPair(this, true);
+        });
+
+        isSyncingPermissions = false;
+        applyModuleVisibilityForChildUser(currentChildUserType);
+
+        const searchQuery = $('#permissionSearch').val();
+        if (searchQuery) {
+            filterPermissions(searchQuery);
+        }
+    }
+
+    function schedulePermissionSave() {
+        if (isSyncingPermissions) {
+            return;
+        }
+        clearTimeout(permissionSaveTimer);
+        permissionSaveTimer = setTimeout(function() {
+            submitPermissions(collectCheckedPermissions(), { auto: true });
+        }, 400);
+    }
 
     function syncCreateEditPair(checkbox, isChecked) {
         const permKey = $(checkbox).data('permission');
@@ -197,6 +311,25 @@
         });
     }
 
+    function getActiveChildUserId() {
+        return currentUserId || $('#childUserSelect').val() || null;
+    }
+
+    function refreshPermissions() {
+        const userId = getActiveChildUserId();
+        if (!userId) {
+            notifyPermissionMessage('warning', 'Please select a child user first.');
+            return;
+        }
+
+        clearTimeout(permissionSaveTimer);
+
+        const $btn = $('#refreshPermissionsBtn');
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Refreshing...');
+
+        window.location.href = '/reseller/manage-child-permissions?user_id=' + encodeURIComponent(userId) + '&t=' + Date.now();
+    }
+
     $(document).ready(function() {
         // Load permission dependencies first, then child permissions if pre-selected
         const urlParams = new URLSearchParams(window.location.search);
@@ -229,6 +362,7 @@
             }
 
             syncCreateEditPair(this, isChecked);
+            schedulePermissionSave();
         });
     });
 
@@ -240,8 +374,53 @@
             });
         } else {
             $('#permissionsContainer').hide();
+            $('#permissionSearch').val('');
         }
     });
+
+    $('#permissionSearch').on('input', function() {
+        filterPermissions($(this).val());
+    });
+
+    function filterPermissions(query) {
+        query = query.toLowerCase().trim();
+        let visibleSections = 0;
+        const hideAccountManagement = currentChildUserType === 'User';
+
+        $('.module-section').each(function() {
+            const $section = $(this);
+            const moduleName = $section.data('module');
+
+            if (hideAccountManagement && moduleName === 'account_management') {
+                $section.hide();
+                return;
+            }
+
+            const moduleTitle = $section.find('.module-title').text().toLowerCase().trim();
+            const moduleMatches = !query || moduleTitle.indexOf(query) !== -1;
+            let visibleRows = 0;
+
+            $section.find('tbody tr').each(function() {
+                const $row = $(this);
+                const label = $row.find('td:first').text().toLowerCase().trim();
+                const rowMatches = !query || moduleMatches || label.indexOf(query) !== -1;
+                $row.toggle(rowMatches);
+                if (rowMatches) {
+                    visibleRows++;
+                }
+            });
+
+            const sectionVisible = visibleRows > 0;
+            if (sectionVisible) {
+                $section.show();
+                visibleSections++;
+            } else {
+                $section.hide();
+            }
+        });
+
+        $('#permissionNoResults').toggleClass('active', query.length > 0 && visibleSections === 0);
+    }
 
     function loadPermissionDependencies(callback) {
         $.ajax({
@@ -269,49 +448,30 @@
         });
     }
 
-    function loadChildUserPermissions(userId) {
-        $('#loading').addClass('active');
+    function loadChildUserPermissions(userId, options) {
+        options = options || {};
+        if (!options.silent) {
+            $('#loading').addClass('active');
+        }
 
         $.ajax({
             url: '/reseller/permissions/child/' + userId + '?t=' + new Date().getTime(),
             type: 'GET',
             cache: false,
             success: function(response) {
-                console.log('Loaded child permissions:', response);
-
                 const childUserType = resolveChildUserType(userId, response.user_type);
-                applyModuleVisibilityForChildUser(childUserType);
 
-                // Server already filtered permissions to only assignable ones —
-                // all rendered .permission-row elements ARE assignable.
-                // Just need to set the checkbox state for permissions the child currently has.
-                $('.permission-checkbox').prop('checked', false);
-
-                if (response.permissions && response.permissions.length) {
-                    let permissionsToCheck = [...response.permissions];
-
-                    // Also check parent permissions of any checked children
-                    response.permissions.forEach(function(permId) {
-                        if (permissionDependencies && permissionDependencies[permId]) {
-                            // This is a child permission, add its parent
-                            let parentId = permissionDependencies[permId];
-                            if (!permissionsToCheck.includes(parentId)) {
-                                permissionsToCheck.push(parentId);
-                            }
-                        }
-                    });
-
-                    // Check all the permissions
-                    permissionsToCheck.forEach(function(permId) {
-                        $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);
-                    });
-                    $('.permission-checkbox:checked').each(function() {
-                        syncCreateEditPair(this, true);
-                    });
+                if (!options.silent) {
+                    $('#permissionSearch').val('');
+                    $('#permissionNoResults').removeClass('active');
+                    $('.module-section tbody tr').show();
                 }
 
                 $('#loading').removeClass('active');
                 $('#permissionsContainer').show();
+
+                applyModuleVisibilityForChildUser(childUserType);
+                applyPermissionsState(response.permissions || []);
             },
             error: function(xhr, status, error) {
                 console.error('Error details:', {xhr, status, error});
@@ -360,23 +520,22 @@
             return;
         }
 
-        const permissions = [];
-        $('.permission-checkbox:checked').each(function() {
-            const $section = $(this).closest('.module-section');
-            if (currentChildUserType === 'User' && $section.data('module') === 'account_management') {
-                return;
-            }
-            permissions.push($(this).val());
-        });
+        clearTimeout(permissionSaveTimer);
+        submitPermissions(collectCheckedPermissions(), { auto: false });
+    }
 
-        console.log('=== SAVING PERMISSIONS ===');
-        console.log('User ID:', currentUserId);
-        console.log('Permissions to save:', permissions);
+    function submitPermissions(permissions, options) {
+        options = options || {};
 
-        // Show loading state
+        if (!currentUserId) {
+            return;
+        }
+
         const saveBtn = $('button[onclick="savePermissions()"]');
         const originalText = saveBtn.html();
-        saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+        if (!options.auto) {
+            saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+        }
 
         $.ajax({
             url: '/reseller/permissions/child/' + currentUserId + '/update',
@@ -390,48 +549,29 @@
             }),
             contentType: 'application/json',
             success: function(response) {
-                console.log('✓ SUCCESS - Response:', response);
-
-                // Show success message
-                const added = response.debug ? (response.debug.added || 0) : 0;
-                const removed = response.debug ? (response.debug.removed || 0) : 0;
-                const message = response.message ||
-                    ('Permissions saved successfully! (Added: ' + added + ', Removed: ' + removed + ')');
-                notifyPermissionMessage('success', message);
-                saveBtn.prop('disabled', false).html(originalText);
-
-                // Reload permissions to confirm changes
-                setTimeout(function() {
-                    loadChildUserPermissions(currentUserId);
-                }, 1500);
-            },
-            error: function(xhr, status, error) {
-                console.error('✗ ERROR - AJAX Error:', {
-                    status: xhr.status,
-                    statusText: xhr.statusText,
-                    responseText: xhr.responseText,
-                    error: error,
-                    response: xhr.responseJSON
-                });
-
-                let errorMsg = 'Error saving permissions';
-                if (xhr.status === 0) {
-                    errorMsg = 'Network error - check your connection';
-                } else if (xhr.status === 404) {
-                    errorMsg = 'Route not found (404)';
-                } else if (xhr.status === 403) {
-                    errorMsg = 'Unauthorized access (403)';
-                } else if (xhr.status === 422) {
-                    errorMsg = xhr.responseJSON && xhr.responseJSON.error ?
-                        xhr.responseJSON.error : 'Validation failed (422)';
-                } else if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMsg = xhr.responseJSON.error;
-                } else if (xhr.responseText) {
-                    errorMsg = 'Error: ' + xhr.responseText.substring(0, 200);
+                if (response.permissions) {
+                    applyPermissionsState(response.permissions);
                 }
 
+                if (!options.auto) {
+                    const added = response.debug ? (response.debug.added || 0) : 0;
+                    const removed = response.debug ? (response.debug.removed || 0) : 0;
+                    const message = response.message ||
+                        ('Permissions saved successfully! (Added: ' + added + ', Removed: ' + removed + ')');
+                    notifyPermissionMessage('success', message);
+                    saveBtn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = 'Error saving permissions';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
                 notifyPermissionMessage('error', errorMsg);
-                saveBtn.prop('disabled', false).html(originalText);
+                loadChildUserPermissions(currentUserId, { silent: true });
+                if (!options.auto) {
+                    saveBtn.prop('disabled', false).html(originalText);
+                }
             }
         });
     }

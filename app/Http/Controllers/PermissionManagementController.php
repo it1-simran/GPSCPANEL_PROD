@@ -127,6 +127,7 @@ class PermissionManagementController extends Controller
         return response()->json([
             'success' => true,
             'message' => $result['message'],
+            'permissions' => $result['permissions'] ?? [],
             'debug' => [
                 'requested_count' => count($permissions),
                 'added' => $result['added'] ?? 0,
@@ -308,6 +309,7 @@ class PermissionManagementController extends Controller
         return response()->json([
             'success' => true,
             'message' => $result['message'],
+            'permissions' => $result['permissions'] ?? [],
             'debug' => [
                 'before_count' => $beforeCount,
                 'after_count' => $afterCount,
@@ -493,6 +495,7 @@ class PermissionManagementController extends Controller
         return response()->json([
             'success' => true,
             'message' => $result['message'],
+            'permissions' => $result['permissions'] ?? [],
             'debug' => [
                 'requested_count' => count($permissions),
                 'added' => $result['added'] ?? 0,

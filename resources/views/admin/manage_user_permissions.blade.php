@@ -23,6 +23,25 @@
     .loading { display: none; text-align: center; padding: 20px; }
     .loading.active { display: block; }
     .info-box { background-color: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 4px; margin-bottom: 20px; color: #166534; }
+    .permission-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    .refresh-button {
+        background-color: #1e293b;
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .refresh-button:hover { background-color: #334155; }
+    .refresh-button:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
 @endpush
 
@@ -95,6 +114,11 @@
                         </div>
 
                         <div id="permissionsContainer" style="display:none;">
+                            <div class="permission-toolbar">
+                                <button type="button" id="refreshPermissionsBtn" class="refresh-button" onclick="refreshPermissions()">
+                                    <i class="fa fa-refresh"></i> Refresh
+                                </button>
+                            </div>
                             @foreach($modules as $module)
                                 <div class="module-section">
                                     <div class="module-title">
@@ -140,6 +164,50 @@
     let currentUserId = null;
     let permissionDependencies = {}; // child_id => parent_id
     let permissionDependents = {}; // parent_id => [child_id, ...]
+    let isSyncingPermissions = false;
+    let permissionSaveTimer = null;
+
+    function collectCheckedPermissions() {
+        const permissions = [];
+        $('.permission-checkbox:checked').each(function() {
+            permissions.push($(this).val());
+        });
+        return permissions;
+    }
+
+    function applyPermissionsState(permissionIds) {
+        isSyncingPermissions = true;
+
+        let permissionsToCheck = (permissionIds || []).map(String);
+        (permissionIds || []).forEach(function(permId) {
+            if (permissionDependencies[permId]) {
+                const parentId = String(permissionDependencies[permId]);
+                if (!permissionsToCheck.includes(parentId)) {
+                    permissionsToCheck.push(parentId);
+                }
+            }
+        });
+
+        $('.permission-checkbox').prop('checked', false);
+        permissionsToCheck.forEach(function(permId) {
+            $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);
+        });
+        $('.permission-checkbox:checked').each(function() {
+            syncCreateEditPair(this, true);
+        });
+
+        isSyncingPermissions = false;
+    }
+
+    function schedulePermissionSave() {
+        if (isSyncingPermissions) {
+            return;
+        }
+        clearTimeout(permissionSaveTimer);
+        permissionSaveTimer = setTimeout(function() {
+            submitPermissions(collectCheckedPermissions(), { auto: true });
+        }, 400);
+    }
 
     function syncCreateEditPair(checkbox, isChecked) {
         const permKey = $(checkbox).data('permission');
@@ -151,6 +219,22 @@
         if (pairCheckbox.length) {
             pairCheckbox.prop('checked', isChecked);
         }
+    }
+
+    function getActiveUserId() {
+        return currentUserId || $('#userSelect').val() || null;
+    }
+
+    function refreshPermissions() {
+        const userId = getActiveUserId();
+        if (!userId) {
+            notifyPermissionMessage('warning', 'Please select a user first.');
+            return;
+        }
+
+        clearTimeout(permissionSaveTimer);
+        $('#refreshPermissionsBtn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Refreshing...');
+        window.location.href = '/admin/manage-user-permissions?user_id=' + encodeURIComponent(userId) + '&t=' + Date.now();
     }
 
     $(document).ready(function() {
@@ -186,6 +270,7 @@
             }
 
             syncCreateEditPair(this, isChecked);
+            schedulePermissionSave();
         });
     });
 
@@ -217,38 +302,17 @@
         });
     }
 
-    function loadUserPermissions(userId) {
-        $('#loading').addClass('active');
+    function loadUserPermissions(userId, options) {
+        options = options || {};
+        if (!options.silent) {
+            $('#loading').addClass('active');
+        }
 
         $.ajax({
             url: '/admin/permissions/user/' + userId,
             type: 'GET',
             success: function(response) {
-                // Uncheck all checkboxes first
-                $('.permission-checkbox').prop('checked', false);
-
-                // Check the permissions this user has
-                let permissionsToCheck = [...response.permissions];
-
-                // Also check parent permissions of any checked children
-                response.permissions.forEach(function(permId) {
-                    if (permissionDependencies[permId]) {
-                        // This is a child permission, add its parent
-                        let parentId = permissionDependencies[permId];
-                        if (!permissionsToCheck.includes(parentId)) {
-                            permissionsToCheck.push(parentId);
-                        }
-                    }
-                });
-
-                // Check all the permissions
-                permissionsToCheck.forEach(function(permId) {
-                    $('.permission-checkbox[value="' + permId + '"]').prop('checked', true);
-                });
-                $('.permission-checkbox:checked').each(function() {
-                    syncCreateEditPair(this, true);
-                });
-
+                applyPermissionsState(response.permissions || []);
                 $('#loading').removeClass('active');
                 $('#permissionsContainer').show();
             },
@@ -299,19 +363,22 @@
             return;
         }
 
-        const permissions = [];
-        $('.permission-checkbox:checked').each(function() {
-            permissions.push($(this).val());
-        });
+        clearTimeout(permissionSaveTimer);
+        submitPermissions(collectCheckedPermissions(), { auto: false });
+    }
 
-        console.log('=== SAVING PERMISSIONS ===');
-        console.log('User ID:', currentUserId);
-        console.log('Permissions to save:', permissions);
+    function submitPermissions(permissions, options) {
+        options = options || {};
 
-        // Show loading state
+        if (!currentUserId) {
+            return;
+        }
+
         const saveBtn = $('button[onclick="savePermissions()"]');
         const originalText = saveBtn.html();
-        saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+        if (!options.auto) {
+            saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+        }
 
         $.ajax({
             url: '/admin/permissions/user/' + currentUserId + '/update',
@@ -325,48 +392,29 @@
             }),
             contentType: 'application/json',
             success: function(response) {
-                console.log('✓ SUCCESS - Response:', response);
-
-                // Show success message
-                const added = response.debug ? (response.debug.added || 0) : 0;
-                const removed = response.debug ? (response.debug.removed || 0) : 0;
-                const message = response.message ||
-                    ('Permissions saved successfully! (Added: ' + added + ', Removed: ' + removed + ')');
-                notifyPermissionMessage('success', message);
-                saveBtn.prop('disabled', false).html(originalText);
-
-                // Reload permissions to confirm changes
-                setTimeout(function() {
-                    loadUserPermissions(currentUserId);
-                }, 1500);
-            },
-            error: function(xhr, status, error) {
-                console.error('✗ ERROR - AJAX Error:', {
-                    status: xhr.status,
-                    statusText: xhr.statusText,
-                    responseText: xhr.responseText,
-                    error: error,
-                    response: xhr.responseJSON
-                });
-
-                let errorMsg = 'Error saving permissions';
-                if (xhr.status === 0) {
-                    errorMsg = 'Network error - check your connection';
-                } else if (xhr.status === 404) {
-                    errorMsg = 'Route not found (404)';
-                } else if (xhr.status === 403) {
-                    errorMsg = 'Unauthorized access (403)';
-                } else if (xhr.status === 422) {
-                    errorMsg = xhr.responseJSON && xhr.responseJSON.error ?
-                        xhr.responseJSON.error : 'Validation failed (422)';
-                } else if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMsg = xhr.responseJSON.error;
-                } else if (xhr.responseText) {
-                    errorMsg = 'Error: ' + xhr.responseText.substring(0, 200);
+                if (response.permissions) {
+                    applyPermissionsState(response.permissions);
                 }
 
+                if (!options.auto) {
+                    const added = response.debug ? (response.debug.added || 0) : 0;
+                    const removed = response.debug ? (response.debug.removed || 0) : 0;
+                    const message = response.message ||
+                        ('Permissions saved successfully! (Added: ' + added + ', Removed: ' + removed + ')');
+                    notifyPermissionMessage('success', message);
+                    saveBtn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = 'Error saving permissions';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
                 notifyPermissionMessage('error', errorMsg);
-                saveBtn.prop('disabled', false).html(originalText);
+                loadUserPermissions(currentUserId, { silent: true });
+                if (!options.auto) {
+                    saveBtn.prop('disabled', false).html(originalText);
+                }
             }
         });
     }

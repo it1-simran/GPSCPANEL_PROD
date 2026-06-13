@@ -1570,7 +1570,7 @@ $showAdminConfigFields = $isAdminUser;
                   isParentTemplate: isParentSourced
                 });
                 categoryTemplates.forEach((temp) => {
-                  const labelSuffix = (temp.default_template == 1 ? ' (Default)' : '') + (isParentSourced ? ' (Parent)' : '');
+                  const labelSuffix = (temp.default_template == 1 ? ' (Default)' : '') + (isParentSourced ? '' : '');
                   htmlContent += '<option ' + (temp.id === selectedTemplate.id ? "selected" : "") + ' value="' + temp.id + '">' + temp.template_name + labelSuffix + '</option>';
                 });
                 if (isParentSourced) {

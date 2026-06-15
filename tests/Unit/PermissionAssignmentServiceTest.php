@@ -64,6 +64,30 @@ class PermissionAssignmentServiceTest extends TestCase
     }
 
     /** @test */
+    public function existing_reseller_default_permissions_exclude_certificate_view()
+    {
+        $certificatePermission = Permission::factory()->create([
+            'key' => 'certificate_management.view',
+            'module' => 'certificate_management',
+            'action' => 'view',
+        ]);
+
+        $resellerRole = \App\Role::firstOrCreate(
+            ['slug' => 'reseller'],
+            ['name' => 'Reseller', 'slug' => 'reseller', 'is_active' => 1]
+        );
+        DB::table('role_permissions')->insert([
+            ['role_id' => $resellerRole->id, 'permission_id' => $this->viewPermission->id, 'created_at' => now(), 'updated_at' => now()],
+            ['role_id' => $resellerRole->id, 'permission_id' => $certificatePermission->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $permissionIds = $this->service->getDefaultPermissionIdsForExistingUser($this->reseller);
+
+        $this->assertContains($this->viewPermission->id, $permissionIds);
+        $this->assertNotContains($certificatePermission->id, $permissionIds);
+    }
+
+    /** @test */
     public function admin_created_account_gets_system_default_permissions()
     {
         Permission::factory()->create([

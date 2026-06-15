@@ -19,7 +19,7 @@ class PermissionManagementController extends Controller
     }
 
     /**
-     * Admin: Manage Reseller Permissions
+     * Admin: Manage Manufacturer (Reseller) and Dealer (User) permissions
      */
     public function adminManagePermissions()
     {
@@ -33,11 +33,15 @@ class PermissionManagementController extends Controller
         // Clear permission cache to ensure fresh load from database
         \App\Helpers\PermissionHelper::flushCache();
 
-        // Get all Resellers
-        $resellers = Writer::where('user_type', 'Reseller')
+        $accounts = Writer::whereIn('user_type', ['Reseller', 'User'])
             ->where('is_deleted', 0)
+            ->orderBy('user_type')
             ->orderBy('name')
             ->get();
+
+        $selectedAccountId = request()->query('account_id')
+            ?? request()->query('reseller_id')
+            ?? request()->query('user_id');
 
         // Get all permissions grouped by module (fresh from database)
         $permissionsByModule = Permission::where('is_active', 1)
@@ -49,14 +53,15 @@ class PermissionManagementController extends Controller
         $modules = $permissionsByModule->keys();
 
         return view('admin.manage_permissions', [
-            'resellers' => $resellers,
+            'accounts' => $accounts,
+            'selectedAccountId' => $selectedAccountId,
             'permissionsByModule' => $permissionsByModule,
             'modules' => $modules
         ]);
     }
 
     /**
-     * Get permissions for a specific reseller
+     * Get permissions for a Manufacturer or Dealer account
      */
     public function getResellerPermissions($resellerId)
     {
@@ -66,25 +71,25 @@ class PermissionManagementController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $reseller = Writer::find($resellerId);
-        if (!$reseller || $reseller->user_type !== 'Reseller') {
-            return response()->json(['error' => 'Reseller not found'], 404);
+        $account = $this->findManageableAccount($resellerId);
+        if (!$account) {
+            return response()->json(['error' => 'Account not found'], 404);
         }
 
         // Account permissions are managed in user_permissions. Role permissions are
         // defaults only and must not re-enable permissions the admin removed.
         $userPermissions = DB::table('user_permissions')
             ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
-            ->where('user_permissions.user_id', $resellerId)
+            ->where('user_permissions.user_id', $account->id)
             ->where('permissions.is_active', 1)
             ->pluck('permissions.id')
             ->map(fn($id) => (int) $id)
             ->toArray();
 
         $rolePermissions = [];
-        if ($reseller->role_id) {
+        if ($account->role_id) {
             $rolePermissions = DB::table('role_permissions')
-                ->where('role_id', $reseller->role_id)
+                ->where('role_id', $account->role_id)
                 ->pluck('permission_id')
                 ->map(fn($id) => (int) $id)
                 ->toArray();
@@ -93,14 +98,15 @@ class PermissionManagementController extends Controller
         return response()->json([
             'permissions' => array_values(array_unique($userPermissions)),
             'rolePermissions' => array_values($rolePermissions),
-            'userPermissions' => array_values($userPermissions)
+            'userPermissions' => array_values($userPermissions),
+            'user_type' => $account->user_type,
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
           ->header('Pragma', 'no-cache')
           ->header('Expires', '0');
     }
 
     /**
-     * Update Reseller Permissions (Admin)
+     * Update Manufacturer or Dealer permissions (Admin)
      */
     public function updateResellerPermissions(Request $request, $resellerId)
     {
@@ -110,27 +116,28 @@ class PermissionManagementController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $reseller = Writer::find($resellerId);
-        if (!$reseller || $reseller->user_type !== 'Reseller') {
-            return response()->json(['error' => 'Reseller not found'], 404);
+        $account = $this->findManageableAccount($resellerId);
+        if (!$account) {
+            return response()->json(['error' => 'Account not found'], 404);
         }
 
         $permissions = $request->input('permissions', []);
 
         // Use PermissionAssignmentService for validated sync
         $service = new PermissionAssignmentService();
-        $result = $service->syncPermissions($reseller, $permissions, $user);
+        $result = $service->syncPermissions($account, $permissions, $user);
 
         if (!$result['success']) {
             return response()->json(['error' => $result['message']], 422);
         }
 
-        app(PermissionSyncImpactService::class)->applyImpact($reseller, $permissions, $user);
+        app(PermissionSyncImpactService::class)->applyImpact($account, $permissions, $user);
 
         return response()->json([
             'success' => true,
             'message' => $result['message'],
             'permissions' => $result['permissions'] ?? [],
+            'user_type' => $account->user_type,
             'debug' => [
                 'requested_count' => count($permissions),
                 'added' => $result['added'] ?? 0,
@@ -437,38 +444,16 @@ class PermissionManagementController extends Controller
     }
 
     /**
-     * Admin: Manage User Permissions
+     * Legacy route — redirects to the unified permissions page.
      */
-    public function adminManageUserPermissions()
+    public function adminManageUserPermissions(Request $request)
     {
-        $user = Auth::user();
-
-        // Only Admin can access this
-        if ($user->user_type !== 'Admin') {
-            return redirect()->back()->with('error', 'Unauthorized access');
+        $query = [];
+        if ($request->filled('user_id')) {
+            $query['account_id'] = $request->query('user_id');
         }
 
-        // Get all Users
-        $users = Writer::where('user_type', 'User')
-            ->where('is_deleted', 0)
-            ->orderBy('name')
-            ->get();
-
-        // Get permissions excluding 'account_management' module (only for Resellers)
-        $permissionsByModule = Permission::where('is_active', 1)
-            ->where('module', '!=', 'account_management')
-            ->orderBy('module')
-            ->orderBy('order')
-            ->get()
-            ->groupBy('module');
-
-        $modules = $permissionsByModule->keys();
-
-        return view('admin.manage_user_permissions', [
-            'users' => $users,
-            'permissionsByModule' => $permissionsByModule,
-            'modules' => $modules
-        ]);
+        return redirect()->route('admin.manage-permissions', $query);
     }
 
     /**
@@ -548,7 +533,7 @@ class PermissionManagementController extends Controller
     }
 
     /**
-     * Preview permission sync impact for a reseller (Admin)
+     * Preview permission sync impact for a Manufacturer or Dealer (Admin)
      */
     public function previewResellerPermissionImpact(Request $request, $resellerId)
     {
@@ -558,12 +543,12 @@ class PermissionManagementController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $reseller = Writer::find($resellerId);
-        if (!$reseller || $reseller->user_type !== 'Reseller') {
-            return response()->json(['error' => 'Reseller not found'], 404);
+        $account = $this->findManageableAccount($resellerId);
+        if (!$account) {
+            return response()->json(['error' => 'Account not found'], 404);
         }
 
-        return $this->buildPermissionImpactResponse($reseller, $request->input('permissions', []), $user);
+        return $this->buildPermissionImpactResponse($account, $request->input('permissions', []), $user);
     }
 
     /**
@@ -661,5 +646,22 @@ class PermissionManagementController extends Controller
             'dependencies' => $dependencies,  // child_id => parent_id
             'dependents' => $dependents       // parent_id => [child_id, ...]
         ]);
+    }
+
+    private function findManageableAccount($accountId): ?Writer
+    {
+        return Writer::where('id', $accountId)
+            ->whereIn('user_type', ['Reseller', 'User'])
+            ->where('is_deleted', 0)
+            ->first();
+    }
+
+    private function accountTypeLabel(string $userType): string
+    {
+        return match ($userType) {
+            'Reseller' => 'Manufacturer',
+            'User' => 'Dealer',
+            default => $userType,
+        };
     }
 }

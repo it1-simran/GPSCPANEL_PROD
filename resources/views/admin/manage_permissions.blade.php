@@ -58,8 +58,8 @@
         margin-bottom: 20px;
     }
     .permission-toolbar .permission-search-wrap { margin-bottom: 0; flex: 1; min-width: 220px; }
-    .reseller-select-wrap { max-width: 400px; }
-    .reseller-select-wrap .select2-container { width: 100% !important; }
+    .account-select-wrap { max-width: 400px; }
+    .account-select-wrap .select2-container { width: 100% !important; }
 </style>
 @endpush
 
@@ -81,7 +81,7 @@
                     <div class="c_title" style="margin-bottom: 10px;">
                         <div class="row bgx-title-container">
                             <div class="col-lg-12">
-                                <h2><i class="fa fa-lock" style="color:#76CF1C; margin-right:10px;"></i>Manage Reseller Permissions</h2>
+                                <h2><i class="fa fa-lock" style="color:#76CF1C; margin-right:10px;"></i>Manage Account Permissions</h2>
                             </div>
                         </div>
                     </div>
@@ -91,33 +91,47 @@
                             @include('partials.gps-inline-alerts')
                         </div>
 
-                        @if(request()->query('reseller_id'))
-                            {{-- Display selected reseller info when passed via URL --}}
-                            @php
-                                $selectedReseller = null;
-                                foreach($resellers as $reseller) {
-                                    if($reseller->id == request()->query('reseller_id')) {
-                                        $selectedReseller = $reseller;
-                                        break;
-                                    }
-                                }
-                            @endphp
-                            @if($selectedReseller)
-                                <div style="margin-bottom: 20px; padding: 12px; background: #f0fdf4; border-left: 4px solid #76CF1C; border-radius: 4px;">
-                                    <label style="font-weight: 600; color: #166534; display: block; margin-bottom: 5px;">Selected Reseller:</label>
-                                    <div style="color: #166534; font-size: 14px;">{{ $selectedReseller->name }} ({{ $selectedReseller->email }})</div>
+                        @php
+                            $selectedAccount = null;
+                            if (!empty($selectedAccountId)) {
+                                $selectedAccount = $accounts->firstWhere('id', (int) $selectedAccountId);
+                            }
+                        @endphp
+
+                        @if($selectedAccount)
+                            <div style="margin-bottom: 20px; padding: 12px; background: #f0fdf4; border-left: 4px solid #76CF1C; border-radius: 4px;">
+                                <label style="font-weight: 600; color: #166534; display: block; margin-bottom: 5px;">Selected Account:</label>
+                                <div style="color: #166534; font-size: 14px;">
+                                    {{ $selectedAccount->name }} ({{ $selectedAccount->email }})
+                                    — {{ $selectedAccount->user_type === 'Reseller' ? 'Manufacturer' : 'Dealer' }}
                                 </div>
-                            @endif
+                            </div>
                         @else
-                            {{-- Display dropdown when no reseller_id in URL --}}
-                            <div class="reseller-select-wrap" style="margin-bottom: 20px;">
-                                <label style="font-weight: 600; display: block; margin-bottom: 10px;">Select Reseller:</label>
-                                <select id="resellerSelect" class="reseller-select" style="width: 100%;">
-                                    <option value="">-- Choose a Reseller --</option>
-                                    @foreach($resellers as $reseller)
-                                        <option value="{{ $reseller->id }}">{{ $reseller->name }} ({{ $reseller->email }})</option>
-                                    @endforeach
+                            <div class="account-select-wrap" style="margin-bottom: 20px;">
+                                <label style="font-weight: 600; display: block; margin-bottom: 10px;">Select Account:</label>
+                                <select id="accountSelect" class="reseller-select" style="width: 100%;">
+                                    <option value="">-- Choose an Account --</option>
+                                    @if($accounts->where('user_type', 'Reseller')->isNotEmpty())
+                                        <optgroup label="Manufacturers">
+                                            @foreach($accounts->where('user_type', 'Reseller') as $account)
+                                                <option value="{{ $account->id }}" data-user-type="Reseller">{{ $account->name }} ({{ $account->email }})</option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
+                                    @if($accounts->where('user_type', 'User')->isNotEmpty())
+                                        <optgroup label="Dealers">
+                                            @foreach($accounts->where('user_type', 'User') as $account)
+                                                <option value="{{ $account->id }}" data-user-type="User">{{ $account->name }} ({{ $account->email }})</option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
                                 </select>
+                            </div>
+                        @endif
+
+                        @if($accounts->isEmpty())
+                            <div class="alert alert-info">
+                                <i class="fa fa-info-circle"></i> No manufacturer or dealer accounts found.
                             </div>
                         @endif
 
@@ -136,7 +150,7 @@
                                 <i class="fa fa-search" style="margin-right: 6px;"></i>No permissions match your search.
                             </div>
                             @foreach($modules as $module)
-                                <div class="module-section">
+                                <div class="module-section" data-module="{{ $module }}">
                                     <div class="module-title">
                                         {{ ucwords(str_replace('_', ' ', $module)) }}
                                     </div>
@@ -178,7 +192,9 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 @include('partials.permission-save-confirm')
 <script>
-    let currentResellerId = null;
+    let currentAccountId = @json($selectedAccountId ?? null);
+    let currentAccountType = @json(optional($selectedAccount)->user_type);
+    let accountTypes = @json($accounts->pluck('user_type', 'id'));
     let permissionDependencies = {}; // child_id => parent_id
     let permissionDependents = {}; // parent_id => [child_id, ...]
     let isSyncingPermissions = false;
@@ -243,14 +259,42 @@
         }
     }
 
-    function initResellerSelect2() {
-        const $select = $('#resellerSelect');
+    function resolveAccountType(accountId, responseUserType) {
+        if (responseUserType) {
+            return responseUserType;
+        }
+        if ($('#accountSelect').length) {
+            const selectedType = $('#accountSelect option:selected').data('user-type');
+            if (selectedType) {
+                return selectedType;
+            }
+        }
+        return accountTypes[accountId] || accountTypes[String(accountId)] || null;
+    }
+
+    function applyModuleVisibilityForAccount(userType) {
+        currentAccountType = userType;
+        const hideAccountManagement = userType === 'User';
+
+        $('.module-section[data-module="account_management"]').each(function() {
+            const $section = $(this);
+            if (hideAccountManagement) {
+                $section.hide();
+                $section.find('.permission-checkbox').prop('checked', false);
+            } else {
+                $section.show();
+            }
+        });
+    }
+
+    function initAccountSelect2() {
+        const $select = $('#accountSelect');
         if (!$select.length || $select.hasClass('select2-hidden-accessible')) {
             return;
         }
 
         $select.select2({
-            placeholder: '-- Choose a Reseller --',
+            placeholder: '-- Choose an Account --',
             allowClear: true,
             width: '100%',
             minimumResultsForSearch: 0
@@ -258,27 +302,25 @@
     }
 
     $(document).ready(function() {
-        initResellerSelect2();
+        initAccountSelect2();
 
         // Load permission dependencies
         loadPermissionDependencies();
 
-        // Check if reseller_id is in query parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const resellerId = urlParams.get('reseller_id');
-        if (resellerId) {
-            currentResellerId = resellerId;
-            if ($('#resellerSelect').length) {
-                $('#resellerSelect').select2('val', resellerId);
+        if (currentAccountId) {
+            if ($('#accountSelect').length) {
+                $('#accountSelect').val(currentAccountId).trigger('change.select2');
             }
-            loadResellerPermissions(resellerId);
+            loadAccountPermissions(currentAccountId);
         }
 
-        $('#resellerSelect').on('change', function() {
-            currentResellerId = $(this).val();
-            if (currentResellerId) {
-                loadResellerPermissions(currentResellerId);
+        $('#accountSelect').on('change', function() {
+            currentAccountId = $(this).val();
+            if (currentAccountId) {
+                applyModuleVisibilityForAccount(resolveAccountType(currentAccountId));
+                loadAccountPermissions(currentAccountId);
             } else {
+                currentAccountType = null;
                 $('#permissionsContainer').hide();
                 $('#permissionSearch').val('');
             }
@@ -353,7 +395,10 @@
 
             const sectionVisible = visibleRows > 0;
             $section.toggle(sectionVisible);
-            if (sectionVisible) {
+            if (sectionVisible && currentAccountType === 'User' && $section.data('module') === 'account_management') {
+                $section.hide();
+            }
+            if (sectionVisible && $section.is(':visible')) {
                 visibleSections++;
             }
         });
@@ -361,23 +406,28 @@
         $('#permissionNoResults').toggleClass('active', query.length > 0 && visibleSections === 0);
     }
 
-    function loadResellerPermissions(resellerId, options) {
+    function loadAccountPermissions(accountId, options) {
         options = options || {};
         if (!options.silent) {
             $('#loading').addClass('active');
         }
 
         $.ajax({
-            url: '/admin/permissions/' + resellerId + '?t=' + new Date().getTime(),
+            url: '/admin/permissions/' + accountId + '?t=' + new Date().getTime(),
             type: 'GET',
             cache: false,
             success: function(response) {
+                const accountType = resolveAccountType(accountId, response.user_type);
+                applyModuleVisibilityForAccount(accountType);
                 applyPermissionsState(response.permissions || []);
 
                 if (!options.silent) {
                     $('#permissionSearch').val('');
                     $('#permissionNoResults').removeClass('active');
                     $('.module-section, .module-section tbody tr').show();
+                    if (accountType === 'User') {
+                        applyModuleVisibilityForAccount(accountType);
+                    }
                 }
 
                 $('#loading').removeClass('active');
@@ -387,7 +437,7 @@
                 console.error('Error details:', {xhr, status, error});
                 let errorMsg = 'Error loading permissions';
                 if (xhr.status === 404) {
-                    errorMsg = 'Reseller not found';
+                    errorMsg = 'Account not found';
                 } else if (xhr.status === 403) {
                     errorMsg = 'Unauthorized access';
                 } else if (xhr.responseJSON && xhr.responseJSON.error) {
@@ -425,8 +475,8 @@
     }
 
     function savePermissions() {
-        if (!currentResellerId) {
-            notifyPermissionMessage('warning', 'Please select a reseller.');
+        if (!currentAccountId) {
+            notifyPermissionMessage('warning', 'Please select an account.');
             return;
         }
 
@@ -442,7 +492,7 @@
         }
 
         confirmPermissionsBeforeSave({
-            previewUrl: '/admin/permissions/' + currentResellerId + '/preview',
+            previewUrl: '/admin/permissions/' + currentAccountId + '/preview',
             collectPermissions: collectCheckedPermissions,
             onConfirm: runSave
         });
@@ -451,7 +501,7 @@
     function submitPermissions(permissions, options) {
         options = options || {};
 
-        if (!currentResellerId) {
+        if (!currentAccountId) {
             return;
         }
 
@@ -462,7 +512,7 @@
         }
 
         $.ajax({
-            url: '/admin/permissions/' + currentResellerId + '/update',
+            url: '/admin/permissions/' + currentAccountId + '/update',
             type: 'POST',
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
@@ -492,7 +542,7 @@
                     errorMsg = xhr.responseJSON.error;
                 }
                 notifyPermissionMessage('error', errorMsg);
-                loadResellerPermissions(currentResellerId, { silent: true });
+                loadAccountPermissions(currentAccountId, { silent: true });
                 if (!options.auto) {
                     saveBtn.prop('disabled', false).html(originalText);
                 }

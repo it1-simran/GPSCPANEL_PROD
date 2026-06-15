@@ -13,6 +13,40 @@ use Illuminate\Support\Facades\Event;
 
 class PermissionAssignmentService
 {
+    private const RESELLER_DEALER_DEFAULT_EXCLUDED_KEYS = [
+        'certificate_management.view',
+    ];
+
+    /**
+     * Permission keys disabled by default for Manufacturer (Reseller) and Dealer (User) accounts.
+     *
+     * @return string[]
+     */
+    public function getResellerDealerDefaultExcludedKeys(): array
+    {
+        return self::RESELLER_DEALER_DEFAULT_EXCLUDED_KEYS;
+    }
+
+    /**
+     * Remove permissions that should stay off by default for Reseller/Dealer accounts.
+     */
+    public function stripResellerDealerDefaultExclusions(array $permissionIds): array
+    {
+        $excludedIds = Permission::whereIn('key', $this->getResellerDealerDefaultExcludedKeys())
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (empty($excludedIds)) {
+            return array_values(array_unique(array_map('intval', $permissionIds)));
+        }
+
+        return array_values(array_diff(
+            array_map('intval', $permissionIds),
+            $excludedIds
+        ));
+    }
+
     /**
      * Assign permission to a user with hierarchy validation
      *
@@ -542,6 +576,38 @@ class PermissionAssignmentService
     }
 
     /**
+     * Default permissions for an existing Reseller or User (Dealer) account,
+     * based on the role template defined in role_permissions.
+     */
+    public function getDefaultPermissionIdsForExistingUser($user): array
+    {
+        $roleSlug = match ($user->user_type ?? '') {
+            'Reseller' => 'reseller',
+            'User' => 'user',
+            default => null,
+        };
+
+        if (!$roleSlug) {
+            return [];
+        }
+
+        $permissionIds = DB::table('role_permissions')
+            ->join('permissions', 'permissions.id', '=', 'role_permissions.permission_id')
+            ->join('roles', 'roles.id', '=', 'role_permissions.role_id')
+            ->where('roles.slug', $roleSlug)
+            ->where('permissions.is_active', 1)
+            ->pluck('permissions.id')
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
+
+        return $this->stripResellerDealerDefaultExclusions(
+            $this->applyDependencies(
+                $this->applyCreateEditPairing($permissionIds)
+            )
+        );
+    }
+
+    /**
      * Default permissions for a newly created account.
      * Admin-created accounts use system defaults; reseller-created children inherit parent permissions.
      */
@@ -558,19 +624,23 @@ class PermissionAssignmentService
                     ->toArray();
             }
 
-            return $this->applyDependencies(
-                $this->applyCreateEditPairing($permissionIds)
+            return $this->stripResellerDealerDefaultExclusions(
+                $this->applyDependencies(
+                    $this->applyCreateEditPairing($permissionIds)
+                )
             );
         }
 
         $permissionIds = Permission::where('is_active', 1)
-            ->where('key', '!=', 'certificate_management.view')
+            ->whereNotIn('key', $this->getResellerDealerDefaultExcludedKeys())
             ->pluck('id')
             ->map(fn($id) => (int) $id)
             ->toArray();
 
-        return $this->applyDependencies(
-            $this->applyCreateEditPairing($permissionIds)
+        return $this->stripResellerDealerDefaultExclusions(
+            $this->applyDependencies(
+                $this->applyCreateEditPairing($permissionIds)
+            )
         );
     }
 

@@ -53,13 +53,12 @@ class PermissionSeeder extends Seeder
         $adminRole->permissions()->sync($allPerms->values());
 
         // ---------------------------------------------------------------
-        // Reseller role — Account + Device + Certificate (view) + Settings
+        // Reseller role — Account + Device + Settings (certificate view off by default)
         // ---------------------------------------------------------------
         $resellerKeys = [
             'account_management.view', 'account_management.create',
             'account_management.edit', 'account_management.delete',
             'device_management.view', 'device_management.edit',
-            'certificate_management.view',
             'settings_management.view', 'settings_management.create',
             'settings_management.edit', 'settings_management.delete',
             'settings_management.assign_bulk',
@@ -69,11 +68,10 @@ class PermissionSeeder extends Seeder
         );
 
         // ---------------------------------------------------------------
-        // User role — Device + Certificate (view) + Settings (no account_management)
+        // User role — Device + Settings (no account_management, certificate view off by default)
         // ---------------------------------------------------------------
         $userKeys = [
             'device_management.view', 'device_management.edit',
-            'certificate_management.view',
             'settings_management.view', 'settings_management.create',
             'settings_management.edit', 'settings_management.delete',
             'settings_management.assign_bulk',

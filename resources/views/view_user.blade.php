@@ -187,10 +187,8 @@
                     </td>
                     @if(Auth::user()->user_type == 'Admin' || (Auth::user()->user_type == 'Reseller' && Auth::user()->hasPermission('account_management.view')))
                     <td>
-                      @if(Auth::user()->user_type == 'Admin' && $contact['user_type'] == 'Reseller')
-                        <a href="/admin/manage-permissions?reseller_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
-                      @elseif(Auth::user()->user_type == 'Admin' && $contact['user_type'] == 'User')
-                        <a href="/admin/manage-user-permissions?user_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
+                      @if(Auth::user()->user_type == 'Admin' && in_array($contact['user_type'], ['Reseller', 'User'], true))
+                        <a href="/admin/manage-permissions?account_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
                       @elseif(Auth::user()->user_type == 'Reseller' && in_array($contact['user_type'], ['User', 'Reseller'], true))
                         <a href="/reseller/manage-child-permissions?user_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
                       @endif

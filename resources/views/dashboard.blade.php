@@ -64,7 +64,11 @@
       $AssignedDevice     = DB::table('devices')->leftJoin('writers','writers.id','=','devices.user_id')->select('devices.*','writers.name as username')->where('devices.is_deleted','0')->where('devices.user_id','!=','')->count();
       $totalTemplete      = DB::table('templates')->where('is_deleted','0')->where('verify','1')->count();
       $usertotalTemplete  = DB::table('templates')->where('is_deleted','0')->where('verify','2')->where('id_user',auth()->id())->count();
-      $totalDevice        = DB::table('devices')->where('is_deleted','0')->where('user_id',auth()->id())->orwhereRaw('FIND_IN_SET('.auth()->id().',devices.assign_to_ids)')->count();
+      $totalDeviceQuery   = DB::table('devices')->where('is_deleted','0')->where(function($q) {
+          $q->where('user_id', auth()->id())->orWhereRaw('FIND_IN_SET(?, devices.assign_to_ids)', [auth()->id()]);
+      });
+      app(\App\Services\DeviceCategoryAccessService::class)->applyCategoryScopeToQuery($totalDeviceQuery, auth()->user(), 'devices.device_category_id');
+      $totalDevice        = $totalDeviceQuery->count();
       $AdmintotalDevice   = DB::table('devices')->where('is_deleted','0')->count();
       /* Admin: total = all writers; today = sum(today_pings) where pings_date is today. */
       $totalpingsadmin    = DB::table('writers')->where('writers.is_deleted', '0')->sum('total_pings');
@@ -118,7 +122,7 @@
         };
       @endphp
 
-      @if(Auth::user()->user_type=='Admin')
+      @if(Auth::user()->user_type=='Admin' || auth()->user()->hasPermission('account_management.view'))
       {{-- Users Registered --}}
       <div class="stat-card green-accent">
         <div class="card-icon"><i class="fa fa-users"></i></div>
@@ -129,7 +133,9 @@
         <a href="{{ $__va }}" class="stat-link">View All <i class="fa fa-arrow-right"></i></a>
         @endif
       </div>
+      @endif
 
+      @if(Auth::user()->user_type=='Admin' || auth()->user()->hasPermission('device_management.view'))
       {{-- Assigned Device --}}
       <div class="stat-card dark-accent">
         <div class="card-icon"><i class="fa fa-link"></i></div>

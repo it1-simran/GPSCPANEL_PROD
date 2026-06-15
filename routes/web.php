@@ -2,15 +2,18 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\FirmwareController;
 use App\Http\Controllers\DeviceCategoryController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\DeviceLogsController;
 use App\Http\Controllers\GuestUserController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\PermissionManagementController;
 use App\Exports\BackendExport;
 use App\Exports\UsersExport;
 use App\Exports\DevicesExports;
@@ -30,13 +33,17 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Support\AuthenticatedRedirect;
 
 Route::get('/clear-cache', function () {
-    Artisan::call('config:clear');
-    Artisan::call('cache:clear');
-    Artisan::call('config:cache');
-    Artisan::call('route:clear');
-    Artisan::call('view:clear');
-    return 'DONE';
-});
+    // Only Admin users can clear cache
+    if (Auth::check() && Auth::user()->user_type === 'Admin') {
+        Artisan::call('config:clear');
+        Artisan::call('cache:clear');
+        Artisan::call('config:cache');
+        Artisan::call('route:clear');
+        Artisan::call('view:clear');
+        return 'DONE';
+    }
+    return response('Unauthorized', 403);
+})->middleware('auth');
 
 Route::get('/', function () {
     return AuthenticatedRedirect::redirectIfAuthenticated() ?? view('welcome');
@@ -65,11 +72,11 @@ Route::view('/home', 'home')->middleware('auth');
 // Authenticated Home Route
 Route::get('/register/user', [GuestUserController::class, 'index'])->name('register.user')->middleware('signed');
 Route::post('/register/create', [GuestUserController::class, 'store'])->name('register.user.store');
-Route::get('/device-category/config/{id}', [GuestUserController::class, 'getDeviceCategoryConfig']);
-Route::patch('/approval/update/{id}', [GuestUserController::class, 'updateStatus'])->name('approval.update');
+Route::get('/device-category/config/{id}', [GuestUserController::class, 'getDeviceCategoryConfig'])->middleware('auth');
+Route::patch('/approval/update/{id}', [GuestUserController::class, 'updateStatus'])->middleware('auth')->name('approval.update');
 Route::post('/guest/send-otp', [GuestUserController::class, 'sendOtp'])->name('guest.send.otp');
 Route::post('/guest/verify-otp', [GuestUserController::class, 'verifyOtp'])->name('guest.verify.otp');
-Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteRequest'])->name('request.delete');
+Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteRequest'])->middleware('auth')->name('request.delete');
     Route::middleware('check.role:admin')->group(function () {
         /* ======================= IMEI Tracking Management (Live Tracker) ======================= */
         Route::get('/admin/tracker', [\App\Http\Controllers\LiveTrackerController::class, 'index'])->name('admin.tracker.index');
@@ -147,25 +154,25 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/getData/{id}', [DeviceController::class, 'getData']);
 
     /* ======================= User Management Routes ======================= */
-    Route::post('/admin/register/writer', [RegisterController::class, 'createWriter'])->name('register.writer');
-    Route::get('/admin/view-user', [RegisterController::class, 'showWriter']);
-    Route::get('/admin/view-user-approval-request', [GuestUserController::class, 'showApprovalRequest']);
-    Route::post('/admin/submitImeiSheet', [DeviceController::class, 'submitImeiSheet']);
+    Route::post('/admin/register/writer', [RegisterController::class, 'createWriter'])->middleware('check.permission:account_management.create')->name('register.writer');
+    Route::get('/admin/view-user', [RegisterController::class, 'showWriter'])->middleware('check.permission:account_management.view');
+    Route::get('/admin/view-user-approval-request', [GuestUserController::class, 'showApprovalRequest'])->middleware('check.permission:account_management.view');
 
-
-    Route::get('/admin/edit-user/{user_type}/{id}', [RegisterController::class, 'editWriter'])->name('writer.edit');
-    Route::get('/admin/view-configurations/{id}', [RegisterController::class, 'showConfigurations']);
-    Route::post('/admin/update-configurations/{id}', [RegisterController::class, 'updateConfigurations']);
-    Route::post('/admin/update-canprotocolWriter-configurations/{id}', [RegisterController::class, 'updateCanProtocolConfigurations']);
-    Route::patch('/admin/update-user/{id}/{user_type}', [RegisterController::class, 'updateWriter'])->name('writer.update');
-    Route::patch('/admin/update-user-info/{id}/{user_type}', [RegisterController::class, 'updateWriterInformation'])->name('writer.updateWriterInformation');
-    Route::delete('/admin/delete-user/{id}', [RegisterController::class, 'deleteWriter'])->name('writer.delete');
+    Route::get('/admin/edit-user/{user_type}/{id}', [RegisterController::class, 'editWriter'])->middleware('check.permission:account_management.edit')->name('writer.edit');
+    Route::get('/admin/view-configurations/{id}', [RegisterController::class, 'showConfigurations'])->middleware('check.permission:account_management.edit');
+    Route::post('/admin/update-configurations/{id}', [RegisterController::class, 'updateConfigurations'])->middleware('check.permission:account_management.edit');
+    Route::post('/admin/update-canprotocolWriter-configurations/{id}', [RegisterController::class, 'updateCanProtocolConfigurations'])->middleware('check.permission:account_management.edit');
+    Route::patch('/admin/update-user/{id}/{user_type}', [RegisterController::class, 'updateWriter'])->middleware('check.permission:account_management.edit')->name('writer.update');
+    Route::post('/admin/enable-account-device-category', [RegisterController::class, 'enableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
+    Route::post('/admin/disable-account-device-category', [RegisterController::class, 'disableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
+    Route::patch('/admin/update-user-info/{id}/{user_type}', [RegisterController::class, 'updateWriterInformation'])->middleware('check.permission:account_management.edit')->name('writer.updateWriterInformation');
+    Route::delete('/admin/delete-user/{id}', [RegisterController::class, 'deleteWriter'])->middleware('check.permission:account_management.delete')->name('writer.delete');
     Route::post('/admin/getusers', [RegisterController::class, 'getuserinfo'])->name('user.getinfo');
     Route::post('/admin/assign-device', [RegisterController::class, 'assign'])->name('template.assign');
     Route::post('/admin/get-model-name', [FirmwareController::class, 'getModelName']);
     Route::post('/admin/getResellersList', [RegisterController::class, 'getResellersList']);
     Route::post('/admin/linkResellers', [RegisterController::class, 'linkResellers']);
-    Route::get('/admin/view-uncategorized-users', [RegisterController::class, 'viewUncategorized'])->name('users.viewUncategorized');
+    Route::get('/admin/view-uncategorized-users', [RegisterController::class, 'viewUncategorized'])->middleware('check.permission:account_management.view')->name('users.viewUncategorized');
 
 
     /* ======================= Firmware Management Routes ======================= */
@@ -201,46 +208,61 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/admin/view-firmware-models/{id}', [FirmwareController::class, 'viewFirmwareModel']);
 
     /* ======================= Device Management Routes ======================= */
-    Route::get('/admin/add-device', [DeviceController::class, 'index'])->name('device.add');
-    Route::get('/admin/add-Multipledevice', [DeviceController::class, 'addMultipleDevice']);
-    Route::post('/admin/submitImeiSheet', [DeviceController::class, 'submitImeiSheet']);
-    Route::post('/admin/submit-Multipledevice', [DeviceController::class, 'submitMultipleDevice']);
-    Route::post('/admin/store-device', [DeviceController::class, 'create']);
-    Route::get('/admin/testview-device-assign', [DeviceController::class, 'testshowAssign'])->name('device.view');
-    Route::get('/admin/view-device-assign', [DeviceController::class, 'show'])->name('device.view');
-    Route::get('/admin/view-device-unassign', [DeviceController::class, 'showAssign'])->name('device.view');
-    Route::get('/admin/edit-device/{id}', [DeviceController::class, 'edit'])->name('device.edit');
-    Route::patch('/admin/update-device/{id}', [DeviceController::class, 'update'])->name('device.update');
-    Route::delete('/admin/delete-device/{id}', [DeviceController::class, 'destroy'])->name('device.delete');
-    Route::delete('/admin/deleteAll', [DeviceController::class, 'deleteAll'])->name('device.deleteall');
-    Route::post('/admin/assignuserAll', [DeviceController::class, 'userassignAll'])->name('device.userassignall');
-    Route::post('/admin/assigtemplateAll', [DeviceController::class, 'userassigtemplateAll'])->name('device.assigtemplateAll');
-    Route::get('/admin/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations']);
-    Route::post('/admin/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);
-    Route::post('/admin/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations']);
+    Route::get('/admin/add-device', [DeviceController::class, 'index'])->middleware('check.role:admin')->name('device.add');
+    Route::get('/admin/add-Multipledevice', [DeviceController::class, 'addMultipleDevice'])->middleware('check.role:admin');
+    Route::post('/admin/submitImeiSheet', [DeviceController::class, 'submitImeiSheet'])->middleware('check.role:admin');
+    Route::post('/admin/submit-Multipledevice', [DeviceController::class, 'submitMultipleDevice'])->middleware('check.role:admin');
+    Route::post('/admin/store-device', [DeviceController::class, 'create'])->middleware('check.role:admin');
+    Route::get('/admin/testview-device-assign', [DeviceController::class, 'testshowAssign'])->middleware('check.permission:device_management.view')->name('device.view');
+    Route::get('/admin/view-device-assign', [DeviceController::class, 'show'])->middleware('check.permission:device_management.view')->name('device.view');
+    Route::get('/admin/view-device-unassign', [DeviceController::class, 'showAssign'])->middleware('check.permission:device_management.view')->name('device.view');
+    Route::get('/admin/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
+    Route::patch('/admin/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
+    Route::delete('/admin/delete-device/{id}', [DeviceController::class, 'destroy'])->middleware('check.permission:device_management.edit')->name('device.delete');
+    Route::delete('/admin/deleteAll', [DeviceController::class, 'deleteAll'])->middleware('check.permission:device_management.edit')->name('device.deleteall');
+    Route::post('/admin/assignuserAll', [DeviceController::class, 'userassignAll'])->middleware('check.permission:device_management.edit')->name('device.userassignall');
+    Route::post('/admin/assigtemplateAll', [DeviceController::class, 'userassigtemplateAll'])->middleware('check.permission:device_management.edit')->name('device.assigtemplateAll');
+    Route::get('/admin/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations'])->middleware('check.permission:device_management.view');
+    Route::post('/admin/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations'])->middleware('check.permission:device_management.edit');
+    Route::post('/admin/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations'])->middleware('check.permission:device_management.edit');
 
-    Route::post('/admin/device-data-field', [DeviceController::class, 'addDeviceDataField']);
-    Route::patch('/admin/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations']);
-    Route::get('/admin/view-device-logs/{id}', [DeviceLogsController::class, 'index']);
-    Route::get('/admin/view-device-category-fields', [DeviceController::class, 'viewDeviceCategoryFields'])->name('users.viewDeviceCategoryFields');
-    Route::delete('/admin/delete-category-fields/{id}', [DeviceController::class, 'destroyDataField']);
-    Route::post('/admin/check-modal-name', [DeviceController::class, 'checkModalName']);
+    Route::post('/admin/device-data-field', [DeviceController::class, 'addDeviceDataField'])->middleware('check.permission:device_management.edit');
+    Route::patch('/admin/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations'])->middleware('check.permission:device_management.edit');
+    Route::get('/admin/view-device-logs/{id}', [DeviceLogsController::class, 'index'])->middleware('check.permission:device_management.view');
+    Route::get('/admin/view-device-category-fields', [DeviceController::class, 'viewDeviceCategoryFields'])->middleware('check.permission:device_management.view')->name('users.viewDeviceCategoryFields');
+    Route::delete('/admin/delete-category-fields/{id}', [DeviceController::class, 'destroyDataField'])->middleware('check.permission:device_management.edit');
+    Route::post('/admin/check-modal-name', [DeviceController::class, 'checkModalName'])->middleware('check.permission:device_management.view');
+
+    /* ======================= Certificate Management Routes ======================= */
+    Route::get('/admin/certificates', [CertificateController::class, 'index'])->middleware('check.permission:certificate_management.view')->name('certificate.index');
+    Route::get('/admin/certificate/{id}', [CertificateController::class, 'certificatePage'])->middleware('check.permission:certificate_management.view')->name('certificate.page');
+    Route::post('/admin/certificate/{id}', [CertificateController::class, 'generateCertificate'])->middleware('check.permission:certificate_management.create')->name('certificate.generate');
+    Route::post('/admin/certificate/{id}/preview', [CertificateController::class, 'previewCertificate'])->middleware('check.permission:certificate_management.view')->name('certificate.preview');
+    Route::post('/admin/certificate/{id}/save', [CertificateController::class, 'saveCertificateDetails'])->middleware('check.permission:certificate_management.create')->name('certificate.save');
+    Route::get('/admin/certificate/{id}/view', [CertificateController::class, 'viewCertificate'])->middleware('check.permission:certificate_management.view')->name('certificate.view');
+    Route::post('/admin/certificate/{id}/upload-rc', [CertificateController::class, 'uploadRC'])->middleware('check.permission:certificate_management.create')->name('certificate.upload-rc');
+    Route::post('/admin/certificate/{id}/verify-plate', [CertificateController::class, 'verifyNumberPlate'])->middleware('check.permission:certificate_management.create')->name('certificate.verify-plate');
+    Route::post('/admin/certificate/{id}/extract-device', [CertificateController::class, 'extractDeviceInfo'])->middleware('check.permission:certificate_management.create')->name('certificate.extract-device');
+    Route::post('/admin/certificate/{id}/lookup-iccid', [CertificateController::class, 'lookupIccid'])->middleware('check.permission:certificate_management.create')->name('certificate.lookup-iccid');
+    Route::get('/admin/certificate/{id}/rc-data', [CertificateController::class, 'getRCData'])->middleware('check.permission:certificate_management.view')->name('certificate.rc-data');
+    Route::get('/admin/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->middleware('check.permission:certificate_management.view')->name('certificate.rc-status');
+    Route::get('/admin/certificate/{id}/generate-vltd-serial', [CertificateController::class, 'generateVltdSerial'])->middleware('check.permission:certificate_management.view')->name('certificate.generate-vltd-serial');
 
     /* ======================= Template Management Routes ======================= */
-    Route::post('/admin/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations']);
-    Route::get('/admin/add-template', [TemplateController::class, 'index'])->name('template.add');
-    Route::post('/admin/store-template', [TemplateController::class, 'create'])->name('template.store');
-    Route::get('/admin/view-template', [TemplateController::class, 'show'])->name('template.view');
-    Route::get('/admin/edit-template/{id}', [TemplateController::class, 'edit'])->name('template.edit');
-    Route::patch('/admin/update-template/{id}', [TemplateController::class, 'update'])->name('template.update');
-    Route::delete('/admin/delete-template/{id}', [TemplateController::class, 'destroy'])->name('template.delete');
-    Route::post('/admin/assign-template/{id}', [TemplateController::class, 'assign'])->name('template.assign');
-    Route::get('/admin/view-uncategorized-templates', [TemplateController::class, 'viewUncategorized'])->name('templates.viewUncategorized');
-    Route::get('/admin/assign-setting-bulk', [TemplateController::class, 'assignTemplateBulk']);
-    Route::post('/admin/assign-template-bulk', [TemplateController::class, 'editDeviceTemplateBulk']);
-    Route::get('/admin/view-template-configurations/{id}', [TemplateController::class, 'viewTemplateConifiguration']);
-    Route::patch('/admin/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations']);
-    Route::post('/admin/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations']);
+    Route::post('/admin/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations'])->middleware('check.permission:settings_management.edit');
+    Route::get('/admin/add-template', [TemplateController::class, 'index'])->middleware('check.permission:settings_management.create')->name('template.add');
+    Route::post('/admin/store-template', [TemplateController::class, 'create'])->middleware('check.permission:settings_management.create')->name('template.store');
+    Route::get('/admin/view-template', [TemplateController::class, 'show'])->middleware('check.permission:settings_management.view')->name('template.view');
+    Route::get('/admin/edit-template/{id}', [TemplateController::class, 'edit'])->middleware('check.permission:settings_management.edit')->name('template.edit');
+    Route::patch('/admin/update-template/{id}', [TemplateController::class, 'update'])->middleware('check.permission:settings_management.edit')->name('template.update');
+    Route::delete('/admin/delete-template/{id}', [TemplateController::class, 'destroy'])->middleware('check.permission:settings_management.delete')->name('template.delete');
+    Route::post('/admin/assign-template/{id}', [TemplateController::class, 'assign'])->middleware('check.permission:settings_management.edit')->name('template.assign');
+    Route::get('/admin/view-uncategorized-templates', [TemplateController::class, 'viewUncategorized'])->middleware('check.permission:settings_management.view')->name('templates.viewUncategorized');
+    Route::get('/admin/assign-setting-bulk', [TemplateController::class, 'assignTemplateBulk'])->middleware('check.permission:settings_management.assign_bulk');
+    Route::post('/admin/assign-template-bulk', [TemplateController::class, 'editDeviceTemplateBulk'])->middleware('check.permission:settings_management.assign_bulk');
+    Route::get('/admin/view-template-configurations/{id}', [TemplateController::class, 'viewTemplateConifiguration'])->middleware('check.permission:settings_management.view');
+    Route::patch('/admin/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations'])->middleware('check.permission:settings_management.edit');
+    Route::post('/admin/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations'])->middleware('check.permission:settings_management.edit');
 
     /* ======================= Device Category Routes ======================= */
     Route::get('/admin/get-data-fields', [DeviceController::class, 'getDataFields'])->name('dataFields.get');
@@ -292,6 +314,25 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/admin/packet-alerts/{alert}/edit', [App\Http\Controllers\PacketAlertController::class, 'edit'])->name('protocols.packet-alerts.edit');
     Route::put('/admin/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'update'])->name('protocols.packet-alerts.update');
     Route::delete('/admin/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'destroy'])->name('protocols.packet-alerts.destroy');
+
+    /* ======================= Permission Management Routes ======================= */
+    Route::middleware(['auth', 'account.management'])->group(function () {
+        Route::get('/admin/manage-permissions', [PermissionManagementController::class, 'adminManagePermissions'])->name('admin.manage-permissions');
+        Route::get('/admin/manage-user-permissions', [PermissionManagementController::class, 'adminManageUserPermissions'])->name('admin.manage-user-permissions');
+
+        // More specific user routes BEFORE generic reseller routes (important for route matching)
+        Route::get('/admin/permissions/user/{userId}', [PermissionManagementController::class, 'getUserPermissions']);
+        Route::post('/admin/permissions/user/{userId}/preview', [PermissionManagementController::class, 'previewUserPermissionImpact']);
+        Route::post('/admin/permissions/user/{userId}/update', [PermissionManagementController::class, 'updateUserPermissions']);
+
+        // Permission dependencies
+        Route::get('/admin/permissions/dependencies/get', [PermissionManagementController::class, 'getPermissionDependencies']);
+
+        // Generic reseller routes
+        Route::get('/admin/permissions/{resellerId}', [PermissionManagementController::class, 'getResellerPermissions']);
+        Route::post('/admin/permissions/{resellerId}/preview', [PermissionManagementController::class, 'previewResellerPermissionImpact']);
+        Route::post('/admin/permissions/{resellerId}/update', [PermissionManagementController::class, 'updateResellerPermissions']);
+    });
 });
 
 Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function () {
@@ -304,35 +345,37 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::post('/updateFirmware', [FirmwareController::class, 'updateFirmwareDevices']);
 
     // User Management
-    Route::get('/view-user', [RegisterController::class, 'showWriter']);
-    Route::view('/add-user', 'add_user');
-    Route::post('/register/writer', [RegisterController::class, 'createWriter'])->name('register.writer');
-    Route::get('/edit-user/{user_type}/{id}', [RegisterController::class, 'editWriter'])->name('rwriter.edit');
-    Route::patch('/update-user/{id}/{user_type}', [RegisterController::class, 'updateWriter'])->name('rwriter.update');
-    Route::patch('/update-user-info/{id}/{user_type}', [RegisterController::class, 'updateWriterInformation'])->name('writer.updateWriterInformation');
-    Route::delete('/delete-user/{id}', [RegisterController::class, 'deleteWriter'])->name('rwriter.delete');
+    Route::get('/view-user', [RegisterController::class, 'showWriter'])->middleware('check.permission:account_management.view');
+    Route::view('/add-user', 'add_user')->middleware('check.permission:account_management.create');
+    Route::post('/register/writer', [RegisterController::class, 'createWriter'])->middleware('check.permission:account_management.create')->name('register.writer');
+    Route::get('/edit-user/{user_type}/{id}', [RegisterController::class, 'editWriter'])->middleware('check.permission:account_management.edit')->name('rwriter.edit');
+    Route::patch('/update-user/{id}/{user_type}', [RegisterController::class, 'updateWriter'])->middleware('check.permission:account_management.edit')->name('rwriter.update');
+    Route::post('/enable-account-device-category', [RegisterController::class, 'enableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
+    Route::post('/disable-account-device-category', [RegisterController::class, 'disableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
+    Route::patch('/update-user-info/{id}/{user_type}', [RegisterController::class, 'updateWriterInformation'])->middleware('check.permission:account_management.edit')->name('writer.updateWriterInformation');
+    Route::delete('/delete-user/{id}', [RegisterController::class, 'deleteWriter'])->middleware('check.permission:account_management.delete')->name('rwriter.delete');
 
     // Device Management
-    Route::get('/view-device-assign', [DeviceController::class, 'show'])->name('device.view'); // Consider renaming route if needed
-    Route::get('/view-device-unassign', [DeviceController::class, 'showAssign']);
-    Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->name('device.edit');
-    Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->name('device.update');
-    Route::post('/assignuserAll', [DeviceController::class, 'userassignAll'])->name('device.userassignall');
+    Route::get('/view-device-assign', [DeviceController::class, 'show'])->middleware('check.permission:device_management.view')->name('device.view'); // Consider renaming route if needed
+    Route::get('/view-device-unassign', [DeviceController::class, 'showAssign'])->middleware('check.permission:device_management.view');
+    Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
+    Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
+    Route::post('/assignuserAll', [DeviceController::class, 'userassignAll'])->middleware('check.permission:device_management.edit')->name('device.userassignall');
 
     // Templates
-    Route::get('/add-template', [TemplateController::class, 'index'])->name('template.add');
-    Route::post('/store-template', [TemplateController::class, 'create'])->name('template.store');
-    Route::get('/view-template', [TemplateController::class, 'show'])->name('template.view');
-    Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->name('template.edit');
-    Route::patch('/update-template/{id}', [TemplateController::class, 'update'])->name('template.update');
-    Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->name('template.delete');
-    Route::post('/assign-template/{id}', [TemplateController::class, 'assign']);
-    Route::post('/assign-template-bulk', [TemplateController::class, 'editDeviceTemplateBulk']);
-    Route::get('/assign-setting-bulk', [TemplateController::class, 'assignTemplateBulk']);
-    Route::post('/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations']);
-    Route::get('/view-template-configurations/{id}', [TemplateController::class, 'viewTemplateConifiguration']);
-    Route::patch('/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations']);
-    Route::post('/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations']);
+    Route::get('/add-template', [TemplateController::class, 'index'])->middleware('check.permission:settings_management.create')->name('template.add');
+    Route::post('/store-template', [TemplateController::class, 'create'])->middleware('check.permission:settings_management.create')->name('template.store');
+    Route::get('/view-template', [TemplateController::class, 'show'])->middleware('check.permission:settings_management.view')->name('template.view');
+    Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->middleware('check.permission:settings_management.edit')->name('template.edit');
+    Route::patch('/update-template/{id}', [TemplateController::class, 'update'])->middleware('check.permission:settings_management.edit')->name('template.update');
+    Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->middleware('check.permission:settings_management.delete')->name('template.delete');
+    Route::post('/assign-template/{id}', [TemplateController::class, 'assign'])->middleware('check.permission:settings_management.edit');
+    Route::post('/assign-template-bulk', [TemplateController::class, 'editDeviceTemplateBulk'])->middleware('check.permission:settings_management.assign_bulk');
+    Route::get('/assign-setting-bulk', [TemplateController::class, 'assignTemplateBulk'])->middleware('check.permission:settings_management.assign_bulk');
+    Route::post('/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations'])->middleware('check.permission:settings_management.edit');
+    Route::get('/view-template-configurations/{id}', [TemplateController::class, 'viewTemplateConifiguration'])->middleware('check.permission:settings_management.view');
+    Route::patch('/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations'])->middleware('check.permission:settings_management.edit');
+    Route::post('/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations'])->middleware('check.permission:settings_management.edit');
     // Device Category
     Route::permanentRedirect('View-device-category', '/reseller/view-device-category');
     Route::get('/view-device-category', [DeviceCategoryController::class, 'show'])->name('reseller.deviceCategory.view');
@@ -342,11 +385,11 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::post('/get-template-configuration', [DeviceCategoryController::class, 'getTemplateConfiguration']);
 
     // Configurations
-    Route::get('/view-configurations/{id}', [RegisterController::class, 'showConfigurations']);
-    Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations']);
-    Route::post('/update-configurations/{id}', [RegisterController::class, 'updateConfigurations']);
-    Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);
-    Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations']);
+    Route::get('/view-configurations/{id}', [RegisterController::class, 'showConfigurations'])->middleware('check.permission:account_management.edit');
+    Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations'])->middleware('check.permission:device_management.view');
+    Route::post('/update-configurations/{id}', [RegisterController::class, 'updateConfigurations'])->middleware('check.permission:account_management.edit');
+    Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations'])->middleware('check.permission:device_management.edit');
+    Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations'])->middleware('check.permission:device_management.edit');
     Route::post('/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations']);
 
     // Reseller Linking
@@ -358,6 +401,30 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::post('/get-can-protocol-fields', [DeviceController::class, 'getCanProtoColFields']);
     Route::post('/get-firmware-with-models', [FirmwareController::class, 'getFirmwareWithModel']);
     Route::post('/get-firmware', [FirmwareController::class, 'getFirmware']);
+
+    // Certificate Management Routes for Reseller
+    Route::get('/certificates', [CertificateController::class, 'index'])->name('certificate.index');
+    Route::get('/certificate/{id}', [CertificateController::class, 'certificatePage'])->name('certificate.page');
+    Route::post('/certificate/{id}', [CertificateController::class, 'generateCertificate'])->name('certificate.generate');
+    Route::post('/certificate/{id}/preview', [CertificateController::class, 'previewCertificate'])->name('certificate.preview');
+    Route::post('/certificate/{id}/save', [CertificateController::class, 'saveCertificateDetails'])->name('certificate.save');
+    Route::get('/certificate/{id}/view', [CertificateController::class, 'viewCertificate'])->name('certificate.view');
+    Route::post('/certificate/{id}/upload-rc', [CertificateController::class, 'uploadRC'])->name('certificate.upload-rc');
+    Route::post('/certificate/{id}/verify-plate', [CertificateController::class, 'verifyNumberPlate'])->name('certificate.verify-plate');
+    Route::post('/certificate/{id}/extract-device', [CertificateController::class, 'extractDeviceInfo'])->name('certificate.extract-device');
+    Route::post('/certificate/{id}/lookup-iccid', [CertificateController::class, 'lookupIccid'])->name('certificate.lookup-iccid');
+    Route::get('/certificate/{id}/rc-data', [CertificateController::class, 'getRCData'])->name('certificate.rc-data');
+    Route::get('/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->name('certificate.rc-status');
+    Route::get('/certificate/{id}/generate-vltd-serial', [CertificateController::class, 'generateVltdSerial'])->name('certificate.generate-vltd-serial');
+
+    /* ======================= Permission Management Routes ======================= */
+    Route::middleware(['auth', 'account.management'])->group(function () {
+        Route::get('/manage-child-permissions', [PermissionManagementController::class, 'resellerManageChildPermissions'])->middleware('check.permission:account_management.view')->name('reseller.manage-child-permissions');
+        Route::get('/permissions/dependencies/get', [PermissionManagementController::class, 'getPermissionDependencies']);
+        Route::get('/permissions/child/{userId}', [PermissionManagementController::class, 'getChildUserPermissions']);
+        Route::post('/permissions/child/{userId}/preview', [PermissionManagementController::class, 'previewChildUserPermissionImpact']);
+        Route::post('/permissions/child/{userId}/update', [PermissionManagementController::class, 'updateChildUserPermissions']);
+    });
 });
 
 
@@ -367,42 +434,65 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::view('/', 'dashboard');
     Route::post('/update-canprotocolWriter-configurations/{id}', [RegisterController::class, 'updateCanProtocolConfigurations']);
     // Device Management
-    Route::get('/view-device', [DeviceController::class, 'showUserDevice'])->name('device.view');
-    Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->name('device.edit');
-    Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->name('device.update');
-    Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);
+    Route::get('/view-device', [DeviceController::class, 'showUserDevice'])->middleware('check.permission:device_management.view')->name('device.view');
+    Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
+    Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
+    Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations'])->middleware('check.permission:device_management.edit');
+
+    // Certificate Management Routes
+    Route::get('/certificates', [CertificateController::class, 'index'])->name('certificate.index');
+    Route::get('/certificate/{id}', [CertificateController::class, 'certificatePage'])->name('certificate.page');
+    Route::post('/certificate/{id}', [CertificateController::class, 'generateCertificate'])->name('certificate.generate');
+    Route::post('/certificate/{id}/preview', [CertificateController::class, 'previewCertificate'])->name('certificate.preview');
+    Route::post('/certificate/{id}/save', [CertificateController::class, 'saveCertificateDetails'])->name('certificate.save');
+    Route::get('/certificate/{id}/view', [CertificateController::class, 'viewCertificate'])->name('certificate.view');
+    Route::post('/certificate/{id}/upload-rc', [CertificateController::class, 'uploadRC'])->name('certificate.upload-rc');
+    Route::post('/certificate/{id}/verify-plate', [CertificateController::class, 'verifyNumberPlate'])->name('certificate.verify-plate');
+    Route::post('/certificate/{id}/extract-device', [CertificateController::class, 'extractDeviceInfo'])->name('certificate.extract-device');
+    Route::post('/certificate/{id}/lookup-iccid', [CertificateController::class, 'lookupIccid'])->name('certificate.lookup-iccid');
+    Route::get('/certificate/{id}/rc-data', [CertificateController::class, 'getRCData'])->name('certificate.rc-data');
+    Route::get('/certificate/{id}/rc-status', [CertificateController::class, 'getRCStatus'])->name('certificate.rc-status');
+    Route::get('/certificate/{id}/generate-vltd-serial', [CertificateController::class, 'generateVltdSerial'])->name('certificate.generate-vltd-serial');
+
+    // Legacy Device Certificate Routes (kept for backward compatibility)
     Route::post('/device/{id}/certificate', [DeviceController::class, 'generateCertificate']);
     Route::post('/device/{id}/certificate/preview', [DeviceController::class, 'previewCertificate']);
     Route::get('/device/{id}/certificate', [DeviceController::class, 'certificatePage']);
     Route::post('/device/{id}/certificate/save', [DeviceController::class, 'saveCertificateDetails']);
     Route::get('/device/{id}/certificate/view', [DeviceController::class, 'viewCertificate']);
-    Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations']);
-    Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations']);
-    Route::post('/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations']);
+    Route::post('/device/{id}/certificate/upload-rc', [DeviceController::class, 'uploadRC']);
+    Route::post('/device/{id}/certificate/verify-plate', [DeviceController::class, 'verifyNumberPlate']);
+    Route::post('/device/{id}/certificate/extract-device', [DeviceController::class, 'extractDeviceInfo']);
+    Route::get('/device/{id}/certificate/rc-data', [DeviceController::class, 'getRCData']);
+    Route::get('/device/{id}/certificate/rc-status', [DeviceController::class, 'getRCStatus']);
+
+    Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations'])->middleware('check.permission:device_management.view');
+    Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations'])->middleware('check.permission:device_management.edit');
+    Route::post('/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations'])->middleware('check.permission:device_management.edit');
 
     // User Info Update
     Route::get('/edit-user/{user_type}/{id}', [RegisterController::class, 'editWriter'])->name('rwriter.edit');
     Route::patch('/update-user/{id}/{user_type}', [RegisterController::class, 'updateWriter'])->name('rwriter.update');
 
     // Template Management
-    Route::get('/add-template', [TemplateController::class, 'index'])->name('template.add');
-    Route::post('/store-template', [TemplateController::class, 'create'])->name('template.store');
-    Route::get('/view-template', [TemplateController::class, 'show'])->name('template.view');
-    Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->name('template.edit');
-    Route::patch('/update-template/{id}', [TemplateController::class, 'update'])->name('template.update');
-    Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->name('template.delete');
-    Route::post('/assign-template/{id}', [TemplateController::class, 'assign'])->name('template.assign');
-    Route::post('/assigtemplateAll', [DeviceController::class, 'userassigtemplateAll'])->name('device.assigtemplateAll');
-    Route::post('/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations']);
+    Route::get('/add-template', [TemplateController::class, 'index'])->middleware('check.permission:settings_management.create')->name('template.add');
+    Route::post('/store-template', [TemplateController::class, 'create'])->middleware('check.permission:settings_management.create')->name('template.store');
+    Route::get('/view-template', [TemplateController::class, 'show'])->middleware('check.permission:settings_management.view')->name('template.view');
+    Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->middleware('check.permission:settings_management.edit')->name('template.edit');
+    Route::patch('/update-template/{id}', [TemplateController::class, 'update'])->middleware('check.permission:settings_management.edit')->name('template.update');
+    Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->middleware('check.permission:settings_management.delete')->name('template.delete');
+    Route::post('/assign-template/{id}', [TemplateController::class, 'assign'])->middleware('check.permission:settings_management.edit')->name('template.assign');
+    Route::post('/assigtemplateAll', [DeviceController::class, 'userassigtemplateAll'])->middleware('check.permission:settings_management.edit')->name('device.assigtemplateAll');
+    Route::post('/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations'])->middleware('check.permission:settings_management.edit');
     // Template Configuration
     Route::post('/get-model-name', [FirmwareController::class, 'getModelName']);
 
     Route::post('/get-template-configuration', [DeviceCategoryController::class, 'getTemplateConfiguration']); // only once
-    Route::post('/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations']);
-    Route::patch('/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations']);
-    Route::get('/view-template-configurations/{id}', [TemplateController::class, 'viewTemplateConifiguration']);
-    Route::get('/assign-setting-bulk', [TemplateController::class, 'assignTemplateBulk']);
-    Route::post('/assign-template-bulk', [TemplateController::class, 'editDeviceTemplateBulk']);
+    Route::post('/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations'])->middleware('check.permission:settings_management.edit');
+    Route::patch('/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations'])->middleware('check.permission:settings_management.edit');
+    Route::get('/view-template-configurations/{id}', [TemplateController::class, 'viewTemplateConifiguration'])->middleware('check.permission:settings_management.view');
+    Route::get('/assign-setting-bulk', [TemplateController::class, 'assignTemplateBulk'])->middleware('check.permission:settings_management.assign_bulk');
+    Route::post('/assign-template-bulk', [TemplateController::class, 'editDeviceTemplateBulk'])->middleware('check.permission:settings_management.assign_bulk');
 
     // Device Category
     Route::post('/get-device-category', [DeviceCategoryController::class, 'getDeviceCategory']);
@@ -453,25 +543,25 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::get('/view-user-approval-request', [GuestUserController::class, 'showApprovalRequest']);
     Route::get('/assign-device', [DeviceController::class, 'assignDeviceMultiple'])->name('support.device.add.multiple');
     // Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);
-    Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations']);
-    Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations']);
+    Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations'])->middleware('check.permission:device_management.view');
+    Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations'])->middleware('check.permission:device_management.edit');
     Route::post('/get-model-name', [FirmwareController::class, 'getModelName']);
     Route::post('/getusers', [RegisterController::class, 'getuserinfo'])->name('user.getinfo');
-    Route::post('/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations']);
-    Route::get('/add-template', [TemplateController::class, 'index'])->name('template.add');
-    Route::post('/store-template', [TemplateController::class, 'create'])->name('template.store');
-    Route::get('/view-template', [TemplateController::class, 'show'])->name('template.view');
-    Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->name('template.edit');
-    Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->name('template.delete');
+    Route::post('/update-canprotocol-configurations/{id}', [DeviceController::class, 'updateCanProtocolConfigurations'])->middleware('check.permission:device_management.edit');
+    Route::get('/add-template', [TemplateController::class, 'index'])->middleware('check.permission:settings_management.create')->name('template.add');
+    Route::post('/store-template', [TemplateController::class, 'create'])->middleware('check.permission:settings_management.create')->name('template.store');
+    Route::get('/view-template', [TemplateController::class, 'show'])->middleware('check.permission:settings_management.view')->name('template.view');
+    Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->middleware('check.permission:settings_management.edit')->name('template.edit');
+    Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->middleware('check.permission:settings_management.delete')->name('template.delete');
     // Template Configuration
     Route::post('/submit-assign-device', [DeviceController::class, 'submitImeiSheetSupport']);
     Route::post('/submit-Multipledevice', [DeviceController::class, 'submitMultipleDeviceSupport']);
     Route::post('/get-template-configuration', [DeviceCategoryController::class, 'getTemplateConfiguration']); // only once
-    Route::post('/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations']);
-    Route::patch('/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations']);
-    Route::get('/view-template-configurations/{id}', [TemplateController::class, 'viewTemplateConifiguration']);
+    Route::post('/update-template-configurations/{id}', [TemplateController::class, 'updateConfigurations'])->middleware('check.permission:settings_management.edit');
+    Route::patch('/update-template-info-configurations/{id}', [TemplateController::class, 'updateTemplateInfoConfigurations'])->middleware('check.permission:settings_management.edit');
+    Route::get('/view-template-configurations/{id}', [TemplateController::class, 'viewTemplateConifiguration'])->middleware('check.permission:settings_management.view');
     Route::get('/view-device-logs/{id}', [DeviceLogsController::class, 'index']);
-    Route::post('/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations']);
+    Route::post('/update-canprotocol-temp-configurations/{id}', [TemplateController::class, 'updateCanProtocolTempConfigurations'])->middleware('check.permission:settings_management.edit');
     //   Route::get('/edit-user/{user_type}/{id}', [RegisterController::class, 'editWriter'])->name('writer.edit');
     // Device Category
     Route::post('/assigtemplateAll', [DeviceController::class, 'userassigtemplateAll'])->name('device.assigtemplateAll');
@@ -509,4 +599,3 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::put('/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'update'])->name('support.protocols.packet-alerts.update');
     Route::delete('/packet-alerts/{alert}', [App\Http\Controllers\PacketAlertController::class, 'destroy'])->name('support.protocols.packet-alerts.destroy');
 });
-

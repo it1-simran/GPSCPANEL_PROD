@@ -58,6 +58,7 @@ class Kernel extends HttpKernel
         'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'check.role' => \App\Http\Middleware\CheckUserType::class,
+        'check.permission' => \App\Http\Middleware\CheckPermission::class,
         'check.auth.token' => \App\Http\Middleware\CheckAuthorizationToken::class,
         'check.auth.token.jig' => \App\Http\Middleware\CheckAuthorizationTokenJig::class,
         'check.auth.file.token' => \App\Http\Middleware\CheckAuthorizationFileToken::class,
@@ -69,5 +70,7 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'account.management' => \App\Http\Middleware\AccountManagementAccess::class,
+        'hierarchy.access' => \App\Http\Middleware\HierarchyAccess::class,
     ];
 }

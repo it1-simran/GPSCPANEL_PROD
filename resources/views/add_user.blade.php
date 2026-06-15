@@ -10,10 +10,20 @@
 
   $getDeviceCategory = CommonHelper::getDeviceCategory();
   $currentUser =  Auth::user();
+  $categoryConfigMap = [];
+  $canConfigurations = [];
   if ($currentUser->user_type == 'Reseller') {
     $getDeviceCategoryId = $currentUser->device_category_id;
     $deviceCategoryArr = explode(",", $getDeviceCategoryId);
-    $configurations = json_decode($currentUser->configurations, true);
+    $configurations = json_decode($currentUser->configurations, true) ?: [];
+    $canConfigurations = json_decode($currentUser->can_configurations, true) ?: [];
+
+    foreach ($deviceCategoryArr as $configIndex => $categoryId) {
+      $categoryId = (int) trim($categoryId);
+      if ($categoryId && isset($configurations[$configIndex])) {
+        $categoryConfigMap[$categoryId] = $configurations[$configIndex];
+      }
+    }
   }
 
   ?>
@@ -49,25 +59,7 @@
             </div><!--/.c_title-->
             <div class="c_content" style="padding: 30px;">
               <div class="row" id="alert_msg">
-                @if ($message = Session::get('success'))
-                <div class="col-sm-12 alert alert-success" role="alert">
-                  {{ $message }}
-                </div>
-                @endif
-                @if ($message = Session::get('error'))
-                <div class="col-sm-12 alert alert-danger" role="alert">
-                  {{ $message }}
-                </div>
-                @endif
-                @if ($errors->any())
-                <div class="alert alert-danger">
-                  <ul>
-                    @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                  </ul>
-                </div>
-                @endif
+                @include('partials.gps-inline-alerts')
                 <div class="col-sm-12 alert alert-success success_msg" role="alert" style="display:none"></div>
                 <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
                 <form class="validator" id="commentForm" method="post" action="#" onsubmit="return false">
@@ -136,12 +128,12 @@
 
                   <div class="form-group" style="margin-top: 10px; margin-bottom: 30px;">
                     <label style="font-weight: 700; color: #334155; font-size: 16px; margin-bottom: 16px; display: block; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Device Categories <span style="color: #ef4444;">*</span></label>
-                    <div class="row" style="margin-top: 16px;">
+                    <div style="margin-top: 16px; display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 15px;">
                       @foreach($getDeviceCategory as $deviceCategory)
-                      <div class="col-md-3 col-sm-6" style="margin-bottom: 15px;">
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
-                          <label class="bgx-label-category" style="margin: 0; font-weight: 600; color: #475569; cursor: pointer;">{{$deviceCategory->device_category_name}}</label>
-                          <input type="checkbox" class="bgx-checkbox-category " name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput()" style="width: 18px; height: 18px; margin: 0; cursor: pointer;">
+                      <div style="flex: 0 0 auto; min-width: 100px; max-width: 180px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; width: 100%; transition: all 0.2s ease;">
+                          <input type="checkbox" id="deviceCategory{{$deviceCategory->id}}" class="bgx-checkbox-category" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput()" style="width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0;">
+                          <label for="deviceCategory{{$deviceCategory->id}}" class="bgx-label-category" style="margin: 0; margin-left: 12px; font-weight: 600; color: #475569; cursor: pointer; flex: 1; text-align: right;">{{$deviceCategory->device_category_name}}</label>
                         </div>
                       </div>
                       @endforeach
@@ -151,13 +143,13 @@
                   @if($currentUser->user_type == 'Reseller')
                   <div class="form-group" style="margin-top: 10px; margin-bottom: 30px;">
                     <label style="font-weight: 700; color: #334155; font-size: 16px; margin-bottom: 16px; display: block; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Device Categories <span style="color: #ef4444;">*</span></label>
-                    <div class="row" style="margin-top: 16px;">
+                    <div style="margin-top: 16px; display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 15px;">
                       @foreach($getDeviceCategory as $deviceCategory)
                       @if(in_array($deviceCategory->id,$deviceCategoryArr))
-                      <div class="col-md-3 col-sm-6" style="margin-bottom: 15px;">
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
-                          <label class="bgx-label-category" style="margin: 0; font-weight: 600; color: #475569; cursor: pointer;">{{$deviceCategory->device_category_name}}</label>
-                          <input type="checkbox" {{ in_array($deviceCategory->id, $deviceCategoryArr) ? 'checked' : '' }} class="bgx-checkbox-category bgx-checkbox-category-{{$deviceCategory->id}}" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput({{Auth::user()->id}},{{$deviceCategory->id}})" style="width: 18px; height: 18px; margin: 0; cursor: pointer;">
+                      <div style="flex: 0 0 auto; min-width: 100px; max-width: 180px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; width: 100%; transition: all 0.2s ease;">
+                          <input type="checkbox" id="deviceCategory{{$deviceCategory->id}}" {{ in_array($deviceCategory->id, $deviceCategoryArr) ? 'checked' : '' }} class="bgx-checkbox-category bgx-checkbox-category-{{$deviceCategory->id}}" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput({{Auth::user()->id}},{{$deviceCategory->id}})" style="width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0;">
+                          <label for="deviceCategory{{$deviceCategory->id}}" class="bgx-label-category" style="margin: 0; margin-left: 12px; font-weight: 600; color: #475569; cursor: pointer; flex: 1; text-align: right;">{{$deviceCategory->device_category_name}}</label>
                         </div>
                       </div>
                       @endif
@@ -183,6 +175,7 @@
                       });
                       $user = Auth::user();
                       $templates = Template::where('device_category_id', $category->id)
+                      ->where('is_deleted', '0')
                       ->where(function ($query) use ($user) {
                       if ($user->user_type == 'Admin') {
                       $query->whereNull('id_user');
@@ -190,7 +183,16 @@
                       $query->where('id_user', $user->id);
                       }
                       })
+                      ->orderByDesc('default_template')
                       ->get();
+                      if ($templates->isEmpty() && $user->user_type !== 'Admin') {
+                        $templates = Template::where('device_category_id', $category->id)
+                          ->whereNull('id_user')
+                          ->where('is_deleted', '0')
+                          ->where('verify', 1)
+                          ->orderByDesc('default_template')
+                          ->get();
+                      }
                       @endphp
                       <div class="row">
                         <div class="col-md-6">
@@ -273,9 +275,8 @@
                         @if(isset($input['key']))
                         @php
 
-                        // Check if $configurations is defined and has the current index
-                        $config = json_decode($currentUser['configurations'],true);
-                        $configurationValue = isset($configurations[$key]) ? $configurations[$key]: null;
+                        // Map parent configuration by device category id (not global category list index).
+                        $configurationValue = $categoryConfigMap[$category->id] ?? null;
                         @endphp
                         @if($index % 2 === 0)
                         <div class="row">
@@ -595,37 +596,36 @@
             type: "POST",
             data: formData,
             success: function(response) {
-              let result = JSON.parse(response);
-              $('.success_msg').append(result.success).show();
-
-              document.documentElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-              });
+              let result = typeof response === 'object' ? response : JSON.parse(response);
+              if (window.notifyGpsSuccess) {
+                window.notifyGpsSuccess(result.success || 'Account created successfully.');
+              } else {
+                $('.success_msg').append(result.success).show();
+              }
             },
             error: function(xhr) {
-              let errors = JSON.parse(xhr.responseText);
-              $('.error_msg').empty();
-              if (errors && errors.errors) {
-                $.each(errors.errors, function(key, value) {
-                  $('.error_msg').append(value[0] + '<br>').show();
-                });
+              if (window.notifyGpsFromXhr) {
+                window.notifyGpsFromXhr(xhr);
+              } else {
+                let errors = JSON.parse(xhr.responseText);
+                $('.error_msg').empty();
+                if (errors && errors.errors) {
+                  $.each(errors.errors, function(key, value) {
+                    $('.error_msg').append(value[0] + '<br>').show();
+                  });
+                }
               }
-              document.documentElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-              });
             },
             complete: function() {
               $('#loading').hide();
             }
           });
         } else {
-          $('.error_msg').text(error_msg).show();
-          document.documentElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
+          if (window.notifyGpsError) {
+            window.notifyGpsError(error_msg);
+          } else {
+            $('.error_msg').text(error_msg).show();
+          }
         }
       });
     });
@@ -803,13 +803,7 @@
                   htmlContent += '<div>';
                   htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" placeholder="Ping Interval" value=""/>';
                   htmlContent += '</div></div></div>';
-                  htmlContent += '<div class="col-lg-6">';
-                  htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
-                  htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Device Edit Permission<span class="require">*</span></label>';
-                  htmlContent += '<div style="display: flex; gap: 16px; align-items: center; margin-top: 8px;">';
-                  htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Enable</label>';
-                  htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Disable</label>';
-                  htmlContent += '</div></div></div>';
+                  htmlContent += '<input type="hidden" name="configuration[' + index + '][is_editable]" value="1">';
                   htmlContent += '</div>';
                   htmlContent += '</div></div></div>';
                   // Close device-category-fields
@@ -1037,13 +1031,7 @@
                 htmlContent += '<div>';
                 htmlContent += '<input type="number" name="configuration[' + index + '][ping_interval]" class="form-control inputType" style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;" placeholder="Ping Interval" value=""/>';
                 htmlContent += '</div></div></div>';
-                htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group" style="margin-bottom: 24px;">';
-                htmlContent += '<label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Device Edit Permission<span class="require">*</span></label>';
-                htmlContent += '<div style="display: flex; gap: 16px; align-items: center; margin-top: 8px;">';
-                htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input checked type="radio" name="configuration[' + index + '][is_editable]" value="1" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Enable</label>';
-                htmlContent += '<label style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #475569; cursor: pointer;"><input type="radio" name="configuration[' + index + '][is_editable]" value="0" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #76CF1C;" required> Disable</label>';
-                htmlContent += '</div></div></div>';
+                htmlContent += '<input type="hidden" name="configuration[' + index + '][is_editable]" value="1">';
                 if (canEnable) {
                   htmlContent += `
                 <div class="col-lg-12 isCanEnable` + index + `" style="padding: 0px 15px; margin-bottom: 24px;">

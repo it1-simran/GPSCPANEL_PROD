@@ -119,6 +119,9 @@ $errors = json_decode($device['errors'], true);
                                         </h4>
                                     </div>
                                     <div class="card-body body-custom">
+                                        <div class="row" id="alert_msg">
+                                            @include('partials.gps-inline-alerts')
+                                        </div>
                                         @if($errors && count($errors) > 0)
                                             @foreach($errors as $error)
                                                 <div class="col-sm-12 alert alert-danger" role="alert">
@@ -261,19 +264,21 @@ $errors = json_decode($device['errors'], true);
                                                                 {{ $configurations['total_pings'] ?? 0}}</div>
                                                         </div>
                                                         <div class="edit-row">
-                                                            @if(Auth::user()->user_type != "Support")
-                                                                @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
-                                                                    <button type="button" class="btn btn-primary edit-device-btn"
-                                                                        onclick="toggleEditDevice()">
-                                                                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
-                                                                    </button>
-                                                                @endif
-                                                            @else
-                                                                @if(Auth::user()->is_support_active)
-                                                                    <button type="button" class="btn btn-primary edit-btn"
-                                                                        onclick="toggleEditDevice('')">
-                                                                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
-                                                                    </button>
+                                                            @if(Auth::user()->user_type == "Admin" || Auth::user()->hasPermission('device_management.edit'))
+                                                                @if(Auth::user()->user_type != "Support")
+                                                                    @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                                                        <button type="button" class="btn btn-primary edit-device-btn"
+                                                                            onclick="toggleEditDevice()">
+                                                                            <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                                        </button>
+                                                                    @endif
+                                                                @else
+                                                                    @if(Auth::user()->is_support_active)
+                                                                        <button type="button" class="btn btn-primary edit-btn"
+                                                                            onclick="toggleEditDevice('')">
+                                                                            <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                                        </button>
+                                                                    @endif
                                                                 @endif
                                                             @endif
                                                         </div>
@@ -459,27 +464,29 @@ $errors = json_decode($device['errors'], true);
                                                 <p class="col-md-12">No configurations found.</p>
                                             @else
                                                 <?php    echo CommonHelper::getDeviceConfigurationInput($device['device_category_id'], 0, $configurations, $template_info, $url_type, $device); ?>
-                                                @if(Auth::user()->user_type != "Support")
-                                                    @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
-                                                        <div class="row mt-3">
-                                                            <div class="col-lg-12 text-center">
-                                                                <button type="button" class="btn btn-primary edit-btn"
-                                                                    onclick="toggleEdit('')">
-                                                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
-                                                                </button>
+                                                @if(Auth::user()->user_type == "Admin" || Auth::user()->hasPermission('device_management.edit'))
+                                                    @if(Auth::user()->user_type != "Support")
+                                                        @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                                            <div class="row mt-3">
+                                                                <div class="col-lg-12 text-center">
+                                                                    <button type="button" class="btn btn-primary edit-btn"
+                                                                        onclick="toggleEdit('')">
+                                                                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    @endif
-                                                @else
-                                                    @if(Auth::user()->is_support_active)
-                                                        <div class="row mt-3">
-                                                            <div class="col-lg-12 text-center">
-                                                                <button type="button" class="btn btn-primary edit-btn"
-                                                                    onclick="toggleEdit('')">
-                                                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
-                                                                </button>
+                                                        @endif
+                                                    @else
+                                                        @if(Auth::user()->is_support_active)
+                                                            <div class="row mt-3">
+                                                                <div class="col-lg-12 text-center">
+                                                                    <button type="button" class="btn btn-primary edit-btn"
+                                                                        onclick="toggleEdit('')">
+                                                                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                        </div>
+                                                        @endif
                                                     @endif
                                                 @endif
                                             @endempty
@@ -490,6 +497,7 @@ $errors = json_decode($device['errors'], true);
                                                     <div class="vc-section-title"><i class="fa fa-sitemap"></i> CAN Protocol Configurations</div>
                                                     @php $canConfigData = is_array($canConfigurations) ? $canConfigurations : json_decode($canConfigurations, true);
                                                     @endphp
+                                                    @if(Auth::user()->user_type == "Admin" || Auth::user()->hasPermission('device_management.edit'))
                                                     @empty($device['can_configurations'])
                                                         <?php            echo CommonHelper::getCanProtocolConfigurationInput($device['device_category_id'], 0, $canConfigData, $url_type, $device); ?>
                                                         @if(Auth::user()->user_type != "Support")
@@ -541,6 +549,7 @@ $errors = json_decode($device['errors'], true);
                                                             @endif
                                                         @endif
                                                     @endempty
+                                                    @endif
                                                 </div>
                                             @endif
                                         @endif

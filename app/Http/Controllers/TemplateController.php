@@ -257,14 +257,19 @@ class TemplateController extends Controller
                 ->orderBy('templates.default_template', 'DESC')
                 ->get();
         } else {
-            $templates = DB::table('templates')
+            $templatesQuery = DB::table('templates')
                 ->leftJoin('writers', 'writers.id', '=', 'templates.user_id')
                 ->select('templates.*', 'writers.name as username')
                 ->where('templates.is_deleted', '0')
                 ->where('verify', '2')
-                ->where('id_user', auth()->id())
-                ->orderBy('templates.default_template', 'DESC')
-                ->get();
+                ->where('id_user', auth()->id());
+            $enabledCategoryIds = $this->deviceCategoryAccess()->parseEnabledCategoryIds(Auth::user());
+            if (empty($enabledCategoryIds)) {
+                $templatesQuery->whereRaw('1 = 0');
+            } else {
+                $templatesQuery->whereIn('templates.device_category_id', $enabledCategoryIds);
+            }
+            $templates = $templatesQuery->orderBy('templates.default_template', 'DESC')->get();
         }
         foreach ($templates as $key => $template) {
             if ($template->configurations) {
@@ -286,6 +291,11 @@ class TemplateController extends Controller
         $url_type = self::getURLType();
         // Retrieve the template by ID
         $template = Template::findOrFail($id);
+        if (!$this->deviceCategoryAccess()->userHasCategory(Auth::user(), $template->device_category_id)) {
+            return redirect($url_type . '/view-template')->with([
+                'error' => 'You do not have access to this device category. Please contact your administrator.',
+            ]);
+        }
 
         // Get devices based on IDs from the request
         $devices = Device::whereIn('id', $request->input('devices'))->get();
@@ -317,6 +327,10 @@ class TemplateController extends Controller
         $modelNameFallbackImeis = [];
 
         foreach ($devices as $device) {
+            if (!$this->deviceCategoryAccess()->userCanAccessDevice(Auth::user(), $device)) {
+                $errors[] = $device->imei;
+                continue;
+            }
             $deviceConfig = json_decode($device->configurations, true) ?? [];
             $nestedDevice = isset($deviceConfig['firmware_id']) && is_array($deviceConfig['firmware_id'])
                 && array_key_exists('value', $deviceConfig['firmware_id']);
@@ -624,7 +638,7 @@ class TemplateController extends Controller
         $template->save();
 
         return redirect("{$url_type}/view-template-configurations/{$id}")
-            ->with('success', 'Device Updated Successfully!');
+            ->with('success', 'Template updated successfully.');
     }
 
     // public function updateConfigurations(Request $request, $id)
@@ -833,7 +847,7 @@ class TemplateController extends Controller
                 ]);
         }
 
-        return back()->with('success', "Device Updated Successfully!");
+        return back()->with('success', 'Template information updated successfully.');
     }
 
     // public function updateTemplateInfoConfigurations(Request $request, $id)
@@ -925,12 +939,14 @@ class TemplateController extends Controller
         $template->updated_at = Carbon::now('UTC')->toDateTimeString();
         $template->save();
 
-        return back();
+        return back()->with('success', 'Template CAN protocol configurations updated successfully.');
     }
 
     public function editDeviceTemplateBulk(Request $request)
     {
-        //dd($request);
+        if (!$this->deviceCategoryAccess()->userHasCategory(Auth::user(), $request->deviceCategory)) {
+            return back()->withErrors('You do not have access to this device category. Please contact your administrator.');
+        }
 
         $config = $request->configuration;
         // dd($config);
@@ -995,6 +1011,11 @@ class TemplateController extends Controller
                         continue;
                     }
 
+                    if (!$this->deviceCategoryAccess()->userCanAccessDevice(Auth::user(), $dataVal)) {
+                        $skippedImeis[] = $imei;
+                        continue;
+                    }
+
                     // Check if Admin or if device belongs to/is assigned to user
                     if (Auth::user()->user_type !== 'Admin') {
                         $authId = Auth::id();
@@ -1018,7 +1039,11 @@ class TemplateController extends Controller
                         // dd($configuration);
                         $dataVal->can_configurations = json_encode($canConverted);
                         $dataVal->configurations = json_encode($configuration);
-                        $dataVal->update();
+                        $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
+                        $dataVal->timestamps = false;
+                        $dataVal->updated_at = $utcTime;
+                        $dataVal->save();
+                        $dataVal->timestamps = true;
                         $updatedCount++;
                     }
                 }

@@ -417,6 +417,13 @@ class FirmwareController extends Controller
         $user_id = $request->user_id; // Selected account ID
         $category_id = $request->category_id;
 
+        if ($category_id && !$this->deviceCategoryAccess()->userHasCategory($user, $category_id)) {
+            return response()->json([
+                'status' => 403,
+                'message' => 'You do not have access to this device category. Please contact your administrator.',
+            ], 403);
+        }
+
         $firmware = Firmware::find($firmware_id);
         $firmwareFileSize = 0;
         if ($firmware) {
@@ -425,7 +432,13 @@ class FirmwareController extends Controller
         }
 
         $device = $request->device_id ? \App\Device::find($request->device_id) : null;
-        
+        if ($device && !$this->deviceCategoryAccess()->userCanAccessDevice($user, $device)) {
+            return response()->json([
+                'status' => 403,
+                'message' => 'You do not have access to this device. Please contact your administrator.',
+            ], 403);
+        }
+
         $target_user_id = ($user_id && $user_id != "" && $user_id != "No User Found") ? $user_id : $user->id;
 
         $modal = \App\Helper\CommonHelper::getModelByHierarchy($device, $firmware_id, $target_user_id, $category_id);

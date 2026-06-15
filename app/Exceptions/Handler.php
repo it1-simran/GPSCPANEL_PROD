@@ -33,6 +33,14 @@ class Handler extends ExceptionHandler
             ], 403);
         }
 
+        if ($request->expectsJson() || $request->ajax()) {
+            if ($exception instanceof \TypeError || $exception instanceof \ErrorException) {
+                return response()->json([
+                    'message' => 'Something went wrong while processing your request. Please refresh the page and try again.',
+                ], 422);
+            }
+        }
+
         return parent::render($request, $exception);
     }
 }

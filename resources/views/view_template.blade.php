@@ -33,28 +33,16 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           <div class="vt-card-header">
             <h4><i class="fa fa-table"></i> Show Settings</h4>
             <div class="vt-card-header-actions">
-              <a href="{{ url($url_type . '/add-template') }}" class="btn vt-btn-add">
-                <i class="fa fa-plus"></i> Add Setting
-              </a>
+              @if(auth()->user()->hasPermission('settings_management.create') || auth()->user()->user_type == 'Admin')
+                <a href="{{ url($url_type . '/add-template') }}" class="btn vt-btn-add">
+                  <i class="fa fa-plus"></i> Add Setting
+                </a>
+              @endif
             </div>
           </div>
           <div class="vt-card-body">
             <div class="row" id="alert_msg">
-              @if ($message = Session::get('success'))
-                <div class="col-sm-12 alert alert-success" role="alert">
-                  {{ $message }}
-                </div>
-              @endif
-              @if ($message = Session::get('error'))
-                <div class="col-sm-12 alert alert-danger" role="alert">
-                  {{ $message }}
-                </div>
-              @endif
-              @if ($errors->any())
-                <div class="col-sm-12 alert alert-danger" role="alert">
-                  {{ $errors->first() }}
-                </div>
-              @endif
+              @include('partials.gps-inline-alerts')
             </div>
             <div class="vt-view-toolbar">
               <div class="vt-category-tabs" role="tablist">
@@ -103,7 +91,9 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         @if(Auth::user()->user_type == "Admin")
                           <th>Apply Setting</th>
                         @endif
-                        <th>Delete</th>
+                        @if(auth()->user()->hasPermission('settings_management.delete') || auth()->user()->user_type == 'Admin')
+                          <th>Delete</th>
+                        @endif
                       </tr>
                     </thead>
                     <tbody>
@@ -188,19 +178,21 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                           <a href="/{{$url_type}}/edit-template/{{$contactValue->id}}" class="btn btn-primary btn-sm">Edit</a>
                                           @endif
                                         </td> -->
+                                          @if(auth()->user()->hasPermission('settings_management.delete') || auth()->user()->user_type == 'Admin')
                                           <td>
-                                            <form id="delete-form-{{$contactValue->id}}"
-                                              action="/{{$url_type}}/delete-template/{{$contactValue->id}}" method="post">
-                                              @csrf
-                                              @method('DELETE')
-                                              @if($contactValue->default_template == '0')
-                                                <button class="btn vt-btn-delete swal-confirm" type="button"
-                                                  data-form-id="delete-form-{{$contactValue->id}}"
-                                                  data-confirm-msg="Are you sure you want to delete this template?"><i
-                                                    class="fa fa-trash"></i> Delete</button>
-                                              @endif
-                                            </form>
+                                              <form id="delete-form-{{$contactValue->id}}"
+                                                action="/{{$url_type}}/delete-template/{{$contactValue->id}}" method="post">
+                                                @csrf
+                                                @method('DELETE')
+                                                @if($contactValue->default_template == '0')
+                                                  <button class="btn vt-btn-delete swal-confirm" type="button"
+                                                    data-form-id="delete-form-{{$contactValue->id}}"
+                                                    data-confirm-msg="Are you sure you want to delete this template?"><i
+                                                      class="fa fa-trash"></i> Delete</button>
+                                                @endif
+                                              </form>
                                           </td>
+                                          @endif
                                         </tr>
                                         <?php
                         $i++;

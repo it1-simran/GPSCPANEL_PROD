@@ -220,6 +220,11 @@
     padding: 16px 20px !important;
 }
 
+.gps-inline-alert .gps-inline-alert__list {
+    margin-bottom: 0;
+    padding-left: 1.25rem;
+}
+
 #main-content .alert.alert-info,
 #container .c_content .alert.alert-info {
     background-color: #d9edf7 !important;

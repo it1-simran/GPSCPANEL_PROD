@@ -72,7 +72,7 @@
                 <a href="{{ route('writers.excel') }}" class="vu-btn-excel"><i class="fa fa-download"></i> Excel</a>
                 <a href="{{ route('writers.csv') }}" class="vu-btn-csv"><i class="fa fa-download"></i> CSV</a>
                 @endif
-                @if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller')
+                @if ((Auth::user()->user_type == 'Admin') || (Auth::user()->user_type == 'Reseller' && Auth::user()->hasPermission('account_management.create')))
                 <a href="/{{$url_type}}/add-user" class="vu-btn-primary"><i class="fa fa-plus"></i> Add Account</a>
                 @endif
               </div>
@@ -87,21 +87,7 @@
           </div><!--/.c_title-->
           <div class="c_content">
             <div class="row" id="alert_msg">
-              @if ($message = Session::get('success'))
-              <div class="col-sm-12 alert alert-success" role="alert">
-                {{ $message }}
-              </div>
-              @endif
-              @if ($message = Session::get('error'))
-              <div class="col-sm-12 alert alert-danger" role="alert">
-                {{ $message }}
-              </div>
-              @endif
-              @if ($errors->any())
-              <div class="col-sm-12 alert alert-danger" role="alert">
-                {{ $errors->first() }}
-              </div>
-              @endif
+              @include('partials.gps-inline-alerts')
             </div>
             <div>
               @if(Auth::user()->user_type == "Admin")
@@ -125,11 +111,16 @@
 <th>Device</th>
 <th>Default Configurations</th>
 <th>Assign devices</th>
-@if(Auth::user()->user_type !='User' )
+@if(Auth::user()->user_type !='User' && (Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit')))
 <th>Edit</th>
 @endif
+@if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.delete'))
 <th>Delete</th>
+@endif
 <th>Link Account</th>
+@if(Auth::user()->user_type == 'Admin' || (Auth::user()->user_type == 'Reseller' && Auth::user()->hasPermission('account_management.view')))
+<th>Manage Permissions</th>
+@endif
                     
                     </tr>
                 </thead>
@@ -168,24 +159,41 @@
 <td>{{$contact['last_ip'] ?? 'N/A'}}</td>
 <td>{{$contact['last_device'] ?? 'N/A'}}</td>
 <td>
-  <a href="/{{strtolower(Auth::user()->user_type)}}/view-configurations/{{$contact['id']}}" class="vu-btn-view" onclick="openConfigurations({{$contact['id']}})"><i class="fa fa-eye"></i> View Config</a>
+  @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit'))
+    <a href="/{{strtolower(Auth::user()->user_type)}}/view-configurations/{{$contact['id']}}" class="vu-btn-view" onclick="openConfigurations({{$contact['id']}})"><i class="fa fa-eye"></i> View Config</a>
+  @endif
 </td>
-<td><button style="margin-top:1px" class="vu-btn-assign" onclick="open_asign({{$contact['id']}})"><i class="fa fa-link"></i> Assign</button></td>
+<td>
+  @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit'))
+    <button style="margin-top:1px" class="vu-btn-assign" onclick="open_asign({{$contact['id']}})"><i class="fa fa-link"></i> Assign</button>
+  @endif
+</td>
 
                     </td>
-                    @if(Auth::user()->user_type !='User' )
+                    @if(Auth::user()->user_type !='User' && (Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit')))
                     <td>
                       <a href="/{{$url_type}}/edit-user/{{$contact['user_type']}}/{{$contact['id']}}" class="vu-btn-edit"><i class="fa fa-edit"></i> Edit</a>
                     </td>
                     @endif
+                    @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.delete'))
                     <td>
                       <button style="margin-top:1px" data-uid="{{$contact['id']}}" data-utype="{{$contact['user_type']}}" class="vu-btn-delete delUserReseller" type="button"><i class="fa fa-trash"></i> Delete</button>
                     </td>
+                    @endif
                     <td>
                       @if($contact['user_type']=='Reseller' )
                       <button style="margin-top:1px" data-uid="{{$contact['id']}}" data-cutype="{{$url_type}}" class="vu-btn-link linkReseller" type="button"><i class="fa fa-chain"></i> Link</button>
                       @endif
                     </td>
+                    @if(Auth::user()->user_type == 'Admin' || (Auth::user()->user_type == 'Reseller' && Auth::user()->hasPermission('account_management.view')))
+                    <td>
+                      @if(Auth::user()->user_type == 'Admin' && in_array($contact['user_type'], ['Reseller', 'User'], true))
+                        <a href="/admin/manage-permissions?account_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
+                      @elseif(Auth::user()->user_type == 'Reseller' && in_array($contact['user_type'], ['User', 'Reseller'], true))
+                        <a href="/reseller/manage-child-permissions?user_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
+                      @endif
+                    </td>
+                    @endif
                   </tr>
                   <?php $i++; ?>
                   @endforeach
@@ -225,6 +233,15 @@
                                 @endif
                               </optgroup>
                             </select>
+                            <script>
+                              $(document).ready(function() {
+                                $('#s2example-2{{$contact['id']}}').select2({
+                                  placeholder: 'Select and Search',
+                                  width: '100%',
+                                  dropdownParent: $('#modal-responsive{{$contact['id']}}')
+                                });
+                              });
+                            </script>
                           </div>
                         </div>
                         <div class="modal-footer text-center">
@@ -254,21 +271,29 @@
 <!--****** End Modal Responsive******-->
 @stop
 <script>
-  function open_asign(id) {
-    var $modal = $("#modal-responsive" + id);
-    $modal.find(".assign-user-id").val(id);
-
-    var $select = $modal.find(".assignDevices");
-    if ($select.length && !$select.hasClass("select2-hidden-accessible")) {
-      $select.select2({
-        placeholder: 'Select and Search ',
-        width: '100%',
-        dropdownParent: $modal
-      });
+  function initAssignDeviceSelect($modal) {
+    var $select = $modal.find('.assignDevices');
+    if (!$select.length) {
+      return;
     }
 
+    if ($select.hasClass('select2-hidden-accessible')) {
+      $select.select2('destroy');
+    }
+
+    $select.val(null);
+    $select.select2({
+      placeholder: 'Select and Search',
+      width: '100%',
+      dropdownParent: $modal
+    });
+  }
+
+  function open_asign(id) {
+    var $modal = $('#modal-responsive' + id);
+    $modal.find('.assign-user-id').val(id);
     $modal.modal('show');
-  };
+  }
 
   function openConfigurations(id) {
     $("#view-Configurations" + id).modal('show');
@@ -293,11 +318,14 @@
         pageLength: 25
     });
 
-    $('.assignDevices').each(function() {
-      // Select2 is initialized on modal open to avoid hidden-width alignment bugs.
+    $('.assign-device-modal').on('shown.bs.modal', function() {
+      initAssignDeviceSelect($(this));
+    }).on('hidden.bs.modal', function() {
+      var $select = $(this).find('.assignDevices');
+      if ($select.hasClass('select2-hidden-accessible')) {
+        $select.select2('destroy');
+      }
     });
-
-
   });
 
   function togglePasswordShow(id) {

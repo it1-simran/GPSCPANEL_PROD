@@ -40,6 +40,9 @@ $timeZones = TimezoneModel::all();
                     <h4>User Profile and Configurations</h4>
 								</div>
 								<div class="card-body body-custom">
+									<div class="row" id="alert_msg">
+										@include('partials.gps-inline-alerts')
+									</div>
 									{{-- Display User Information --}}
 									<div class="user-info no-accordion mb-4">
 										<div class="vc-section-title"><i class="fa fa-user"></i> User Information</div>

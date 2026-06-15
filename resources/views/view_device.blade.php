@@ -61,21 +61,7 @@ $currentEmail = Auth::user()->email;
               <div class="col-sm-12 alert alert-success alert-success-error" role="alert" style="display:none;"></div>
               <div class="col-sm-12 alert alert-danger alert-danger-error" role="alert" style="display:none;"></div>
               <div class="col-sm-12 alert alert-success" id="demo" role="alert" style="display: none"></div>
-              @if ($message = Session::get('success'))
-              <div class="col-sm-12 alert alert-success" role="alert">
-                {{ $message }}
-              </div>
-              @endif
-              @if ($message = Session::get('error'))
-              <div class="col-sm-12 alert alert-danger" role="alert">
-                {{ $message }}
-              </div>
-              @endif
-              @if ($errors->any())
-              <div class="col-sm-12 alert alert-danger" role="alert">
-                {{ $errors->first() }}
-              </div>
-              @endif
+              @include('partials.gps-inline-alerts')
             </div>
             <div class="tabs">
               <?php echo CommonHelper::getDeviceCategoryTabs($device, $show_acc_wise, $url_type, Session::get('device_category_id')); ?>

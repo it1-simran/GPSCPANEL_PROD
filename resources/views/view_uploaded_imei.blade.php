@@ -50,15 +50,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           <div class="c_content">
 
             {{-- Alerts --}}
-            @if ($message = Session::get('success'))
-              <div class="alert alert-success">{{ $message }}</div>
-            @endif
-            @if ($message = Session::get('error'))
-              <div class="alert alert-danger">{{ $message }}</div>
-            @endif
-            @if ($errors->any())
-              <div class="alert alert-danger">{{ $errors->first() }}</div>
-            @endif
+            @include('partials.gps-inline-alerts')
 
 
 

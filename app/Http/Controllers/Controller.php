@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use DB;
 use Auth;
 use App\Writer;
+use App\Services\DeviceCategoryAccessService;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -15,6 +16,16 @@ class Controller extends BaseController
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
     private $childAcounts = array();
+
+    protected function deviceCategoryAccess(): DeviceCategoryAccessService
+    {
+        return app(DeviceCategoryAccessService::class);
+    }
+
+    protected function authorizeDeviceCategoryAccess($device)
+    {
+        return $this->deviceCategoryAccess()->authorizeDeviceAccess($device);
+    }
 
     public function getNextValue(array $values, $lastValue)
     {

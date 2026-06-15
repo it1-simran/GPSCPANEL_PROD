@@ -21,10 +21,10 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Public route
+// Device Token Generation - requires device authentication
 Route::post('/generate-token', [DeviceApiController::class, 'generateToken']);
 
-Route::post('/generate-token-jig', [AddDeviceThroughJigController::class, 'generateToken']);
+Route::middleware('check.auth.token.jig')->post('/generate-token-jig', [AddDeviceThroughJigController::class, 'generateToken']);
 
 // Authenticated route via token
 Route::middleware('check.auth.token')->post('/postPacketData', [DeviceApiController::class, 'postPacketData']);
@@ -39,16 +39,15 @@ Route::middleware('check.auth.token.jig')->post('/add-device-through-jig', [AddD
 
 // Route::get('download-firmware/{filename}/{deviceId}', 'ApiControllers\DeviceApiController@downloadFirmware');
 
-// IMEI Logs Data Ingestion
-// IMEI Logs Data Ingestion
-Route::post('/packets/ingest', [\App\Http\Controllers\Api\PacketIngestionController::class, 'store']);
-Route::post('/tracker/packets/store', [TrackerPacketController::class, 'store']);
+// IMEI Logs Data Ingestion - requires device authentication
+Route::middleware('check.auth.token')->post('/packets/ingest', [\App\Http\Controllers\Api\PacketIngestionController::class, 'store']);
+Route::middleware('check.auth.token')->post('/tracker/packets/store', [TrackerPacketController::class, 'store']);
 
 // Live Tracking Log Fetcher
 
-// Command Execution API Routes
-Route::post('/commands/execute', [\App\Http\Controllers\LiveTrackerController::class, 'executeCommand']);
-Route::get('/commands/status', [\App\Http\Controllers\LiveTrackerController::class, 'getCommandStatus']);
+// Command Execution API Routes - requires device authentication
+Route::middleware('check.auth.token')->post('/commands/execute', [\App\Http\Controllers\LiveTrackerController::class, 'executeCommand']);
+Route::middleware('check.auth.token')->get('/commands/status', [\App\Http\Controllers\LiveTrackerController::class, 'getCommandStatus']);
 
 // Device Configuration Update API Route
 Route::middleware('check.auth.token')->post('/update-device-configuration', [DeviceApiController::class, 'updateDeviceConfiguration']);

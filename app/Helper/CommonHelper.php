@@ -75,11 +75,24 @@ class CommonHelper
     {
         $currentUser = Auth::user();
         if ($currentUser->user_type != 'Admin') {
-            $deviceCategoryIdsArray = explode(',',  $currentUser->device_category_id);
-            $getDeviceCategory = DeviceCategory::select('id', 'device_category_name', 'is_certification_enable')->whereIn('id', $deviceCategoryIdsArray)->where('is_deleted', 0)->get();
+            $deviceCategoryIdsArray = array_values(array_filter(array_map('trim', explode(',', $currentUser->device_category_id ?? ''))));
+            $getDeviceCategory = empty($deviceCategoryIdsArray)
+                ? collect()
+                : DeviceCategory::select('id', 'device_category_name', 'is_certification_enable')
+                    ->whereIn('id', $deviceCategoryIdsArray)
+                    ->where('is_deleted', 0)
+                    ->get();
         } else {
             $getDeviceCategory = DeviceCategory::select('id', 'device_category_name', 'is_certification_enable')->where('is_deleted', 0)->get();
         }
+
+        if ($currentUser->user_type != 'Admin' && $getDeviceCategory->isEmpty()) {
+            return '<div class="alert alert-info vd-no-category-msg" style="margin:24px 0;padding:20px;text-align:center;">'
+                . '<i class="fa fa-info-circle" style="margin-right:8px;"></i>'
+                . 'You don\'t have enabled device category. Please contact with the administrator regarding this.'
+                . '</div>';
+        }
+
         $html = '<div class="tabs">';
         foreach ($getDeviceCategory as $key => $category) {
             // dd($deviceCategoryId); 
@@ -126,20 +139,25 @@ class CommonHelper
             if (Auth::user()->user_type == 'Admin') {
                 $html .= '<button class="btn btn-danger btn-sm delete_all" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/deleteAll">Delete All Selected</button>';
             }
-            if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller') {
-                $html .= '<button class="btn btn-primary btn-sm user-responsive" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/assignuserAll" >Assign Account</button>';
+            $canEditDevice = \App\Helpers\PermissionHelper::hasPermission('device_management.edit');
+            if ($canEditDevice) {
+                if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller') {
+                    $html .= '<button class="btn btn-primary btn-sm user-responsive" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/assignuserAll" >Assign Account</button>';
+                }
+                $html .= '<button class="btn btn-info btn-sm template-responsive" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/assigtemplateAll">Assign Setting Template</button>';
             }
-            $html .= '<button class="btn btn-info btn-sm template-responsive" data-category-id="' . $category->id . '" data-url="/' . $urlType . '/assigtemplateAll">Assign Setting Template</button>';
             $html .= '</div>';
             if ((Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Reseller') && $show_acc_wise) {
-                $filterAction = '/' . $urlType . '/view-device-unassign';
+                $filterAction = '/' . $urlType . '/view-device-assign';
+                $selectedAccountId = (string) request('username', '0');
                 $html .= '<div class="vdc-tab-toolbar-right" style="display:flex;align-items:center;flex-shrink:0;margin-left:auto;">';
                 $html .= '<form method="get" action="' . $filterAction . '" class="vdc-filter-form" style="display:flex;align-items:center;gap:8px;margin:0;flex-wrap:nowrap;">';
                 $html .= '<select class="form-control input-sm btn-sm" id="searchUser' . $category->id . '" name="username" style="height:33px;min-width:160px;max-width:280px;width:auto;margin:0;flex:0 1 auto;">';
                 if (count($getUser) > 0) {
-                    $html .= '<option value="0">Account Wise list</option>';
+                    $html .= '<option value="0"' . ($selectedAccountId === '0' ? ' selected' : '') . '>Account Wise list</option>';
                     foreach ($getUser as $user) {
-                        $html .= '<option value="' . $user->id . '" >' . htmlspecialchars($user->name, ENT_QUOTES, 'UTF-8') . '</option>';
+                        $isSelected = $selectedAccountId === (string) $user->id ? ' selected' : '';
+                        $html .= '<option value="' . $user->id . '"' . $isSelected . '>' . htmlspecialchars($user->name, ENT_QUOTES, 'UTF-8') . '</option>';
                     }
                 }
                 $html .= '</select><button type="submit" class="btn btn-success btn-sm" style="margin-top: 1px;">Filter</button></form></div>';
@@ -235,8 +253,10 @@ class CommonHelper
                 }
             }
             $html .= '</tbody></table>'; // Close tab content div
-            $html .= self::getModels('user-responsive' . $category->id . '', 'user_assign_all', 'Account', $getUser, $category->id);
-            $html .= self::getModels('template-responsive' . $category->id . '', 'temp_assign_all', 'Template', $getTemplates, $category->id);
+            if ($canEditDevice) {
+                $html .= self::getModels('user-responsive' . $category->id . '', 'user_assign_all', 'Account', $getUser, $category->id);
+                $html .= self::getModels('template-responsive' . $category->id . '', 'temp_assign_all', 'Template', $getTemplates, $category->id);
+            }
             $html .= '</div>';
         }
 
@@ -299,6 +319,10 @@ class CommonHelper
     public static function unassignDevices($device_category_id)
     {
         $user = Auth::user();
+        $accessService = app(\App\Services\DeviceCategoryAccessService::class);
+        if (!$accessService->userHasCategory($user, $device_category_id)) {
+            return '';
+        }
         if ($user->user_type == 'Admin') {
             $unassignedDevices = Device::select('id', 'imei', 'device_category_id')
                 ->where('device_category_id', $device_category_id)
@@ -527,7 +551,7 @@ class CommonHelper
                 }
             }
         }
-        $editableValue = isset($configurations['is_editable']) ? $configurations['is_editable']['value'] : '';
+        $editableValue = isset($configurations['is_editable']) ? $configurations['is_editable']['value'] : '1';
         if (Auth::user()->user_type == "Admin") {
             $html .= '<div class="row">
                   <div class="col-lg-12">
@@ -540,20 +564,8 @@ class CommonHelper
                       </div>
                     </div>
                   </div>
-                  <div class="col-lg-12">
-                    <div class="form-group">
-                      <label for="curl" class="control-label col-lg-5">Device Edit Permission<span class="require">*</span></label>
-                      <div class="col-lg-6">
-                      
-                         <input type="radio" name="configuration[' . $key . '][is_editable]" value="1" ' . ($editableValue == '1' ? 'checked' : '') . ' style="height:20px; width:20px; vertical-align: middle;" required>
-                            <label class="padding-10">Enable</label>
-                            
-                        <input type="radio" name="configuration[' . $key . '][is_editable]" value="0" ' . ($editableValue == '0' ? 'checked' : '') . ' style="height:20px; width:20px; vertical-align: middle;" required>
-                            <label class="padding-10">Disable</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>';
+                </div>
+                <input type="hidden" name="configuration[' . $key . '][is_editable]" value="' . htmlspecialchars((string) $editableValue) . '">';
         } else {
             $html .= ' <input type="hidden" name="configuration[' . $key . '][ping_interval]" value="' . (isset($configurations['ping_interval']) ? $configurations['ping_interval']['value'] : '') . '" placeholder="Ping Interval" value=""/><input type="hidden" name="configuration[' . $key . '][is_editable]" value="' . (isset($configurations['is_editable']) ? $configurations['is_editable']['value'] : '') . '"  value=""/>';
         }

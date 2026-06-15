@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\PacketAlert;
 use App\Models\ImeiLog;
-use App\Models\TicketModel;
 use Illuminate\Support\Facades\Log;
 
 class AlertService
@@ -148,6 +147,8 @@ class AlertService
         // ]);
 
         Log::info("Packet Alert Triggered", [
+            'subject' => $subject,
+            'description' => $description,
             'alert_id' => $alert->id,
             'packet_type_id' => $alert->packet_type_id,
             'imei' => $imei,

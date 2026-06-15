@@ -42,21 +42,7 @@ $configurations = json_decode($template_info->configurations);
                     </div><!--/.c_title-->
                     <div class="c_content">
                         <div class="row" id="alert_msg">
-                            @if ($message = Session::get('success'))
-                            <div class="col-sm-12 alert alert-success" role="alert">
-                                {{ $message }}
-                            </div>
-                            @endif
-                            @if ($message = Session::get('error'))
-                            <div class="col-sm-12 alert alert-danger" role="alert">
-                                {{ $message }}
-                            </div>
-                            @endif
-                            @if ($errors->any())
-                            <div class="col-sm-12 alert alert-danger" role="alert">
-                                {{ $errors->first() }}
-                            </div>
-                            @endif
+                            @include('partials.gps-inline-alerts')
                         </div>
                         <form class="validator form-horizontal " id="commentForm" method="post" action="/{{$url_type}}/update-template/{{$template_info->id}}">
                             @method('PATCH')

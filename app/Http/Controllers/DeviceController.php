@@ -57,30 +57,6 @@ class DeviceController extends Controller
         return null;
     }
 
-    /**
-     * Normalize configuration array: convert null values to empty strings
-     */
-    private function normalizeConfiguration($config)
-    {
-        if (!is_array($config)) {
-            return $config;
-        }
-
-        foreach ($config as $key => $value) {
-            if (is_array($value) && isset($value['value'])) {
-                if ($value['value'] === null || $value['value'] === "" || (is_scalar($value['value']) && strtolower((string)$value['value']) === 'null')) {
-                    $config[$key]['value'] = "";
-                }
-            } elseif (is_array($value)) {
-                $config[$key] = $this->normalizeConfiguration($value);
-            } elseif ($value === null || $value === "" || (is_scalar($value) && strtolower((string)$value) === 'null')) {
-                $config[$key] = "";
-            }
-        }
-
-        return $config;
-    }
-
     public function index()
     {
         $users = DB::table('writers')
@@ -116,6 +92,13 @@ class DeviceController extends Controller
      */
     public function create(Request $request)
     {
+        if (!$this->deviceCategoryAccess()->userHasCategory(Auth::user(), $request->deviceCategory)) {
+            return response()->json([
+                'status' => 403,
+                'status_message' => 'You do not have access to this device category. Please contact your administrator.',
+            ], 403);
+        }
+
         $request->validate([
             'imei' => "unique:devices|min:15|max:15",
             'firmware' => 'required',
@@ -186,8 +169,8 @@ class DeviceController extends Controller
             'name' => $request->name,
             'imei' => $request->imei,
             'device_category_id' => $request->deviceCategory,
-            'configurations' => json_encode($this->normalizeConfiguration($device_array)),
-            'can_configurations' => json_encode($this->normalizeConfiguration($canConverted))
+            'configurations' => json_encode($device_array),
+            'can_configurations' => json_encode($canConverted)
         ]);
         $log = Devicelog::create([
             'device_id' => $data->id,
@@ -300,6 +283,19 @@ class DeviceController extends Controller
             });
         }
 
+        $filterUserId = $request->input('username');
+        if (!empty($filterUserId) && $filterUserId !== '0') {
+            if ($user->user_type == 'Admin') {
+                $devicesQuery->where(function ($query) use ($filterUserId) {
+                    $query->where('devices.user_id', $filterUserId)
+                        ->orWhereRaw('FIND_IN_SET(?, devices.assign_to_ids)', [$filterUserId]);
+                });
+            } else {
+                $devicesQuery->where('devices.user_id', $filterUserId);
+            }
+        }
+
+        $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, $user);
         $devices = $devicesQuery->get();
         $childUsersQuery = DB::table('writers')->select('id', 'name')->where('is_deleted', '0');
         // dd(Auth::user()->id);
@@ -375,14 +371,72 @@ class DeviceController extends Controller
         $url_type = self::getURLType();
 
 
-        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => false]);
+        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => true]);
+    }
+
+    /**
+     * Build the Vendor / Owner / Device detail fields for the certificate PDF.
+     * Prefers submitted request values, falling back to previously saved
+     * certificate_details and canonical device data.
+     */
+    private function certExtraFields(Request $request, Device $device, $vltdModel, $iccId): array
+    {
+        // Use ONLY request data, not saved configuration
+        // The form is the single source of truth
+        return [
+            // Vendor Details - from request ONLY
+            'vendor_name'      => $request->vendor_name ?? null,
+            'vendor_address'   => $request->vendor_address ?? null,
+            'vendor_contact'   => $request->vendor_contact ?? null,
+            'vendor_email'     => $request->vendor_email ?? null,
+            'vendor_gst'       => $request->vendor_gst ?? null,
+            // Owner Details - from request ONLY
+            'owner_name'       => $request->owner_name ?? null,
+            'owner_address'    => $request->owner_address ?? null,
+            'owner_mobile'     => $request->owner_mobile ?? null,
+            'owner_email'      => $request->owner_email ?? null,
+            // Device Details - from request ONLY (with safe defaults for device-level data)
+            'vendor_id'        => $request->vendor_id ?? null,
+            'firmware_version' => $request->firmware_version ?? null,
+            'device_imei'      => $request->device_imei ?: $device->imei,
+            'device_iccid'     => $request->device_iccid ?: ($request->vltd_icc_id ?: $iccId),
+            'device_model'     => $request->device_model ?: $vltdModel,
+            // SIM & Plan Details - from request ONLY
+            'organization_name' => $request->organization_name ?? null,
+            'plan_status'       => $request->plan_status ?? null,
+            'sim1_operator'     => $request->sim1_operator ?? null,
+            'sim1_msisdn'       => $request->sim1_msisdn ?? null,
+            'sim1_imsi'         => $request->sim1_imsi ?? null,
+            'sim1_profile_status' => $request->sim1_profile_status ?? null,
+            'sim1_activation_date' => $request->sim1_activation_date ?? null,
+            'sim1_expiry_date'  => $request->sim1_expiry_date ?? null,
+            'sim2_operator'     => $request->sim2_operator ?? null,
+            'sim2_msisdn'       => $request->sim2_msisdn ?? null,
+            'sim2_imsi'         => $request->sim2_imsi ?? null,
+            'sim2_profile_status' => $request->sim2_profile_status ?? null,
+            'sim2_activation_date' => $request->sim2_activation_date ?? null,
+            'sim2_expiry_date'  => $request->sim2_expiry_date ?? null,
+        ];
+    }
+
+    /**
+     * Build base64 data URIs for certificate supporting images.
+     * ($request kept for signature compatibility; no longer used.)
+     */
+    private function certImages(?Request $request, Device $device): array
+    {
+        return (new \App\Services\CertificateImageService())->forDevice($device);
     }
 
     public function generateCertificate($id, Request $request)
     {
         $request->validate([
-            'holder_name' => 'required|string|max:255',
-            'authority_city' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
+            'owner_address' => 'required|string|max:500',
+            'fitter_company' => 'required|string|max:255',
+            'fitter_contact' => 'required|string|max:20',
+            'fitter_address' => 'required|string|max:500',
+            'fitter_email' => 'required|email|max:255',
             'fitment_date' => 'required|date',
             'vehicle_registration_no' => 'required|string|max:255',
             'vltd_serial_no' => 'required|string|max:255',
@@ -398,6 +452,9 @@ class DeviceController extends Controller
             'service_providers' => 'nullable',
         ]);
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -423,9 +480,19 @@ class DeviceController extends Controller
         $araiDateRaw = $isCertificationEnabled && !empty($deviceCategory->arai_date) ? $deviceCategory->arai_date : ($request->arai_date ?? '08-12-2025');
         $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
         $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
+
+        // Authority City: prefer the user-editable field; fall back to deriving
+        // from owner_address (last comma-separated part) only when left blank.
+        $authorityCity = trim((string) $request->input('authority_city', ''));
+        if ($authorityCity === '') {
+            $ownerAddress = (string) $request->owner_address;
+            $addressParts = explode(',', $ownerAddress);
+            $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        }
+
         $data = [
-            'holder_name' => $request->holder_name,
-            'authority_city' => $request->authority_city,
+            'holder_name' => $request->owner_name,
+            'authority_city' => $authorityCity,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -435,15 +502,31 @@ class DeviceController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
+            'vehicle_class' => $request->vehicle_class ?? null,
+            'fuel_type' => $request->fuel_type ?? null,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId,
             'service_provider' => $provider,
+            'fitter_company' => $request->fitter_company,
+            'fitter_contact' => $request->fitter_contact,
+            'fitter_address' => $request->fitter_address,
+            'fitter_email' => $request->fitter_email,
+            'sim1_operator' => $request->sim1_operator ?? null,
+            'sim1_msisdn'   => $request->sim1_msisdn ?? null,
+            'sim1_activation_date' => $request->sim1_activation_date ?? null,
+            'sim1_expiry_date' => $request->sim1_expiry_date ?? null,
+            'sim2_operator' => $request->sim2_operator ?? null,
+            'sim2_msisdn'   => $request->sim2_msisdn ?? null,
+            'sim2_activation_date' => $request->sim2_activation_date ?? null,
+            'sim2_expiry_date' => $request->sim2_expiry_date ?? null,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
         ];
+        $data = array_merge($data, $this->certExtraFields($request, $device, $vltdModel, $iccId));
+        $data = array_merge($data, $this->certImages($request, $device));
         $pdfLink = url('/AS9076.pdf');
         $qrText = $pdfLink;
         $client = new Client();
@@ -465,15 +548,31 @@ class DeviceController extends Controller
             $qrImageDataUri = null;
         }
         $data['qr_image'] = $qrImageDataUri;
+
+        // Mark certificate as generated in database
+        try {
+            $device->is_certificate_generated = true;
+            $device->certificate_data = json_encode($data);
+            $device->update();
+        } catch (\Exception $e) {
+            \Log::error('Failed to save certificate data: ' . $e->getMessage());
+            // Continue with PDF generation even if data save fails
+        }
+
         $pdf = PDF::loadView('pdf.certificate', $data);
-        return $pdf->download('certificate_' . $device->imei . '.pdf');
+        return $pdf->download(\App\Support\CertificatePdf::filename($device, $request->vehicle_registration_no));
     }
 
     public function previewCertificate($id, Request $request)
     {
+
         $request->validate([
-            'holder_name' => 'required|string|max:255',
-            'authority_city' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
+            'owner_address' => 'required|string|max:500',
+            'fitter_company' => 'required|string|max:255',
+            'fitter_contact' => 'required|string|max:20',
+            'fitter_address' => 'required|string|max:500',
+            'fitter_email' => 'required|email|max:255',
             'fitment_date' => 'required|date',
             'vehicle_registration_no' => 'required|string|max:255',
             'vltd_serial_no' => 'required|string|max:255',
@@ -489,6 +588,9 @@ class DeviceController extends Controller
             'service_providers' => 'nullable',
         ]);
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -514,9 +616,19 @@ class DeviceController extends Controller
         $araiDateRaw = $isCertificationEnabled && !empty($deviceCategory->arai_date) ? $deviceCategory->arai_date : ($request->arai_date ?? '08-12-2025');
         $araiDate = Carbon::parse($araiDateRaw)->format('d-m-Y');
         $vltdModel = $isCertificationEnabled && !empty($deviceCategory->certification_model_name) ? $deviceCategory->certification_model_name : $request->vltd_model;
+
+        // Authority City: prefer the user-editable field; fall back to deriving
+        // from owner_address (last comma-separated part) only when left blank.
+        $authorityCity = trim((string) $request->input('authority_city', ''));
+        if ($authorityCity === '') {
+            $ownerAddress = (string) $request->owner_address;
+            $addressParts = explode(',', $ownerAddress);
+            $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        }
+
         $data = [
-            'holder_name' => $request->holder_name,
-            'authority_city' => $request->authority_city,
+            'holder_name' => $request->owner_name,
+            'authority_city' => $authorityCity,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -526,15 +638,31 @@ class DeviceController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
+            'vehicle_class' => $request->vehicle_class ?? null,
+            'fuel_type' => $request->fuel_type ?? null,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId,
             'service_provider' => $provider,
+            'fitter_company' => $request->fitter_company,
+            'fitter_contact' => $request->fitter_contact,
+            'fitter_address' => $request->fitter_address,
+            'fitter_email' => $request->fitter_email,
+            'sim1_operator' => $request->sim1_operator ?? null,
+            'sim1_msisdn'   => $request->sim1_msisdn ?? null,
+            'sim1_activation_date' => $request->sim1_activation_date ?? null,
+            'sim1_expiry_date' => $request->sim1_expiry_date ?? null,
+            'sim2_operator' => $request->sim2_operator ?? null,
+            'sim2_msisdn'   => $request->sim2_msisdn ?? null,
+            'sim2_activation_date' => $request->sim2_activation_date ?? null,
+            'sim2_expiry_date' => $request->sim2_expiry_date ?? null,
             'device_name' => $device->name,
             'imei' => $device->imei,
             'category_name' => $categoryName,
             'issued_date' => Carbon::now()->format('d-M-Y'),
         ];
+        $data = array_merge($data, $this->certExtraFields($request, $device, $vltdModel, $iccId));
+        $data = array_merge($data, $this->certImages($request, $device));
         $pdfLink = url('/AS9076.pdf');
         $qrText = $pdfLink;
         $client = new Client();
@@ -556,13 +684,20 @@ class DeviceController extends Controller
             $qrImageDataUri = null;
         }
         $data['qr_image'] = $qrImageDataUri;
-        $pdf = PDF::loadView('pdf.certificate', $data);
-        return $pdf->stream('certificate_' . $device->imei . '.pdf');
+
+        return response()
+            ->view('certificate_preview', $data)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
     public function certificatePage($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -579,9 +714,48 @@ class DeviceController extends Controller
         if (is_array($deviceConfig)) {
             $iccId = $deviceConfig['ccid']['value'] ?? ($deviceConfig['iccid']['value'] ?? '');
         }
-        $config = json_decode($device->configurations, true) ?: [];
-        $saved = $config['certificate_details'] ?? null;
+        // Fetch certificate data from the dedicated certificate_data field ONLY
+        $saved = null;
+
+        if (!empty($device->certificate_data)) {
+            $saved = json_decode($device->certificate_data, true);
+        }
+
+        // If certificate_data is empty, try to migrate from old configuration location
+        if (empty($saved)) {
+            $config = json_decode($device->configurations, true) ?: [];
+            $oldSaved = $config['certificate_details'] ?? null;
+
+            if (!empty($oldSaved)) {
+                // Migrate old data to certificate_data field
+                $device->certificate_data = json_encode($oldSaved);
+                $device->update();
+                $saved = $oldSaved;
+            }
+        }
+
         $editMode = (int) $request->query('edit', 0) === 1;
+        $isCertificateGenerated = (bool) $device->is_certificate_generated;
+
+        // Prevent editing if certificate has been generated
+        if ($editMode && $isCertificateGenerated) {
+            $urlType = $this->getURLType();
+            return redirect('/' . $urlType . '/certificate/' . $id)->with('warning', 'Certificate cannot be edited once it has been generated.');
+        }
+
+        // Auto-populate fitment_date: use saved value if exists, otherwise default to today
+        $autoFitmentDate = date('Y-m-d');
+        if ($saved && !empty($saved['fitment_date'])) {
+            try {
+                // Convert any format to Y-m-d for HTML5 date input
+                $autoFitmentDate = \Carbon\Carbon::parse($saved['fitment_date'])->format('Y-m-d');
+            } catch (\Exception $e) {
+                $autoFitmentDate = date('Y-m-d');
+            }
+        }
+
+        $urlType = $this->getURLType();
+
         return view('certificate_page', [
             'device' => $device,
             'category_name' => $categoryName,
@@ -591,21 +765,26 @@ class DeviceController extends Controller
             'arai_date' => $araiDate,
             'vltd_icc_id' => $iccId,
             'saved' => $saved,
-            'edit_mode' => $editMode,
+            'edit_mode' => $editMode && !$isCertificateGenerated,
+            'is_certificate_generated' => $isCertificateGenerated,
+            'autoFitmentDate' => $autoFitmentDate,
+            'url_type' => $urlType,
+            'cert_base' => '/' . $urlType . '/certificate/' . $device->id,
         ]);
     }
     public static function uniqueJson(Device $device, string $key, $value): bool
     {
+        // Check uniqueness in certificate_data field ONLY (not in configurations)
         return !Device::where('id', '!=', $device->id)
-            ->where(function ($query) use ($key, $value) {
-                $query->whereJsonContains("configurations->certificate_details->$key", $value)
-                    ->orWhereJsonContains("configurations->$key", $value);
-            })
+            ->whereJsonContains("certificate_data->$key", $value)
             ->exists();
     }
     public function saveCertificateDetails($id, Request $request)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -628,8 +807,12 @@ class DeviceController extends Controller
             }
         }
         $request->validate([
-            'holder_name' => 'required|string|max:255',
-            'authority_city' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
+            'owner_address' => 'required|string|max:500',
+            'fitter_company' => 'required|string|max:255',
+            'fitter_contact' => 'required|string|max:20',
+            'fitter_address' => 'required|string|max:500',
+            'fitter_email' => 'required|email|max:255',
             'fitment_date' => 'required|date',
             // 'vehicle_registration_no' => ['required', 'string', 'max:255', Rule::unique('devices', 'vehicle_registration_no')->ignore($uniqueIgnoreId)],
             // 'vltd_serial_no' => ['required', 'string', 'max:255', Rule::unique('devices', 'vltd_serial_no')->ignore($uniqueIgnoreId)],
@@ -644,6 +827,23 @@ class DeviceController extends Controller
             // 'arai_date' => 'nullable|date',
             'service_provider' => 'required_without:service_providers|nullable|string|max:255',
             'service_providers' => 'nullable',
+            // Vendor Details
+            'vendor_name'     => 'required|string|max:255',
+            'vendor_address'  => 'required|string|max:1000',
+            'vendor_contact'  => 'required|string|max:20',
+            'vendor_email'    => 'required|email|max:255',
+            'vendor_gst'      => 'nullable|string|max:30',
+            // Owner Details
+            'owner_name'      => 'required|string|max:255',
+            'owner_address'   => 'required|string|max:1000',
+            'owner_mobile'    => 'required|string|max:20',
+            'owner_email'     => 'required|email|max:255',
+            // Device Details
+            'device_imei'     => 'nullable|string|max:30',
+            'device_iccid'    => 'nullable|string|max:30',
+            'device_model'    => 'nullable|string|max:255',
+            'vendor_id'       => 'required|string|max:100',
+            'firmware_version' => 'nullable|string|max:100',
         ]);
         $categoryName = CommonHelper::getDeviceCategoryName($device->device_category_id);
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
@@ -662,9 +862,19 @@ class DeviceController extends Controller
             }
         }
         $config = json_decode($device->configurations, true) ?: [];
-        $config['certificate_details'] = [
-            'holder_name' => $request->holder_name,
-            'authority_city' => $request->authority_city,
+
+        // Authority City: prefer the user-editable field; fall back to deriving
+        // from owner_address (last comma-separated part) only when left blank.
+        $authorityCity = trim((string) $request->input('authority_city', ''));
+        if ($authorityCity === '') {
+            $ownerAddress = (string) $request->owner_address;
+            $addressParts = explode(',', $ownerAddress);
+            $authorityCity = !empty($addressParts) ? trim(end($addressParts)) : '';
+        }
+
+        $certificateData = [
+            'holder_name' => $request->owner_name,
+            'authority_city' => $authorityCity,
             'fitment_date' => Carbon::parse($request->fitment_date)->format('Y-m-d'),
             'vehicle_registration_no' => $request->vehicle_registration_no,
             'vltd_serial_no' => $request->vltd_serial_no,
@@ -674,24 +884,433 @@ class DeviceController extends Controller
             'engine_no' => $request->engine_no,
             'color' => $request->color,
             'vehicle_model' => $request->vehicle_model,
+            'vehicle_class' => $request->vehicle_class ?? null,
+            'fuel_type' => $request->fuel_type ?? null,
             'vltd_icc_id' => $request->vltd_icc_id,
             'arai_tac' => $araiTac,
             'arai_date' => $araiDate,
             'service_provider' => $serviceProvider,
+            // Vendor Details
+            'vendor_name'     => $request->vendor_name,
+            'vendor_address'  => $request->vendor_address,
+            'vendor_contact'  => $request->vendor_contact,
+            'vendor_email'    => $request->vendor_email,
+            'vendor_gst'      => $request->vendor_gst,
+            // Owner Details
+            'owner_name'      => $request->owner_name,
+            'owner_address'   => $request->owner_address,
+            'owner_mobile'    => $request->owner_mobile,
+            'owner_email'     => $request->owner_email,
+            // Fitter Details
+            'fitter_company'  => $request->fitter_company ?? null,
+            'fitter_contact'  => $request->fitter_contact ?? null,
+            'fitter_address'  => $request->fitter_address ?? null,
+            'fitter_email'    => $request->fitter_email ?? null,
+            // Device Details (overlapping fields fall back to canonical/device values)
+            'device_imei'     => $request->device_imei ?: $device->imei,
+            'device_iccid'    => $request->device_iccid ?: $request->vltd_icc_id,
+            'device_model'    => $request->device_model ?: $vltdModel,
+            'vendor_id'       => $request->vendor_id,
+            'firmware_version' => $request->firmware_version,
+            // SIM Details
+            'organization_name' => $request->organization_name ?? null,
+            'plan_status' => $request->plan_status ?? null,
+            'sim1_operator'   => $request->sim1_operator ?? null,
+            'sim1_msisdn'     => $request->sim1_msisdn ?? null,
+            'sim1_imsi' => $request->sim1_imsi ?? null,
+            'sim1_profile_status' => $request->sim1_profile_status ?? null,
+            'sim1_activation_date' => $request->sim1_activation_date ?? null,
+            'sim1_expiry_date' => $request->sim1_expiry_date ?? null,
+            'sim2_operator'   => $request->sim2_operator ?? null,
+            'sim2_msisdn'     => $request->sim2_msisdn ?? null,
+            'sim2_imsi' => $request->sim2_imsi ?? null,
+            'sim2_profile_status' => $request->sim2_profile_status ?? null,
+            'sim2_activation_date' => $request->sim2_activation_date ?? null,
+            'sim2_expiry_date' => $request->sim2_expiry_date ?? null,
         ];
-        $device->configurations = json_encode($config);
-        // $device->certificate_vltd_serial_no = $request->vltd_serial_no;
-        // $device->certificate_vltd_icc_id = $request->vltd_icc_id;
-        // $device->certificate_vehicle_registration_no = $request->vehicle_registration_no;
-        // $device->certificate_chassis_no = $request->chassis_no;
-        // $device->certificate_engine_no = $request->engine_no;
+
+        $existingCert = !empty($device->certificate_data)
+            ? json_decode($device->certificate_data, true) : [];
+
+        // Merge so OCR uploads (ocr_images, file_path, etc.) are preserved on save.
+        $device->certificate_data = json_encode(array_merge($existingCert, $certificateData));
+        // Mark certificate as generated when saved
+        $device->is_certificate_generated = true;
         $device->update();
-        return redirect('/user/device/' . $device->id . '/certificate/view');
+
+        $urlType = $this->getURLType();
+
+        return redirect('/' . $urlType . '/certificate/' . $device->id)
+            ->with('success', 'Certificate details saved successfully!');
+    }
+
+    public function uploadRC($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'rc_file' => 'required|file|mimes:pdf,jpg,jpeg,png,bmp,gif|max:5120',
+            'rc_type' => 'nullable|in:front,back',
+        ]);
+
+        try {
+            $file = $request->file('rc_file');
+            $filePath = $file->store('rc_uploads', 'local');
+            $fullPath = storage_path('app/' . $filePath);
+
+            $rcService = new \App\Services\RCExtractionService();
+            $extractedData = $rcService->extractFromFile($fullPath);
+            $mappedData = $rcService->mapRCToFormFields($extractedData);
+
+            // ── Data extraction validation ───────────────────────────────
+            // Report which mandatory RC fields this file yielded. Because the
+            // form merges separate front + back uploads on the client, overall
+            // completeness is enforced on the merged result in the browser.
+            $requiredFields = ['vehicle_registration_no', 'chassis_no', 'engine_no', 'color', 'vehicle_model'];
+            $missingLabels = \App\Services\OcrQualityHelper::missingFieldLabels($requiredFields, $extractedData);
+
+            // ── Duplicate RC Validation ───────────────────────────────────
+            // Check if a certificate already exists for this vehicle registration number
+            if (!empty($extractedData['vehicle_registration_no'])) {
+                $vehicleRegNo = $extractedData['vehicle_registration_no'];
+
+                // Check ONLY in certificate_data field (not in configurations)
+                $duplicateExists = Device::where('id', '!=', $device->id)
+                    ->whereRaw("JSON_EXTRACT(certificate_data, '$.vehicle_registration_no') = ?", [$vehicleRegNo])
+                    ->where('is_certificate_generated', true)
+                    ->exists();
+
+                if ($duplicateExists) {
+                    // Clean up uploaded file
+                    if (isset($filePath) && file_exists(storage_path('app/' . $filePath))) {
+                        unlink(storage_path('app/' . $filePath));
+                    }
+
+                    return response()->json([
+                        'success' => false,
+                        'is_duplicate' => true,
+                        'error' => 'A certificate has already been generated for vehicle registration number: ' . $vehicleRegNo,
+                    ], 422);
+                }
+            }
+
+            // Store OCR-extracted RC data in certificate_data field ONLY
+            // Do NOT save to configurations - keep configurations for device operational parameters only
+            $rcDetailsData = array_merge(
+                $extractedData,
+                ['file_path' => $filePath, 'uploaded_at' => now()]
+            );
+
+            // Get existing certificate data if any
+            $certData = !empty($device->certificate_data) ? json_decode($device->certificate_data, true) : [];
+
+            // Merge RC details into certificate data
+            $certData = array_merge($certData, $rcDetailsData);
+
+            // Store the uploaded RC image path in the correct ocr_images slot so it
+            // renders in the certificate's Supporting Images (rc_front / rc_back).
+            // Preserve any slot already set by a previous upload (front then back).
+            if (!isset($certData['ocr_images']) || !is_array($certData['ocr_images'])) {
+                $certData['ocr_images'] = [];
+            }
+            $rcType = $request->input('rc_type', 'front');
+            if ($rcType === 'back') {
+                $certData['ocr_images']['rc_back'] = $filePath;
+            } else {
+                $certData['ocr_images']['rc_front'] = $filePath;
+                $certData['ocr_images']['rc'] = $filePath; // legacy single-RC fallback
+            }
+
+            // Save to certificate_data field only
+            $device->certificate_data = json_encode($certData);
+            $device->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'RC document processed successfully',
+                'data' => $mappedData,
+                'raw_data' => $extractedData,
+                'required_fields' => $requiredFields,
+                'missing_required' => $missingLabels,
+            ]);
+        } catch (\App\Exceptions\ImageQualityException $e) {
+            // Image is blurry / cropped / tilted / unreadable.
+            if (isset($filePath) && file_exists(storage_path('app/' . $filePath))) {
+                unlink(storage_path('app/' . $filePath));
+            }
+            return response()->json([
+                'success'       => false,
+                'quality_error' => true,
+                'error'         => $e->getMessage(),
+            ], 422);
+        } catch (\Exception $e) {
+            // Clean up uploaded file on error
+            if (isset($filePath) && file_exists(storage_path('app/' . $filePath))) {
+                unlink(storage_path('app/' . $filePath));
+            }
+
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Verify uploaded number plate image against expected registration number
+     */
+    public function verifyNumberPlate($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
+        $currentUser = Auth::user();
+
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'plate_file'      => 'required|file|mimes:jpg,jpeg,png,bmp,gif|max:5120',
+            'expected_reg_no' => 'required|string|max:20',
+        ]);
+
+        $filePath = null;
+        try {
+            $expected = \App\Services\GoogleVisionRCService::normalizePlateNumber(
+                $request->input('expected_reg_no')
+            );
+            if ($expected === '') {
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Please fill in Vehicle Registration No (from RC) before verifying the plate.',
+                ], 422);
+            }
+
+            $file     = $request->file('plate_file');
+            $filePath = $file->store('plate_uploads', 'local');
+            $fullPath = storage_path('app/' . $filePath);
+
+            if (!\App\Services\GoogleVisionRCService::isConfigured()) {
+                throw new \Exception('Google Vision OCR is not configured.');
+            }
+
+            $service  = new \App\Services\GoogleVisionRCService();
+            $detected = $service->extractPlateNumber($fullPath);
+            $detectedNormalized = \App\Services\GoogleVisionRCService::normalizePlateNumber($detected);
+
+            // Store plate image path in certificate_data ONLY (not in configurations)
+            $certData = !empty($device->certificate_data)
+                ? json_decode($device->certificate_data, true) : [];
+            if (!isset($certData['ocr_images'])) {
+                $certData['ocr_images'] = [];
+            }
+            $certData['ocr_images']['plate'] = $filePath;
+            $device->certificate_data = json_encode($certData);
+            $device->save();
+
+            if (!$detectedNormalized) {
+                return response()->json([
+                    'success'  => false,
+                    'matched'  => false,
+                    'expected' => $expected,
+                    'detected' => null,
+                    'error'    => 'Could not detect a valid number plate in the uploaded image. Please upload a clearer photo.',
+                ], 422);
+            }
+
+            $matched = ($detectedNormalized === $expected);
+
+            return response()->json([
+                'success'  => $matched,
+                'matched'  => $matched,
+                'expected' => $expected,
+                'detected' => $detectedNormalized,
+                'message'  => $matched
+                    ? 'Number plate verified successfully — matches the RC registration number.'
+                    : 'Number plate does NOT match the RC. Expected: ' . $expected . ', Detected: ' . $detectedNormalized,
+            ], $matched ? 200 : 422);
+
+        } catch (\Exception $e) {
+            if ($filePath && file_exists(storage_path('app/' . $filePath))) {
+                @unlink(storage_path('app/' . $filePath));
+            }
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Extract IMEI and ICCID from a device image
+     */
+    public function extractDeviceInfo($id, Request $request)
+    {
+        $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
+        $currentUser = Auth::user();
+
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $request->validate([
+            'device_file' => 'required|file|mimes:jpg,jpeg,png,bmp,gif|max:5120',
+        ]);
+
+        $filePath = null;
+        try {
+            $file     = $request->file('device_file');
+            $filePath = $file->store('device_uploads', 'local');
+            $fullPath = storage_path('app/' . $filePath);
+
+            if (!\App\Services\GoogleVisionRCService::isConfigured()) {
+                throw new \Exception('Google Vision OCR is not configured.');
+            }
+
+            $service = new \App\Services\GoogleVisionRCService();
+            $info    = $service->extractDeviceInfo($fullPath);
+
+            // Store device image path in certificate_data ONLY (not in configurations)
+            $certData = !empty($device->certificate_data)
+                ? json_decode($device->certificate_data, true) : [];
+            if (!isset($certData['ocr_images'])) {
+                $certData['ocr_images'] = [];
+            }
+            $certData['ocr_images']['device'] = $filePath;
+            $device->certificate_data = json_encode($certData);
+            $device->save();
+
+            if (empty($info['imei']) && empty($info['iccid'])) {
+                return response()->json([
+                    'success' => false,
+                    'imei'    => null,
+                    'iccid'   => null,
+                    'error'   => 'Could not detect IMEI or ICCID in the image. Please upload a clearer photo of the device label.',
+                ], 422);
+            }
+
+            $deviceImei  = $device->imei ?? null;
+            $imeiMatches = null;
+            if ($info['imei'] && $deviceImei) {
+                $imeiMatches = (trim($info['imei']) === trim($deviceImei));
+            }
+
+            // Enrich ICCID with SIM info from GrowSpace API
+            $simData = ['sims' => [], 'plan_status' => null, 'organization' => null];
+            if (!empty($info['iccid'])) {
+                $growService = new \App\Services\GrowSpaceSimService();
+                $simData     = $growService->lookupByIccid($info['iccid']);
+            }
+
+            return response()->json([
+                'success'      => true,
+                'imei'         => $info['imei'],
+                'iccid'        => $info['iccid'],
+                'device_imei'  => $deviceImei,
+                'imei_matches' => $imeiMatches,
+                'sims'         => $simData['sims'],
+                'plan_status'  => $simData['plan_status'],
+                'organization' => $simData['organization'],
+                'message'      => 'Device info extracted: '
+                    . ($info['imei']  ? 'IMEI ' . $info['imei']  : 'IMEI not found')
+                    . ', '
+                    . ($info['iccid'] ? 'ICCID ' . $info['iccid'] : 'ICCID not found'),
+            ]);
+
+        } catch (\Exception $e) {
+            if ($filePath && file_exists(storage_path('app/' . $filePath))) {
+                @unlink(storage_path('app/' . $filePath));
+            }
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getRCData($id)
+    {
+        $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        // Read RC details from certificate_data field ONLY (not from configurations)
+        $rcDetails = null;
+        if (!empty($device->certificate_data)) {
+            $certData = json_decode($device->certificate_data, true) ?: [];
+            // RC details are stored in certificate data
+            $rcDetails = $certData;
+        }
+
+        if (!$rcDetails) {
+            return response()->json(['data' => null]);
+        }
+
+        // Don't return file path in API response
+        $rcData = array_diff_key($rcDetails, array_flip(['file_path']));
+
+        return response()->json(['data' => $rcData]);
+    }
+
+    public function getRCStatus($id)
+    {
+        $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
+        $currentUser = Auth::user();
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['error' => 'Unauthorized access'], 403);
+        }
+
+        $fallbackService = new \App\Services\RCFallbackService();
+        $googleVisionConfigured = \App\Services\GoogleVisionRCService::isConfigured();
+        $tesseractAvailable = $fallbackService->isTesseractAvailable();
+
+        $response = [
+            'google_vision_available' => $googleVisionConfigured,
+            'tesseract_available' => $tesseractAvailable,
+            'ocr_available' => $googleVisionConfigured || $tesseractAvailable,
+        ];
+
+        if (!$googleVisionConfigured && !$tesseractAvailable) {
+            $instructions = $fallbackService->getInstallationInstructions();
+            $response['instructions'] = $instructions;
+            $response['message'] = 'OCR feature is not configured. Please set up either Google Cloud Vision API (recommended) or Tesseract-OCR.';
+        } else {
+            $response['message'] = 'OCR feature is available and ready to use.';
+            if ($googleVisionConfigured) {
+                $response['active_ocr'] = 'Google Cloud Vision API';
+            } elseif ($tesseractAvailable) {
+                $response['active_ocr'] = 'Tesseract-OCR';
+            }
+        }
+
+        return response()->json($response);
     }
 
     public function viewCertificate($id)
     {
         $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
         $currentUser = Auth::user();
         if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
             return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
@@ -700,8 +1319,26 @@ class DeviceController extends Controller
         $deviceCategory = DeviceCategory::select('is_certification_enable', 'arai_tac_no', 'arai_date', 'certification_model_name')
             ->find($device->device_category_id);
         $isCertificationEnabled = (int) ($deviceCategory->is_certification_enable ?? 0) === 1;
-        $config = json_decode($device->configurations, true) ?: [];
-        $details = $config['certificate_details'] ?? null;
+        // Fetch certificate data from the dedicated certificate_data field ONLY
+        $details = null;
+
+        if (!empty($device->certificate_data)) {
+            $details = json_decode($device->certificate_data, true);
+        }
+
+        // If certificate_data is empty, try to migrate from old configuration location
+        if (empty($details)) {
+            $config = json_decode($device->configurations, true) ?: [];
+            $oldDetails = $config['certificate_details'] ?? null;
+
+            if (!empty($oldDetails)) {
+                // Migrate old data to certificate_data field
+                $device->certificate_data = json_encode($oldDetails);
+                $device->update();
+                $details = $oldDetails;
+            }
+        }
+
         if (!$details) {
             return redirect('/user/device/' . $device->id . '/certificate');
         }
@@ -741,6 +1378,7 @@ class DeviceController extends Controller
         if (!empty($data['arai_date'])) {
             $data['arai_date'] = Carbon::parse($data['arai_date'])->format('d-m-Y');
         }
+        $data = array_merge($data, $this->certImages(null, $device));
         $pdfLink = url('/AS9076.pdf');
         $qrText = $pdfLink;
         $client = new Client();
@@ -763,7 +1401,14 @@ class DeviceController extends Controller
         }
         $data['qr_image'] = $qrImageDataUri;
         $pdf = PDF::loadView('pdf.certificate', $data);
-        return $pdf->stream('certificate_' . $device->imei . '.pdf');
+        $pdfFilename = \App\Support\CertificatePdf::filename($device, $data['vehicle_registration_no'] ?? null);
+        return response($pdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $pdfFilename . '"',
+            'Cache-Control'       => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
+        ]);
     }
 
     public function testshowAssign(Device $device, Request $request)
@@ -923,12 +1568,13 @@ class DeviceController extends Controller
         } else {
             // Reseller: devices that are assigned TO this reseller (user_id = reseller_id)
             // These are devices Reseller can manage and reassign/unassign
-            $devices = DB::table('devices')
+            $devicesQuery = DB::table('devices')
                 ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
                 ->select('devices.*')
                 ->where('devices.is_deleted', '0')
-                ->where('devices.user_id', $master_id)  // Currently assigned to this Reseller
-                ->get();
+                ->where('devices.user_id', $master_id);
+            $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, Auth::user());
+            $devices = $devicesQuery->get();
         }
 
         $users = DB::table('writers')->select('id', 'name')->where('writers.created_by', Auth::user()->id)->where('writers.is_deleted', '0')->where('user_type', '!=', 'Support')->get();
@@ -991,7 +1637,7 @@ class DeviceController extends Controller
             //     }
         }
         $url_type = self::getURLType();
-        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => true]);
+        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => false]);
     }
     /**
      * Show the form for editing the specified resource.
@@ -1002,6 +1648,22 @@ class DeviceController extends Controller
     {
         $currentUser = auth()->user();
         $device_info = Device::findOrFail($id);
+
+        if ($denied = $this->authorizeDeviceCategoryAccess($device_info)) {
+            return $denied;
+        }
+
+        // Check if user has permission to edit devices
+        $hasPermission = DB::table('user_permissions as up')
+            ->join('permissions as p', 'up.permission_id', '=', 'p.id')
+            ->where('up.user_id', $currentUser->id)
+            ->where('p.key', 'device_management.edit')
+            ->exists();
+
+        if (!$hasPermission) {
+            return view('unauthorized_access', ['error' => 403, 'error_msg' => "You don't have permission to edit devices!"]);
+        }
+
         if ($currentUser->user_type == 'User') {
             $checkUsers = DB::table('devices')->where('user_id', $currentUser->id)->pluck('user_id')->toArray();
         } elseif ($currentUser->user_type == 'Reseller') {
@@ -1055,11 +1717,31 @@ class DeviceController extends Controller
      */
     public function update(Request $request, Device $id)
     {
+        $currentUser = Auth::user();
+
+        // Check if user has permission to edit devices
+        $hasPermission = DB::table('user_permissions as up')
+            ->join('permissions as p', 'up.permission_id', '=', 'p.id')
+            ->where('up.user_id', $currentUser->id)
+            ->where('p.key', 'device_management.edit')
+            ->exists();
+
+        if (!$hasPermission) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to edit devices!"
+            ], 403);
+        }
+
+        $contact_id = $request->input('id');
+        if ($denied = $this->authorizeDeviceCategoryAccess($contact_id)) {
+            return $denied;
+        }
+
         $uid = Auth::user()->id;
         $request->validate([
             'imei' => "unique:devices,imei,{$request->input('id')}|max:15|min:15"
         ]);
-        $contact_id = $request->input('id');
         $is_editable = DB::table('devices')->where('id', $contact_id)->first();
         $prev_uid = $request->input('prev_uid');
         if (Auth::user()->user_type != 'Admin' && Auth::user()->user_type != 'Support' && $is_editable->is_editable == '1') {
@@ -1099,7 +1781,7 @@ class DeviceController extends Controller
                     }
                 }
             }
-            $contact->configurations = json_encode($this->normalizeConfiguration($request->get('configuration')));
+            $contact->configurations = json_encode($request->get('configuration'));
             $contact->update();
         } elseif (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
             $contact = Device::find($contact_id);
@@ -1128,7 +1810,7 @@ class DeviceController extends Controller
                     $contact->assign_to_ids = '';
                 }
             }
-            $contact->configurations = json_encode($this->normalizeConfiguration($request->get('configuration')));
+            $contact->configurations = json_encode($request->get('configuration'));
             if (Auth::user()->user_type == 'Admin' || Auth::user()->user_type == 'Support') {
                 $contact->is_editable = $request->get('is_editable');
             }
@@ -1155,6 +1837,9 @@ class DeviceController extends Controller
             if (!$device_data) {
                 return redirect()->back()->with('error', 'Device not found.');
             }
+            if ($denied = $this->authorizeDeviceCategoryAccess($device_data)) {
+                return $denied;
+            }
             $device_data->is_deleted = '1';
             $device_data->delete();
 
@@ -1165,8 +1850,29 @@ class DeviceController extends Controller
     }
     public function deleteAll(Request $request)
     {
-        $ids = $request->ids;
-        $deleteAll = DB::table("devices")->whereIn('id', explode(",", $ids))->delete();
+        $ids = array_values(array_filter(array_map('trim', explode(',', (string) ($request->ids ?? '')))));
+        if (empty($ids)) {
+            return response()->json(['error' => 'No devices selected.'], 422);
+        }
+
+        $deleted = 0;
+        $denied = 0;
+        foreach ($ids as $id) {
+            $device = Device::find($id);
+            if (!$device || !$this->deviceCategoryAccess()->userCanAccessDevice(Auth::user(), $device)) {
+                $denied++;
+                continue;
+            }
+            DB::table('devices')->where('id', $device->id)->delete();
+            $deleted++;
+        }
+
+        if ($deleted === 0 && $denied > 0) {
+            return response()->json([
+                'error' => 'You do not have access to the selected device category.',
+            ], 403);
+        }
+
         return response()->json(['success' => "Device Deleted successfully."]);
     }
     public function userassignAll(Request $request)
@@ -1188,9 +1894,19 @@ class DeviceController extends Controller
         $user_configurations = json_decode($user_info->configurations, true);
         // dd($user_configurations);
         $device_category_id = 0;
+        $errors = [];
+        $successfulUpdates = [];
 
         foreach ($devices as $id) {
             $device_info = Device::find($id);
+            if (!$device_info) {
+                $errors[] = $id;
+                continue;
+            }
+            if (!$this->deviceCategoryAccess()->userCanAccessDevice(Auth::user(), $device_info)) {
+                $errors[] = $id;
+                continue;
+            }
 
             $device_category_id = $device_info->device_category_id;
             $device_uid = self::getAssignedUserIdForDevice($id);
@@ -1282,8 +1998,6 @@ class DeviceController extends Controller
                 $models = DB::table('modals')->where('user_id', $assign_ids[1])->where('firmware_id', $configurations['firmware_id']['value'])->first();
             }
             // dd($models);
-            $errors = [];
-            $successfulUpdates = [];
             if ($models) {
                 $configurations['modelName']['value'] = $models->name;
                 $device_array['configurations'] = json_encode($configurations);
@@ -1377,6 +2091,10 @@ class DeviceController extends Controller
         $successfulUpdates = [];
         $updatedConfigurations = [];
         foreach ($devices as $device) {
+            if (!$this->deviceCategoryAccess()->userCanAccessDevice(Auth::user(), $device)) {
+                $errors[] = $device->imei;
+                continue;
+            }
             $deviceConfig = json_decode($device->configurations, true);
             if (!$deviceConfig) {
                 continue;
@@ -1475,17 +2193,18 @@ class DeviceController extends Controller
     public function showUserDevice()
     {
         if (Auth::user()->user_type == 'Support') {
-            $devices = DB::table('devices')
+            $devicesQuery = DB::table('devices')
                 ->leftJoin('writers', function ($join) {
                     $join->on('writers.id', '=', 'devices.user_id')
                         ->where('writers.is_deleted', '=', '0');
                 })
                 ->select('devices.*', 'writers.name as username')
-                ->where('devices.is_deleted', '0')
-                ->get();
+                ->where('devices.is_deleted', '0');
+            $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, Auth::user());
+            $devices = $devicesQuery->get();
         } else {
             $authId = auth()->id();
-            $devices = DB::table('devices')
+            $devicesQuery = DB::table('devices')
                 ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
                 ->select('devices.*', 'writers.name as username')
                 ->where('devices.is_deleted', '0')
@@ -1493,8 +2212,9 @@ class DeviceController extends Controller
                     $q->where('devices.user_id', $authId)
                         ->orWhere('devices.master_id', $authId)
                         ->orWhereRaw("FIND_IN_SET(?, devices.assign_to_ids)", [$authId]);
-                })
-                ->get();
+                });
+            $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, Auth::user());
+            $devices = $devicesQuery->get();
         }
         $users = DB::table('writers')
             ->select('id', 'name')
@@ -2096,9 +2816,9 @@ class DeviceController extends Controller
                     $oldConfig = [];
                 }
                 $newConfig = array_merge($oldConfig, $converted);
-                $arr['configurations'] = json_encode($this->normalizeConfiguration($newConfig));
+                $arr['configurations'] = json_encode($newConfig);
                 $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
-                $arr['can_configurations'] = json_encode($this->normalizeConfiguration($canConverted));
+                $arr['can_configurations'] = json_encode($canConverted);
                 $master_id = Auth::user()->id;
                 if (in_array($imei, $new_imei_list)) {
                     $mid = null;
@@ -2234,9 +2954,9 @@ class DeviceController extends Controller
                     $oldConfig = [];
                 }
                 $newConfig = array_merge($oldConfig, $converted);
-                $arr['configurations'] = json_encode($this->normalizeConfiguration($newConfig));
+                $arr['configurations'] = json_encode($newConfig);
                 $canConverted = !empty($request->canConfigurationArr) ? json_decode($request->canConfigurationArr, true) : [];
-                $arr['can_configurations'] = json_encode($this->normalizeConfiguration($canConverted));
+                $arr['can_configurations'] = json_encode($canConverted);
                 $master_id = Auth::user()->id;
                 if (in_array($imei, $new_imei_list)) {
                     $mid = null;
@@ -2288,7 +3008,16 @@ class DeviceController extends Controller
 
     public function showConfigurations($id)
     {
-        $device = Device::Find($id);
+        // Permission check - only need VIEW permission to view configurations
+        if (!Auth::user()->hasPermission('device_management.view')) {
+            abort(403, 'You do not have permission to view device configurations');
+        }
+
+        $device = Device::find($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
+
         $url_type = self::getURLType();
         $currentUser = Auth::user();
 
@@ -2300,15 +3029,10 @@ class DeviceController extends Controller
             return in_array($userId, $chain);
         };
 
+        $deviceCategoryId = (int) $device->device_category_id;
+
         if ($currentUser->user_type == 'Reseller') {
             $checkUser = DB::table('devices')->where('master_id', $currentUser->id)->pluck('user_id')->toArray();
-            $users = DB::table('writers')
-                ->select('id', 'name')
-                ->where('user_type', '!=', 'Admin')
-                ->where('user_type', '!=', 'Support')
-                ->where('is_deleted', 0)
-                ->where('created_by', $currentUser->id)
-                ->get();
 
             // Allow access if: user is in assign_to_ids chain, OR assigned to this Reseller, OR user is current assignment
             $hasAccess = $isInChain($currentUser->id, $device->assign_to_ids)
@@ -2327,23 +3051,18 @@ class DeviceController extends Controller
             if (!$hasAccess) {
                 return view('unauthorized_access', ['error' => 403, 'error_msg' => "Unauthorized access!"]);
             }
-            $users = DB::table('writers')
-                ->select('id', 'name')
-                ->where('user_type', '!=', 'Admin')
-                ->where('user_type', '!=', 'Support')
-                ->where('is_deleted', 0)
-                ->where('created_by', $currentUser->id)
-                ->get();
-        } else {
-            $users = DB::table('writers')
-                ->select('id', 'name')
-                ->where('is_deleted', 0)
-                ->where('user_type', '!=', 'Admin')
-                ->where('user_type', '!=', 'Support')
-                ->where('created_by', Auth::user()->id)
-                ->whereRaw('FIND_IN_SET(' . $device->device_category_id . ',device_category_id)')
-                ->get();
         }
+
+        // Only list accounts that have this device's category enabled on their profile
+        $users = DB::table('writers')
+            ->select('id', 'name')
+            ->where('is_deleted', 0)
+            ->where('user_type', '!=', 'Admin')
+            ->where('user_type', '!=', 'Support')
+            ->where('created_by', $currentUser->id)
+            ->whereRaw('FIND_IN_SET(?, device_category_id)', [$deviceCategoryId])
+            ->orderBy('name')
+            ->get();
         $uid = self::getAssignedUserIdForDevice($id);
         if ($uid == $currentUser->id || $device->user_id == $currentUser->id) {
             $uid = '';
@@ -2388,6 +3107,34 @@ class DeviceController extends Controller
     }
     public function updateDeviceConfigurations(Request $request, $id)
     {
+        // Permission check
+        if (!Auth::user()->hasPermission('device_management.edit')) {
+            return response()->json(['status' => 403, 'message' => 'You do not have permission to update device configurations'], 403);
+        }
+
+        // Ownership validation
+        $device = Device::findOrFail($id);
+        if ($denied = $this->authorizeDeviceCategoryAccess($device)) {
+            return $denied;
+        }
+        $currentUser = Auth::user();
+
+        // Check ownership based on user type
+        if ($currentUser->user_type == 'User' && $currentUser->id != $device->user_id) {
+            return response()->json(['status' => 403, 'message' => 'You do not have permission to update this device'], 403);
+        }
+
+        if ($currentUser->user_type == 'Reseller') {
+            $isOwnDevice = $device->user_id == $currentUser->id;
+            $isChildUserDevice = \DB::table('writers')
+                ->where('id', $device->user_id)
+                ->where('created_by', $currentUser->id)
+                ->exists();
+
+            if (!$isOwnDevice && !$isChildUserDevice) {
+                return response()->json(['status' => 403, 'message' => 'You do not have permission to update this device'], 403);
+            }
+        }
 
         $params = $request->configuration[0];
         $keys = array_keys($params);
@@ -2456,12 +3203,12 @@ class DeviceController extends Controller
         foreach ($newChanges as $key => $value) {
             $newValue = $value['value'] ?? null;
             if ($newValue === null || $newValue === "" || strtolower((string)$newValue) === 'null') {
-                $newValue = "";
-                $newChanges[$key]['value'] = "";
+                $newValue = "0";
+                $newChanges[$key]['value'] = "0";
             }
-            $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? null) : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '');
+            $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? null) : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '0');
             if ($oldValue === null || $oldValue === "" || strtolower((string)$oldValue) === 'null' || $oldValue === 'N/A') {
-                $oldValue = "";
+                $oldValue = "0";
             }
             if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $newValue) {
                 $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];
@@ -2470,12 +3217,9 @@ class DeviceController extends Controller
         if ($newChanges) {
             $device->deviceStatus = "Pending";
         }
-        
         $result = array_replace($oldChanges, $newChanges);
-    //    $device->configurations = json_encode($result);
-        $device->configurations = json_encode($this->normalizeConfiguration($result));
+        $device->configurations = json_encode($result);
         $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
-        // dd($device->configurations);
         $device->timestamps = false; // disable auto timestamps temporarily
         $device->updated_at = $utcTime;
         $device->save();
@@ -2499,10 +3243,14 @@ class DeviceController extends Controller
             ]);
         }
 
-        return back();
+        return redirect()->back()->with('success', 'Device configurations updated successfully.');
     }
     public function updateCanProtocolConfigurations(Request $request, $id)
     {
+        if ($denied = $this->authorizeDeviceCategoryAccess($id)) {
+            return $denied;
+        }
+
         $params = $request->canConfiguration;
         $dataFields = DataFields::select("*")->where(['is_can_protocol' => 1])->get()->keyBy(function ($item) {
             // Convert field names to lowercase snake_case as key
@@ -2549,7 +3297,7 @@ class DeviceController extends Controller
             $device->deviceStatus = "Pending";
         }
 
-        $device->can_configurations = json_encode($this->normalizeConfiguration($newChanges));
+        $device->can_configurations = json_encode($newChanges);
         $utcTime = Carbon::now('UTC')->setTimezone('UTC')->toDateTimeString();
         $device->timestamps = false; // disable auto timestamps temporarily
         $device->updated_at = $utcTime;
@@ -2577,10 +3325,19 @@ class DeviceController extends Controller
             ]);
         }
 
-        return back();
+        return redirect()->back()->with('success', 'CAN protocol configurations updated successfully.');
     }
     public function updateDeviceInfoConfigurations(Request $request, $id)
     {
+        // Permission check
+        if (!Auth::user()->hasPermission('device_management.edit')) {
+            return response()->json(['status' => 403, 'message' => 'You do not have permission to update device information'], 403);
+        }
+
+        if ($denied = $this->authorizeDeviceCategoryAccess($id)) {
+            return $denied;
+        }
+
         // dd($request);
         $params = $request->configuration;
         $dataFields = DataFields::select("*")->where(['is_common' => 1])->get();
@@ -2850,9 +3607,9 @@ class DeviceController extends Controller
             //     'is_active' => 1
             // ]);
         } else {
-            return redirect()->back()->with('error', 'you do not have permission to update');
+            return redirect()->back()->with('error', 'You do not have permission to update this device.');
         }
-        return back();
+        return redirect()->back()->with('success', 'Device information updated successfully.');
     }
     public function viewUncategorized()
     {
@@ -2871,6 +3628,11 @@ class DeviceController extends Controller
     }
     public function checkModalName(Request $request)
     {
+        // Permission check
+        if (!Auth::user()->hasPermission('device_management.view')) {
+            return response()->json(['status' => 403, 'message' => 'Unauthorized: You do not have permission to perform this action'], 403);
+        }
+
         $request->validate([
             'modalName' => 'required|string'
         ]);
@@ -2894,6 +3656,11 @@ class DeviceController extends Controller
     }
     public function destroyDataField(DataFields $dataField, $id)
     {
+        // Permission check
+        if (!Auth::user()->hasPermission('device_management.edit')) {
+            abort(403, 'You do not have permission to delete device data fields');
+        }
+
         $device_data_field = DataFields::find($id);
         // $device_data->is_deleted = '1';
         $device_data_field->delete();
@@ -2901,6 +3668,11 @@ class DeviceController extends Controller
     }
     public function getDataFields()
     {
+        // Permission check
+        if (!Auth::user()->hasPermission('device_management.view')) {
+            return response()->json(['status' => 403, 'message' => 'You do not have permission to view device data fields'], 403);
+        }
+
         $dataFields = DataFields::get();
         return response()->json([
             'status' => 200,

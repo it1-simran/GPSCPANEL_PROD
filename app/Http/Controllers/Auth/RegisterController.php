@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use App\Services\AccountDeviceCategoryService;
+use App\Services\PermissionAssignmentService;
 use Svg\Tag\Rect;
 
 class RegisterController extends Controller
@@ -111,12 +113,11 @@ class RegisterController extends Controller
     }
 
     $formatted = [];
+    $formattedByCategory = [];
 
-    foreach ($configuration as $index => $config) {
+    foreach ($configuration as $categoryId => $config) {
       $formattedRow = [];
-      $keys = array_keys($config);
-      $idSet = $idParameters[$index];
-      $keyIndex = 0;
+      $idSet = $idParameters[$categoryId] ?? $idParameters[(string) $categoryId] ?? [];
       foreach ($config as $key => $value) {
         if ($key === 'template') continue;
 
@@ -124,26 +125,32 @@ class RegisterController extends Controller
           'id' => $idSet[$key] ?? null,
           'value' => $value
         ];
-        $keyIndex++;
       }
 
       $commonFields = DB::table("data_fields")->where("is_common", 1)->get();
-      foreach ($commonFields as $index => $value) {
-        $key = strtolower(str_replace(' ', '_', $value->fieldName));
+      foreach ($commonFields as $commonField) {
+        $key = strtolower(str_replace(' ', '_', $commonField->fieldName));
         if ($key == 'ping_interval' || $key == 'is_editable') {
           $formattedRow[$key] = [
-            'id' => $value->id,
+            'id' => $commonField->id,
             'value' => $config[$key] ?? ''
           ];
         }
       }
-      $formatted[] = (object)$formattedRow;
+
+      $formattedByCategory[(int) $categoryId] = $formattedRow;
     }
+
     if (is_string($request->deviceCategory)) {
       $device_category = json_decode($request->deviceCategory, true);
     } else {
       $device_category = $request->deviceCategory;
     }
+
+    foreach ($device_category as $categoryId) {
+      $formatted[] = (object) ($formattedByCategory[(int) $categoryId] ?? []);
+    }
+
     $device_category_id = implode(',', $device_category);
     // dd($device_category_id);
     if (Auth::user()->user_type == "Reseller") {
@@ -258,28 +265,17 @@ class RegisterController extends Controller
       'configurations' => json_encode($formatted),
       'can_configurations' => json_encode($canConfiguration),
       'created_by' => Auth::user()->id,
+      'parent_user_id' => Auth::user()->user_type === 'Reseller' ? Auth::user()->id : null,
       'is_support_active' => $request->has('is_support_active') && $request->get('is_support_active') === 'on' ? 1 : 0,
       'timezone' => $request->timezone,
     ]);
-    foreach ($formatted as $key => $format) {
-      $format->ping_interval = ["id" => 77, "value" => 4];
-      $format->is_editable = ["id" => 78, "value" => 1];
 
-      $deviceCatId = $device_category[$key] ?? null; // prevent undefined index
+    $defaultPermissions = app(PermissionAssignmentService::class)
+      ->getDefaultPermissionIdsForNewAccount(Auth::user(), $request->user_type);
+    $writer->permissions()->sync($defaultPermissions);
 
-      $temp = [
-        'id_user' => $writer->id,
-        'template_name' => 'default',
-        'device_category_id' => $deviceCatId,
-        'configurations' => json_encode($format),
-        'can_configurations' => ($deviceCatId && isset($canConfiguration[$deviceCatId]))
-          ? json_encode($canConfiguration[$deviceCatId])
-          : null,
-        'default_template' => 1,
-        'verify' => 2
-      ];
-      Template::create($temp);
-    }
+    app(AccountDeviceCategoryService::class)
+      ->provisionDefaultTemplatesForNewAccount($writer, $canConfiguration);
 
     return json_encode(['success' => $request->email . ' Added Successfully']);
   }
@@ -300,20 +296,59 @@ class RegisterController extends Controller
   }
   public function getResellersList(Request $request)
   {
-    $uid = $request->get('uid');
-    $where = [];
-    $where[] = ['id', '!=', $uid];
-    //$where[] = ['user_type', '=', 'Reseller'];
-    $where[] = ['created_by', '=', Auth::user()->id];
-    $where[] = ['is_deleted', '=', 0];
-    $users = Writer::where($where)->get();
-    $resellers = array();
-    if (count($users) > 0) {
-      foreach ($users as $user) {
-        $resellers[] = array('id' => $user['id'], 'text' => $user['name']);
+    $uid = (int) $request->get('uid');
+    if (!$uid) {
+      return json_encode(['resellers' => []]);
+    }
+
+    $parentAccount = Writer::where('id', $uid)->where('is_deleted', 0)->first();
+    if (!$parentAccount) {
+      return json_encode(['resellers' => []]);
+    }
+
+    $authUser = Auth::user();
+    if ($authUser->user_type !== 'Admin') {
+      $canManageParent = (int) $parentAccount->id === (int) $authUser->id
+        || (int) $parentAccount->created_by === (int) $authUser->id
+        || (int) $parentAccount->parent_user_id === (int) $authUser->id;
+
+      if (!$canManageParent) {
+        return json_encode(['resellers' => []]);
       }
     }
-    return json_encode(array('resellers' => $resellers));
+
+    $this->childAcounts = [];
+    $childAccounts = self::getAllChildAccounts($uid);
+    $childIds = array_map(fn($child) => (int) $child['uid'], $childAccounts);
+    $parentLinkedIds = Writer::where('parent_user_id', $uid)
+      ->where('is_deleted', 0)
+      ->pluck('id')
+      ->map(fn($id) => (int) $id)
+      ->toArray();
+
+    $excludeIds = array_values(array_unique(array_merge([$uid], $childIds, $parentLinkedIds)));
+
+    $query = Writer::where('is_deleted', 0)
+      ->whereNotIn('id', $excludeIds)
+      ->whereNotIn('user_type', ['Admin', 'Support'])
+      ->orderBy('name');
+
+    if ($authUser->user_type !== 'Admin') {
+      $query->where('created_by', $authUser->id);
+    }
+
+    $users = $query->get();
+
+    $resellers = [];
+    foreach ($users as $user) {
+      $typeLabel = $user->user_type === 'Reseller' ? 'Manufacturer' : 'Dealer';
+      $resellers[] = [
+        'id' => $user->id,
+        'text' => $user->name . ' (' . $typeLabel . ')',
+      ];
+    }
+
+    return json_encode(['resellers' => $resellers]);
   }
   public function showWriter(Request $request)
   {
@@ -409,81 +444,315 @@ class RegisterController extends Controller
 
     // If allowed, proceed to edit
     $url_type = self::getURLType();
-    return view('edit_user', ['contact' => $contact, 'url_type' => $url_type, 'currentUser' => $currentUser]);
+    $categoryService = app(AccountDeviceCategoryService::class);
+    $categoryService->ensureMissingDefaultTemplates($contact);
+    $contact->refresh();
+    $categoryConfigMap = $categoryService->buildCategoryConfigMap($contact);
+    $templateViewData = $categoryService->buildCategoryDefaultTemplateViewData($contact);
+
+    return view('edit_user', [
+      'contact' => $contact,
+      'url_type' => $url_type,
+      'currentUser' => $currentUser,
+      'categoryConfigMap' => $categoryConfigMap,
+      'categoryViewConfigMap' => $templateViewData['viewConfigMap'],
+      'categoryDefaultTemplateMap' => $templateViewData['defaultTemplateMap'],
+      'categoryCanViewConfigMap' => $templateViewData['canViewConfigMap'],
+      'categoryAdminPingIntervalMap' => $categoryService->buildAdminPingIntervalMap(),
+    ]);
+  }
+
+  public function enableAccountDeviceCategory(Request $request, AccountDeviceCategoryService $service)
+  {
+    try {
+      $request->validate([
+        'user_id' => 'required|integer',
+        'category_id' => 'required|integer',
+      ]);
+
+      $this->authorizeAccountDeviceCategoryChange((int) $request->user_id);
+
+      $result = $service->enableCategoryForAccount((int) $request->user_id, (int) $request->category_id);
+
+      return response()->json([
+        'status' => 200,
+        'message' => 'Device category enabled successfully.',
+        'templates' => $result['templates'],
+        'default_template_id' => $result['template']->id,
+      ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+      throw $e;
+    } catch (\Throwable $e) {
+      \Log::error('enableAccountDeviceCategory failed', [
+        'user_id' => $request->user_id,
+        'category_id' => $request->category_id,
+        'error' => $e->getMessage(),
+      ]);
+
+      return response()->json([
+        'message' => 'Unable to enable this device category. Please refresh the page and try again.',
+      ], 422);
+    }
+  }
+
+  public function disableAccountDeviceCategory(Request $request, AccountDeviceCategoryService $service)
+  {
+    try {
+      $request->validate([
+        'user_id' => 'required|integer',
+        'category_id' => 'required|integer',
+      ]);
+
+      $this->authorizeAccountDeviceCategoryChange((int) $request->user_id);
+
+      $service->disableCategoryForAccount((int) $request->user_id, (int) $request->category_id);
+
+      return response()->json([
+        'status' => 200,
+        'message' => 'Device category disabled successfully.',
+      ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+      throw $e;
+    } catch (\Throwable $e) {
+      \Log::error('disableAccountDeviceCategory failed', [
+        'user_id' => $request->user_id,
+        'category_id' => $request->category_id,
+        'error' => $e->getMessage(),
+      ]);
+
+      return response()->json([
+        'message' => 'Unable to disable this device category. Please refresh the page and try again.',
+      ], 422);
+    }
+  }
+
+  protected function authorizeAccountDeviceCategoryChange(int $userId): Writer
+  {
+    $currentUser = Auth::user();
+    $contact = Writer::where('id', $userId)->where('is_deleted', 0)->firstOrFail();
+
+    if ($currentUser->user_type === 'Admin') {
+      return $contact;
+    }
+
+    if ($currentUser->user_type === 'Reseller') {
+      $childIds = Writer::where('created_by', $currentUser->id)->where('is_deleted', 0)->pluck('id')->toArray();
+      if (!in_array($contact->id, $childIds, true) && $currentUser->id !== $contact->id) {
+        abort(403, 'Unauthorized access!');
+      }
+
+      return $contact;
+    }
+
+    if ($currentUser->user_type === 'User' && $currentUser->id === $contact->id) {
+      return $contact;
+    }
+
+    abort(403, 'Unauthorized access!');
   }
   public function updateWriter(Request $request, $id, $userType)
+  {
+    try {
+      return $this->performUpdateWriter($request, $id, $userType);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+      throw $e;
+    } catch (\Throwable $e) {
+      \Log::error('updateWriter failed', [
+        'user_id' => $id,
+        'error' => $e->getMessage(),
+      ]);
+
+      return response()->json([
+        'message' => 'We could not update this account. Please select your device categories, complete all required settings, and try again.',
+      ], 422);
+    }
+  }
+
+  protected function performUpdateWriter(Request $request, $id, $userType)
   {
     $request->validate([
       'name' => 'required|string|max:255',
       'mobile' => 'required|string|min:10|max:10',
       'email' => 'required|email|max:255',
-      'timezone' => 'required|string|max:255'
+      'timezone' => 'required|string|max:255',
+      'deviceCategory' => 'nullable|array',
+      'configuration' => 'nullable|array',
+      'idParameters' => 'nullable|array',
+      'canConfigurationArr' => 'nullable|array',
     ]);
-    $configuration = $request->configuration;
-    $canConfiguration = $request->canConfigurationArr;
-    $idParameters = $request->idParameters;
+
+    $deviceCategories = $request->input('deviceCategory', []);
+    if (!is_array($deviceCategories)) {
+      $deviceCategories = array_filter([$deviceCategories]);
+    }
+    $deviceCategories = array_values(array_filter($deviceCategories, function ($categoryId) {
+      return $categoryId !== null && $categoryId !== '';
+    }));
+
+    $configuration = $request->input('configuration', []);
+    $configuration = is_array($configuration) ? $configuration : [];
+    $categoryService = app(AccountDeviceCategoryService::class);
+    $contact = Writer::find($id);
+    $configuration = $categoryService->stripForeignTemplateReferences($contact, $configuration);
+
+    $canConfigurationRaw = $request->input('canConfigurationArr', []);
+    $canConfiguration = [];
+    if (is_array($canConfigurationRaw)) {
+      foreach ($canConfigurationRaw as $categoryId => $canConfigValue) {
+        if ($canConfigValue === null || $canConfigValue === '') {
+          continue;
+        }
+        $decoded = is_array($canConfigValue) ? $canConfigValue : json_decode($canConfigValue, true);
+        if (is_array($decoded)) {
+          $canConfiguration[$categoryId] = $decoded;
+        }
+      }
+    }
+
+    $idParameters = $request->input('idParameters', []);
+    $idParameters = is_array($idParameters) ? $idParameters : [];
+
+    $currentUser = Auth::user();
+    $isEditingOwnAccount = (int) $currentUser->id === (int) $id;
+    $isAdminEditor = $currentUser->user_type === 'Admin';
+
+    $removedCategoryIds = $categoryService->getRemovedCategoryIds($contact, $deviceCategories);
+    foreach ($removedCategoryIds as $removedCategoryId) {
+      $categoryService->disableCategoryForAccount((int) $id, (int) $removedCategoryId);
+    }
+    if (!empty($removedCategoryIds)) {
+      $contact->refresh();
+    }
+
+    $addedCategoryIds = $categoryService->getAddedCategoryIds($contact, $deviceCategories);
+    foreach ($addedCategoryIds as $addedCategoryId) {
+      $categoryService->enableCategoryForAccount((int) $id, (int) $addedCategoryId);
+    }
+    if (!empty($addedCategoryIds)) {
+      $contact->refresh();
+    }
+
+    $isEditableFieldId = null;
+    $commonFields = DB::table('data_fields')->where('is_common', 1)->get();
+    foreach ($commonFields as $commonField) {
+      $commonKey = strtolower(str_replace(' ', '_', $commonField->fieldName));
+      if ($commonKey === 'is_editable') {
+        $isEditableFieldId = (int) $commonField->id;
+        break;
+      }
+    }
+    $existingConfigMap = $categoryService->buildCategoryConfigMap($contact);
+
+    if (!empty($deviceCategories) && ($userType === 'Admin' || $isEditingOwnAccount)) {
+      foreach ($deviceCategories as $categoryId) {
+        $categoryConfig = $configuration[$categoryId] ?? $configuration[(string) $categoryId] ?? null;
+        if (!is_array($categoryConfig)) {
+          return response()->json([
+            'message' => 'Device category settings are incomplete. Please check each enabled category and wait for its configuration section to load before saving.',
+            'errors' => [
+              'deviceCategory' => ['Please complete all device category settings before saving this account.'],
+            ],
+          ], 422);
+        }
+      }
+    } elseif (!empty($addedCategoryIds)) {
+      foreach ($addedCategoryIds as $categoryId) {
+        $categoryConfig = $configuration[$categoryId] ?? $configuration[(string) $categoryId] ?? null;
+        if (!is_array($categoryConfig)) {
+          return response()->json([
+            'message' => 'Device category settings are incomplete. Please check each newly enabled category and wait for its configuration section to load before saving.',
+            'errors' => [
+              'deviceCategory' => ['Please complete all newly enabled device category settings before saving this account.'],
+            ],
+          ], 422);
+        }
+      }
+    }
+
     $formatted = [];
 
-    foreach ($configuration as $index => $config) {
+    foreach ($deviceCategories as $categoryId) {
+      $config = $configuration[$categoryId] ?? $configuration[(string) $categoryId] ?? null;
+      if (!is_array($config)) {
+        continue;
+      }
+
       $formattedRow = [];
-      $keys = array_keys($config);
-      $idSet = $idParameters[$index];
-      // Skip "template" if it's the first key
-      $keyIndex = 0;
+      $idSet = $idParameters[$categoryId] ?? $idParameters[(string) $categoryId] ?? [];
+      if (!is_array($idSet)) {
+        $idSet = [];
+      }
+
+      if (isset($config['template']) && $config['template'] !== '') {
+        $formattedRow['template'] = [
+          'id' => null,
+          'value' => $config['template'],
+        ];
+      }
+
       foreach ($config as $key => $value) {
-        if ($key === 'template') continue;
+        if ($key === 'template') {
+          continue;
+        }
 
         $formattedRow[$key] = [
           'id' => $idSet[$key] ?? null,
           'value' => $value
         ];
-        $keyIndex++;
       }
-      // if($userType == 'Admin'){
-      $commonFields = DB::table("data_fields")->where("is_common", 1)->get();
-      foreach ($commonFields as $index => $value) {
-        $key = strtolower(str_replace(' ', '_', $value->fieldName));
-        // if (isset($config[$key])) {
-        if ($key == 'ping_interval' || $key == 'is_editable') {
-          $formattedRow[$key] = [
+      if ($isAdminEditor && isset($config['ping_interval']) && $config['ping_interval'] !== '') {
+        $formattedRow['ping_interval'] = [
+          'id' => $categoryService->getPingIntervalFieldId(),
+          'value' => $config['ping_interval'],
+        ];
+      } else {
+        $existingPing = $existingConfigMap[(int) $categoryId]['ping_interval']['value'] ?? null;
+        $formattedRow['ping_interval'] = [
+          'id' => $categoryService->getPingIntervalFieldId(),
+          'value' => ($existingPing !== null && $existingPing !== '')
+            ? $existingPing
+            : $categoryService->getAdminPingIntervalForCategory((int) $categoryId),
+        ];
+      }
 
-            'id' => $value->id,
-            'value' => $config[$key] ?? ''
-          ];
+      if ($isEditableFieldId !== null) {
+        if ($isAdminEditor) {
+          $isEditableValue = array_key_exists('is_editable', $config) ? $config['is_editable'] : '1';
+        } else {
+          $isEditableValue = $existingConfigMap[(int) $categoryId]['is_editable']['value']
+            ?? ($config['is_editable'] ?? '1');
         }
-        // }
+        $formattedRow['is_editable'] = [
+          'id' => $isEditableFieldId,
+          'value' => $isEditableValue,
+        ];
       }
-      // }
 
       $formatted[] = (object)$formattedRow;
     }
 
     // dd($formatted);
 
-    $currentUser = Auth::user();
     $requestedUserType = $request->get('user_type');
 
     if ($userType == 'Admin') {
-      $contact = Writer::find($id);
       $contact->twoFactorAuthentication = $request->get('twoFactorAuthentication') == 'on' ? 1 : 0;
       $contact->name = $request->get('name');
       $contact->password = Hash::make($request->password);
       $contact->LoginPassword = $request->password;
       $contact->showLoginPassword = $request->password;
       $contact->user_type = 'Admin';
-      $contact->device_category_id = implode(',', $request->deviceCategory);
+      $contact->device_category_id = implode(',', $deviceCategories);
       $contact->timezone = $request->get('timezone');
       $contact->configurations = json_encode($formatted);
       $contact->can_configurations = json_encode($canConfiguration);
       $contact->is_support_active = $request->get('is_support_active') === 'on' ? 1 : 0;
       $contact->save();
     } else {
-      $contact = Writer::find($id);
-      //   dd($request->deviceCategory);
       $contact->name = $request->get('name');
       $contact->mobile = $request->get('mobile');
       $contact->email = $request->get('email');
-      $contact->device_category_id = implode(',', $request->deviceCategory);
+      $contact->device_category_id = implode(',', $deviceCategories);
       $contact->twoFactorAuthentication = $request->get('twoFactorAuthentication') == 'on' ? 1 : 0;
       if ($currentUser->user_type == 'Reseller' && in_array($requestedUserType, ['User', 'Reseller'], true)) {
         $contact->user_type = $requestedUserType;
@@ -493,10 +762,31 @@ class RegisterController extends Controller
         $contact->user_type = $userType;
       }
       $contact->is_support_active = $request->get('is_support_active') === 'on' ? 1 : 0;
-      $contact->configurations = json_encode($formatted);
       $contact->timezone = $request->get('timezone');
-      $contact->can_configurations = json_encode($canConfiguration);
+
+      if ($isEditingOwnAccount) {
+        $contact->configurations = json_encode($formatted);
+        $contact->can_configurations = json_encode($canConfiguration);
+      } else {
+        if (!empty($addedCategoryIds)) {
+          $categoryService->mergeNewCategoryConfigurations(
+            $contact,
+            $formatted,
+            $deviceCategories,
+            $addedCategoryIds,
+            $canConfiguration
+          );
+        }
+        if ($isAdminEditor) {
+          $categoryService->applyAdminOnlyConfigurationFields($contact, $formatted, $deviceCategories);
+        }
+      }
+
       $contact->save();
+
+      if ($isEditingOwnAccount || !empty($addedCategoryIds)) {
+        $categoryService->syncTemplatesFromAccount($contact, $configuration);
+      }
 
       if ($request->get('acc_type_changed')) {
 
@@ -697,7 +987,7 @@ class RegisterController extends Controller
     $writer->save();
     $writer->timestamps = true;
     // $writer->save();
-    return back();
+    return back()->with('success', 'Account configurations updated successfully.');
   }
   public function updateCanProtocolConfigurations(Request $request, $id)
   {
@@ -776,7 +1066,7 @@ class RegisterController extends Controller
     // dd($updatedConfigurationsJson);
     $writer->can_configurations = $updatedConfigurationsJson;
     $writer->save();
-    return back();
+    return back()->with('success', 'Account CAN protocol configurations updated successfully.');
   }
   public function updateWriterInformation(Request $request, $id, $userType)
   {
@@ -811,7 +1101,7 @@ class RegisterController extends Controller
         self::manageEditDelAccs($id, $request->all(), 'edit');
       }
     }
-    return back();
+    return back()->with('success', 'Account information updated successfully.');
   }
   public function viewUncategorized()
   {

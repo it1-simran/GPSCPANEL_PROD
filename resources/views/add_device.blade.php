@@ -38,21 +38,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                     </div><!--/.c_title-->
                     <div class="c_content">
                         <div class="row" id="alert_msg">
-                            @if ($message = Session::get('success'))
-                            <div class="col-sm-12 alert alert-success" role="alert">
-                                {{ $message }}
-                            </div>
-                            @endif
-                            @if ($message = Session::get('error'))
-                            <div class="col-sm-12 alert alert-danger" role="alert">
-                                {{ $message }}
-                            </div>
-                            @endif
-                            @if ($errors->any())
-                            <div class="col-sm-12 alert alert-danger" role="alert">
-                                {{ $errors->first() }}
-                            </div>
-                            @endif
+                            @include('partials.gps-inline-alerts')
                         </div>
                         <div class="col-sm-12 alert alert-success success_msg" role="alert" style="display:none"></div>
                         <div class="col-sm-12 alert alert-danger error_msg" role="alert" style="display:none"></div>
@@ -319,12 +305,16 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $("#commentForm").submit(function(event) {
             $(".error_msg").html("").hide();
             $(".success_msg").html("").hide();
-            event.preventDefault(); // Prevent default form submission
+            event.preventDefault();
             formValid = true;
             let imei = $("#imei").val();
             let firmware = $("#firmware").val();
             if(!firmware || firmware == ""){
-                $('.error_msg').append("Please select a firmware").show();
+                if (window.notifyGpsError) {
+                    window.notifyGpsError("Please select a firmware");
+                } else {
+                    $('.error_msg').append("Please select a firmware").show();
+                }
                 formValid = false;
             }
             if (!isValidIMEI(imei)) {
@@ -333,48 +323,42 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             if (formValid) {
                 $('.error_msg').empty().hide();
                 $('.success_msg').empty().hide();
-                // Serialize form data
                 let formData = $(this).serialize();
-                // AJAX request
                 $.ajax({
-                    url: "{{ url('/admin/store-device') }}", // Replace with your API endpoint
+                    url: "{{ url('/admin/store-device') }}",
                     type: "POST",
                     data: formData,
                     success: function(response) {
-                        let result = JSON.parse(response);
-                        if (result.status == 200) {
+                        let result = typeof response === 'object' ? response : JSON.parse(response);
+                        if (result.status === 200 || result.status === '200') {
                             $('.btn-disable-after-submit').attr("disabled", true);
-                            $('.success_msg').append(result.status_message).show();
-                            document.documentElement.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'start'
-                            });
+                            if (window.notifyGpsSuccess) {
+                                window.notifyGpsSuccess(result.status_message || 'Device added successfully.');
+                            } else {
+                                $('.success_msg').append(result.status_message).show();
+                            }
                         }
                     },
                     error: function(xhr) {
-                        console.error("Error:", xhr.responseText);
-                        let errors = JSON.parse(xhr.responseText);
-                        // Display specific errors in the error message container
-                        if (errors && errors.errors && errors.errors.imei) {
-                            $('.error_msg').append(errors.errors.imei[0]).show();
+                        if (window.notifyGpsFromXhr) {
+                            window.notifyGpsFromXhr(xhr);
+                        } else {
+                            let errors = JSON.parse(xhr.responseText);
+                            if (errors && errors.errors && errors.errors.imei) {
+                                $('.error_msg').append(errors.errors.imei[0]).show();
+                            }
                         }
-                        document.documentElement.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                        // Handle error response as needed
                     },
                     complete: function() {
-                        // Optional: Hide loading indicator or enable submit button
                         $('#loading').hide();
                     }
                 });
             } else {
-                $(".error_msg").append("Please Enter the valid IMEI no ").show();
-                document.documentElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+                if (window.notifyGpsError) {
+                    window.notifyGpsError("Please enter a valid 15-digit IMEI number.");
+                } else {
+                    $(".error_msg").append("Please Enter the valid IMEI no ").show();
+                }
                 return false;
             }
         });

@@ -130,7 +130,7 @@
                     <label style="font-weight: 700; color: #334155; font-size: 16px; margin-bottom: 16px; display: block; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Device Categories <span style="color: #ef4444;">*</span></label>
                     <div style="margin-top: 16px; display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 15px;">
                       @foreach($getDeviceCategory as $deviceCategory)
-                      <div style="flex: 0 0 auto; min-width: 200px; max-width: 280px;">
+                      <div style="flex: 0 0 auto; min-width: 100px; max-width: 180px;">
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; width: 100%; transition: all 0.2s ease;">
                           <input type="checkbox" id="deviceCategory{{$deviceCategory->id}}" class="bgx-checkbox-category" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput()" style="width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0;">
                           <label for="deviceCategory{{$deviceCategory->id}}" class="bgx-label-category" style="margin: 0; margin-left: 12px; font-weight: 600; color: #475569; cursor: pointer; flex: 1; text-align: right;">{{$deviceCategory->device_category_name}}</label>
@@ -146,7 +146,7 @@
                     <div style="margin-top: 16px; display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 15px;">
                       @foreach($getDeviceCategory as $deviceCategory)
                       @if(in_array($deviceCategory->id,$deviceCategoryArr))
-                      <div style="flex: 0 0 auto; min-width: 200px; max-width: 280px;">
+                      <div style="flex: 0 0 auto; min-width: 100px; max-width: 180px;">
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; width: 100%; transition: all 0.2s ease;">
                           <input type="checkbox" id="deviceCategory{{$deviceCategory->id}}" {{ in_array($deviceCategory->id, $deviceCategoryArr) ? 'checked' : '' }} class="bgx-checkbox-category bgx-checkbox-category-{{$deviceCategory->id}}" name="deviceCategory[]" value="{{$deviceCategory->id}}" onclick="getDeviceCateGoryInput({{Auth::user()->id}},{{$deviceCategory->id}})" style="width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0;">
                           <label for="deviceCategory{{$deviceCategory->id}}" class="bgx-label-category" style="margin: 0; margin-left: 12px; font-weight: 600; color: #475569; cursor: pointer; flex: 1; text-align: right;">{{$deviceCategory->device_category_name}}</label>

@@ -235,6 +235,15 @@
                                 @endif
                               </optgroup>
                             </select>
+                            <script>
+                              $(document).ready(function() {
+                                $('#s2example-2{{$contact['id']}}').select2({
+                                  placeholder: 'Select and Search',
+                                  width: '100%',
+                                  dropdownParent: $('#modal-responsive{{$contact['id']}}')
+                                });
+                              });
+                            </script>
                           </div>
                         </div>
                         <div class="modal-footer text-center">

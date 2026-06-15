@@ -57,34 +57,10 @@
     @endif
     @endif
 
-    {{-- PHP QUERIES --}}
-    <?php
-      $countregister      = DB::table('writers')->where('is_deleted','0')->count();
-      $UnassignedDevices  = DB::table('devices')->leftJoin('writers','writers.id','=','devices.user_id')->select('devices.*','writers.name as username')->where('devices.is_deleted','0')->where('devices.user_id',NULL)->orwhere('devices.user_id',0)->count();
-      $AssignedDevice     = DB::table('devices')->leftJoin('writers','writers.id','=','devices.user_id')->select('devices.*','writers.name as username')->where('devices.is_deleted','0')->where('devices.user_id','!=','')->count();
-      $totalTemplete      = DB::table('templates')->where('is_deleted','0')->where('verify','1')->count();
-      $usertotalTemplete  = DB::table('templates')->where('is_deleted','0')->where('verify','2')->where('id_user',auth()->id())->count();
-      $totalDeviceQuery   = DB::table('devices')->where('is_deleted','0')->where(function($q) {
-          $q->where('user_id', auth()->id())->orWhereRaw('FIND_IN_SET(?, devices.assign_to_ids)', [auth()->id()]);
-      });
-      app(\App\Services\DeviceCategoryAccessService::class)->applyCategoryScopeToQuery($totalDeviceQuery, auth()->user(), 'devices.device_category_id');
-      $totalDevice        = $totalDeviceQuery->count();
-      $AdmintotalDevice   = DB::table('devices')->where('is_deleted','0')->count();
-      /* Admin: total = all writers; today = sum(today_pings) where pings_date is today. */
-      $totalpingsadmin    = DB::table('writers')->where('writers.is_deleted', '0')->sum('total_pings');
-      $countTotalPings    = DB::table('writers')->where('id',auth()->id())->where('writers.is_deleted',0)->value('total_pings');
-      $todaypingsadmin    = DB::table('writers')->where('writers.is_deleted', '0')
-          ->whereDate('writers.pings_date', today())
-          ->sum('today_pings');
-      $todaypingsuser     = DB::table('writers')->where('id',auth()->id())->first();
-      $totalfirmware      = DB::table('firmware')->count();
-      $totalDeviceCategory= DB::table('device_categories')->where('is_deleted',0)->count();
-      $totalESIM          = DB::table('esims')->count();
-      $totalModel         = DB::table('modals')->count();
-      $totalBackend       = DB::table('backends')->count();
-      $totalEsimMasters   = DB::table('ccids')->count();
+    @php
+      $insights = $insights ?? [];
+      $isAdminDashboard = ($insights['role'] ?? '') === 'Admin';
 
-      // Chart: pings (same logic as GET /admin/dashboard/ping-stats for AJAX)
       $pingYearOptions = [];
       $pingChartYear = (int) now()->year;
       $pingChartMonth = 0;
@@ -94,7 +70,7 @@
       $pingChartSubtitle = '';
       $pingChartTotal = 0;
 
-      if (auth()->user()->user_type == 'Admin') {
+      if ($isAdminDashboard) {
           $p = app(\App\Services\DashboardPingChartService::class)->getForAdmin(request());
           $pingYearOptions = $p['year_options'];
           $pingChartYear = $p['year'];
@@ -105,7 +81,14 @@
           $pingChartSubtitle = $p['subtitle'];
           $pingChartTotal = $p['total'];
       }
-    ?>
+
+      $__portalPrefix = match (Auth::user()->user_type) {
+          'Admin' => 'admin',
+          'Reseller' => 'reseller',
+          'Support' => 'support',
+          default => 'user',
+      };
+    @endphp
 
     {{-- STATS GRID --}}
     <div class="stats-grid">
@@ -122,27 +105,27 @@
         };
       @endphp
 
-      @if(Auth::user()->user_type=='Admin' || auth()->user()->hasPermission('account_management.view'))
+      @if(!empty($insights['showUserStats']))
       {{-- Users Registered --}}
       <div class="stat-card green-accent">
         <div class="card-icon"><i class="fa fa-users"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $countregister }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['usersRegistered'] }}">0</div>
         <div class="stat-label">Users Registered</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:74%"></div></div>
-        @if($__va = $__dashboardStatViewAll(url('admin/view-user')))
+        @if($__va = $__dashboardStatViewAll(url($__portalPrefix . '/view-user')))
         <a href="{{ $__va }}" class="stat-link">View All <i class="fa fa-arrow-right"></i></a>
         @endif
       </div>
       @endif
 
-      @if(Auth::user()->user_type=='Admin' || auth()->user()->hasPermission('device_management.view'))
+      @if(!empty($insights['showDeviceBreakdown']))
       {{-- Assigned Device --}}
       <div class="stat-card dark-accent">
         <div class="card-icon"><i class="fa fa-link"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $AssignedDevice }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['assignedDevices'] }}">0</div>
         <div class="stat-label">Assigned Devices</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:57%"></div></div>
-        @if($__va = $__dashboardStatViewAll(url('admin/view-device-assign')))
+        @if($__va = $__dashboardStatViewAll(url($__portalPrefix . '/view-device-assign')))
         <a href="{{ $__va }}" class="stat-link">View All <i class="fa fa-arrow-right"></i></a>
         @endif
       </div>
@@ -150,7 +133,7 @@
       {{-- Total Device --}}
       <div class="stat-card mixed-accent">
         <div class="card-icon"><i class="fa fa-hdd-o"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $AdmintotalDevice }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalDevices'] }}">0</div>
         <div class="stat-label">Total Devices</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:80%"></div></div>
       </div>
@@ -158,14 +141,14 @@
       {{-- Unassigned Device --}}
       <div class="stat-card orange-accent">
         <div class="card-icon"><i class="fa fa-exclamation-circle"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $UnassignedDevices }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['unassignedDevices'] }}">0</div>
         <div class="stat-label">Unassigned Devices</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:30%"></div></div>
-        @if($__va = $__dashboardStatViewAll(url('admin/view-device-unassign')))
+        @if($__va = $__dashboardStatViewAll(url($__portalPrefix . '/view-device-unassign')))
         <a href="{{ $__va }}" class="stat-link">View All <i class="fa fa-arrow-right"></i></a>
         @endif
       </div>
-      @else
+      @elseif(empty($insights['showDeviceBreakdown']))
       @php
         $__nonAdminDeviceHref = match (Auth::user()->user_type) {
             'User' => url('user/view-device'),
@@ -174,10 +157,10 @@
             default => null,
         };
       @endphp
-      {{-- Non-admin: Total Device --}}
+      {{-- Scoped account: Total Device --}}
       <div class="stat-card mixed-accent">
         <div class="card-icon"><i class="fa fa-tablet"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $totalDevice }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalDevices'] }}">0</div>
         <div class="stat-label">Total Devices</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:60%"></div></div>
         @if($__va = $__dashboardStatViewAll($__nonAdminDeviceHref))
@@ -189,7 +172,7 @@
       {{-- Total Templates --}}
       <div class="stat-card purple-accent">
         <div class="card-icon"><i class="fa fa-file-code-o"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) (Auth::user()->user_type=='Admin' ? $totalTemplete : $usertotalTemplete) }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalTemplates'] }}">0</div>
         <div class="stat-label">Total Templates</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:45%"></div></div>
         @php
@@ -209,7 +192,7 @@
       {{-- Total Pings --}}
       <div class="stat-card teal-accent">
         <div class="card-icon"><i class="fa fa-wifi"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) (Auth::user()->user_type=='Admin' ? $totalpingsadmin : $countTotalPings) }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalPings'] }}">0</div>
         <div class="stat-label">Total Pings</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:65%"></div></div>
       </div>
@@ -217,16 +200,16 @@
       {{-- Today Pings --}}
       <div class="stat-card pink-accent">
         <div class="card-icon"><i class="fa fa-calendar"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) (Auth::user()->user_type=='Admin' ? $todaypingsadmin : ($todaypingsuser ? $todaypingsuser->today_pings : 0)) }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['todayPings'] }}">0</div>
         <div class="stat-label">Today's Pings</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:40%"></div></div>
       </div>
 
-      @if(Auth::user()->user_type=='Admin')
+      @if($isAdminDashboard)
       {{-- Total Firmware --}}
       <div class="stat-card amber-accent">
         <div class="card-icon"><i class="fa fa-code"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $totalfirmware }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalFirmware'] }}">0</div>
         <div class="stat-label">Total Firmware</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:50%"></div></div>
         @if($__va = $__dashboardStatViewAll(url('admin/view-firmware')))
@@ -237,7 +220,7 @@
       {{-- Device Categories --}}
       <div class="stat-card green-accent">
         <div class="card-icon"><i class="fa fa-th-large"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $totalDeviceCategory }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalDeviceCategory'] }}">0</div>
         <div class="stat-label">Device Categories</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:55%"></div></div>
         @if($__va = $__dashboardStatViewAll(url('admin/view-device-category')))
@@ -248,7 +231,7 @@
       {{-- Total ESIM --}}
       <div class="stat-card dark-accent">
         <div class="card-icon"><i class="fa fa-credit-card"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $totalESIM }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalESIM'] }}">0</div>
         <div class="stat-label">Total eSIM Types</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:35%"></div></div>
         @if($__va = $__dashboardStatViewAll(url('admin/view-esim')))
@@ -259,7 +242,7 @@
       {{-- ESIM Masters --}}
       <div class="stat-card mixed-accent">
         <div class="card-icon"><i class="fa fa-database"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $totalEsimMasters }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalEsimMasters'] }}">0</div>
         <div class="stat-label">ESIM Masters</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:42%"></div></div>
         @if($__va = $__dashboardStatViewAll(url('admin/view-esim-customers')))
@@ -270,7 +253,7 @@
       {{-- Total Models --}}
       <div class="stat-card purple-accent">
         <div class="card-icon"><i class="fa fa-sitemap"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $totalModel }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalModel'] }}">0</div>
         <div class="stat-label">Total Models</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:48%"></div></div>
         @if($__va = $__dashboardStatViewAll(url('admin/view-models')))
@@ -281,7 +264,7 @@
       {{-- Total Backends --}}
       <div class="stat-card orange-accent">
         <div class="card-icon"><i class="fa fa-server"></i></div>
-        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $totalBackend }}">0</div>
+        <div class="stat-num js-stat-count" data-stat-target="{{ (int) $insights['totalBackend'] }}">0</div>
         <div class="stat-label">Total Backends</div>
         <div class="stat-bar"><div class="stat-bar-fill" style="width:52%"></div></div>
         @if($__va = $__dashboardStatViewAll(url('admin/view-backend')))
@@ -292,7 +275,7 @@
 
     </div>
 
-    @if(Auth::user()->user_type=='Admin')
+    @if($isAdminDashboard)
     <div class="chart-section chart-section--pings">
       <div class="ping-chart-inner">
         <div class="chart-header-row">

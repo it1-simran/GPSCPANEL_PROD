@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Services\DashboardInsightsService;
 use App\Support\GpsFlash;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -32,6 +34,15 @@ class AppServiceProvider extends ServiceProvider
         View::composer(['layouts.apps', 'layouts.*'], function ($view) {
             $errors = $view->getData()['errors'] ?? View::shared('errors');
             $view->with('gpsPageFlash', GpsFlash::collect($errors));
+        });
+
+        View::composer('dashboard', function ($view) {
+            $user = Auth::user();
+            $insights = $user
+                ? app(DashboardInsightsService::class)->forUser($user)
+                : [];
+
+            $view->with('insights', $insights);
         });
     }
 }

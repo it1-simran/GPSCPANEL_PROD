@@ -9,6 +9,49 @@ use Illuminate\Support\Facades\Schema;
 
 class DashboardPingChartService
 {
+    private const PING_ACTION = 'API Response ';
+
+    /**
+     * Year dropdown options: current year and the previous four years.
+     *
+     * @return list<int>
+     */
+    public function getYearOptions(): array
+    {
+        $currentYear = (int) now()->year;
+
+        return range($currentYear, $currentYear - 4);
+    }
+
+    /**
+     * Count successful device API pings from device_logs.
+     */
+    public function countTotalPings(): int
+    {
+        if (! Schema::hasTable('device_logs')) {
+            return 0;
+        }
+
+        return (int) DB::table('device_logs')
+            ->where('action', self::PING_ACTION)
+            ->count();
+    }
+
+    /**
+     * Count successful device API pings logged today.
+     */
+    public function countTodayPings(): int
+    {
+        if (! Schema::hasTable('device_logs')) {
+            return 0;
+        }
+
+        return (int) DB::table('device_logs')
+            ->where('action', self::PING_ACTION)
+            ->whereDate('created_at', today())
+            ->count();
+    }
+
     /**
      * Ping chart payload for admin dashboard (device_logs, API success rows).
      *
@@ -20,7 +63,7 @@ class DashboardPingChartService
 
         $y = (int) now()->year;
         $defaults = [
-            'year_options' => [$y],
+            'year_options' => $this->getYearOptions(),
             'year' => $y,
             'month' => 0,
             'labels' => [],
@@ -41,19 +84,7 @@ class DashboardPingChartService
         }
 
         $maxY = (int) now()->year;
-        $minYRaw = DB::table('device_logs')
-            ->where('action', 'API Response ')
-            ->selectRaw('MIN(YEAR(created_at)) as y')
-            ->value('y');
-        $minY = $minYRaw ? (int) $minYRaw : $maxY;
-        $minY = min($minY, $maxY);
-        if ($minY < 2000) {
-            $minY = $maxY;
-        }
-        if ($minY > $maxY) {
-            $minY = $maxY;
-        }
-        $yearOptions = range($maxY, $minY);
+        $yearOptions = $this->getYearOptions();
 
         $reqY = (int) $request->input('ping_year', $maxY);
         $year = in_array($reqY, $yearOptions, true) ? $reqY : $maxY;
@@ -80,7 +111,7 @@ class DashboardPingChartService
             }
             $pingRows = DB::table('device_logs')
                 ->select(DB::raw("DATE_FORMAT(created_at, '%Y-%m') as ym"), DB::raw('COUNT(*) as cnt'))
-                ->where('action', 'API Response ')
+                ->where('action', self::PING_ACTION)
                 ->whereBetween('created_at', [$start, $end])
                 ->groupBy(DB::raw("DATE_FORMAT(created_at, '%Y-%m')"))
                 ->orderBy('ym')
@@ -101,7 +132,7 @@ class DashboardPingChartService
             }
             $pingRows = DB::table('device_logs')
                 ->select(DB::raw('DATE(created_at) as d'), DB::raw('COUNT(*) as cnt'))
-                ->where('action', 'API Response ')
+                ->where('action', self::PING_ACTION)
                 ->whereBetween('created_at', [$start, $end])
                 ->groupBy(DB::raw('DATE(created_at)'))
                 ->orderBy('d')

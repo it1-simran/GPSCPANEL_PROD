@@ -1,35 +1,35 @@
-name: CI
+name: CI/CD
 
 on:
-  pull_request:
-    branches: [main]
   push:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@2.31.1
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, json, bcmath
-          coverage: none
-
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
-
-      - name: Copy environment
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-
-      - name: Run PHPUnit
-        run: vendor/bin/phpunit
-
-      - name: Assert portal CSS assets
-        run: php artisan portal:assert-assets
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /var/www/html/GPSCPANEL_PROD
+            git checkout main
+            git pull origin main
+            sudo chmod -R 777 storage bootstrap/cache
+            export APP_DEBUG=false
+            composer install --no-dev --optimize-autoloader
+            php artisan optimize:clear
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan portal:assert-assets
+            sudo chmod -R 777 storage bootstrap/cache

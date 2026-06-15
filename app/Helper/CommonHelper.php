@@ -193,6 +193,9 @@ class CommonHelper
                 $html .= '<th>Logs</th>';
             }
             $html .= '<th>Default Configurations </th>';
+            if (Auth::user()->user_type == 'User' && (int)$category->is_certification_enable === 1) {
+                $html .= '<th>Certificate</th>';
+            }
 
             if (Auth::user()->user_type == 'Admin') {
                 $html .= '<th>Delete</th>';
@@ -232,6 +235,9 @@ class CommonHelper
                             $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
                         }
                         $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info"><i class="fa fa-cog"></i> View Configuration</a></td>';
+                        if (Auth::user()->user_type == 'User' && (int)$category->is_certification_enable === 1) {
+                            $html .= '<td><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/device/' . $contact->id . '/certificate') . '" class="btn btn-success btn-sm" data-device-id="' . $contact->id . '" data-category-id="' . $category->id . '">Certificate</a></td>';
+                        }
                         if (Auth::user()->user_type == 'Admin') {
                             $html .= '<td>';
                             $html .= '<form action="' . route('device.delete', $contact->id) . '" method="post">';

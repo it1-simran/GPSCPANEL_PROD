@@ -19,6 +19,28 @@ use Illuminate\Database\QueryException;
 class TemplateController extends Controller
 {
     /**
+     * Normalize configuration array: convert null values to empty strings
+     */
+    private function normalizeConfiguration($config)
+    {
+        if (!is_array($config)) {
+            return $config;
+        }
+
+        foreach ($config as $key => $value) {
+            if (is_array($value) && isset($value['value'])) {
+                if ($value['value'] === null || $value['value'] === "" || strtolower((string)$value['value']) === 'null') {
+                    $config[$key]['value'] = "";
+                }
+            } elseif ($value === null || $value === "" || strtolower((string)$value) === 'null') {
+                $config[$key] = "";
+            }
+        }
+
+        return $config;
+    }
+
+    /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
@@ -460,7 +482,7 @@ class TemplateController extends Controller
             }
             $contact->verify = '1';
             $contact->template_name =  $request->get('template_name');
-            $contact->configurations = json_encode($request->configuration);
+            $contact->configurations = json_encode($this->normalizeConfiguration($request->configuration));
             $contact->device_category_id = $request->deviceCategory;
             $contact->default_template = $set_val;
             $contact->save();
@@ -588,12 +610,13 @@ class TemplateController extends Controller
             : [];
         // Merge existing and new configurations
         $mergedConfigurations = array_merge($existingConfigurations, $converted);
+        $mergedConfigurations = $this->normalizeConfiguration($mergedConfigurations);
         //  dd($mergedConfigurations);
         // If default template, update writer’s configuration
         if ($template->default_template == 1) {
             $contact = Writer::find($template->id_user);
             if ($contact) {
-                $deviceCategories = explode(',', $contact->device_category_id);
+                $deviceCategories = explode(‘,’, $contact->device_category_id);
                 $writerConfigs = json_decode($contact->configurations, true) ?? [];
 
                 foreach ($deviceCategories as $index => $categoryId) {
@@ -801,7 +824,7 @@ class TemplateController extends Controller
 
             $oldConfig = json_decode($template->configurations, true) ?? [];
             $mergedConfig = array_replace($oldConfig, $converted);
-
+            $mergedConfig = $this->normalizeConfiguration($mergedConfig);
 
             $template->configurations = json_encode($mergedConfig);
             $template->updated_at = Carbon::now('UTC')->toDateTimeString();
@@ -912,7 +935,7 @@ class TemplateController extends Controller
         }
 
         // Save in the submitted sequence
-        $template->can_configurations = json_encode($converted);
+        $template->can_configurations = json_encode($this->normalizeConfiguration($converted));
         $template->updated_at = Carbon::now('UTC')->toDateTimeString();
         $template->save();
 

@@ -18,7 +18,6 @@ public_html/hot
 docs/
 
 storage/*.key
-storage/*.json
 .env
 Homestead.yaml
 Homestead.json

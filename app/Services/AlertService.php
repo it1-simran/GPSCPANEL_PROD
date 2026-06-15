@@ -136,6 +136,16 @@ class AlertService
         $description .= "Conditions Satisfied:\n" . implode("\n", $satisfiedConditions);
         $description .= "\n\nRaw Data Context: " . ($log ? $log->raw_packet : 'N/A');
 
+        // Create a Ticket (Notification) - commented out to reduce site load
+        // TicketModel::create([
+        //     'type' => 'alert',
+        //     'subject' => $subject,
+        //     'description' => $description,
+        //     'is_read' => 0,
+        //     'status' => 'open',
+        //     'created_by' => 0 // System generated
+        // ]);
+
         Log::info("Packet Alert Triggered", [
             'subject' => $subject,
             'description' => $description,

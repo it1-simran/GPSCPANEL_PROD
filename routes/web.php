@@ -66,7 +66,6 @@ Route::post('/reset-password', [LoginController::class, 'resetPassword'])->name(
 Route::post('/login/admin', [LoginController::class, 'adminLogin']);
 Route::post('/login/writer', [LoginController::class, 'writerLogin']);
 Route::post('/login/reseller', [LoginController::class, 'resellerLogin']);
-Route::post('/register/admin', [RegisterController::class, 'createAdmin'])->name('register.admin');
 Route::match(['get', 'post'], '/logout', [LoginController::class, 'logout'])->name('logout');
 Route::view('/home', 'home')->middleware('auth');
 // Authenticated Home Route

@@ -3202,13 +3202,13 @@ class DeviceController extends Controller
         $changedFields = [];
         foreach ($newChanges as $key => $value) {
             $newValue = $value['value'] ?? null;
-            if ($newValue === null || $newValue === "" || strtolower((string)$newValue) === 'null') {
-                $newValue = "0";
-                $newChanges[$key]['value'] = "0";
+            if ($newValue === null || strtolower((string)$newValue) === 'null') {
+                $newValue = '';
+                $newChanges[$key]['value'] = '';
             }
-            $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? null) : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '0');
-            if ($oldValue === null || $oldValue === "" || strtolower((string)$oldValue) === 'null' || $oldValue === 'N/A') {
-                $oldValue = "0";
+            $oldValue = (isset($oldChanges[$key]) && is_array($oldChanges[$key])) ? ($oldChanges[$key]['value'] ?? null) : (is_string($oldChanges[$key] ?? null) ? $oldChanges[$key] : '');
+            if ($oldValue === null || strtolower((string)$oldValue) === 'null' || $oldValue === 'N/A') {
+                $oldValue = '';
             }
             if (!isset($oldChanges[$key]) || !is_array($oldChanges[$key]) || ($oldChanges[$key]['value'] ?? null) !== $newValue) {
                 $changedFields[$key] = ['old' => $oldValue, 'new' => $newValue];

@@ -15,6 +15,10 @@ class DevicePingIntervalAnalysisService
 
     private const ALLOWED_LIMITS = [10, 25, 50, 100];
 
+    public function __construct(
+        private readonly DashboardPingChartService $pingChartService
+    ) {}
+
     /**
      * @return array{total_devices: int, total_pings: int, today_pings: int, last_updated: string, last_updated_iso: string, devices_with_ping_data: int, devices_without_ping_data: int}
      */
@@ -32,8 +36,8 @@ class DevicePingIntervalAnalysisService
 
             return [
                 'total_devices' => $totalDevices,
-                'total_pings' => $this->countFleetTotalPings(),
-                'today_pings' => $this->countFleetTodayPings(),
+                'total_pings' => $this->pingChartService->countTotalPings(),
+                'today_pings' => $this->pingChartService->countTodayPings(),
                 'last_updated' => CommonHelper::getDateAsTimeZone(now(), 'd M Y h:i A'),
                 'last_updated_iso' => now()->toIso8601String(),
                 'devices_with_ping_data' => $withPing,
@@ -254,25 +258,6 @@ class DevicePingIntervalAnalysisService
         return $query;
     }
 
-    private function countFleetTotalPings(): int
-    {
-        return (int) $this->baseDeviceQuery()
-            ->selectRaw("COALESCE(SUM(CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(devices.configurations, '$.total_pings')), '0') AS UNSIGNED)), 0) AS fleet_total_pings")
-            ->value('fleet_total_pings');
-    }
-
-    private function countFleetTodayPings(): int
-    {
-        if (! Schema::hasTable('device_logs')) {
-            return 0;
-        }
-
-        return (int) DB::table('device_logs')
-            ->where('action', self::PING_ACTION)
-            ->whereDate('created_at', today())
-            ->count();
-    }
-
     private function configuredPingIntervalDaysSql(): string
     {
         return "COALESCE(
@@ -295,6 +280,7 @@ class DevicePingIntervalAnalysisService
             $lastPingRaw = $row->last_ping_raw ?? null;
             $lastSettingsUpdate = $row->updated_at ?? null;
 
+
             return [
                 'id' => (int) $row->id,
                 'name' => (string) $row->name,
@@ -313,7 +299,7 @@ class DevicePingIntervalAnalysisService
                 'last_settings_update_iso' => $lastSettingsUpdate
                     ? Carbon::parse($lastSettingsUpdate)->toIso8601String()
                     : null,
-                'status' => $this->resolveStatus($pingIntervalDays, $lastSettingsUpdate),
+                'status' => $this->resolveStatus($pingIntervalDays, $lastPingRaw),
             ];
         })->values()->all();
     }
@@ -323,11 +309,10 @@ class DevicePingIntervalAnalysisService
         if (empty($lastSettingsUpdate)) {
             return 'Offline';
         }
-
         $intervalDays = $pingIntervalDays > 0 ? $pingIntervalDays : 4;
         $lastUpdate = Carbon::parse($lastSettingsUpdate);
-        $onlineUntil = $lastUpdate->copy()->addDays($intervalDays);
 
+        $onlineUntil = $lastUpdate->copy()->addDays($intervalDays);
         return now()->lte($onlineUntil) ? 'Online' : 'Offline';
     }
 

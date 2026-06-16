@@ -13,7 +13,7 @@ class TicketController extends Controller
 {
     public function index()
     {
-        $ticketList = TicketModel::get();
+        $ticketList = $this->userRaisedTicketsQuery()->get();
         $url_type = self::getURLType();
         return view('view-raised-ticket', ['ticketList' => $ticketList, 'url_type' => $url_type]);
     }
@@ -21,7 +21,7 @@ class TicketController extends Controller
     {
         // 🔹 Step 1: Validation
         $request->validate([
-            'ticket_type'        => 'required|string|max:255',
+            'ticket_type'        => 'required|string|max:255|not_in:alert',
             'ticket_subject'     => 'required|string|max:255',
             'ticket_description' => 'required|string',
             'error_file'         => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048', // 2MB limit
@@ -82,7 +82,12 @@ class TicketController extends Controller
 
     public function viewTickets()
     {
-        $ticketList = TicketModel::orderBy('created_at', 'desc')->get();
+        $ticketList = $this->userRaisedTicketsQuery()->orderBy('created_at', 'desc')->get();
         return view('ticket-management', compact('ticketList'));
+    }
+
+    private function userRaisedTicketsQuery()
+    {
+        return TicketModel::query()->where('type', '!=', 'alert');
     }
 }

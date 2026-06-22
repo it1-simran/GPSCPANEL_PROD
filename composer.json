@@ -8,14 +8,14 @@
         "php": "^8.0",
         "barryvdh/laravel-dompdf": "^1.0",
         "fruitcake/laravel-cors": "^2.0.5",
+        "google/cloud-vision": "^2.0",
         "guzzlehttp/guzzle": "^7.2",
+        "intervention/image": "^3.0",
         "laravel/framework": "^9.52",
         "laravel/sanctum": "^2.14",
         "laravel/tinker": "^2.7",
         "maatwebsite/excel": "^3.1",
         "pusher/pusher-php-server": "^7.2",
-        "intervention/image": "^3.0",
-        "google/cloud-vision": "^2.0",
         "thiagoalessio/tesseract_ocr": "^2.0"
     },
     "require-dev": {

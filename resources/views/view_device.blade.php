@@ -237,7 +237,59 @@ $currentEmail = Auth::user()->email;
       form.attr('action', originalAction);
       form.removeAttr('target');
     });
-    $('.user-responsive').on('click', function(e) {
+
+    $(document).on('submit', '.vdc-filter-form', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var url = form.attr('action');
+        var data = form.serialize();
+        
+        $('#loading').show();
+        $.ajax({
+            url: url,
+            type: 'GET',
+            data: data,
+            success: function(response) {
+                var newContent = $(response).find('.c_content > .tabs').html();
+                $('.c_content > .tabs').html(newContent);
+                initializeDataTables();
+                
+                let activeTabId = form.closest('.tabcontent').attr('id');
+                $('.tabcontent').hide();
+                $('.tablinks').removeClass('active');
+                if (activeTabId) {
+                    $('#' + activeTabId).show();
+                    $('.tablinks[onclick*="' + activeTabId + '"]').addClass('active');
+                } else {
+                    let firstTab = $('.tablinks').first();
+                    if (firstTab.length) {
+                        firstTab.addClass('active');
+                        let onclick = firstTab.attr('onclick');
+                        if (onclick) {
+                            let tabMatch = onclick.match(/'([^']+)'/);
+                            if (tabMatch) $('#' + tabMatch[1]).show();
+                        }
+                    }
+                }
+                setTimeout(function() {
+                    if ($.fn.DataTable) {
+                        var dtTables = $.fn.dataTable.tables({ visible: true, api: true });
+                        if (dtTables && dtTables.columns && typeof dtTables.columns.adjust === 'function') {
+                          dtTables.columns.adjust();
+                        } else if (dtTables && typeof dtTables.columns === 'function') {
+                          dtTables.columns().adjust();
+                        }
+                    }
+                }, 100);
+            },
+            error: function(xhr) {
+                $('#loading').hide();
+                showToast('Failed to filter data.', 'error');
+            }
+        });
+    });
+
+    $(document).on('click', '.user-responsive', function(e) {
       var allVals = []; 
       
       let categoryID = $(this).attr('data-category-id');
@@ -252,7 +304,7 @@ $currentEmail = Auth::user()->email;
       }
 
     });
-    $('.template-responsive').on('click', function(e) {
+    $(document).on('click', '.template-responsive', function(e) {
       var allVals = [];
        let categoryID = $(this).attr('data-category-id');
       $(".sub_chk"+categoryID+":checked").each(function() {
@@ -265,7 +317,7 @@ $currentEmail = Auth::user()->email;
         $("#template-responsive" + categoryId).modal('show');
       }
     });
-    $('.delete_all').on('click', function(e) {
+    $(document).on('click', '.delete_all', function(e) {
       var allVals = [];
       let categoryID = $(this).attr('data-category-id');
       $(".sub_chk"+categoryID+":checked").each(function() {
@@ -316,7 +368,7 @@ $currentEmail = Auth::user()->email;
         });
       }
     });
-    $('.user_assign_all').on('click', function(e) {
+    $(document).on('click', '.user_assign_all', function(e) {
       var allVals = [];
       let categoryID = $(this).attr('data-category-id');
       $(".sub_chk"+categoryID+":checked").each(function() {
@@ -367,7 +419,7 @@ $currentEmail = Auth::user()->email;
         });
       }
     });
-    $('.temp_assign_all').on('click', function(e) {
+    $(document).on('click', '.temp_assign_all', function(e) {
       var allVals = [];
       let categoryID = $(this).attr('data-category-id');
       $(".sub_chk"+categoryID+":checked").each(function() {

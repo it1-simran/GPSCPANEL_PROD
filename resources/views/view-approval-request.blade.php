@@ -179,67 +179,19 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                                     <i class="fa fa-repeat"></i> Resend
                                                 </button>
                                                 @endif
-                                                <div class="custom-modal modal" id="approvalModal{{ $request->id }}" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content custom-modal-content">
-                                                            <div class="modal-header custom-modal-header">
-                                                                <h5 class="modal-title">Confirm Action</h5>
-                                                                <button type="button" class="bg-calendar-content btn-close margin-top-1" data-bs-dismiss="modal"
-                                                                    onclick="cancelAcceptModel({{ $request->id }})" style="border:none;">x</button>
-                                                            </div>
-                                                            <div class="modal-body custom-modal-body text-center">
-                                                                <p class="font-size-14">
-                                                                    Are you sure you want to <span id="actionText{{ $request->id }}"></span> this user?
-                                                                </p>
-                                                            </div>
-                                                            <div class="modal-footer custom-modal-footer">
-                                                                <form id="approvalForm{{ $request->id }}" method="POST"
-                                                                    action="{{ route('approval.update', $request->id) }}">
-                                                                    @csrf
-                                                                    @method('PATCH')
-                                                                    <input type="hidden" name="action" id="actionInput{{ $request->id }}">
-                                                                    <button type="button" class="btn custom-btn-secondary"
-                                                                        onclick="cancelAcceptModel({{ $request->id }})"
-                                                                        data-bs-dismiss="modal">
-                                                                        Cancel
-                                                                    </button>
-                                                                    <button type="submit" class="btn custom-btn-primary">
-                                                                        Confirm
-                                                                    </button>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <form id="approvalForm{{ $request->id }}" method="POST" action="{{ route('approval.update', $request->id) }}" style="display: none;">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="action" id="actionInput{{ $request->id }}">
+                                                </form>
 
-                                                <!-- Reject Modal -->
-                                                <div class="custom-modal modal" id="rejectModal{{ $request->id }}" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content custom-modal-content">
-                                                            <div class="modal-header custom-modal-header d-flex justify-content-between">
-                                                                <h5 class="modal-title">Reject Request</h5>
-                                                            </div>
-                                                            <div class="modal-body custom-modal-body">
-                                                                <p class="font-bold font-size-14">Please provide a reason for rejecting this request:</p>
-                                                                <textarea class="form-control custom-textarea w-100" id="rejectReason{{ $request->id }}" name="reason"
-                                                                    placeholder="Enter rejection reason" required style="width: 100%;height: 100px;"></textarea>
-                                                            </div>
-                                                            <div class="modal-footer custom-modal-footer">
-                                                                <form id="rejectForm{{ $request->id }}" method="POST"
-                                                                    action="{{ route('approval.update', $request->id) }}">
-                                                                    @csrf
-                                                                    @method('PATCH')
-                                                                    <input type="hidden" name="action" value="reject">
-                                                                    <input type="hidden" name="reason" id="rejectReasonInput{{ $request->id }}">
-                                                                    <button type="button" class="btn custom-btn-secondary"
-                                                                        data-bs-dismiss="modal"
-                                                                        onclick="cancelRejectModel({{ $request->id }})">Cancel</button>
-                                                                    <button type="submit" class="btn bg-danger">Confirm Reject</button>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <!-- Reject Form -->
+                                                <form id="rejectForm{{ $request->id }}" method="POST" action="{{ route('approval.update', $request->id) }}" style="display: none;">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="action" value="reject">
+                                                    <input type="hidden" name="reason" id="rejectReasonInput{{ $request->id }}">
+                                                </form>
                                             </td>
 
                                         </tr>
@@ -315,69 +267,20 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                                 Resend Request
                                             </button>
                                             @endif
-                                            <!-- Modal -->
-                                            <div class="custom-modal modal" id="approvalModal{{ $request->id }}" tabindex="-1" aria-hidden="true">
-                                                <div class="modal-dialog modal-dialog-centered">
-                                                    <div class="modal-content custom-modal-content">
-                                                        <div class="modal-header custom-modal-header">
-                                                            <h5 class="modal-title">Confirm Action</h5>
-                                                            <!-- <button type="button" class="bg-calendar-content btn-close margin-top-1" data-bs-dismiss="modal"
-                                                                onclick="cancelAcceptModel({{ $request->id }})" style="border:none;">x</button> -->
-                                                        </div>
-                                                        <div class="modal-body custom-modal-body text-center">
-                                                            <p class="font-size-14">
-                                                                Are you sure you want to <span id="actionText{{ $request->id }}"></span> this user?
-                                                            </p>
-                                                        </div>
-                                                        <div class="modal-footer custom-modal-footer">
-                                                            <form id="approvalForm{{ $request->id }}" method="POST"
-                                                                action="{{ route('approval.update', $request->id) }}">
-                                                                @csrf
-                                                                @method('PATCH')
-                                                                <input type="hidden" name="action" id="actionInput{{ $request->id }}">
-                                                                <button type="button" class="btn custom-btn-secondary"
-                                                                    onclick="cancelAcceptModel({{ $request->id }})"
-                                                                    data-bs-dismiss="modal">
-                                                                    Cancel
-                                                                </button>
-                                                                <button type="submit" class="btn custom-btn-primary">
-                                                                    Confirm
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <!-- Reject Modal -->
-                                            <div class="custom-modal modal" id="rejectModal{{ $request->id }}" tabindex="-1" aria-hidden="true">
-                                                <div class="modal-dialog modal-dialog-centered">
-                                                    <div class="modal-content custom-modal-content">
-                                                        <div class="modal-header custom-modal-header d-flex justify-content-between">
-                                                            <h5 class="modal-title">Reject Request</h5>
-                                                            <!-- <button type="button" class="bg-calendar-content btn-close margin-top-1" data-bs-dismiss="modal" aria-label="Close"
-                                                                onclick="cancelRejectModel({{ $request->id }})" style="border:none;">X</button> -->
-                                                        </div>
-                                                        <div class="modal-body custom-modal-body">
-                                                            <p class="font-bold font-size-14">Please provide a reason for rejecting this request:</p>
-                                                            <textarea class="form-control custom-textarea w-100" id="rejectReason{{ $request->id }}" name="reason"
-                                                                placeholder="Enter rejection reason" required style="width: 100%;height: 100;"></textarea>
-                                                        </div>
-                                                        <div class="modal-footer custom-modal-footer">
-                                                            <form id="rejectForm{{ $request->id }}" method="POST"
-                                                                action="{{ route('approval.update', $request->id) }}">
-                                                                @csrf
-                                                                @method('PATCH')
-                                                                <input type="hidden" name="action" value="reject">
-                                                                <input type="hidden" name="reason" id="rejectReasonInput{{ $request->id }}">
-                                                                <button type="button" class="btn custom-btn-secondary"
-                                                                    data-bs-dismiss="modal"
-                                                                    onclick="cancelRejectModel({{ $request->id }})">Cancel</button>
-                                                                <button type="submit" class="btn bg-danger">Confirm Reject</button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <!-- Hidden Forms -->
+                                            <form id="approvalForm{{ $request->id }}" method="POST" action="{{ route('approval.update', $request->id) }}" style="display: none;">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="action" id="actionInput{{ $request->id }}">
+                                            </form>
+
+                                            <!-- Reject Form -->
+                                            <form id="rejectForm{{ $request->id }}" method="POST" action="{{ route('approval.update', $request->id) }}" style="display: none;">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="action" value="reject">
+                                                <input type="hidden" name="reason" id="rejectReasonInput{{ $request->id }}">
+                                            </form>
                                         </td>
                                     </tr>
                                     @php $i++; @endphp
@@ -614,24 +517,30 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $("#accountRequestModal").modal("show");
     }
 
-    function cancelAcceptModel(id) {
-        $("#approvalModal" + id).modal("hide");
-    }
-
-    function cancelRejectModel(id) {
-        $('#rejectModal' + id).modal('hide');
-    }
-
     function showRejectModal(id) {
-        $('#rejectModal' + id).modal('show');
-        $('#rejectForm' + id).on('submit', function(e) {
-            let reason = $('#rejectReason' + id).val().trim();
-            if (!reason) {
-                e.preventDefault();
-                alert("Please provide a rejection reason.");
-                return false;
+        Swal.fire({
+            title: 'Reject Request',
+            text: 'Please provide a reason for rejecting this request:',
+            input: 'textarea',
+            inputPlaceholder: 'Enter rejection reason',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Confirm Reject',
+            cancelButtonText: 'Cancel',
+            background: '#1e293b',
+            color: '#f8fafc',
+            inputValidator: (value) => {
+                if (!value || value.trim() === '') {
+                    return 'Please provide a rejection reason.';
+                }
             }
-            $('#rejectReasonInput' + id).val(reason);
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#rejectReasonInput' + id).val(result.value.trim());
+                $('#rejectForm' + id).submit();
+            }
         });
     }
 
@@ -647,10 +556,30 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
     }
 
     function showApprovalModal(id, action) {
-        $("#actionText" + id).text(action);
-        $("#actionInput" + id).val(action);
+        let displayAction = action;
+        if (action === 'AdminApprovalPending' || action === 'Approved') {
+            displayAction = 'approve';
+        } else if (action.includes('Reject')) {
+            displayAction = 'reject';
+        }
 
-        $("#approvalModal" + id).modal("show");
+        Swal.fire({
+            title: 'Confirm Action',
+            text: 'Are you sure you want to ' + displayAction + ' this user?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'No',
+            background: '#1e293b',
+            color: '#f8fafc'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $("#actionInput" + id).val(action);
+                $("#approvalForm" + id).submit();
+            }
+        });
     }
     $(document).ready(function() {
         $("#approvalRequests").DataTable({

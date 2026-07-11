@@ -112,6 +112,14 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
         Route::delete('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'destroy'])->name('imei-devices.destroy');
         Route::patch('/admin/imei-devices/{imei_device}/toggle-status', [\App\Http\Controllers\ImeiDeviceController::class, 'toggleStatus'])->name('imei-devices.toggle-status');
         Route::get('/admin/dashboard/ping-stats', DashboardPingStatsController::class)->name('admin.dashboard.ping-stats');
+
+        /* ======================= Ping Interval Analysis ======================= */
+        Route::get('/admin/ping-interval-analysis', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'index'])->name('admin.ping-interval-analysis.index');
+        Route::get('/admin/ping-interval-analysis/summary', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'summary'])->name('admin.ping-interval-analysis.summary');
+        Route::get('/admin/ping-interval-analysis/devices', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'devices'])->name('admin.ping-interval-analysis.devices');
+        Route::get('/admin/ping-interval-analysis/search', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'search'])->name('admin.ping-interval-analysis.search');
+        Route::get('/admin/ping-interval-analysis/export', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'export'])->name('admin.ping-interval-analysis.export');
+
     Route::get('/admin', fn() => view('dashboard'));
 
     // Export Routes

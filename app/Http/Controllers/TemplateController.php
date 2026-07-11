@@ -141,9 +141,13 @@ class TemplateController extends Controller
                     'value' => $config[$key] ?? ''
                 ];
             } else if ($key == 'ping_interval' || $key == 'is_editable') {
+                $fieldValue = $config[$key] ?? '';
+                if ($key == 'ping_interval' && $fieldValue === '') {
+                    $fieldValue = 4;
+                }
                 $converted[$key] = [
                     'id' => $value->id,
-                    'value' => $config[$key] ?? ''
+                    'value' => $fieldValue
                 ];
             }
             // }

@@ -22,6 +22,7 @@ $globalSearchItems = [];
 if ($userType === 'admin') {
     $globalSearchItems = [
         ['label' => 'Dashboard', 'url' => url('/admin'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'Ping Analysis', 'url' => url('/admin/ping-interval-analysis'), 'keywords' => ['ping', 'analysis', 'device ping', 'offline']],
         ['label' => 'Raised Tickets', 'url' => url('/admin/tickets'), 'keywords' => ['ticket', 'raised', 'complaint', 'issue']],
         ['label' => 'Version Management', 'url' => url('/admin/version-control'), 'keywords' => ['version', 'release', 'notes']],
         ['label' => 'IMEI Management', 'url' => url('/admin/view-imeis'), 'keywords' => ['imei', 'imei list']],
@@ -334,6 +335,14 @@ if ($userType === 'admin') {
                             <a href="{{ url('/admin') }}"
                                 class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin') ? 'active' : '' }}">
                                 <span class='icon-sidebar icon-home fa-2x'></span><span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li class="{{ request()->is('admin/ping-interval-analysis*') ? 'active' : '' }}">
+                            <a href="{{ url('/admin/ping-interval-analysis') }}"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/ping-interval-analysis*') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-signal fa-2x'></span>
+                                <span>Ping Analysis</span>
                             </a>
                         </li>
 

@@ -941,8 +941,11 @@
                       <div class="row">
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Owner Name <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="owner_name" placeholder="Auto-filled from RC" value="{{ old('owner_name', $formData['owner_name'] ?? '') }}" required readonly style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                              Owner Name <span class="require" style="color:#d32f2f;">*</span>
+                              <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— from RC; editable</span>
+                            </label>
+                            <input class="form-control" type="text" name="owner_name" placeholder="Auto-filled from RC (editable)" value="{{ old('owner_name', $formData['owner_name'] ?? '') }}" required style="border-radius:4px; border:1px solid #ddd; padding:10px; font-size:13px;" />
                           </div>
                         </div>
                         <div class="col-lg-6">
@@ -1028,8 +1031,11 @@
                       <div class="row">
                         <div class="col-lg-6">
                           <div class="form-group" style="margin-bottom:20px;">
-                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">Fuel Type <span class="require" style="color:#d32f2f;">*</span></label>
-                            <input class="form-control" type="text" name="fuel_type" placeholder="Auto-filled from RC" value="{{ old('fuel_type', $formData['fuel_type'] ?? '') }}" required readonly style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px; background-color:#f8f8f8;" />
+                            <label class="control-label" style="font-weight:500; color:#333; display:block; margin-bottom:8px;">
+                              Fuel Type <span class="require" style="color:#d32f2f;">*</span>
+                              <span style="font-weight:400; color:#94a3b8; font-size:11px; margin-left:6px;">— from RC; editable</span>
+                            </label>
+                            <input class="form-control" type="text" name="fuel_type" placeholder="Auto-filled from RC (editable)" value="{{ old('fuel_type', $formData['fuel_type'] ?? '') }}" required style="border-radius:6px; border:1px solid #cbd5e1; padding:10px; font-size:13px;" />
                           </div>
                         </div>
                         <div class="col-lg-6">

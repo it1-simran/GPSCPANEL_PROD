@@ -4,9 +4,12 @@ namespace App\Services;
 
 use App\Writer;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardInsightsService
 {
+    private const PING_ACTION = 'API Response ';
+
     public function __construct(
         private readonly DeviceCategoryAccessService $deviceCategoryAccess,
         private readonly DashboardPingChartService $pingChartService
@@ -84,7 +87,7 @@ class DashboardInsightsService
             $query->where('devices.user_id', $user->id);
         });
 
-        $assignedDevices = $this->countDevicesForUser($user, function ($query) use ($childIds) {
+        $assignedDeviceScope = function ($query) use ($childIds) {
             if (empty($childIds)) {
                 $query->whereRaw('1 = 0');
 
@@ -92,7 +95,20 @@ class DashboardInsightsService
             }
 
             $query->whereIn('devices.user_id', $childIds);
-        });
+        };
+
+        // Pings: devices owned by this reseller (inventory + assigned to downstream dealers).
+        $pingDeviceScope = function ($query) use ($user, $childIds) {
+            $query->where(function ($q) use ($user, $childIds) {
+                $q->where('devices.user_id', $user->id);
+
+                if (! empty($childIds)) {
+                    $q->orWhereIn('devices.user_id', $childIds);
+                }
+            });
+        };
+
+        $assignedDevices = $this->countDevicesForUser($user, $assignedDeviceScope);
 
         $totalDevices = $showDeviceBreakdown
             ? $assignedDevices + $unassignedDevices
@@ -126,15 +142,8 @@ class DashboardInsightsService
                 ->where('verify', '2')
                 ->where('id_user', $user->id)
                 ->count(),
-            'totalPings' => (int) DB::table('writers')
-                ->where('created_by', $user->id)
-                ->where('is_deleted', '0')
-                ->sum('total_pings'),
-            'todayPings' => (int) DB::table('writers')
-                ->where('created_by', $user->id)
-                ->where('is_deleted', '0')
-                ->whereDate('pings_date', today())
-                ->sum('today_pings'),
+            'totalPings' => $this->sumDeviceConfigurationTotalPings($user, $pingDeviceScope),
+            'todayPings' => $this->countDeviceLogsTodayPings($user, $pingDeviceScope),
         ];
     }
 
@@ -161,14 +170,14 @@ class DashboardInsightsService
      */
     private function forDealer(Writer $user): array
     {
-        $totalDevices = $this->countDevicesForUser($user, function ($query) use ($user) {
+        $deviceScope = function ($query) use ($user) {
             $query->where(function ($q) use ($user) {
                 $q->where('devices.user_id', $user->id)
                     ->orWhereRaw('FIND_IN_SET(?, devices.assign_to_ids)', [$user->id]);
             });
-        });
+        };
 
-        $writer = DB::table('writers')->where('id', $user->id)->where('is_deleted', 0)->first();
+        $totalDevices = $this->countDevicesForUser($user, $deviceScope);
 
         return [
             'role' => $user->user_type === 'User' ? 'User' : (string) $user->user_type,
@@ -183,8 +192,8 @@ class DashboardInsightsService
                 ->where('verify', '2')
                 ->where('id_user', $user->id)
                 ->count(),
-            'totalPings' => (int) ($writer->total_pings ?? 0),
-            'todayPings' => (int) ($writer->today_pings ?? 0),
+            'totalPings' => $this->sumDeviceConfigurationTotalPings($user, $deviceScope),
+            'todayPings' => $this->countDeviceLogsTodayPings($user, $deviceScope),
         ];
     }
 
@@ -208,5 +217,40 @@ class DashboardInsightsService
         $this->deviceCategoryAccess->applyCategoryScopeToQuery($query, $user, 'devices.device_category_id');
 
         return (int) $query->count();
+    }
+
+    private function sumDeviceConfigurationTotalPings(Writer $user, callable $scope): int
+    {
+        $query = DB::table('devices')->where('devices.is_deleted', '0');
+        $scope($query);
+        $this->deviceCategoryAccess->applyCategoryScopeToQuery($query, $user, 'devices.device_category_id');
+
+        $row = $query->selectRaw(
+            "COALESCE(SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(devices.configurations, '$.total_pings')) AS UNSIGNED)), 0) AS ping_total"
+        )->first();
+
+        return (int) ($row->ping_total ?? 0);
+    }
+
+    private function countDeviceLogsTodayPings(Writer $user, callable $scope): int
+    {
+        if (! Schema::hasTable('device_logs')) {
+            return 0;
+        }
+
+        $deviceQuery = DB::table('devices')->where('devices.is_deleted', '0');
+        $scope($deviceQuery);
+        $this->deviceCategoryAccess->applyCategoryScopeToQuery($deviceQuery, $user, 'devices.device_category_id');
+
+        $deviceIds = $deviceQuery->pluck('devices.id');
+        if ($deviceIds->isEmpty()) {
+            return 0;
+        }
+
+        return (int) DB::table('device_logs')
+            ->where('action', self::PING_ACTION)
+            ->whereDate('created_at', today())
+            ->whereIn('device_id', $deviceIds)
+            ->count();
     }
 }

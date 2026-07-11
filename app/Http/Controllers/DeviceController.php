@@ -154,10 +154,10 @@ class DeviceController extends Controller
         $firmware = Firmware::select('configurations')->where(['id' => $request->firmware])->first();
         $device_array = $converted;
         $fimwareArr = json_decode($firmware->configurations, true);
-        $device_array['firmware_id']['value'] = $request->firmware;
-        $device_array['firmware_file']['value'] = $fimwareArr['filename'];
-        $device_array['firmware_version']['value'] = $fimwareArr['version'];
-        $device_array['firmwareFileSize']['value'] = $fimwareArr['fileSize'];
+        $device_array['firmware_id']      = ['id' => 84, 'value' => $request->firmware];
+        $device_array['firmware_file']    = ['id' => 85, 'value' => $fimwareArr['filename']];
+        $device_array['firmware_version'] = ['id' => 86, 'value' => $fimwareArr['version']];
+        $device_array['firmwareFileSize'] = ['id' => 83, 'value' => $fimwareArr['fileSize']];
         $master_id = Auth::user()->id;
         $mid = null;
         $assign_to_ids = '';
@@ -2791,10 +2791,10 @@ class DeviceController extends Controller
             $firmware = DB::table('firmware')->select('configurations')->where(['id' => $firmwareId])->first();
             if ($firmware) {
                 $fimwareArr = json_decode($firmware->configurations, true);
-                $converted['firmware_id'] = ['value' => $firmwareId];
-                $converted['firmware_file'] = ['value' => $fimwareArr['filename'] ?? ''];
-                $converted['firmware_version'] = ['value' => $fimwareArr['version'] ?? ''];
-                $converted['firmwareFileSize'] = ['value' => $fimwareArr['fileSize'] ?? ''];
+                $converted['firmware_id']      = ['id' => 84, 'value' => $firmwareId];
+                $converted['firmware_file']    = ['id' => 85, 'value' => $fimwareArr['filename'] ?? ''];
+                $converted['firmware_version'] = ['id' => 86, 'value' => $fimwareArr['version'] ?? ''];
+                $converted['firmwareFileSize'] = ['id' => 83, 'value' => $fimwareArr['fileSize'] ?? ''];
             }
         }
         // dd($converted);
@@ -2931,10 +2931,10 @@ class DeviceController extends Controller
             $firmware = DB::table('firmware')->select('configurations')->where(['id' => $firmwareId])->first();
             if ($firmware) {
                 $fimwareArr = json_decode($firmware->configurations, true);
-                $converted['firmware_id'] = ['value' => $firmwareId];
-                $converted['firmware_file'] = ['value' => $fimwareArr['filename'] ?? ''];
-                $converted['firmware_version'] = ['value' => $fimwareArr['version'] ?? ''];
-                $converted['firmwareFileSize'] = ['value' => $fimwareArr['fileSize'] ?? ''];
+                $converted['firmware_id']      = ['id' => 84, 'value' => $firmwareId];
+                $converted['firmware_file']    = ['id' => 85, 'value' => $fimwareArr['filename'] ?? ''];
+                $converted['firmware_version'] = ['id' => 86, 'value' => $fimwareArr['version'] ?? ''];
+                $converted['firmwareFileSize'] = ['id' => 83, 'value' => $fimwareArr['fileSize'] ?? ''];
             }
         }
         // dd($converted);

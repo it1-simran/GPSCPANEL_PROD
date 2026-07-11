@@ -118,6 +118,9 @@ class DeviceController extends Controller
                 'value' => $config[$key] ?? ''
             ];
         }
+        if (isset($converted['ping_interval']) && $converted['ping_interval']['value'] === '') {
+            $converted['ping_interval']['value'] = 4;
+        }
         if (isset($request->user_id) && $request->user_id != '' && $request->user_id != 'No User Found') {
             $user = DB::table('writers')->where(['id' => $request->user_id])->first();
             $configuration = json_decode($user->configurations);
@@ -1988,6 +1991,9 @@ class DeviceController extends Controller
                     $configurations = array_merge($oldChanges, $newchanges);
                 }
             }
+            if (isset($configurations['ping_interval']) && ($configurations['ping_interval']['value'] === '' || $configurations['ping_interval']['value'] === null)) {
+                $configurations['ping_interval']['value'] = isset($oldChanges['ping_interval']['value']) && $oldChanges['ping_interval']['value'] !== '' ? $oldChanges['ping_interval']['value'] : 4;
+            }
             // dd($configurations);
             // $models = DB::table('modals')->where('user_id', $request->user_id)->where('firmware_id', $configurations['firmware_id'])->first();
             // if($configurations['firmware_id']){
@@ -2137,6 +2143,9 @@ class DeviceController extends Controller
                 if (isset($deviceConfig[$resolvedKey])) {
                     $mergedConfig[$resolvedKey] = $deviceConfig[$resolvedKey];
                 }
+            }
+            if (isset($mergedConfig['ping_interval']) && ($mergedConfig['ping_interval']['value'] === '' || $mergedConfig['ping_interval']['value'] === null)) {
+                $mergedConfig['ping_interval']['value'] = isset($deviceConfig['ping_interval']['value']) && $deviceConfig['ping_interval']['value'] !== '' ? $deviceConfig['ping_interval']['value'] : 4;
             }
             $device->configurations = json_encode($mergedConfig);
             $device->save();
@@ -2750,7 +2759,9 @@ class DeviceController extends Controller
                 'value' => $config[$key] ?? $config[$camelKey] ?? ''
             ];
         }
-
+        if (isset($converted['ping_interval']) && $converted['ping_interval']['value'] === '') {
+            $converted['ping_interval']['value'] = 4;
+        }
 
         if (isset($request->user_id) && $request->user_id != '') {
             $user = DB::table('writers')->where(['id' => $request->user_id])->first();
@@ -2888,7 +2899,9 @@ class DeviceController extends Controller
                 'value' => $config[$key] ?? $config[$camelKey] ?? ''
             ];
         }
-
+        if (isset($converted['ping_interval']) && $converted['ping_interval']['value'] === '') {
+            $converted['ping_interval']['value'] = 4;
+        }
 
         if (isset($request->user_id) && $request->user_id != '') {
             $user = DB::table('writers')->where(['id' => $request->user_id])->first();

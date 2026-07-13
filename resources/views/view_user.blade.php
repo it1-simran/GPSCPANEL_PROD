@@ -2,6 +2,19 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-user') }}">
+<style>
+  /* Compact account table rows */
+  #accountsTable.dataTable thead th,
+  #accountsTable.dataTable tbody td {
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.3;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  #accountsTable .pwd-pill { padding: 2px 6px; }
+  #accountsTable .btn { padding: 3px 8px; font-size: 12px; }
+</style>
 @endpush
 @section('content')
 @include('modals.userEditDelOptions')
@@ -95,7 +108,10 @@
               @endif
             </div>
             <div class="table-responsive" style="overflow-x: auto; width: 100%;">
-              <table id="example" class="table">
+              {{-- Rows load one page at a time via /{url_type}/accounts-list-data --}}
+              <table id="accountsTable" class="table"
+                data-server-side="1"
+                data-ajax-url="/{{ $url_type }}/accounts-list-data">
                 <thead>
                   <tr>
                     <th>Sr. No.</th>
@@ -124,137 +140,36 @@
                     
                     </tr>
                 </thead>
-                <tbody>
-                  @if(count($contacts) > 0)
-                  <?php
-                  $i = 1;
-                  ?>
-                  @foreach($contacts as $contact)
-                  <tr>
-
-                    <td><?php echo $i; ?></td>
-                    <td>
-                      {{ $contact['user_type'] === 'Reseller' ? 'Manufacturer' : ($contact['user_type'] === 'Support' ? 'Support' : 'Dealer') }}
-                    </td>
-
-                    <td>{{$contact['name']}}</td>
-                    <td>{{$contact['mobile']}}</td>
-                    <td>{{$contact['email']}}</td>
-                    <td>
-                      <div class="pwd-pill">
-                        <div id="showpassword-{{$contact['id']}}" class="pwd-text" style="display: none;">
-                          {{$contact['showLoginPassword']}}
-                        </div>
-                        <div id="hiddenpassword-{{$contact['id']}}" class="pwd-hidden">
-                          ••••••••
-                        </div>
-                        <button type="button" style="margin-top:1px" id="hide-{{$contact['id']}}" class="pwd-btn" onclick="togglePasswordShow({{$contact['id']}})" title="Toggle Password">
-                          <i class="fa fa-eye" id="eye-icon-{{$contact['id']}}"></i>
-                        </button>
-                      </div>
-                    </td>
-                    <td>{{$contact['device_count']}}</td>
-<td>{{$contact['total_pings']}}</td>
-<td>{{$contact['today_pings']}}</td>
-<td>{{$contact['last_ip'] ?? 'N/A'}}</td>
-<td>{{$contact['last_device'] ?? 'N/A'}}</td>
-<td>
-  @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit'))
-    <a href="/{{strtolower(Auth::user()->user_type)}}/view-configurations/{{$contact['id']}}" class="vu-btn-view" onclick="openConfigurations({{$contact['id']}})"><i class="fa fa-eye"></i> View Config</a>
-  @endif
-</td>
-<td>
-  @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit'))
-    <button style="margin-top:1px" class="vu-btn-assign" onclick="open_asign({{$contact['id']}})"><i class="fa fa-link"></i> Assign</button>
-  @endif
-</td>
-
-                    </td>
-                    @if(Auth::user()->user_type !='User' && (Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.edit')))
-                    <td>
-                      <a href="/{{$url_type}}/edit-user/{{$contact['user_type']}}/{{$contact['id']}}" class="vu-btn-edit"><i class="fa fa-edit"></i> Edit</a>
-                    </td>
-                    @endif
-                    @if(Auth::user()->user_type == 'Admin' || Auth::user()->hasPermission('account_management.delete'))
-                    <td>
-                      <button style="margin-top:1px" data-uid="{{$contact['id']}}" data-utype="{{$contact['user_type']}}" class="vu-btn-delete delUserReseller" type="button"><i class="fa fa-trash"></i> Delete</button>
-                    </td>
-                    @endif
-                    <td>
-                      @if($contact['user_type']=='Reseller' )
-                      <button style="margin-top:1px" data-uid="{{$contact['id']}}" data-cutype="{{$url_type}}" class="vu-btn-link linkReseller" type="button"><i class="fa fa-chain"></i> Link</button>
-                      @endif
-                    </td>
-                    @if(Auth::user()->user_type == 'Admin' || (Auth::user()->user_type == 'Reseller' && Auth::user()->hasPermission('account_management.view')))
-                    <td>
-                      @if(Auth::user()->user_type == 'Admin' && in_array($contact['user_type'], ['Reseller', 'User'], true))
-                        <a href="/admin/manage-permissions?account_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
-                      @elseif(Auth::user()->user_type == 'Reseller' && in_array($contact['user_type'], ['User', 'Reseller'], true))
-                        <a href="/reseller/manage-child-permissions?user_id={{$contact['id']}}" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>
-                      @endif
-                    </td>
-                    @endif
-                  </tr>
-                  <?php $i++; ?>
-                  @endforeach
-                  @else
-                  <!-- <td colspan="7">No Data Found</td> -->
-                  @endif
-                </tbody>
+                <tbody></tbody>
               </table>
             </div>
 
-            {{-- Render Modals Outside Table to avoid Hover Glitches --}}
-            @if(count($contacts) > 0)
-              @foreach($contacts as $contact)
-                <!--****** Start Modal Responsive******-->
-                <div class="modal assign-device-modal" id="modal-responsive{{ $contact['id']}}" aria-hidden="true">
-                  <div class="modal-dialog modal-md">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
-                        <h4 class="modal-title"><strong>Assign Device</strong></h4>
-                      </div>
-                      <form action="/{{$url_type}}/assign-device" method="post">
-                        @csrf
-                        <div class="modal-body">
-                          <div class="form-group">
-                            <label class="form-label">Single/Multiple Select Device</label>
-                            <input type="hidden" name="user_id" class="assign-user-id" value="">
-                            <select class="assignDevices" id="s2example-2{{$contact['id']}}" name="devices[]" multiple>
-                              @if(count($unassign_device) > 0)
-                              <option></option>
-                              <optgroup label="Unassigned Devices">
-                                @foreach($unassign_device as $user)
-                                @if(in_array($user->device_category_id,explode(',',$contact->device_category_id)))
-                                <option value="{{$user->id}}">{{$user->imei}}</option>
-                                @endif
-                                @endforeach
-                                @endif
-                              </optgroup>
-                            </select>
-                            <script>
-                              $(document).ready(function() {
-                                $('#s2example-2{{$contact['id']}}').select2({
-                                  placeholder: 'Select and Search',
-                                  width: '100%',
-                                  dropdownParent: $('#modal-responsive{{$contact['id']}}')
-                                });
-                              });
-                            </script>
-                          </div>
-                        </div>
-                        <div class="modal-footer text-center">
-                          <button type="submit" class="btn btn-primary btn-raised rippler rippler-default">
-                            <i class="fa fa-check"></i> Assign
-                          </button>
-                        </div>
-                      </form>
-                    </div>
+            {{-- Shared Assign Device modal: devices load via AJAX select2 --}}
+            <div class="modal assign-device-modal" id="assignDeviceModal" aria-hidden="true">
+              <div class="modal-dialog modal-md">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
+                    <h4 class="modal-title"><strong>Assign Device</strong></h4>
                   </div>
+                  <form action="/{{$url_type}}/assign-device" method="post">
+                    @csrf
+                    <div class="modal-body">
+                      <div class="form-group">
+                        <label class="form-label">Single/Multiple Select Device</label>
+                        <input type="hidden" name="user_id" class="assign-user-id" value="">
+                        <select class="assignDevices" id="assignDeviceSelect" name="devices[]" multiple style="width:100%;"></select>
+                      </div>
+                    </div>
+                    <div class="modal-footer text-center">
+                      <button type="submit" class="btn btn-primary btn-raised rippler rippler-default">
+                        <i class="fa fa-check"></i> Assign
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              @endforeach
-            @endif
+              </div>
+            </div>
 
             </div>
           </div><!--/.c_content-->
@@ -270,28 +185,39 @@
 
 <!--****** End Modal Responsive******-->
 @stop
+@section('scripts')
 <script>
-  function initAssignDeviceSelect($modal) {
-    var $select = $modal.find('.assignDevices');
-    if (!$select.length) {
-      return;
-    }
+  // Shared assign modal: devices are searched/paged via AJAX select2, scoped
+  // to the target account's device categories.
+  function open_asign(btn) {
+    var $btn = $(btn);
+    var userId = $btn.data('user-id');
+    var categories = String($btn.data('categories') || '');
+    var $modal = $('#assignDeviceModal');
 
-    if ($select.hasClass('select2-hidden-accessible')) {
+    $modal.find('.assign-user-id').val(userId);
+
+    var $select = $('#assignDeviceSelect');
+    if ($select.data('select2')) {
+      $select.val(null).trigger('change');
       $select.select2('destroy');
     }
-
-    $select.val(null);
+    $select.empty();
     $select.select2({
       placeholder: 'Select and Search',
       width: '100%',
-      dropdownParent: $modal
+      dropdownParent: $modal,
+      ajax: {
+        url: '/{{ $url_type }}/devices-select',
+        dataType: 'json',
+        delay: 300,
+        data: function(params) {
+          return { q: params.term || '', page: params.page || 1, category_id: categories, mode: 'assignable' };
+        },
+        cache: true
+      }
     });
-  }
 
-  function open_asign(id) {
-    var $modal = $('#modal-responsive' + id);
-    $modal.find('.assign-user-id').val(id);
     $modal.modal('show');
   }
 
@@ -304,27 +230,30 @@
     $('.select2').select();
   }
   $(document).ready(function() {
-    $('#example').DataTable({
+    var $table = $('#accountsTable');
+    $table.DataTable({
+        serverSide: true,
+        processing: true,
         paging: true,
         searching: true,
+        searchDelay: 400,
         info: true,
         ordering: true,
         lengthChange: true,
         autoWidth: false,
+        scrollX: true,
+        scrollCollapse: true,
+        order: [],
+        ajax: { url: $table.data('ajax-url') },
+        columnDefs: [
+            { targets: [1, 2, 3, 4, 7, 8], orderable: true },
+            { targets: '_all', orderable: false }
+        ],
         lengthMenu: [
-            [25, 50, 100, 500, -1],
-            [25, 50, 100, 500, "All"]
+            [25, 50, 100, 500],
+            [25, 50, 100, 500]
         ],
         pageLength: 25
-    });
-
-    $('.assign-device-modal').on('shown.bs.modal', function() {
-      initAssignDeviceSelect($(this));
-    }).on('hidden.bs.modal', function() {
-      var $select = $(this).find('.assignDevices');
-      if ($select.hasClass('select2-hidden-accessible')) {
-        $select.select2('destroy');
-      }
     });
   });
 
@@ -344,3 +273,4 @@
     }
   }
 </script>
+@endsection

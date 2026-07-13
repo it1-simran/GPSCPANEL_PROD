@@ -6,6 +6,7 @@ use DB;
 use Illuminate\Http\Request;
 use Auth;
 use App\DataFields;
+use App\Helper\CommonHelper;
 use App\esim;
 use App\backend;
 use App\Ccid;
@@ -26,12 +27,80 @@ class FirmwareController extends Controller
     //
     public function show()
     {
-        // $firmwares = Firmware::get();
-
-        $firmwares = Firmware::withCount('modals')->get();
-        // dd($firmwares);
+        // Rows are served one page at a time by listData() (server-side DataTables).
         $url_type = self::getURLType();
-        return view('view_firmware', ['firmwares' => $firmwares, 'url_type' => $url_type]);
+        return view('view_firmware', ['firmwares' => collect(), 'url_type' => $url_type, 'server_side' => true]);
+    }
+
+    /**
+     * Server-side DataTables source for the firmware listing (per category tab).
+     */
+    public function listData(Request $request)
+    {
+        $categoryId = (int) $request->input('category_id');
+        $urlType = self::getURLType();
+
+        $category = DeviceCategory::select('id', 'is_esim')->where('id', $categoryId)->first();
+
+        $base = DB::table('firmware')->where('device_category_id', $categoryId);
+
+        return \App\Support\ServerSideTable::respond($request, $base, [
+            'idColumn' => 'firmware.id',
+            'searchColumns' => ['firmware.name', 'firmware.configurations'],
+            'sortable' => [
+                1 => 'firmware.id',
+                2 => 'firmware.name',
+                11 => 'firmware.is_default',
+                13 => 'firmware.created_at',
+                14 => 'firmware.updated_at',
+            ],
+            'defaultOrder' => [['firmware.id', 'asc']],
+            'fetchRows' => function (array $ids) {
+                return Firmware::withCount('modals')->whereIn('id', $ids)->get();
+            },
+            'renderRow' => function ($firmware, $srNo) use ($urlType, $category) {
+                $e = [\App\Support\ServerSideTable::class, 'e'];
+                $config = json_decode($firmware->configurations);
+
+                $esim = '-';
+                if (isset($config->esim)) {
+                    $esim = ($category && $category->is_esim == 1)
+                        ? CommonHelper::getEsim($config->esim)
+                        : $config->esim;
+                }
+
+                $actions = '<div class="fw-actions-cluster">'
+                    . '<button type="button" class="btn fw-action-btn fw-btn-edit"'
+                    . ' data-firmware-id="' . $firmware->id . '"'
+                    . ' data-filename="' . $e($config->filename ?? '') . '"'
+                    . ' data-version="' . $e($config->version ?? '') . '"'
+                    . ' data-notes="' . $e(isset($config->releasingNotes) ? trim($config->releasingNotes) : '') . '"'
+                    . ' onclick="openEditModel(this)"><i class="fa fa-pencil"></i>Edit</button>'
+                    . '<form id="deleteForm-' . $firmware->id . '" action="" method="post">'
+                    . csrf_field() . method_field('DELETE')
+                    . '<button type="button" class="btn fw-action-btn fw-btn-delete" onclick="showDeleteModal(' . $firmware->id . ')"><i class="fa fa-trash"></i>Delete</button>'
+                    . '</form></div>';
+
+                return [
+                    (string) $srNo,
+                    '<span class="fw-id-pill">' . $firmware->id . '</span>',
+                    '<span class="fw-name-cell">' . $e($firmware->name) . '</span>',
+                    isset($config->country) ? $e(CommonHelper::getCountryName($config->country)) : '-',
+                    isset($config->state) ? $e(CommonHelper::getStateName($config->state)) : '-',
+                    $e($esim),
+                    isset($config->backend) ? $e(CommonHelper::getBackend($config->backend)) : '-',
+                    '<span class="fw-chip fw-file-chip">' . $e($config->filename ?? '-') . '</span>',
+                    '<span class="fw-chip">' . $e($config->fileSize ?? '-') . '</span>',
+                    '<span class="fw-chip">' . $e($config->version ?? '-') . '</span>',
+                    '<a href="/admin/view-firmware-models/' . $firmware->id . '" class="btn fw-action-btn fw-btn-model"><i class="fa fa-eye"></i>View Model</a>',
+                    $firmware->is_default == 1 ? '<span class="fw-default-pill">Yes</span>' : '',
+                    '<span class="fw-model-count">' . (int) $firmware->modals_count . '</span>',
+                    '<span class="fw-date-cell">' . CommonHelper::getDateAsTimeZone($firmware->created_at) . '</span>',
+                    '<span class="fw-date-cell">' . CommonHelper::getDateAsTimeZone($firmware->updated_at) . '</span>',
+                    $actions,
+                ];
+            },
+        ]);
     }
 
     public function add()
@@ -406,9 +475,66 @@ class FirmwareController extends Controller
 
     public function viewModals()
     {
-        $modalList = modal::get();
+        // Rows are served one page at a time by modelsListData().
         $url_type = self::getURLType();
-        return view('view_modal', ['modalList' => $modalList, 'url_type' => $url_type]);
+        return view('view_modal', ['modalList' => collect(), 'url_type' => $url_type, 'server_side' => true]);
+    }
+
+    /**
+     * Server-side DataTables source for the models listing.
+     * Accepts an optional firmware_id to scope to one firmware's models.
+     */
+    public function modelsListData(Request $request)
+    {
+        $base = DB::table('modals')
+            ->leftJoin('writers', 'writers.id', '=', 'modals.user_id')
+            ->leftJoin('firmware', 'firmware.id', '=', 'modals.firmware_id');
+
+        $firmwareId = (int) $request->input('firmware_id');
+        if ($firmwareId > 0) {
+            $base->where('modals.firmware_id', $firmwareId);
+        }
+
+        $urlType = self::getURLType();
+
+        return \App\Support\ServerSideTable::respond($request, $base, [
+            'idColumn' => 'modals.id',
+            'searchColumns' => ['modals.name', 'modals.vendorId', 'writers.name', 'firmware.name'],
+            'sortable' => [
+                1 => 'modals.name',
+                2 => 'modals.vendorId',
+                3 => 'writers.name',
+                4 => 'firmware.name',
+                5 => 'modals.created_at',
+                6 => 'modals.updated_at',
+            ],
+            'fetchRows' => function (array $ids) {
+                return DB::table('modals')
+                    ->leftJoin('writers', 'writers.id', '=', 'modals.user_id')
+                    ->leftJoin('firmware', 'firmware.id', '=', 'modals.firmware_id')
+                    ->select('modals.id', 'modals.name', 'modals.vendorId', 'modals.created_at', 'modals.updated_at',
+                        'writers.name as user_name', 'firmware.name as firmware_name')
+                    ->whereIn('modals.id', $ids)
+                    ->get();
+            },
+            'renderRow' => function ($modal, $srNo) {
+                $e = [\App\Support\ServerSideTable::class, 'e'];
+
+                return [
+                    (string) $srNo,
+                    $e($modal->name),
+                    $e($modal->vendorId),
+                    $e($modal->user_name ?? ''),
+                    $e($modal->firmware_name ?? ''),
+                    CommonHelper::getDateAsTimeZone($modal->created_at),
+                    CommonHelper::getDateAsTimeZone($modal->updated_at),
+                    '<form id="deleteForm-' . $modal->id . '" action="" method="post">'
+                        . csrf_field() . method_field('DELETE')
+                        . '<button type="button" class="btn btn-danger btn-sm btn-vm-delete" title="Delete" aria-label="Delete" onclick="showDeleteModal(' . $modal->id . ')"><i class="fa fa-trash" aria-hidden="true"></i></button>'
+                        . '</form>',
+                ];
+            },
+        ]);
     }
     public function getModelName(Request $request)
     {
@@ -608,7 +734,7 @@ class FirmwareController extends Controller
     }
     public function viewFirmwareModel($id)
     {
-        $modalList = modal::where(['firmware_id' => $id])->get();
+        $modalList = collect(); // rows served by modelsListData(), scoped by firmware_id
         $deviceCategoryID = DB::table('firmware')->select("device_category_id")->where('id', $id)->first();
         // $getUser = DB::table('writers as w')
         // ->select('w.id', 'w.name')
@@ -626,7 +752,7 @@ class FirmwareController extends Controller
             ->whereRaw("FIND_IN_SET(?, device_category_id)", [$deviceCategoryID->device_category_id])
             ->get();
         $url_type = self::getURLType();
-        return view('view_modal', ['modalList' => $modalList, 'url_type' => $url_type, 'firmware_id' => $id, 'users' => $getUser]);
+        return view('view_modal', ['modalList' => $modalList, 'url_type' => $url_type, 'firmware_id' => $id, 'users' => $getUser, 'server_side' => true]);
     }
     public function getFirmwareWithModel(Request $request)
     {

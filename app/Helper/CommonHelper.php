@@ -93,6 +93,9 @@ class CommonHelper
                 . '</div>';
         }
 
+        // Group once so each tab only iterates its own devices instead of the full list.
+        $devicesByCategory = collect($device)->groupBy('device_category_id');
+
         $html = '<div class="tabs">';
         foreach ($getDeviceCategory as $key => $category) {
             // dd($deviceCategoryId); 
@@ -199,51 +202,60 @@ class CommonHelper
             }
             $html .= '</tr></thead><tbody>';
 
-            if (count($device) > 0) {
+            $categoryDevices = $devicesByCategory->get($category->id, collect());
+            if (count($categoryDevices) > 0) {
                 $i = 1;
-                foreach ($device as $contact) {
-                    $config = json_decode($contact->configurations, true);
-                    // dd($config);
-                    if ($category->id == $contact->device_category_id) {
-                        $html .= '<tr>';
-                        $html .= '<td><input type="checkbox" class="sub_chk' . $category->id . '" data-category="' . $category->id . '" data-id="' . $contact->id . '"></td>';
-                        $html .= '<td>' . $i . '</td>';
-                        $html .= '<td>' . (!empty($contact->username) ? $contact->username : 'Unassigned') . '</td>';
-                        $html .= '<td>' . self::emptyToNA($contact->name ?? null, true) . '</td>';
-                        $html .= '<td>' . $contact->imei . '</td>';
-                        $html .= '<td>' . (isset($config['total_pings']) ? $config['total_pings'] : 0) . '</td>';
-                        if (Auth::user()->user_type == 'Admin') {
-                            $html .= '<td>' . (isset($config['ping_interval']) ? $config['ping_interval']['value'] : "") . '</td>';
-                        }
-                        $html .= '<td>' . self::getDateAsTimeZone($contact->created_at) . '</td>';
-                        $html .= '<td>' . self::getDateAsTimeZone($contact->updated_at) . '</td>';
-
-                        if (Auth::user()->user_type == 'Admin') {
-                            $html .= '<td>';
-                            if (isset($config['is_editable']) && $config['is_editable']['value'] == '1') {
-                                $html .= '<button class="btn btn-success btn-sm"><i class="fa fa-check"></i> Yes</button>';
-                            } else {
-                                $html .= '<button class="btn btn-danger btn-sm"><i class="fa fa-times"></i> No</button>';
-                            }
-                            $html .= '</td>';
-                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/admin/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
-                        }
-                        if (Auth::user()->user_type == 'Support') {
-                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
-                        }
-                        $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info"><i class="fa fa-cog"></i> View Configuration</a></td>';
-                        if (Auth::user()->user_type == 'Admin') {
-                            $html .= '<td>';
-                            $html .= '<form action="' . route('device.delete', $contact->id) . '" method="post">';
-                            $html .= csrf_field();
-                            $html .= method_field('DELETE');
-                            $html .= '<button class="btn btn-danger btn-sm swal-confirm" data-confirm-msg="Are you sure you want to delete this device?" type="submit"><i class="fa fa-trash"></i> Delete</button>';
-                            $html .= '</form>';
-                            $html .= '</td>';
-                        }
-                        $html .= '</tr>';
-                        $i++;
+                foreach ($categoryDevices as $contact) {
+                    // Prefer values extracted in SQL (cfg_* aliases); fall back to
+                    // decoding the configurations JSON for callers still passing devices.*.
+                    if (property_exists($contact, 'cfg_total_pings')) {
+                        $totalPings = $contact->cfg_total_pings ?? 0;
+                        $pingInterval = $contact->cfg_ping_interval ?? '';
+                        $isEditable = $contact->cfg_is_editable;
+                    } else {
+                        $config = json_decode($contact->configurations ?? '', true);
+                        $totalPings = $config['total_pings'] ?? 0;
+                        $pingInterval = $config['ping_interval']['value'] ?? '';
+                        $isEditable = $config['is_editable']['value'] ?? null;
                     }
+                    $html .= '<tr>';
+                    $html .= '<td><input type="checkbox" class="sub_chk' . $category->id . '" data-category="' . $category->id . '" data-id="' . $contact->id . '"></td>';
+                    $html .= '<td>' . $i . '</td>';
+                    $html .= '<td>' . (!empty($contact->username) ? $contact->username : 'Unassigned') . '</td>';
+                    $html .= '<td>' . self::emptyToNA($contact->name ?? null, true) . '</td>';
+                    $html .= '<td>' . $contact->imei . '</td>';
+                    $html .= '<td>' . ($totalPings !== null && $totalPings !== '' ? $totalPings : 0) . '</td>';
+                    if (Auth::user()->user_type == 'Admin') {
+                        $html .= '<td>' . $pingInterval . '</td>';
+                    }
+                    $html .= '<td>' . self::getDateAsTimeZone($contact->created_at) . '</td>';
+                    $html .= '<td>' . self::getDateAsTimeZone($contact->updated_at) . '</td>';
+
+                    if (Auth::user()->user_type == 'Admin') {
+                        $html .= '<td>';
+                        if ($isEditable == '1') {
+                            $html .= '<button class="btn btn-success btn-sm"><i class="fa fa-check"></i> Yes</button>';
+                        } else {
+                            $html .= '<button class="btn btn-danger btn-sm"><i class="fa fa-times"></i> No</button>';
+                        }
+                        $html .= '</td>';
+                        $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/admin/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
+                    }
+                    if (Auth::user()->user_type == 'Support') {
+                        $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
+                    }
+                    $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info"><i class="fa fa-cog"></i> View Configuration</a></td>';
+                    if (Auth::user()->user_type == 'Admin') {
+                        $html .= '<td>';
+                        $html .= '<form action="' . route('device.delete', $contact->id) . '" method="post">';
+                        $html .= csrf_field();
+                        $html .= method_field('DELETE');
+                        $html .= '<button class="btn btn-danger btn-sm swal-confirm" data-confirm-msg="Are you sure you want to delete this device?" type="submit"><i class="fa fa-trash"></i> Delete</button>';
+                        $html .= '</form>';
+                        $html .= '</td>';
+                    }
+                    $html .= '</tr>';
+                    $i++;
                 }
             }
             $html .= '</tbody></table>'; // Close tab content div

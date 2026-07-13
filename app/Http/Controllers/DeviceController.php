@@ -263,9 +263,24 @@ class DeviceController extends Controller
 
         $user = Auth::user();
 
+        // Select only the columns the listing renders; pull the three displayed
+        // configuration values out in SQL instead of shipping the full JSON blobs.
         $devicesQuery = DB::table('devices')
             ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
-            ->select('devices.*', 'writers.name as username')
+            ->select(
+                'devices.id',
+                'devices.name',
+                'devices.imei',
+                'devices.user_id',
+                'devices.assign_to_ids',
+                'devices.device_category_id',
+                'devices.created_at',
+                'devices.updated_at',
+                'writers.name as username',
+                DB::raw("JSON_UNQUOTE(JSON_EXTRACT(devices.configurations, '$.total_pings')) AS cfg_total_pings"),
+                DB::raw("JSON_UNQUOTE(JSON_EXTRACT(devices.configurations, '$.ping_interval.value')) AS cfg_ping_interval"),
+                DB::raw("JSON_UNQUOTE(JSON_EXTRACT(devices.configurations, '$.is_editable.value')) AS cfg_is_editable")
+            )
             ->where('devices.is_deleted', '0');
 
         if ($user->user_type == 'Admin') {
@@ -307,19 +322,37 @@ class DeviceController extends Controller
 
         $childUsers = $childUsersQuery->pluck('name', 'id'); // [id => name]
 
+        // Batch-load every writer referenced by user_id / assign_to_ids so the
+        // loop below resolves names in memory instead of querying per device.
+        $writerIds = [];
+        foreach ($devices as $device) {
+            if (!empty($device->user_id)) {
+                $writerIds[] = $device->user_id;
+            }
+            foreach (explode(',', $device->assign_to_ids ?? '') as $aid) {
+                $aid = trim($aid);
+                if ($aid !== '') {
+                    $writerIds[] = $aid;
+                }
+            }
+        }
+        $writersById = empty($writerIds)
+            ? collect()
+            : DB::table('writers')->select('id', 'name', 'user_type')->whereIn('id', array_unique($writerIds))->get()->keyBy('id');
+
         // Set username based on child user match
         foreach ($devices as $dkey => $device) {
             $userId = $device->user_id;
-            $aids = explode(',', $device->assign_to_ids ?? '');
+            $aids = array_map('trim', explode(',', $device->assign_to_ids ?? ''));
             $next_id = null;
 
             // Get next assigned user ID relative to current user
             if (!empty($aids)) {
                 $next_id = self::getNextValue($aids, Auth::user()->id);
-                
+
                 if (empty($next_id) && Auth::user()->user_type == 'Admin') {
                     $root_id = $aids[0];
-                    $root_writer = DB::table('writers')->select('user_type')->where('id', $root_id)->first();
+                    $root_writer = $writersById->get($root_id);
                     if ($root_writer && $root_writer->user_type == 'Support') {
                         $next_id = self::getNextValue($aids, $root_id);
                         if (empty($next_id)) {
@@ -335,7 +368,7 @@ class DeviceController extends Controller
             }
             // If next direct child exists in list and is a valid writer
             elseif ($next_id) {
-                $w_details = DB::table('writers')->where('id', $next_id)->first();
+                $w_details = $writersById->get($next_id);
                 if ($w_details) {
                     $devices[$dkey]->username = $w_details->name;
                 } else {

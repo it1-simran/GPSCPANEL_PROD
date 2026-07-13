@@ -353,71 +353,153 @@ class RegisterController extends Controller
   public function showWriter(Request $request)
   {
     $usertype = Auth::user()->user_type;
-    if ($usertype == 'Admin') {
-      $utype = '1';
-      $user_id = NULL;
-    } else {
-      $utype = $user_id = Auth::user()->id;
-    }
-    $where = [];
-    $where[] = ['writers.is_deleted', '=', 0];
-    $where[] = ['writers.user_type', '!=', 'Admin'];
-    $where[] = ['writers.created_by', '=', $utype];
-    if (Auth::user()->user_type != "Admin") {
-      $where[] = ['writers.created_by', '=', $utype];
-    }
+    $utype = ($usertype == 'Admin') ? '1' : Auth::user()->id;
 
-    $deviceCounts = DB::table('devices')
-      ->select('user_id', DB::raw('COUNT(*) as device_count'))
-      ->groupBy('user_id')
-      ->pluck('device_count', 'user_id'); // returns [user_id => count]
-
-    // Step 2: Get all writer records
-    $contacts = Writer::where($where)->get();
-
-    // Attach device count and last login details
-    foreach ($contacts as $contact) {
-      $contact->device_count = $deviceCounts[$contact->id] ?? 0;
-      $lastLogin = DB::table('user_logins')
-        ->where('user_id', $contact->id)
-        ->orderBy('logged_at', 'desc')
-        ->first();
-      $contact->last_ip = $lastLogin->ip_address ?? 'N/A';
-      $contact->last_device = $lastLogin->user_agent ?? 'N/A';
-    }
-
-    $admins = Admin::all();
-    $c_uid = Auth::user()->id;
-    $totalDevices = 0;
+    // Account rows are served one page at a time by listData(); only the
+    // header stats are computed here — each as a single aggregate query.
     $totalUsers = DB::table('writers')
       ->select(DB::raw('count(*) as user_count'))
       ->where('writers.created_by', $utype)
       ->where('writers.is_deleted', 0)
       ->get();
-    $totalPings = DB::table('writers')
-      ->select('writers.*')
+    $totalPings = (float) DB::table('writers')
       ->where('writers.created_by', $utype)
       ->where('writers.is_deleted', 0)
-      ->get()
-      ->sum("total_pings");
-    foreach ($contacts as $contact) {
-      $count = DB::table('devices')->where('user_id', $contact['id'])
-        ->where('is_deleted', 0)
-        ->count();
-
-      $totalDevices += $count;
-    }
-    $contactsArr = [];
-    if ($usertype == 'Admin') {
-    }
-    $unassign_device = DB::table('devices')
-      ->select('devices.*')
-      ->where('devices.user_id', $user_id)
-      ->where('devices.is_deleted', 0)
-      ->get();
+      ->sum('total_pings');
+    $totalDevices = DB::table('devices')
+      ->where('is_deleted', 0)
+      ->whereIn('user_id', function ($q) use ($utype) {
+        $q->select('id')->from('writers')
+          ->where('created_by', $utype)
+          ->where('is_deleted', 0)
+          ->where('user_type', '!=', 'Admin');
+      })
+      ->count();
 
     $url_type = self::getURLType();
-    return view('view_user', ['contacts' => $contacts, 'unassign_device' => $unassign_device, 'totalUsers' => $totalUsers, 'totalDevices' => $totalDevices, 'totalPings' => $totalPings, 'url_type' => $url_type]);
+    return view('view_user', [
+      'contacts' => collect(),
+      'unassign_device' => collect(), // assign modal now loads devices via AJAX select2
+      'totalUsers' => $totalUsers,
+      'totalDevices' => $totalDevices,
+      'totalPings' => $totalPings,
+      'url_type' => $url_type,
+      'server_side' => true,
+    ]);
+  }
+
+  /**
+   * Server-side DataTables source for the accounts listing.
+   */
+  public function listData(Request $request)
+  {
+    $authUser = Auth::user();
+    $utype = ($authUser->user_type == 'Admin') ? '1' : $authUser->id;
+    $urlType = self::getURLType();
+
+    $isAdmin = $authUser->user_type == 'Admin';
+    $showEditCol = $authUser->user_type != 'User' && ($isAdmin || $authUser->hasPermission('account_management.edit'));
+    $showDeleteCol = $isAdmin || $authUser->hasPermission('account_management.delete');
+    $showPermsCol = $isAdmin || ($authUser->user_type == 'Reseller' && $authUser->hasPermission('account_management.view'));
+    $canEditActions = $isAdmin || $authUser->hasPermission('account_management.edit');
+
+    $base = DB::table('writers')
+      ->where('writers.is_deleted', 0)
+      ->where('writers.user_type', '!=', 'Admin')
+      ->where('writers.created_by', $utype);
+
+    return \App\Support\ServerSideTable::respond($request, $base, [
+      'idColumn' => 'writers.id',
+      'searchColumns' => ['writers.name', 'writers.mobile', 'writers.email', 'writers.user_type'],
+      'sortable' => [
+        1 => 'writers.user_type',
+        2 => 'writers.name',
+        3 => 'writers.mobile',
+        4 => 'writers.email',
+        7 => 'writers.total_pings',
+        8 => 'writers.today_pings',
+      ],
+      'fetchRows' => function (array $ids) {
+        $contacts = DB::table('writers')->whereIn('id', $ids)->get();
+
+        // Page-scoped batch lookups (device counts + latest login per account)
+        $deviceCounts = DB::table('devices')
+          ->select('user_id', DB::raw('COUNT(*) as device_count'))
+          ->whereIn('user_id', $ids)
+          ->groupBy('user_id')
+          ->pluck('device_count', 'user_id');
+        $latestLogins = DB::table('user_logins')
+          ->whereIn('user_id', $ids)
+          ->orderBy('logged_at', 'desc')
+          ->get()
+          ->unique('user_id')
+          ->keyBy('user_id');
+
+        foreach ($contacts as $contact) {
+          $contact->device_count = $deviceCounts[$contact->id] ?? 0;
+          $login = $latestLogins->get($contact->id);
+          $contact->last_ip = $login->ip_address ?? 'N/A';
+          $contact->last_device = $login->user_agent ?? 'N/A';
+        }
+
+        return $contacts;
+      },
+      'renderRow' => function ($contact, $srNo) use ($urlType, $authUser, $isAdmin, $showEditCol, $showDeleteCol, $showPermsCol, $canEditActions) {
+        $e = [\App\Support\ServerSideTable::class, 'e'];
+
+        $typeLabel = $contact->user_type === 'Reseller' ? 'Manufacturer' : ($contact->user_type === 'Support' ? 'Support' : 'Dealer');
+
+        $passwordCell = '<div class="pwd-pill">'
+          . '<div id="showpassword-' . $contact->id . '" class="pwd-text" style="display: none;">' . $e($contact->showLoginPassword) . '</div>'
+          . '<div id="hiddenpassword-' . $contact->id . '" class="pwd-hidden">••••••••</div>'
+          . '<button type="button" style="margin-top:1px" id="hide-' . $contact->id . '" class="pwd-btn" onclick="togglePasswordShow(' . $contact->id . ')" title="Toggle Password"><i class="fa fa-eye" id="eye-icon-' . $contact->id . '"></i></button>'
+          . '</div>';
+
+        $configCell = $canEditActions
+          ? '<a href="/' . strtolower($authUser->user_type) . '/view-configurations/' . $contact->id . '" class="vu-btn-view"><i class="fa fa-eye"></i> View Config</a>'
+          : '';
+        $assignCell = $canEditActions
+          ? '<button style="margin-top:1px" class="vu-btn-assign" data-user-id="' . $contact->id . '" data-categories="' . $e($contact->device_category_id) . '" onclick="open_asign(this)"><i class="fa fa-link"></i> Assign</button>'
+          : '';
+
+        $cells = [
+          (string) $srNo,
+          $typeLabel,
+          $e($contact->name),
+          $e($contact->mobile),
+          $e($contact->email),
+          $passwordCell,
+          (string) ($contact->device_count ?? 0),
+          $e($contact->total_pings),
+          $e($contact->today_pings),
+          $e($contact->last_ip ?? 'N/A'),
+          $e($contact->last_device ?? 'N/A'),
+          $configCell,
+          $assignCell,
+        ];
+
+        if ($showEditCol) {
+          $cells[] = '<a href="/' . $urlType . '/edit-user/' . $e($contact->user_type) . '/' . $contact->id . '" class="vu-btn-edit"><i class="fa fa-edit"></i> Edit</a>';
+        }
+        if ($showDeleteCol) {
+          $cells[] = '<button style="margin-top:1px" data-uid="' . $contact->id . '" data-utype="' . $e($contact->user_type) . '" class="vu-btn-delete delUserReseller" type="button"><i class="fa fa-trash"></i> Delete</button>';
+        }
+        $cells[] = $contact->user_type == 'Reseller'
+          ? '<button style="margin-top:1px" data-uid="' . $contact->id . '" data-cutype="' . $urlType . '" class="vu-btn-link linkReseller" type="button"><i class="fa fa-chain"></i> Link</button>'
+          : '';
+        if ($showPermsCol) {
+          $permCell = '';
+          if ($isAdmin && in_array($contact->user_type, ['Reseller', 'User'], true)) {
+            $permCell = '<a href="/admin/manage-permissions?account_id=' . $contact->id . '" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>';
+          } elseif ($authUser->user_type == 'Reseller' && in_array($contact->user_type, ['User', 'Reseller'], true)) {
+            $permCell = '<a href="/reseller/manage-child-permissions?user_id=' . $contact->id . '" class="vu-btn-permission" style="margin-top:1px"><i class="fa fa-lock"></i> Manage</a>';
+          }
+          $cells[] = $permCell;
+        }
+
+        return $cells;
+      },
+    ]);
   }
   public function editWriter($userType, $id)
   {

@@ -14,11 +14,11 @@ $getCanEnableByDeviceCategory = !empty($template_info['device_category_id'])
     : null;
 // dd($configurations);
 $canConfigurations = json_decode($template_info['can_configurations'], true);
+// Edit access is governed by the Manage Permissions module
+// (settings_management.edit), not the template's is_editable flag.
 $canEditSettings = Auth::user()->user_type === 'Admin'
     || \App\Helpers\PermissionHelper::hasPermission('settings_management.edit');
-$templateAllowsEdit = Auth::user()->user_type === 'Admin'
-    || (isset($configurations['is_editable']['value']) && (int) $configurations['is_editable']['value'] === 1);
-$showTemplateEditControls = $canEditSettings && $templateAllowsEdit;
+$showTemplateEditControls = $canEditSettings;
 ?>
 
 @extends('layouts.apps')

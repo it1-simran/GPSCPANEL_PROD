@@ -91,7 +91,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
             </div>
             @endif
             <div class="vm-table-wrap">
-            <table id="esim" class="example table table-bordered table-striped cf vm-datatable-table" style="border-spacing: 0; width: 100%; font-size: 14px;">
+            {{-- Rows load one page at a time via /{url_type}/models-list-data --}}
+            <table id="esim" class="example table table-bordered table-striped cf vm-datatable-table"
+              data-server-side="1"
+              data-ajax-url="/{{ $url_type }}/models-list-data"
+              data-firmware-id="{{ $firmware_id ?? '' }}"
+              style="border-spacing: 0; width: 100%; font-size: 14px;">
               <thead>
                 <tr>
                   <th>Sr. No.</th>
@@ -104,35 +109,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                   <th>Delete</th>
                 </tr>
               </thead>
-              <?php
-              $i =  1;
-              ?>
-              <tbody>
-                @foreach ($modalList as $modal)
-                <tr>
-                  <td><?php echo $i; ?></td>
-                  <td>{{$modal->name}}</td>
-                  <td>{{$modal->vendorId}}</td>
-                  <td>{{CommonHelper::getUserName($modal->user_id)}}</td>
-                  <td>{{CommonHelper::getFirmwareName($modal->firmware_id)}}</td>
-                  <td>{{CommonHelper::getDateAsTimeZone($modal->created_at)}}</td>
-                  <td>{{CommonHelper::getDateAsTimeZone($modal->updated_at)}}</td>
-                  <td>
-                      <form id="deleteForm-{{$modal->id}}" action="" method="post">
-                      @csrf
-                      @method('DELETE')
-                      <button type="button" class="btn btn-danger btn-sm btn-vm-delete" title="Delete" aria-label="Delete" onclick="showDeleteModal({{$modal->id}})">
-                        <i class="fa fa-trash" aria-hidden="true"></i>
-                      </button>
-                      </form>
-                  </td>
-                </tr>
-
-                <?php
-                $i++;
-                ?>
-                @endforeach
-              </tbody>
+              <tbody></tbody>
             </table>
             </div>
           </div><!--/.c_content-->
@@ -201,8 +178,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
       if (!$tbl.length || !$.fn.DataTable) return;
 
       var dt = $tbl.DataTable({
+          serverSide: true,
+          processing: true,
           paging: true,
           searching: true,
+          searchDelay: 400,
           info: true,
           ordering: true,
           lengthChange: true,
@@ -212,9 +192,20 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
           scrollX: true,
           scrollCollapse: false,
 
+          order: [],
+          ajax: {
+              url: $tbl.data('ajax-url'),
+              data: function (d) {
+                  d.firmware_id = $tbl.data('firmware-id') || '';
+              }
+          },
+          columnDefs: [
+              { targets: [1, 2, 3, 4, 5, 6], orderable: true },
+              { targets: '_all', orderable: false }
+          ],
           lengthMenu: [
-              [25, 50, 100, 500, -1],
-              [25, 50, 100, 500, "All"]
+              [25, 50, 100, 500],
+              [25, 50, 100, 500]
           ],
           pageLength: 25,
           dom: "<'row'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>",

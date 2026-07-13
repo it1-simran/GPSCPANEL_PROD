@@ -226,55 +226,8 @@
                       <th class="text-center vdf-th-actions"><span class="vdf-th-label">Actions</span></th>
                     </tr>
                   </thead>
-                  <tbody>
-                    @foreach ($dataFields as $i => $dataField)
-                      <tr>
-                        <td data-order="{{ $i + 1 }}">{{ $i + 1 }}</td>
-                        <td data-order="{{ $dataField->id }}">{{ $dataField->id }}</td>
-                        <!-- <td>{{$dataField->fieldType == 0 ? 'Configurations' : 'Parameters'}}</td> -->
-                        <td class="field-type">{{$dataField->fieldType == 0 ? 'Configurations' : 'Parameters'}}</td>
-                        <td>{{$dataField->fieldName}}</td>
-                        <td>{{$dataField->inputType}}</td>
-                        <td>{{$dataField->validationConfig}}</td>
-                        <td data-order="{{ $dataField->is_common ? 1 : 0 }}">
-                          @if ($dataField->is_common)
-                            <span class="vdf-badge vdf-badge-true">True</span>
-                          @else
-                            <span class="vdf-badge vdf-badge-false">False</span>
-                          @endif
-                        </td>
-                        <td data-order="{{ $dataField->is_can_protocol ? 1 : 0 }}">
-                          @if ($dataField->is_can_protocol)
-                            <span class="vdf-badge vdf-badge-true">True</span>
-                          @else
-                            <span class="vdf-badge vdf-badge-false">False</span>
-                          @endif
-                        </td>
-                        <td class="vdf-actions-cell text-center">
-                          <div class="vdf-actions-inner">
-                            @if($vdfIsAdmin)
-                              <button type="button" class="btn btn-primary btn-sm vdf-btn-edit" data-id="{{ $dataField->id }}"
-                                data-field-type="{{ $dataField->fieldType }}" data-field-name="{{ $dataField->fieldName }}"
-                                data-input-type="{{ $dataField->inputType }}" data-config='@json($dataField->validationConfig)'
-                                data-is_common="{{$dataField->is_common}}"
-                                data-is_can_protocol="{{$dataField->is_can_protocol}}"
-                                title="Edit" aria-label="Edit"
-                                onclick="openEditModel(this)"><i class="fa fa-pencil" aria-hidden="true"></i></button>
-                            @endif
-                            <form action="{{ url($routePrefix . '/delete-category-fields/' . $dataField->id) }}" method="post" class="form-inline" style="display:inline;">
-                              @csrf
-                              @method('DELETE')
-                              <button type="submit" class="swal-confirm btn btn-danger btn-sm vdf-btn-delete"
-                                data-confirm-msg="Are you sure you want to delete this data field?"
-                                title="Delete" aria-label="Delete">
-                                <i class="fa fa-trash" aria-hidden="true"></i>
-                              </button>
-                            </form>
-                          </div>
-                        </td>
-                      </tr>
-                    @endforeach
-                  </tbody>
+                  {{-- Rows load one page at a time via /admin/data-fields-list-data --}}
+                  <tbody></tbody>
                 </table>
               </div>
             </div>
@@ -728,8 +681,12 @@
     }
     $.fn.dataTable.ext.errMode = 'none';
     vdfDataTable = $dt.DataTable({
+      serverSide: true,
+      processing: true,
+      ajax: { url: '/{{ $url_type ?? "admin" }}/data-fields-list-data' },
       paging: true,
       searching: true,
+      searchDelay: 400,
       info: true,
       ordering: true,
       lengthChange: true,
@@ -737,11 +694,11 @@
       autoWidth: false,
       pageLength: 10,
       stripeClasses: [],
-      order: [[0, 'asc']],
-      lengthMenu: [[10, 25, 50, 100, 500, -1], [10, 25, 50, 100, 500, 'All']],
+      order: [[1, 'asc']],
+      lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
       columnDefs: [
         { type: 'num', targets: [0, 1] },
-        { orderable: false, targets: 8 }
+        { orderable: false, targets: [0, 5, 8] }
       ],
       dom: "<'row'<'col-sm-6'l><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>",
       initComplete: function () {
@@ -775,7 +732,8 @@
     if (!type || type === 'all') {
       vdfDataTable.column(2).search('').draw();
     } else {
-      vdfDataTable.column(2).search('^' + type + '$', true, false).draw();
+      // Server-side: send the plain tab value; the endpoint maps it to fieldType.
+      vdfDataTable.column(2).search(type).draw();
     }
   });
 

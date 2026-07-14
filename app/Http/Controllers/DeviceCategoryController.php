@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use DB;
 use Auth;
 use App\DeviceCategory;
-use App\Firmware;
+use App\Firmware; 
 use App\Template;
 use App\Writer;
 use PDO;
@@ -362,7 +362,7 @@ class DeviceCategoryController extends Controller
     public function restoreDeviceCategory($id)
     {
         $device_category = DeviceCategory::find($id);
-        $device_category->is_deleted = 0;
+        $device_category->is_deleted = '0';
         $device_category->save();
         return back()->with('success', $device_category->device_category_name . ' Device Category Restore Successfully');
     }

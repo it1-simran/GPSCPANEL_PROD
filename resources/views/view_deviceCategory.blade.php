@@ -138,13 +138,18 @@ use App\Helper\CommonHelper;
 @section('scripts')
 <script type="text/javascript">
   function submitDelCategoryForm(id, choosenDeviceCategory) {
+    let requestData = {
+      '_token': '{{ csrf_token() }}',
+      '_method': 'DELETE'
+    };
+    if (choosenDeviceCategory) {
+        requestData.choosenDeviceCategory = choosenDeviceCategory;
+    }
+
     $.ajax({
       url: "{{ url('admin/delete-device-category') }}/" + id,
-      type: 'DELETE',
-      data: {
-        'choosenDeviceCategory': choosenDeviceCategory,
-        '_token': '{{ csrf_token() }}'
-      },
+      type: 'POST',
+      data: requestData,
       success: function(response) {
         let result = typeof response === 'string' ? JSON.parse(response) : response;
         if (result.status == 200) {

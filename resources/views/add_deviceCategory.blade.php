@@ -103,19 +103,22 @@
                                 </div>
                             </div>
                             <div class="form-step">
-                                <div class="form-group">
-                                    <label for="template_name" class="control-label col-xs-12 col-lg-3">Template Name <span class="require">*</span></label>
-                                    <div class="col-xs-12 col-lg-6">
-                                        <input class="form-control" id="template_name" type="text" placeholder="Enter Template Name" name="template_name" required />
+                                <div class="adc-form-card">
+                                    <h5 class="adc-section-title"><i class="fa fa-file-text-o"></i> Template Details</h5>
+                                    <div class="form-group row" style="margin-top: 15px;">
+                                        <label for="template_name" class="control-label col-xs-12 col-md-3">Template Name <span class="require">*</span></label>
+                                        <div class="col-xs-12 col-md-6">
+                                            <input class="form-control" id="template_name" type="text" placeholder="Enter Template Name" name="template_name" required />
+                                        </div>
                                     </div>
-                                </div>
-                                <div id="inputSecondStep"></div>
-                                <div class="form-group adc-step2-actions row margin-top-10">
-                                    <div class="col-xs-12 col-lg-6 adc-step2-prev-wrap">
-                                        <button type="button" class="btn btn-primary btn-flat prev-btn adc-step-nav-btn">Previous</button>
-                                    </div>
-                                    <div class="col-xs-12 col-lg-6 text-right adc-step2-submit-wrap">
-                                        <button class="btn btn-primary btn-flat submit-btn-action adc-step-nav-btn" type="submit">Save</button>
+                                    <div class="clearfix"></div>
+                                    <div id="inputSecondStep" class="clearfix"></div>
+                                    <div class="form-group adc-step2-actions row margin-top-10" style="padding: 0 15px; margin-bottom: 0;">
+                                        <div class="col-xs-12 col-md-offset-3 col-md-6 text-left">
+                                            <button type="button" class="btn btn-primary btn-flat prev-btn adc-step-nav-btn" style="margin-right: 10px;">Previous</button>
+                                            <button class="btn btn-primary btn-flat submit-btn-action adc-step-nav-btn" style="margin-top:1px" type="submit">Save</button>
+                                            <div class="clearfix"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -629,7 +632,7 @@
                 });
 
                  if (canEnable) {
-                        fieldHtml += `<div class="form-group isCanEnable">
+                        fieldHtml += `<div class="form-group isCanEnable row" style="margin-top:15px; clear:both;">
                         <label for="canConfigurationArr" class="control-label col-lg-3" required>
                             CAN Configuration <span class="require">*</span>
                         </label>
@@ -643,7 +646,7 @@
                                 Configure CAN Protocol
                             </button>
                         </div>
-                    </div>`;
+                    </div><div class="clearfix"></div>`;
                     $inputSecondStep.append(fieldHtml);
                     }
             }

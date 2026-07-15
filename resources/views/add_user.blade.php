@@ -221,7 +221,40 @@
                         </div>
                         <div class="col-md-6">
                             @php
-                            $firmwares = \DB::table('firmware')->where('device_category_id', $category->id)->get();
+                            $auth_user = Auth::user();
+                            if ($auth_user->user_type == 'Admin' || $auth_user->user_type == 'Support') {
+                                $firmwares = \App\Firmware::where('is_deleted', 0)->where('device_category_id', $category->id)->get();
+                            } else {
+                                $target_id = $auth_user->id;
+                                $search_ids = [$target_id];
+                                $target_user = \App\Writer::find($target_id);
+                                if ($target_user) {
+                                    $current_parent = $target_user->created_by;
+                                    while ($current_parent && $current_parent != "1" && count($search_ids) < 5) {
+                                        $search_ids[] = $current_parent;
+                                        $p_user = \App\Writer::find($current_parent);
+                                        $current_parent = $p_user ? $p_user->created_by : null;
+                                    }
+                                }
+                                $firmwares = \App\Firmware::where('is_deleted', 0)
+                                    ->where('device_category_id', $category->id)
+                                    ->whereIn('id', function ($query) use ($search_ids) {
+                                        $query->select('firmware_id')
+                                            ->from('modals')
+                                            ->whereIn('user_id', $search_ids);
+                                    })->get();
+                                    
+                                if ($firmwares->isEmpty()) {
+                                     $l1_reseller_id = end($search_ids);
+                                     $firmwares = \App\Firmware::where('is_deleted', 0)
+                                        ->where('device_category_id', $category->id)
+                                        ->whereIn('id', function ($query) use ($l1_reseller_id) {
+                                            $query->select('firmware_id')
+                                                ->from('modals')
+                                                ->where('user_id', $l1_reseller_id);
+                                        })->get();
+                                }
+                            }
                             @endphp
                           <div class="form-group" style="margin-bottom: 24px;">
                             <label for="firmware<?= $category->id ?>" style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">

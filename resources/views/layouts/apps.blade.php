@@ -1314,8 +1314,8 @@ if ($userType === 'admin') {
         $(document).ready(function() {
             // Global handler for link/button clicks requiring SweetAlert
             $(document).on('click', '.swal-confirm', function(e) {
-                // If it's a submit button inside a form, let the form submit handler catch it instead
-                if ($(this).attr('type') === 'submit') {
+                // If it's a submit button inside a form, or the form itself, let the form submit handler catch it instead
+                if ($(this).attr('type') === 'submit' || $(this).prop('tagName').toUpperCase() === 'FORM') {
                     return;
                 }
                 e.preventDefault();
@@ -1368,7 +1368,7 @@ if ($userType === 'admin') {
                     }).then((result) => {
                         if (result.isConfirmed) {
                             $form.data('swal-confirmed', true);
-                            $form.submit();
+                            $form[0].submit();
                         }
                     });
                 }

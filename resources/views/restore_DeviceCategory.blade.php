@@ -69,7 +69,7 @@ use App\Helper\CommonHelper;
                     <td>{{ CommonHelper::getDateAsTimeZone($device_category->created_at) }}</td>
                     <td>{{ CommonHelper::getDateAsTimeZone($device_category->updated_at) }}</td>
                     <td>
-                      <form action="{{ url('admin/restore-device-category/' . $device_category->id) }}" method="post" class="form-inline swal-confirm" data-confirm-msg="Restore this device category?">
+                      <form action="{{ url('admin/restore-device-category/' . $device_category->id) }}" method="post" class="form-inline" data-confirm-msg="Restore this device category?">
                         @csrf
                         @method('PATCH')
                         <button class="btn btn-success btn-sm btn-restore-cat" type="submit"><i class="fa fa-undo"></i> Restore</button>

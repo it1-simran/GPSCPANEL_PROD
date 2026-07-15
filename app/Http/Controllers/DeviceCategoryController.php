@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use DB;
 use Auth;
 use App\DeviceCategory;
-use App\Firmware;
+use App\Firmware; 
 use App\Template;
 use App\Writer;
 use PDO;
@@ -362,7 +362,7 @@ class DeviceCategoryController extends Controller
     public function restoreDeviceCategory($id)
     {
         $device_category = DeviceCategory::find($id);
-        $device_category->is_deleted = 0;
+        $device_category->is_deleted = '0';
         $device_category->save();
         return back()->with('success', $device_category->device_category_name . ' Device Category Restore Successfully');
     }
@@ -830,7 +830,41 @@ class DeviceCategoryController extends Controller
                 });
                 $category->inputs = json_encode($enhancedInputs);
 
-                $firmwares[] = DB::table('firmware')->select('*')->where('device_category_id', $category->id)->get();
+                $auth_user = $account ? $account : Auth::user();
+                if ($auth_user->user_type == 'Admin' || $auth_user->user_type == 'Support') {
+                    $cat_firmwares = \App\Firmware::where('is_deleted', 0)->where('device_category_id', $category->id)->get();
+                } else {
+                    $target_id = $auth_user->id;
+                    $search_ids = [$target_id];
+                    $target_user = \App\Writer::find($target_id);
+                    if ($target_user) {
+                        $current_parent = $target_user->created_by;
+                        while ($current_parent && $current_parent != "1" && count($search_ids) < 5) {
+                            $search_ids[] = $current_parent;
+                            $p_user = \App\Writer::find($current_parent);
+                            $current_parent = $p_user ? $p_user->created_by : null;
+                        }
+                    }
+                    $cat_firmwares = \App\Firmware::where('is_deleted', 0)
+                        ->where('device_category_id', $category->id)
+                        ->whereIn('id', function ($query) use ($search_ids) {
+                            $query->select('firmware_id')
+                                ->from('modals')
+                                ->whereIn('user_id', $search_ids);
+                        })->get();
+                        
+                    if ($cat_firmwares->isEmpty()) {
+                         $l1_reseller_id = end($search_ids);
+                         $cat_firmwares = \App\Firmware::where('is_deleted', 0)
+                            ->where('device_category_id', $category->id)
+                            ->whereIn('id', function ($query) use ($l1_reseller_id) {
+                                $query->select('firmware_id')
+                                    ->from('modals')
+                                    ->where('user_id', $l1_reseller_id);
+                            })->get();
+                    }
+                }
+                $firmwares[] = $cat_firmwares;
 
                 if (!$account) {
                     if (Auth::user()->user_type == 'Reseller') {

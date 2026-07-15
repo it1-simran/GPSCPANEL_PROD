@@ -112,6 +112,14 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
         Route::delete('/admin/imei-devices/{imei_device}', [\App\Http\Controllers\ImeiDeviceController::class, 'destroy'])->name('imei-devices.destroy');
         Route::patch('/admin/imei-devices/{imei_device}/toggle-status', [\App\Http\Controllers\ImeiDeviceController::class, 'toggleStatus'])->name('imei-devices.toggle-status');
         Route::get('/admin/dashboard/ping-stats', DashboardPingStatsController::class)->name('admin.dashboard.ping-stats');
+
+        /* ======================= Ping Interval Analysis ======================= */
+        Route::get('/admin/ping-interval-analysis', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'index'])->name('admin.ping-interval-analysis.index');
+        Route::get('/admin/ping-interval-analysis/summary', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'summary'])->name('admin.ping-interval-analysis.summary');
+        Route::get('/admin/ping-interval-analysis/devices', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'devices'])->name('admin.ping-interval-analysis.devices');
+        Route::get('/admin/ping-interval-analysis/search', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'search'])->name('admin.ping-interval-analysis.search');
+        Route::get('/admin/ping-interval-analysis/export', [\App\Http\Controllers\Admin\PingIntervalAnalysisController::class, 'export'])->name('admin.ping-interval-analysis.export');
+
     Route::get('/admin', fn() => view('dashboard'));
 
     // Export Routes
@@ -155,6 +163,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     /* ======================= User Management Routes ======================= */
     Route::post('/admin/register/writer', [RegisterController::class, 'createWriter'])->middleware('check.permission:account_management.create')->name('register.writer');
     Route::get('/admin/view-user', [RegisterController::class, 'showWriter'])->middleware('check.permission:account_management.view');
+    Route::get('/admin/accounts-list-data', [RegisterController::class, 'listData'])->middleware('check.permission:account_management.view');
     Route::get('/admin/view-user-approval-request', [GuestUserController::class, 'showApprovalRequest'])->middleware('check.permission:account_management.view');
 
     Route::get('/admin/edit-user/{user_type}/{id}', [RegisterController::class, 'editWriter'])->middleware('check.permission:account_management.edit')->name('writer.edit');
@@ -177,7 +186,9 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     /* ======================= Firmware Management Routes ======================= */
 
     Route::get('/admin/view-firmware', [FirmwareController::class, 'show']);
+    Route::get('/admin/firmware-list-data', [FirmwareController::class, 'listData']);
     Route::get('/admin/view-models', [FirmwareController::class, 'viewModals']);
+    Route::get('/admin/models-list-data', [FirmwareController::class, 'modelsListData']);
     Route::get('/admin/view-esim-customers', [FirmwareController::class, 'esimCustomer']);
     Route::get('/admin/view-imeis', [ImeiController::class, 'viewImei']);
     Route::delete('/admin/uploaded-imei/{id}', [ImeiController::class, 'destroy'])->name('imei.uploaded.destroy');
@@ -214,6 +225,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::post('/admin/store-device', [DeviceController::class, 'create'])->middleware('check.role:admin');
     Route::get('/admin/testview-device-assign', [DeviceController::class, 'testshowAssign'])->middleware('check.permission:device_management.view')->name('device.view');
     Route::get('/admin/view-device-assign', [DeviceController::class, 'show'])->middleware('check.permission:device_management.view')->name('device.view');
+    Route::get('/admin/devices-list-data', [DeviceController::class, 'listData'])->middleware('check.permission:device_management.view');
     Route::get('/admin/view-device-unassign', [DeviceController::class, 'showAssign'])->middleware('check.permission:device_management.view')->name('device.view');
     Route::get('/admin/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
     Route::patch('/admin/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
@@ -229,6 +241,7 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::patch('/admin/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations'])->middleware('check.permission:device_management.edit');
     Route::get('/admin/view-device-logs/{id}', [DeviceLogsController::class, 'index'])->middleware('check.permission:device_management.view');
     Route::get('/admin/view-device-category-fields', [DeviceController::class, 'viewDeviceCategoryFields'])->middleware('check.permission:device_management.view')->name('users.viewDeviceCategoryFields');
+    Route::get('/admin/data-fields-list-data', [DeviceController::class, 'dataFieldsListData'])->middleware('check.permission:device_management.view');
     Route::delete('/admin/delete-category-fields/{id}', [DeviceController::class, 'destroyDataField'])->middleware('check.permission:device_management.edit');
     Route::post('/admin/check-modal-name', [DeviceController::class, 'checkModalName'])->middleware('check.permission:device_management.view');
 
@@ -252,6 +265,8 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/admin/add-template', [TemplateController::class, 'index'])->middleware('check.permission:settings_management.create')->name('template.add');
     Route::post('/admin/store-template', [TemplateController::class, 'create'])->middleware('check.permission:settings_management.create')->name('template.store');
     Route::get('/admin/view-template', [TemplateController::class, 'show'])->middleware('check.permission:settings_management.view')->name('template.view');
+    Route::get('/admin/templates-list-data', [TemplateController::class, 'listData'])->middleware('check.permission:settings_management.view');
+    Route::get('/admin/devices-select', [DeviceController::class, 'selectDevices'])->middleware('check.permission:device_management.view');
     Route::get('/admin/edit-template/{id}', [TemplateController::class, 'edit'])->middleware('check.permission:settings_management.edit')->name('template.edit');
     Route::patch('/admin/update-template/{id}', [TemplateController::class, 'update'])->middleware('check.permission:settings_management.edit')->name('template.update');
     Route::delete('/admin/delete-template/{id}', [TemplateController::class, 'destroy'])->middleware('check.permission:settings_management.delete')->name('template.delete');
@@ -345,6 +360,8 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
 
     // User Management
     Route::get('/view-user', [RegisterController::class, 'showWriter'])->middleware('check.permission:account_management.view');
+    Route::get('/accounts-list-data', [RegisterController::class, 'listData'])->middleware('check.permission:account_management.view');
+    Route::get('/devices-select', [DeviceController::class, 'selectDevices'])->middleware('check.permission:device_management.view');
     Route::view('/add-user', 'add_user')->middleware('check.permission:account_management.create');
     Route::post('/register/writer', [RegisterController::class, 'createWriter'])->middleware('check.permission:account_management.create')->name('register.writer');
     Route::get('/edit-user/{user_type}/{id}', [RegisterController::class, 'editWriter'])->middleware('check.permission:account_management.edit')->name('rwriter.edit');
@@ -356,6 +373,7 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
 
     // Device Management
     Route::get('/view-device-assign', [DeviceController::class, 'show'])->middleware('check.permission:device_management.view')->name('device.view'); // Consider renaming route if needed
+    Route::get('/devices-list-data', [DeviceController::class, 'listData'])->middleware('check.permission:device_management.view');
     Route::get('/view-device-unassign', [DeviceController::class, 'showAssign'])->middleware('check.permission:device_management.view');
     Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
     Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
@@ -365,6 +383,7 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::get('/add-template', [TemplateController::class, 'index'])->middleware('check.permission:settings_management.create')->name('template.add');
     Route::post('/store-template', [TemplateController::class, 'create'])->middleware('check.permission:settings_management.create')->name('template.store');
     Route::get('/view-template', [TemplateController::class, 'show'])->middleware('check.permission:settings_management.view')->name('template.view');
+    Route::get('/templates-list-data', [TemplateController::class, 'listData'])->middleware('check.permission:settings_management.view');
     Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->middleware('check.permission:settings_management.edit')->name('template.edit');
     Route::patch('/update-template/{id}', [TemplateController::class, 'update'])->middleware('check.permission:settings_management.edit')->name('template.update');
     Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->middleware('check.permission:settings_management.delete')->name('template.delete');
@@ -434,6 +453,7 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::post('/update-canprotocolWriter-configurations/{id}', [RegisterController::class, 'updateCanProtocolConfigurations']);
     // Device Management
     Route::get('/view-device', [DeviceController::class, 'showUserDevice'])->middleware('check.permission:device_management.view')->name('device.view');
+    Route::get('/devices-list-data', [DeviceController::class, 'listData'])->middleware('check.permission:device_management.view');
     Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
     Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
     Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations'])->middleware('check.permission:device_management.edit');
@@ -477,6 +497,7 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::get('/add-template', [TemplateController::class, 'index'])->middleware('check.permission:settings_management.create')->name('template.add');
     Route::post('/store-template', [TemplateController::class, 'create'])->middleware('check.permission:settings_management.create')->name('template.store');
     Route::get('/view-template', [TemplateController::class, 'show'])->middleware('check.permission:settings_management.view')->name('template.view');
+    Route::get('/templates-list-data', [TemplateController::class, 'listData'])->middleware('check.permission:settings_management.view');
     Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->middleware('check.permission:settings_management.edit')->name('template.edit');
     Route::patch('/update-template/{id}', [TemplateController::class, 'update'])->middleware('check.permission:settings_management.edit')->name('template.update');
     Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->middleware('check.permission:settings_management.delete')->name('template.delete');
@@ -537,6 +558,7 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
 
     Route::view('/', 'dashboard');
     Route::get('/view-device', [DeviceController::class, 'showUserDevice'])->name('device.view');
+    Route::get('/devices-list-data', [DeviceController::class, 'listData']);
     Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);
 
     Route::get('/view-user-approval-request', [GuestUserController::class, 'showApprovalRequest']);
@@ -550,6 +572,7 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::get('/add-template', [TemplateController::class, 'index'])->middleware('check.permission:settings_management.create')->name('template.add');
     Route::post('/store-template', [TemplateController::class, 'create'])->middleware('check.permission:settings_management.create')->name('template.store');
     Route::get('/view-template', [TemplateController::class, 'show'])->middleware('check.permission:settings_management.view')->name('template.view');
+    Route::get('/templates-list-data', [TemplateController::class, 'listData'])->middleware('check.permission:settings_management.view');
     Route::get('/edit-template/{id}', [TemplateController::class, 'edit'])->middleware('check.permission:settings_management.edit')->name('template.edit');
     Route::delete('/delete-template/{id}', [TemplateController::class, 'destroy'])->middleware('check.permission:settings_management.delete')->name('template.delete');
     // Template Configuration

@@ -23,7 +23,7 @@ class CommonHelper
         if ($response && $response->inputType == 'select') {
             $config = json_decode($response->validationConfig, true);
             if (!empty($config['selectValues']) && !empty($config['selectOptions'])) {
-                $index = array_search((string)$value, $config['selectValues']);
+                $index = array_search((string) $value, $config['selectValues']);
                 if ($index !== false && isset($config['selectOptions'][$index])) {
                     return $config['selectOptions'][$index];
                 }
@@ -45,7 +45,7 @@ class CommonHelper
     }
     public static function getDateAsTimeZone($date, $format = 'd-M-y H:i:s')
     {
-        $userTimezone = Auth::check() && !empty(Auth::user()->timezone)? Auth::user()->timezone: 'UTC';
+        $userTimezone = Auth::check() && !empty(Auth::user()->timezone) ? Auth::user()->timezone : 'UTC';
         return \Illuminate\Support\Carbon::parse($date)->timezone($userTimezone)->format($format);
     }
 
@@ -71,7 +71,7 @@ class CommonHelper
         return $escapeHtml ? htmlspecialchars($s, ENT_QUOTES, 'UTF-8') : $s;
     }
 
-    public static function getDeviceCategoryTabs($device, $show_acc_wise, $urlType, $deviceCategoryId)
+    public static function getDeviceCategoryTabs($device, $show_acc_wise, $urlType, $deviceCategoryId, $serverSide = false, $listMode = 'assigned')
     {
         $currentUser = Auth::user();
         if ($currentUser->user_type != 'Admin') {
@@ -92,6 +92,9 @@ class CommonHelper
                 . 'You don\'t have enabled device category. Please contact with the administrator regarding this.'
                 . '</div>';
         }
+
+        // Group once so each tab only iterates its own devices instead of the full list.
+        $devicesByCategory = collect($device)->groupBy('device_category_id');
 
         $html = '<div class="tabs">';
         foreach ($getDeviceCategory as $key => $category) {
@@ -169,7 +172,19 @@ class CommonHelper
                     <a href="/device-export-csv" class="btn btn-success">Download CSV</a>
                 </div>';
             }
-            $html .= '<table id="datatable' . $category->id . '" class="example table table-bordered table-striped table-condensed cf" style="border-spacing:0px; width:100%; font-size:14px;">';
+            if ($serverSide) {
+                // Sortable header indexes must match the column map in DeviceController::listData().
+                $orderableCols = (Auth::user()->user_type == 'Admin') ? '[2,3,4,7,8]' : '[2,3,4,6,7]';
+                $html .= '<table id="datatable' . $category->id . '" class="example table table-bordered table-striped table-condensed cf"'
+                    . ' data-server-side="1"'
+                    . ' data-ajax-url="/' . $urlType . '/devices-list-data"'
+                    . ' data-category-id="' . $category->id . '"'
+                    . ' data-list-mode="' . htmlspecialchars($listMode, ENT_QUOTES, 'UTF-8') . '"'
+                    . ' data-orderable-cols="' . $orderableCols . '"'
+                    . ' style="border-spacing:0px; width:100%; font-size:14px;">';
+            } else {
+                $html .= '<table id="datatable' . $category->id . '" class="example table table-bordered table-striped table-condensed cf" style="border-spacing:0px; width:100%; font-size:14px;">';
+            }
             $html .= '<thead>';
             $html .= '<tr>';
             $html .= '<th>Check All &nbsp; <input type="checkbox" id="master' . $category->id . '" onclick="dataTableCheckAll(' . $category->id . ')" data-trId="' . $category->id . '"> </th>';
@@ -199,51 +214,60 @@ class CommonHelper
             }
             $html .= '</tr></thead><tbody>';
 
-            if (count($device) > 0) {
+            $categoryDevices = $serverSide ? collect() : $devicesByCategory->get($category->id, collect());
+            if (count($categoryDevices) > 0) {
                 $i = 1;
-                foreach ($device as $contact) {
-                    $config = json_decode($contact->configurations, true);
-                    // dd($config);
-                    if ($category->id == $contact->device_category_id) {
-                        $html .= '<tr>';
-                        $html .= '<td><input type="checkbox" class="sub_chk' . $category->id . '" data-category="' . $category->id . '" data-id="' . $contact->id . '"></td>';
-                        $html .= '<td>' . $i . '</td>';
-                        $html .= '<td>' . (!empty($contact->username) ? $contact->username : 'Unassigned') . '</td>';
-                        $html .= '<td>' . self::emptyToNA($contact->name ?? null, true) . '</td>';
-                        $html .= '<td>' . $contact->imei . '</td>';
-                        $html .= '<td>' . (isset($config['total_pings']) ? $config['total_pings'] : 0) . '</td>';
-                        if (Auth::user()->user_type == 'Admin') {
-                            $html .= '<td>' . (isset($config['ping_interval']) ? $config['ping_interval']['value'] : "") . '</td>';
-                        }
-                        $html .= '<td>' . self::getDateAsTimeZone($contact->created_at) . '</td>';
-                        $html .= '<td>' . self::getDateAsTimeZone($contact->updated_at) . '</td>';
-
-                        if (Auth::user()->user_type == 'Admin') {
-                            $html .= '<td>';
-                            if (isset($config['is_editable']) && $config['is_editable']['value'] == '1') {
-                                $html .= '<button class="btn btn-success btn-sm"><i class="fa fa-check"></i> Yes</button>';
-                            } else {
-                                $html .= '<button class="btn btn-danger btn-sm"><i class="fa fa-times"></i> No</button>';
-                            }
-                            $html .= '</td>';
-                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/admin/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
-                        }
-                        if (Auth::user()->user_type == 'Support') {
-                            $html .=  '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
-                        }
-                        $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info"><i class="fa fa-cog"></i> View Configuration</a></td>';
-                        if (Auth::user()->user_type == 'Admin') {
-                            $html .= '<td>';
-                            $html .= '<form action="' . route('device.delete', $contact->id) . '" method="post">';
-                            $html .= csrf_field();
-                            $html .= method_field('DELETE');
-                            $html .= '<button class="btn btn-danger btn-sm swal-confirm" data-confirm-msg="Are you sure you want to delete this device?" type="submit"><i class="fa fa-trash"></i> Delete</button>';
-                            $html .= '</form>';
-                            $html .= '</td>';
-                        }
-                        $html .= '</tr>';
-                        $i++;
+                foreach ($categoryDevices as $contact) {
+                    // Prefer values extracted in SQL (cfg_* aliases); fall back to
+                    // decoding the configurations JSON for callers still passing devices.*.
+                    if (property_exists($contact, 'cfg_total_pings')) {
+                        $totalPings = $contact->cfg_total_pings ?? 0;
+                        $pingInterval = $contact->cfg_ping_interval ?? '';
+                        $isEditable = $contact->cfg_is_editable;
+                    } else {
+                        $config = json_decode($contact->configurations ?? '', true);
+                        $totalPings = $config['total_pings'] ?? 0;
+                        $pingInterval = $config['ping_interval']['value'] ?? '';
+                        $isEditable = $config['is_editable']['value'] ?? null;
                     }
+                    $html .= '<tr>';
+                    $html .= '<td><input type="checkbox" class="sub_chk' . $category->id . '" data-category="' . $category->id . '" data-id="' . $contact->id . '"></td>';
+                    $html .= '<td>' . $i . '</td>';
+                    $html .= '<td>' . (!empty($contact->username) ? $contact->username : 'Unassigned') . '</td>';
+                    $html .= '<td>' . self::emptyToNA($contact->name ?? null, true) . '</td>';
+                    $html .= '<td>' . $contact->imei . '</td>';
+                    $html .= '<td>' . ($totalPings !== null && $totalPings !== '' ? $totalPings : 0) . '</td>';
+                    if (Auth::user()->user_type == 'Admin') {
+                        $html .= '<td>' . $pingInterval . '</td>';
+                    }
+                    $html .= '<td>' . self::getDateAsTimeZone($contact->created_at) . '</td>';
+                    $html .= '<td>' . self::getDateAsTimeZone($contact->updated_at) . '</td>';
+
+                    if (Auth::user()->user_type == 'Admin') {
+                        $html .= '<td>';
+                        if ($isEditable == '1') {
+                            $html .= '<button class="btn btn-success btn-sm"><i class="fa fa-check"></i> Yes</button>';
+                        } else {
+                            $html .= '<button class="btn btn-danger btn-sm"><i class="fa fa-times"></i> No</button>';
+                        }
+                        $html .= '</td>';
+                        $html .= '<td><button class="btn btn-carrot"><a class="text-white" href="/admin/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
+                    }
+                    if (Auth::user()->user_type == 'Support') {
+                        $html .= '<td><button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $contact->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button></td>';
+                    }
+                    $html .= '<td class="margin-top-11"><a href="' . url('/' . strtolower(Auth::user()->user_type) . '/view-device-configurations/' . $contact->id) . '" class="btn btn-primary btn-info"><i class="fa fa-cog"></i> View Configuration</a></td>';
+                    if (Auth::user()->user_type == 'Admin') {
+                        $html .= '<td>';
+                        $html .= '<form action="' . route('device.delete', $contact->id) . '" method="post">';
+                        $html .= csrf_field();
+                        $html .= method_field('DELETE');
+                        $html .= '<button class="btn btn-danger btn-sm swal-confirm" data-confirm-msg="Are you sure you want to delete this device?" type="submit"><i class="fa fa-trash"></i> Delete</button>';
+                        $html .= '</form>';
+                        $html .= '</td>';
+                    }
+                    $html .= '</tr>';
+                    $i++;
                 }
             }
             $html .= '</tbody></table>'; // Close tab content div
@@ -256,7 +280,7 @@ class CommonHelper
 
         return $html;
     }
-    public static function getModels($modalId, $submitRequestId, $type, $selectOptions = [], $id)
+    public static function getModels($modalId, $submitRequestId, $type, $selectOptions, $id)
     {
 
         $html = '<div class="modal" id="' . $modalId . '" aria-hidden="true"><div class="modal-dialog modal-md"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i></button>
@@ -433,7 +457,7 @@ class CommonHelper
                         value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]) ? $configurations[strtolower(str_replace(' ', '_', $inputs->key))]['id'] : '') . '"/>';
             $dataFieldOptions = self::getDataFieldById($inputs->id);
             $fieldValidate = json_decode($dataFieldOptions->validationConfig);
-                if ($inputs->type == 'select') {
+            if ($inputs->type == 'select') {
                 $html .= '<div class="form-group">
                             <label class="control-label col-lg-5">' . $inputs->key . ' ' . (isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput ? '<span class="require">*</span>' : '') . '</label>
                             <div class="col-lg-6">
@@ -453,7 +477,7 @@ class CommonHelper
                 $html .= '</select>
                             </div>
                         </div>';
-                } else if ($inputs->type == 'multiselect') {
+            } else if ($inputs->type == 'multiselect') {
                 $html .= '<div class="form-group">
                             <label class="control-label col-lg-5">' . $inputs->key . ' ' . (isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput ? '<span class="require">*</span>' : '') . '</label>
                             <div class="col-lg-6">';
@@ -468,7 +492,7 @@ class CommonHelper
                     $selectedValues = [];
                 }
                 $selectedValues = array_map('strval', $selectedValues);
-                    $html .= '<select class="inputType select2-multiselect" 
+                $html .= '<select class="inputType select2-multiselect" 
                         id="configval' . $configKey . '"
                         name="configuration[' . $key . '][' . $configKey . '][]" 
                         multiple ' .
@@ -477,7 +501,7 @@ class CommonHelper
 
                 foreach ($dataFieldOptions->selectOptions as $key1 => $option) {
                     $value = $dataFieldOptions->selectValues[$key1] ?? '';
-                    $isSelected = in_array((string)$value, $selectedValues) ? 'selected' : '';
+                    $isSelected = in_array((string) $value, $selectedValues) ? 'selected' : '';
                     $html .= '<option value="' . htmlspecialchars($value) . '" ' . $isSelected . '>' . htmlspecialchars($option) . '</option>';
                 }
 
@@ -505,7 +529,7 @@ class CommonHelper
                         });
                     });
                 </script>';
-                } else {
+            } else {
                 if ($inputs->key == 'Password') {
                     $html .= '<div class="form-group">
                             <label for="ip" class="control-label col-lg-5">' . $inputs->key . ' ' . (isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput ? '<span class="require">*</span>' : '') . '</label>
@@ -520,7 +544,7 @@ class CommonHelper
                         $maxValue = isset($fieldValidate->numberInput->max) ? ' maxlength="' . $fieldValidate->numberInput->max . '"' : '';
                         $html .= $minValue . $maxValue;
                     }
-                        $html .= ' value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) ? htmlspecialchars($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) : '') . '" ' . ((isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput) ? 'required' : '') . ' />
+                    $html .= ' value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) ? htmlspecialchars($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) : '') . '" ' . ((isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput) ? 'required' : '') . ' />
                             </div>
                         </div>';
                 } else {
@@ -539,7 +563,7 @@ class CommonHelper
                     }
                     $maxLength = (isset($inputs->type) && ($inputs->type == 'text_array' || $inputs->type == 'text' || $inputs->type == 'IP/URL') && isset($fieldValidate->maxValueInput)) ? 'maxlength="' . $fieldValidate->maxValueInput . '"' : '';
                     $html .= $maxLength;
-                        $html .= ' value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) ? htmlspecialchars($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) : '') . '" ' . ((isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput) ? 'required' : '') . ' />
+                    $html .= ' value="' . (isset($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) ? htmlspecialchars($configurations[strtolower(str_replace(' ', '_', $inputs->key))]['value']) : '') . '" ' . ((isset($inputs->requiredFieldInput) && $inputs->requiredFieldInput) ? 'required' : '') . ' />
                 </div>
             </div>';
                 }
@@ -591,8 +615,8 @@ class CommonHelper
                     ? self::getDeviceCategoryValue(
                         $value1->key,
                         is_array($configurations[strtolower(str_replace(' ', '_', $value1->key))]['value'])
-                            ? implode(', ', $configurations[strtolower(str_replace(' ', '_', $value1->key))]['value'])
-                            : $configurations[strtolower(str_replace(' ', '_', $value1->key))]['value']
+                        ? implode(', ', $configurations[strtolower(str_replace(' ', '_', $value1->key))]['value'])
+                        : $configurations[strtolower(str_replace(' ', '_', $value1->key))]['value']
                     )
                     : '') .
                 '</p></div>';
@@ -643,7 +667,7 @@ class CommonHelper
                 // Loop through options to build each <option>
                 foreach ($dataFieldOptions->selectOptions as $key => $option) {
                     $value = $dataFieldOptions->selectValues[$key] ?? '';
-                    $isSelected = in_array((string)$value, array_map('strval', $selectedValues)) ? 'selected' : '';
+                    $isSelected = in_array((string) $value, array_map('strval', $selectedValues)) ? 'selected' : '';
                     $html .= '<option value="' . htmlspecialchars($value) . '" ' . $isSelected . '>' . htmlspecialchars($option) . '</option>';
                 }
 
@@ -730,11 +754,11 @@ class CommonHelper
     }
     public static function getDataFieldName($id)
     {
-        $dataFieldName =  DataFields::select('fieldName')->where('id', $id)->first();
+        $dataFieldName = DataFields::select('fieldName')->where('id', $id)->first();
         return $dataFieldName->fieldName ?? '';
     }
-    
-        public static function getFieldValueById($id, $value)
+
+    public static function getFieldValueById($id, $value)
     {
         $dataField = DataFields::find($id);
 
@@ -768,7 +792,8 @@ class CommonHelper
         // Show current CAN configuration summary
         foreach ($configurations as $key => $config) {
             $value = isset($configurations[$key]['value']) ? $configurations[$key]['value'] : '';
-            if (is_array($value)) $value = implode(', ', $value);
+            if (is_array($value))
+                $value = implode(', ', $value);
             $html .= '
             <div class="col-lg-3 mb-3">
                 <div class="bgx-table-container">
@@ -1094,7 +1119,7 @@ class CommonHelper
 
         return $html;
     }
-      public static function getCanProtocolTempConfigurationInput($categoryId, $key2, $configurations, $url_type, $device)
+    public static function getCanProtocolTempConfigurationInput($categoryId, $key2, $configurations, $url_type, $device)
     {
 
         $html = '';
@@ -1107,7 +1132,8 @@ class CommonHelper
         if ($configurations != null) {
             foreach ($configurations as $key => $config) {
                 $value = isset($configurations[$key]['value']) ? $configurations[$key]['value'] : '';
-                if (is_array($value)) $value = implode(', ', $value);
+                if (is_array($value))
+                    $value = implode(', ', $value);
 
                 $html .= '
             <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
@@ -1127,7 +1153,7 @@ class CommonHelper
 
         // Editable CAN configuration (hidden by default)
         $html .= '<div id="canConfigForm-' . $key2 . '" style="display:none; padding: 25px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px;">';
-        
+
         $html .= '<style>
             .modern-can-label { font-weight: 600; color: #334155; font-size: 14px; margin-bottom: 6px; display: block; text-align: left; }
             .modern-input { height: 42px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: none; color: #475569; font-size: 14px; padding: 0 15px; width: 100%; transition: all 0.2s; background-color: #fff; }
@@ -1470,17 +1496,17 @@ class CommonHelper
                 if (!canProtocolValue) return;
                 $.ajax({
                     url: "' . url(
-                        (Auth::user()->user_type == "Admin"
-                            ? "admin"
-                            : (Auth::user()->user_type == "reseller"
-                                ? "reseller"
-                                : (Auth::user()->user_type == "support"
-                                    ? "support"
-                                    : "user"
-                                )
-                            )
-                        ) . "/get-can-protocol-fields"
-                    ) . '",
+            (Auth::user()->user_type == "Admin"
+                ? "admin"
+                : (Auth::user()->user_type == "reseller"
+                    ? "reseller"
+                    : (Auth::user()->user_type == "support"
+                        ? "support"
+                        : "user"
+                    )
+                )
+            ) . "/get-can-protocol-fields"
+        ) . '",
                     type: "POST",
                     data: {
                         protocol: canProtocolValue,
@@ -2056,7 +2082,7 @@ class CommonHelper
     //                                 $("#" + fieldId + "_" + deviceId).select2({placeholder: "Select up to " + (validation.maxSelectValue || ""), width: "100%"});
     //                                 $("#" + fieldId + "_" + deviceId).on("change", function () {
     //                                     var selected = $(this).select2("val");
-            
+
     //                                     if (selected && selected.length > validation.maxSelectValue) {
     //                                       // Remove the last selected item
     //                                       selected.splice(validation.maxSelectValue);
@@ -2084,7 +2110,7 @@ class CommonHelper
     //                         } else if (inputType === "text_array") {
     //                             var values = savedValue ? savedValue.replace(/[{}]/g, "").split(",") : [""];
     //                             var maxValue = validation.maxValueInput || 0;
-                                
+
     //                             inputHtml += "<div id=\'" + fieldId + "_wrapper_" + deviceId + "\' class=\'text-array-wrapper\'>" +
     //                                 values.map(function(val, index) {
     //                                     return "<div class=\'text-array-item d-flex align-items-center mb-2\'>" +
@@ -2166,7 +2192,7 @@ class CommonHelper
 
     //     return $html;
     // }
-    
+
     // commented on 12-11-2025 to retrive value name
     // public static function getCanProtocolConfigurationInput($categoryId, $key2, $configurations, $url_type, $device)
     // {
@@ -2304,21 +2330,21 @@ class CommonHelper
 
     //                           setTimeout(() => {
     //                                 const $select = $("#" + fieldId + "_" + deviceId);
-                                
+
     //                                 // Initialize Select2
     //                                 $select.select2({
     //                                     placeholder: "Select up to " + (validation.maxSelectValue || "") + " options",
     //                                     width: "100%"
     //                                 });
-                                
+
     //                                 const isMultiple = $select.prop("multiple");
-                                
+
     //                                 if (isMultiple && validation.maxSelectValue) {
     //                                     let lastValidSelection = $select.val() || [];
-                                
+
     //                                   $select.on("change", function () {
     //                                         var selected = $(this).select2("val");
-                
+
     //                                         if (selected && selected.length > validation.maxSelectValue) {
     //                                             // Remove the last selected item
     //                                             selected.splice(validation.maxSelectValue);
@@ -2810,7 +2836,7 @@ class CommonHelper
     //                                 $("#" + fieldId + "_" + deviceId).select2({placeholder: "Select up to " + (validation.maxSelectValue || ""), width: "100%"});
     //                                 $("#" + fieldId + "_" + deviceId).on("change", function () {
     //                                     var selected = $(this).select2("val");
-            
+
     //                                     if (selected && selected.length > validation.maxSelectValue) {
     //                                       // Remove the last selected item
     //                                       selected.splice(validation.maxSelectValue);
@@ -2838,7 +2864,7 @@ class CommonHelper
     //                         } else if (inputType === "text_array") {
     //                             var values = savedValue ? savedValue.replace(/[{}]/g, "").split(",") : [""];
     //                             var maxValue = validation.maxValueInput || 0;
-                                
+
     //                             inputHtml += "<div id=\'" + fieldId + "_wrapper_" + deviceId + "\' class=\'text-array-wrapper\'>" +
     //                                 values.map(function(val, index) {
     //                                     return "<div class=\'text-array-item d-flex align-items-center mb-2\'>" +
@@ -3198,12 +3224,12 @@ class CommonHelper
         $html = '<div class="configuration-item">';
         $html .= '<div class="bgx-configurations">';
         $html .= '<div id="config-' . $key . '" class="row">';
-        foreach ($configurations  as $field => $value) {
+        foreach ($configurations as $field => $value) {
             if ($field == "ccid") {
                 $html .= '<div class="col-lg-3 mb-3">';
                 $html .= '<div class=" bgx-table-container">';
                 $html .= '<div class="bgx-table-row">';
-                $html .= '<div class="bgx-table-cell"<<p class="card-text"><strong>' . ucfirst(str_replace('_', ' ',  $field)) . ':</strong> ' . $value['value'] . ' ' . self::getESimMakeBYCCID($value['value']) . '</p></div>';
+                $html .= '<div class="bgx-table-cell"<<p class="card-text"><strong>' . ucfirst(str_replace('_', ' ', $field)) . ':</strong> ' . $value['value'] . ' ' . self::getESimMakeBYCCID($value['value']) . '</p></div>';
                 $html .= '</div>'; // Close card-body
                 $html .= '</div>'; // Close card
                 $html .= '</div>'; // Close col-lg-4 mb-3
@@ -3211,7 +3237,7 @@ class CommonHelper
                 $html .= '<div class="col-lg-3 mb-3">';
                 $html .= '<div class=" bgx-table-container">';
                 $html .= '<div class="bgx-table-row">';
-                $html .= '<div class="bgx-table-cell"<<p class="card-text"><strong>' . ucfirst(str_replace('_', ' ',  $field)) . ':</strong> ' . $value['value'] . '</p></div>';
+                $html .= '<div class="bgx-table-cell"<<p class="card-text"><strong>' . ucfirst(str_replace('_', ' ', $field)) . ':</strong> ' . $value['value'] . '</p></div>';
                 $html .= '</div>'; // Close card-body
                 $html .= '</div>'; // Close card
                 $html .= '</div>'; // Close col-lg-4 mb-3
@@ -3226,7 +3252,7 @@ class CommonHelper
     {
         $getDeviceCategory = DeviceCategory::where('id', $categoryId)->first();
         $inputFields = json_decode($getDeviceCategory->inputs, true);
-        
+
         $user = \Illuminate\Support\Facades\Auth::user();
         if ($user && ($user->user_type == 'Admin' || $user->user_type == 'Support')) {
             $firmwares = Firmware::where('device_category_id', $categoryId)->where('is_deleted', 0)->get();
@@ -3299,7 +3325,7 @@ class CommonHelper
                     foreach ($dataFieldOptions->selectOptions as $key => $option) {
                         $value = $dataFieldOptions->selectValues[$key] ?? '';
                         // $selectedValue = $configurations[$configKey] ?? '';
-                        $isSelected = in_array((string)$value, $selectedValues) ? 'selected' : '';
+                        $isSelected = in_array((string) $value, $selectedValues) ? 'selected' : '';
                         $html .= '<option value="' . htmlspecialchars($value) . '" ' . $isSelected . '>' . htmlspecialchars($option) . '</option>';
                     }
                     $html .= '</select>';
@@ -3325,7 +3351,7 @@ class CommonHelper
                 } else {
                     if ($input['key'] == 'Password') {
                         $inputType = ($input['type'] == 'number' ? 'number' : 'text');
-                        $minValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->min) ? 'minlength="' .  $fieldValidate->numberInput->min . '"' : '';
+                        $minValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->min) ? 'minlength="' . $fieldValidate->numberInput->min . '"' : '';
                         $maxValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->max) ? 'maxlength="' . $fieldValidate->numberInput->max . '"' : '';
                         $maxLength = ((isset($input['type']) && ($input['type'] == 'text' || $input['type'] == 'IP/URL' || $input['type'] == 'text_array')) && isset($fieldValidate->maxValueInput)) ? 'maxlength="' . $fieldValidate->maxValueInput . '"' : '';
                         $value = isset($configurations[strtolower(str_replace(' ', '_', $input['key']))]) ? $configurations[strtolower(str_replace(' ', '_', $input['key']))]['value'] : $input['default'];
@@ -3336,7 +3362,7 @@ class CommonHelper
                         $addClassTextArray = isset($input['type']) && $input['type'] == 'text_array' ? "text-array-space" : '';
                         $addClassIpUrl = isset($input['type']) && $input['type'] == 'IP/URL' ? "ip-url-space" : '';
                         $inputType = ($input['type'] == 'number' ? 'number' : 'text');
-                        $minValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->min) ? 'min="' .  $fieldValidate->numberInput->min . '"' : '';
+                        $minValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->min) ? 'min="' . $fieldValidate->numberInput->min . '"' : '';
                         $maxValue = isset($input['type']) && $input['type'] == 'number' && isset($fieldValidate->numberInput->max) ? 'max="' . $fieldValidate->numberInput->max . '"' : '';
                         $maxLength = ((isset($input['type']) && ($input['type'] == 'text' || $input['type'] == 'IP/URL' || $input['type'] == 'text_array')) && isset($fieldValidate->maxValueInput)) ? 'maxlength="' . $fieldValidate->maxValueInput . '"' : '';
                         $key = strtolower(str_replace(' ', '_', $input['key']));
@@ -3378,7 +3404,7 @@ class CommonHelper
             return 'not authorized';
         }
     }
-    public static function  getUserName($id)
+    public static function getUserName($id)
     {
         $user = Writer::select('name')->where(['id' => $id])->first();
         if ($user) {
@@ -3409,7 +3435,7 @@ class CommonHelper
     }
     public static function getUsersByDeviceCategory($categoryId)
     {
-        $users  = DB::table('writers')->get();
+        $users = DB::table('writers')->get();
         $arr = [];
         foreach ($users as $user) {
             $device_category_id = explode(',', $user->device_category_id);
@@ -3442,7 +3468,7 @@ class CommonHelper
 
         if ($device) {
             $categoryId = $device->device_category_id;
-            
+
             // Resolve primary user_id based on device assignment hierarchy
             if (!empty($device->assign_to_ids)) {
                 $aids = array_map('intval', array_map('trim', explode(',', $device->assign_to_ids)));
@@ -3464,14 +3490,15 @@ class CommonHelper
 
         // Build parent chain for resolved userId
         if (empty($search_ids) && $userId && $userId != "No User Found") {
-            $search_ids[] = (int)$userId;
-            
+            $search_ids[] = (int) $userId;
+
             // Traverse parent chain with early termination
             $current_id = $userId;
             for ($depth = 0; $depth < 4; $depth++) {
                 $parent_id = \App\Writer::where('id', $current_id)->pluck('created_by')->first();
-                if (!$parent_id || in_array($parent_id, $search_ids)) break;
-                $search_ids[] = (int)$parent_id;
+                if (!$parent_id || in_array($parent_id, $search_ids))
+                    break;
+                $search_ids[] = (int) $parent_id;
                 $current_id = $parent_id;
             }
         }

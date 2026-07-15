@@ -1,0 +1,260 @@
+/* Ping Interval Analysis — admin dashboard */
+.pia-page { padding-bottom: 40px; }
+
+.pia-breadcrumb-wrap { padding: 14px 0 18px; }
+.pia-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    background: #1e293b;
+    border-radius: 50px;
+    padding: 6px 18px 6px 8px;
+    box-shadow: 0 4px 16px rgba(30, 41, 59, 0.18);
+}
+.pia-breadcrumb .bc-home {
+    width: 30px; height: 30px;
+    background: #76CF1C;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 10px;
+}
+.pia-breadcrumb .bc-home i { color: #1e293b; font-size: 13px; }
+.pia-breadcrumb .bc-item {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 13px; font-weight: 500;
+    text-decoration: none;
+}
+.pia-breadcrumb .bc-sep { color: rgba(255, 255, 255, 0.35); margin: 0 8px; }
+.pia-breadcrumb .bc-item.active { color: #76CF1C; font-weight: 700; }
+
+.pia-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.pia-header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; color: #0f172a; }
+.pia-header p { margin: 0; color: #64748b; font-size: 14px; }
+.pia-header-actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+.pia-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+}
+.pia-btn-primary { background: #76CF1C; color: #0f172a; }
+.pia-btn-secondary { background: #e2e8f0; color: #334155; }
+
+.pia-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.pia-summary-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+.pia-summary-label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+.pia-summary-value { font-size: 28px; color: #0f172a; line-height: 1.1; }
+.pia-summary-value--sm { font-size: 16px; font-weight: 700; }
+
+.pia-panel {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+.pia-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.pia-panel-head--stack { flex-wrap: wrap; }
+.pia-panel h2 { margin: 0 0 4px; font-size: 18px; color: #0f172a; }
+.pia-panel-sub { margin: 0; color: #64748b; font-size: 13px; }
+
+.pia-filters { display: flex; align-items: center; gap: 8px; }
+.pia-filters label { font-size: 13px; color: #475569; font-weight: 600; }
+.pia-select {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    background: #fff;
+}
+
+.pia-charts-row {
+    margin-left: 0;
+    margin-right: 0;
+}
+.pia-charts-row > [class*="col-"] {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+.pia-chart-title {
+    margin: 0 0 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.pia-chart-wrap {
+    position: relative;
+    height: 200px;
+}
+
+.pia-list-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 640px;
+    justify-content: flex-end;
+}
+.pia-list-toolbar .pia-search-row {
+    flex: 1;
+    min-width: 220px;
+    max-width: none;
+}
+.pia-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0 12px;
+    background: #f8fafc;
+}
+.pia-search-wrap i { color: #94a3b8; }
+.pia-search-input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    padding: 10px 0;
+    font-size: 14px;
+    outline: none;
+}
+
+.pia-table-scroll {
+    max-height: 420px;
+    overflow: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+.pia-table-scroll .pia-table { margin: 0; }
+.pia-table-scroll .pia-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    box-shadow: 0 1px 0 #e2e8f0;
+}
+
+.pia-table-wrap { overflow-x: auto; }
+.pia-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.pia-table th,
+.pia-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: middle;
+}
+.pia-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    user-select: none;
+}
+.pia-table th.is-sorted::after {
+    content: ' ↓';
+    color: #76CF1C;
+}
+.pia-table th.is-sorted.asc::after { content: ' ↑'; }
+.pia-table tbody tr:hover { background: #f8fafc; }
+.pia-empty { text-align: center; color: #94a3b8; padding: 28px !important; }
+
+.pia-status {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.pia-status--online { background: #dcfce7; color: #166534; }
+.pia-status--offline { background: #fee2e2; color: #991b1b; }
+.pia-status--inactive { background: #e2e8f0; color: #475569; }
+
+.pia-link-btn {
+    border: none;
+    background: none;
+    color: #2563eb;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+
+.pia-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    gap: 12px;
+}
+.pia-page-info { color: #64748b; font-size: 13px; }
+.pia-page-btns { display: flex; gap: 8px; }
+.pia-page-btn {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.pia-modal .modal-header { border-bottom: 1px solid #e2e8f0; }
+.pia-history-meta {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 16px;
+    color: #475569;
+    font-size: 13px;
+}
+
+@media (max-width: 992px) {
+    .pia-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pia-header { flex-direction: column; }
+}
+
+@media (max-width: 576px) {
+    .pia-summary-grid { grid-template-columns: 1fr; }
+}

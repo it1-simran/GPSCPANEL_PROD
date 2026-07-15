@@ -64,7 +64,7 @@ $currentEmail = Auth::user()->email;
               @include('partials.gps-inline-alerts')
             </div>
             <div class="tabs">
-              <?php echo CommonHelper::getDeviceCategoryTabs($device, $show_acc_wise, $url_type, Session::get('device_category_id')); ?>
+              <?php echo CommonHelper::getDeviceCategoryTabs($device, $show_acc_wise, $url_type, Session::get('device_category_id'), !empty($server_side), $list_mode ?? 'assigned'); ?>
               <div id="loading" class="bgx-loading" style="display:none;">
                 <img src="/assets/icons/loader.gif" alt="Loading..." />
               </div>
@@ -155,9 +155,56 @@ $currentEmail = Auth::user()->email;
     }, 3000);
   }
 
+  // Initialize a server-side (AJAX) DataTable once, on demand.
+  function initServerSideTable($table) {
+    if (!$table.length || $table.data('dt-initialized')) {
+      return;
+    }
+    $table.data('dt-initialized', 1);
+    var orderableCols = $table.data('orderable-cols') || [];
+    $table.DataTable({
+      serverSide: true,
+      processing: true,
+      paging: true,
+      searching: true,
+      ordering: true,
+      lengthChange: true,
+      searchDelay: 400,
+      pageLength: 25,
+      scrollX: true,
+      scrollY: '500px',
+      autoWidth: false,
+      scrollCollapse: true,
+      order: [],
+      lengthMenu: [
+        [25, 50, 100, 500],
+        [25, 50, 100, 500]
+      ],
+      ajax: {
+        url: $table.data('ajax-url'),
+        data: function(d) {
+          d.category_id = $table.data('category-id');
+          d.mode = $table.data('list-mode') || 'assigned';
+          d.username = $('#searchUser' + $table.data('category-id')).val() || '0';
+        }
+      },
+      columnDefs: [
+        { targets: orderableCols, orderable: true },
+        { targets: '_all', orderable: false }
+      ]
+    });
+  }
+
+  // Initialize any server-side tables inside a container (e.g. a tab pane).
+  function initServerTablesIn(selector) {
+    $(selector).find('table[data-server-side="1"]').each(function() {
+      initServerSideTable($(this));
+    });
+  }
+
   $(document).ready(function() {
     function initializeDataTables() {
-      $('.example').each(function() {
+      $('.example').not('[data-server-side="1"]').each(function() {
         var elementId = $(this).attr('id');
         if ($.fn.DataTable.isDataTable("#" + elementId)) {
           $("#" + elementId).DataTable().destroy();
@@ -196,6 +243,8 @@ $currentEmail = Auth::user()->email;
             let tabMatch = onclick.match(/'([^']+)'/);
             if(tabMatch) {
                 $('#' + tabMatch[1]).show();
+                // Server-side tables load lazily: only the visible tab fetches data.
+                initServerTablesIn('#' + tabMatch[1]);
             }
         }
     }
@@ -260,6 +309,7 @@ $currentEmail = Auth::user()->email;
                 if (activeTabId) {
                     $('#' + activeTabId).show();
                     $('.tablinks[onclick*="' + activeTabId + '"]').addClass('active');
+                    initServerTablesIn('#' + activeTabId);
                 } else {
                     let firstTab = $('.tablinks').first();
                     if (firstTab.length) {
@@ -267,7 +317,10 @@ $currentEmail = Auth::user()->email;
                         let onclick = firstTab.attr('onclick');
                         if (onclick) {
                             let tabMatch = onclick.match(/'([^']+)'/);
-                            if (tabMatch) $('#' + tabMatch[1]).show();
+                            if (tabMatch) {
+                                $('#' + tabMatch[1]).show();
+                                initServerTablesIn('#' + tabMatch[1]);
+                            }
                         }
                     }
                 }
@@ -492,6 +545,11 @@ $currentEmail = Auth::user()->email;
       $('.tabcontent').hide();
       $('.tablinks').removeClass('active');
       $('#' + tabName).show();
+
+      // First time this tab is opened: initialize its server-side table (lazy load).
+      if (typeof initServerTablesIn === 'function') {
+          initServerTablesIn('#' + tabName);
+      }
 
       var currentBtn = null;
       if (evt && evt.currentTarget) {

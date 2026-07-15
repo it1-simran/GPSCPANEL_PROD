@@ -141,9 +141,13 @@ class TemplateController extends Controller
                     'value' => $config[$key] ?? ''
                 ];
             } else if ($key == 'ping_interval' || $key == 'is_editable') {
+                $fieldValue = $config[$key] ?? '';
+                if ($key == 'ping_interval' && $fieldValue === '') {
+                    $fieldValue = 4;
+                }
                 $converted[$key] = [
                     'id' => $value->id,
-                    'value' => $config[$key] ?? ''
+                    'value' => $fieldValue
                 ];
             }
             // }
@@ -248,37 +252,86 @@ class TemplateController extends Controller
      */
     public function show(Template $template)
     {
-        if (Auth::user()->user_type == 'Admin') {
-            $templates = DB::table('templates')
-                ->leftJoin('writers', 'writers.id', '=', 'templates.user_id')
-                ->select('templates.*', 'writers.name as username')
-                ->where('templates.is_deleted', '0')
-                ->where('verify', '1')
-                ->orderBy('templates.default_template', 'DESC')
-                ->get();
-        } else {
-            $templatesQuery = DB::table('templates')
-                ->leftJoin('writers', 'writers.id', '=', 'templates.user_id')
-                ->select('templates.*', 'writers.name as username')
-                ->where('templates.is_deleted', '0')
-                ->where('verify', '2')
-                ->where('id_user', auth()->id());
-            $enabledCategoryIds = $this->deviceCategoryAccess()->parseEnabledCategoryIds(Auth::user());
-            if (empty($enabledCategoryIds)) {
-                $templatesQuery->whereRaw('1 = 0');
-            } else {
-                $templatesQuery->whereIn('templates.device_category_id', $enabledCategoryIds);
-            }
-            $templates = $templatesQuery->orderBy('templates.default_template', 'DESC')->get();
-        }
-        foreach ($templates as $key => $template) {
-            if ($template->configurations) {
-                $configurations = json_decode($template->configurations);
-                $templates[$key]->configurations = $configurations;
-            }
-        }
+        // Rows are served one page at a time by listData() (server-side DataTables).
         $url_type = self::getURLType();
-        return view('view_template', ['templates' => $templates, 'url_type' => $url_type]);
+        return view('view_template', ['templates' => collect(), 'url_type' => $url_type, 'server_side' => true]);
+    }
+
+    /**
+     * Server-side DataTables source for the settings-templates listing (per category tab).
+     */
+    public function listData(Request $request)
+    {
+        $user = Auth::user();
+        $categoryId = (int) $request->input('category_id');
+        $urlType = self::getURLType();
+        $isAdmin = $user->user_type == 'Admin';
+        $canDelete = $isAdmin || $user->hasPermission('settings_management.delete');
+
+        // Same scoping as CommonHelper::getTemplatesInfo()
+        $base = DB::table('templates')
+            ->where('templates.is_deleted', '0')
+            ->where('templates.device_category_id', $categoryId);
+        if ($isAdmin) {
+            $base->where('verify', '1');
+        } else {
+            $base->where('verify', '2')->where('id_user', $user->id);
+            if (!$this->deviceCategoryAccess()->userHasCategory($user, $categoryId)) {
+                $base->whereRaw('1 = 0');
+            }
+        }
+
+        $categoryName = \App\Helper\CommonHelper::getDeviceCategoryName($categoryId);
+
+        return \App\Support\ServerSideTable::respond($request, $base, [
+            'idColumn' => 'templates.id',
+            'searchColumns' => ['templates.template_name'],
+            'sortable' => [
+                1 => 'templates.template_name',
+                3 => 'templates.created_at',
+                4 => 'templates.updated_at',
+                5 => 'templates.default_template',
+            ],
+            'defaultOrder' => [['templates.default_template', 'desc']],
+            'fetchRows' => function (array $ids) {
+                return DB::table('templates')
+                    ->select('id', 'template_name', 'device_category_id', 'created_at', 'updated_at', 'default_template')
+                    ->whereIn('id', $ids)
+                    ->get();
+            },
+            'renderRow' => function ($tpl, $srNo) use ($urlType, $isAdmin, $canDelete, $categoryName, $categoryId) {
+                $e = [\App\Support\ServerSideTable::class, 'e'];
+
+                $cells = [
+                    (string) $srNo,
+                    $e($tpl->template_name),
+                    $e($categoryName),
+                    \App\Helper\CommonHelper::getDateAsTimeZone($tpl->created_at) ?? 'N/A',
+                    \App\Helper\CommonHelper::getDateAsTimeZone($tpl->updated_at) ?? 'N/A',
+                    $tpl->default_template == '1'
+                        ? '<span class="vt-badge default-yes"><i class="fa fa-star"></i> Yes</span>'
+                        : '<span class="vt-badge default-no">—</span>',
+                    '<a href="' . url($urlType . '/view-template-configurations/' . $tpl->id) . '" class="btn vt-btn-view"><i class="fa fa-eye"></i> View</a>',
+                ];
+
+                if ($isAdmin) {
+                    $cells[] = '<button type="button" class="btn vt-btn-apply" data-template-id="' . $tpl->id . '" data-category-id="' . $categoryId . '" onclick="openApplyModal(this)"><i class="fa fa-check"></i> Apply</button>';
+                }
+
+                if ($canDelete) {
+                    $deleteCell = '';
+                    if ($tpl->default_template == '0') {
+                        $deleteCell = '<form id="delete-form-' . $tpl->id . '" action="/' . $urlType . '/delete-template/' . $tpl->id . '" method="post">'
+                            . csrf_field() . method_field('DELETE')
+                            . '<button class="btn vt-btn-delete swal-confirm" type="button" data-form-id="delete-form-' . $tpl->id . '" data-confirm-msg="Are you sure you want to delete this template?"><i class="fa fa-trash"></i> Delete</button>'
+                            . '</form>';
+                    }
+                    $cells[] = $deleteCell;
+                }
+
+                return $cells;
+            },
+        ]);
     }
     public function assign(Request $request, $id)
     {

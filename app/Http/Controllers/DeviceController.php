@@ -81,9 +81,136 @@ class DeviceController extends Controller
             ->where('writers.is_deleted', '0')
             ->where('writers.created_by', Auth::user()->id)
             ->get();
-        $dataFields = DB::table('data_fields')->select('*')->get();
+        // Rows are served one page at a time by dataFieldsListData().
         $url_type = self::getURLType();
-        return view('view_device_category_field', ['users' => $users, 'url_type' => $url_type, 'dataFields' => $dataFields]);
+        return view('view_device_category_field', ['users' => $users, 'url_type' => $url_type, 'dataFields' => collect(), 'server_side' => true]);
+    }
+
+    /**
+     * Server-side DataTables source for the data-fields listing.
+     */
+    public function dataFieldsListData(Request $request)
+    {
+        $isAdmin = strcasecmp(trim((string) Auth::user()->user_type), 'admin') === 0;
+        $urlType = self::getURLType();
+
+        return \App\Support\ServerSideTable::respond($request, DB::table('data_fields'), [
+            'idColumn' => 'data_fields.id',
+            'searchColumns' => ['data_fields.fieldName', 'data_fields.inputType', 'data_fields.validationConfig'],
+            'sortable' => [
+                1 => 'data_fields.id',
+                2 => 'data_fields.fieldType',
+                3 => 'data_fields.fieldName',
+                4 => 'data_fields.inputType',
+                6 => 'data_fields.is_common',
+                7 => 'data_fields.is_can_protocol',
+            ],
+            'defaultOrder' => [['data_fields.id', 'asc']],
+            'columnFilters' => [
+                // Field Type tab filter: "Configurations" / "Parameters"
+                2 => function ($query, $value) {
+                    $query->where('data_fields.fieldType', strcasecmp($value, 'Parameters') === 0 ? 1 : 0);
+                },
+            ],
+            'fetchRows' => function (array $ids) {
+                return DB::table('data_fields')->whereIn('id', $ids)->get();
+            },
+            'renderRow' => function ($field, $srNo) use ($isAdmin, $urlType) {
+                $e = [\App\Support\ServerSideTable::class, 'e'];
+                $typeLabel = $field->fieldType == 0 ? 'Configurations' : 'Parameters';
+                $badge = function ($flag) {
+                    return $flag
+                        ? '<span class="vdf-badge vdf-badge-true">True</span>'
+                        : '<span class="vdf-badge vdf-badge-false">False</span>';
+                };
+
+                $actions = '<div class="vdf-actions-inner">';
+                if ($isAdmin) {
+                    $actions .= '<button type="button" class="btn btn-primary btn-sm vdf-btn-edit"'
+                        . ' data-id="' . $field->id . '"'
+                        . ' data-field-type="' . $e($field->fieldType) . '"'
+                        . ' data-field-name="' . $e($field->fieldName) . '"'
+                        . ' data-input-type="' . $e($field->inputType) . '"'
+                        . " data-config='" . $e(json_encode($field->validationConfig)) . "'"
+                        . ' data-is_common="' . $e($field->is_common) . '"'
+                        . ' data-is_can_protocol="' . $e($field->is_can_protocol) . '"'
+                        . ' title="Edit" aria-label="Edit" onclick="openEditModel(this)"><i class="fa fa-pencil" aria-hidden="true"></i></button>';
+                }
+                $actions .= '<form action="' . url($urlType . '/delete-category-fields/' . $field->id) . '" method="post" class="form-inline" style="display:inline;">'
+                    . csrf_field() . method_field('DELETE')
+                    . '<button type="submit" class="swal-confirm btn btn-danger btn-sm vdf-btn-delete" data-confirm-msg="Are you sure you want to delete this data field?" title="Delete" aria-label="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>'
+                    . '</form></div>';
+
+                return [
+                    (string) $srNo,
+                    (string) $field->id,
+                    '<span class="field-type">' . $typeLabel . '</span>',
+                    $e($field->fieldName),
+                    $e($field->inputType),
+                    $e($field->validationConfig),
+                    $badge($field->is_common),
+                    $badge($field->is_can_protocol),
+                    $actions,
+                ];
+            },
+        ]);
+    }
+
+    /**
+     * Select2 AJAX source for device pickers (template apply / account assign).
+     * Returns id+imei pages filtered by category, scope and search term.
+     */
+    public function selectDevices(Request $request)
+    {
+        $user = Auth::user();
+        $categoryIds = array_filter(array_map('intval', explode(',', (string) $request->input('category_id'))));
+        $mode = $request->input('mode');
+        $term = trim((string) $request->input('q', ''));
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = 50;
+
+        $access = $this->deviceCategoryAccess();
+        $allowed = array_values(array_filter($categoryIds, function ($cid) use ($access, $user) {
+            return $access->userHasCategory($user, $cid);
+        }));
+        if (empty($allowed)) {
+            return response()->json(['results' => [], 'pagination' => ['more' => false]]);
+        }
+
+        $query = DB::table('devices')
+            ->select('id', 'imei')
+            ->where('is_deleted', '0')
+            ->whereIn('device_category_id', $allowed);
+
+        if ($mode === 'assignable') {
+            // Pool for assigning devices to an account (was view_user's unassign_device list)
+            if ($user->user_type == 'Admin') {
+                $query->whereNull('user_id');
+            } else {
+                $query->where('user_id', $user->id);
+            }
+        } else {
+            // Pool for applying a setting template (mirrors CommonHelper::unassignDevices)
+            if ($user->user_type == 'Reseller') {
+                $query->where('master_id', $user->id);
+            } elseif ($user->user_type != 'Admin') {
+                $query->where('user_id', $user->id);
+            }
+        }
+
+        if ($term !== '') {
+            $query->where('imei', 'like', '%' . addcslashes($term, '%_\\') . '%');
+        }
+
+        $rows = $query->orderBy('id')->offset(($page - 1) * $perPage)->limit($perPage + 1)->get();
+        $more = $rows->count() > $perPage;
+
+        return response()->json([
+            'results' => $rows->take($perPage)->map(function ($d) {
+                return ['id' => $d->id, 'text' => (string) $d->imei];
+            })->values(),
+            'pagination' => ['more' => $more],
+        ]);
     }
     /**
      * Show the form for creating a new resource.
@@ -118,6 +245,9 @@ class DeviceController extends Controller
                 'value' => $config[$key] ?? ''
             ];
         }
+        if (isset($converted['ping_interval']) && $converted['ping_interval']['value'] === '') {
+            $converted['ping_interval']['value'] = 4;
+        }
         if (isset($request->user_id) && $request->user_id != '' && $request->user_id != 'No User Found') {
             $user = DB::table('writers')->where(['id' => $request->user_id])->first();
             $configuration = json_decode($user->configurations);
@@ -151,10 +281,10 @@ class DeviceController extends Controller
         $firmware = Firmware::select('configurations')->where(['id' => $request->firmware])->first();
         $device_array = $converted;
         $fimwareArr = json_decode($firmware->configurations, true);
-        $device_array['firmware_id']['value'] = $request->firmware;
-        $device_array['firmware_file']['value'] = $fimwareArr['filename'];
-        $device_array['firmware_version']['value'] = $fimwareArr['version'];
-        $device_array['firmwareFileSize']['value'] = $fimwareArr['fileSize'];
+        $device_array['firmware_id']      = ['id' => 84, 'value' => $request->firmware];
+        $device_array['firmware_file']    = ['id' => 85, 'value' => $fimwareArr['filename']];
+        $device_array['firmware_version'] = ['id' => 86, 'value' => $fimwareArr['version']];
+        $device_array['firmwareFileSize'] = ['id' => 83, 'value' => $fimwareArr['fileSize']];
         $master_id = Auth::user()->id;
         $mid = null;
         $assign_to_ids = '';
@@ -251,72 +381,248 @@ class DeviceController extends Controller
     // }
     public function show(Device $device, Request $request)
     {
+        // Device rows are no longer fetched here: the tables on this page load
+        // one page at a time through listData() (server-side DataTables).
+        $users = DB::table('writers')
+            ->select('id', 'name')
+            ->where('created_by', Auth::id())
+            ->where('is_deleted', 0)
+            ->where('user_type', '!=', 'Support')
+            ->get();
 
-        if (Auth::user()->user_type == 'Admin') {
-            $user_id = NULL;
+        if (Auth::user()->user_type == 'Reseller') {
+            $template_info = DB::table('templates')->select('templates.*')->where('templates.id_user', Auth::user()->id)->where('templates.is_deleted', '0')->where('verify', '2')->get();
         } else {
-            $user_id = Auth::user()->id;
+            $template_info = DB::table('templates')->select('templates.*')->where('templates.is_deleted', '0')->where('verify', '1')->get();
         }
 
+        $url_type = self::getURLType();
+
+        return view('view_device', ['users' => $users, 'device' => collect(), 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => true, 'server_side' => true]);
+    }
+
+    /**
+     * Server-side DataTables source for the assigned-devices listing.
+     * Returns one page of rows as JSON; never materializes the full table.
+     */
+    public function listData(Request $request)
+    {
         $user = Auth::user();
+        $categoryId = (int) $request->input('category_id');
 
-        $devicesQuery = DB::table('devices')
+        $draw = (int) $request->input('draw', 1);
+        $start = max(0, (int) $request->input('start', 0));
+        $length = (int) $request->input('length', 25);
+        $length = ($length > 0) ? min($length, 500) : 25;
+
+        $mode = $request->input('mode', 'assigned');
+
+        $base = DB::table('devices')
             ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
-            ->select('devices.*', 'writers.name as username')
-            ->where('devices.is_deleted', '0');
+            ->where('devices.is_deleted', '0')
+            ->where('devices.device_category_id', $categoryId);
 
-        if ($user->user_type == 'Admin') {
-            $devicesQuery->where('devices.user_id', '!=', null);
-        }
-        if ($user->user_type != 'Admin') {
-            $devicesQuery->where(function ($query) use ($user) {
-                $query->where('devices.user_id', '!=', $user->id)
-                    ->where(function ($q) use ($user) {
-                        $q->whereIn('devices.user_id', function ($subquery) use ($user) {
-                            $subquery->select('id')
-                                ->from('writers')
-                                ->where('created_by', $user->id)
-                                ->where('is_deleted', '0');
-                        })
-                            ->orWhereNull('devices.user_id');
-                    });
-            });
-        }
-
-        $filterUserId = $request->input('username');
-        if (!empty($filterUserId) && $filterUserId !== '0') {
+        if ($mode === 'unassigned') {
+            // view-device-unassign scoping: admin sees unassigned stock,
+            // resellers see devices currently held by them.
             if ($user->user_type == 'Admin') {
-                $devicesQuery->where(function ($query) use ($filterUserId) {
-                    $query->where('devices.user_id', $filterUserId)
-                        ->orWhereRaw('FIND_IN_SET(?, devices.assign_to_ids)', [$filterUserId]);
+                $base->where(function ($q) {
+                    $q->whereNull('devices.user_id')->orWhere('devices.user_id', 0);
                 });
             } else {
-                $devicesQuery->where('devices.user_id', $filterUserId);
+                $base->where('devices.user_id', $user->id);
+            }
+        } elseif ($mode === 'own') {
+            // /user/view-device and /support/view-device scoping: Support sees
+            // everything (category-scoped below); dealers see devices held by,
+            // mastered by or assigned through them.
+            if ($user->user_type != 'Support') {
+                $base->where(function ($q) use ($user) {
+                    $q->where('devices.user_id', $user->id)
+                        ->orWhere('devices.master_id', $user->id)
+                        ->orWhereRaw('FIND_IN_SET(?, devices.assign_to_ids)', [$user->id]);
+                });
+            }
+        } else {
+            // view-device-assign scoping (same as show() used previously).
+            if ($user->user_type == 'Admin') {
+                $base->where('devices.user_id', '!=', null);
+            } else {
+                $base->where(function ($query) use ($user) {
+                    $query->where('devices.user_id', '!=', $user->id)
+                        ->where(function ($q) use ($user) {
+                            $q->whereIn('devices.user_id', function ($subquery) use ($user) {
+                                $subquery->select('id')
+                                    ->from('writers')
+                                    ->where('created_by', $user->id)
+                                    ->where('is_deleted', '0');
+                            })
+                                ->orWhereNull('devices.user_id');
+                        });
+                });
+            }
+
+            $filterUserId = $request->input('username');
+            if (!empty($filterUserId) && $filterUserId !== '0') {
+                if ($user->user_type == 'Admin') {
+                    $base->where(function ($query) use ($filterUserId) {
+                        $query->where('devices.user_id', $filterUserId)
+                            ->orWhereRaw('FIND_IN_SET(?, devices.assign_to_ids)', [$filterUserId]);
+                    });
+                } else {
+                    $base->where('devices.user_id', $filterUserId);
+                }
             }
         }
 
-        $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, $user);
-        $devices = $devicesQuery->get();
-        $childUsersQuery = DB::table('writers')->select('id', 'name')->where('is_deleted', '0');
-        // dd(Auth::user()->id);
-        // Only direct children for resellers
-        $childUsersQuery->where('created_by', Auth::user()->id);
+        $this->deviceCategoryAccess()->applyCategoryScopeToQuery($base, $user);
 
-        $childUsers = $childUsersQuery->pluck('name', 'id'); // [id => name]
+        $recordsTotal = (clone $base)->count();
 
-        // Set username based on child user match
-        foreach ($devices as $dkey => $device) {
+        $searchValue = trim((string) $request->input('search.value', ''));
+        if ($searchValue !== '') {
+            $like = '%' . addcslashes($searchValue, '%_\\') . '%';
+            $base->where(function ($q) use ($like) {
+                $q->where('devices.name', 'like', $like)
+                    ->orWhere('devices.imei', 'like', $like)
+                    ->orWhere('writers.name', 'like', $like);
+            });
+        }
+        $recordsFiltered = ($searchValue !== '') ? (clone $base)->count() : $recordsTotal;
+
+        // Sortable columns per user type; indexes match the table header layout
+        // rendered by CommonHelper::getDeviceCategoryTabs().
+        if ($user->user_type == 'Admin') {
+            $sortable = [2 => 'writers.name', 3 => 'devices.name', 4 => 'devices.imei', 7 => 'devices.created_at', 8 => 'devices.updated_at'];
+        } elseif ($user->user_type == 'Support') {
+            $sortable = [2 => 'writers.name', 3 => 'devices.name', 4 => 'devices.imei', 6 => 'devices.created_at', 7 => 'devices.updated_at'];
+        } else {
+            $sortable = [2 => 'writers.name', 3 => 'devices.name', 4 => 'devices.imei', 6 => 'devices.created_at', 7 => 'devices.updated_at'];
+        }
+
+        $orderColIndex = $request->input('order.0.column');
+        $orderDir = strtolower((string) $request->input('order.0.dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+        if ($orderColIndex !== null && isset($sortable[(int) $orderColIndex])) {
+            $base->orderBy($sortable[(int) $orderColIndex], $orderDir);
+        }
+        $base->orderBy('devices.id'); // deterministic paging tiebreaker
+
+        // Late row lookup: page the ids first, then fetch display data (incl.
+        // JSON extraction) for only those rows.
+        $pageIds = (clone $base)->offset($start)->limit($length)->pluck('devices.id');
+
+        $rows = collect();
+        if ($pageIds->isNotEmpty()) {
+            $rows = DB::table('devices')
+                ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
+                ->select(
+                    'devices.id',
+                    'devices.name',
+                    'devices.imei',
+                    'devices.user_id',
+                    'devices.assign_to_ids',
+                    'devices.created_at',
+                    'devices.updated_at',
+                    'writers.name as username',
+                    DB::raw("JSON_UNQUOTE(JSON_EXTRACT(devices.configurations, '$.total_pings')) AS cfg_total_pings"),
+                    DB::raw("JSON_UNQUOTE(JSON_EXTRACT(devices.configurations, '$.ping_interval.value')) AS cfg_ping_interval"),
+                    DB::raw("JSON_UNQUOTE(JSON_EXTRACT(devices.configurations, '$.is_editable.value')) AS cfg_is_editable")
+                )
+                ->whereIn('devices.id', $pageIds)
+                ->get()
+                ->keyBy('id');
+            // restore page order lost by whereIn
+            $rows = $pageIds->map(function ($id) use ($rows) {
+                return $rows->get($id);
+            })->filter()->values();
+        }
+
+        if ($mode === 'unassigned' || $mode === 'own') {
+            // Parity with the old pages: joined writer name or 'Unassigned'.
+            foreach ($rows as $row) {
+                $row->username = !empty($row->username) ? $row->username : 'Unassigned';
+            }
+        } else {
+            $this->resolveDeviceUsernames($rows);
+        }
+
+        $userType = $user->user_type;
+        $urlType = self::getURLType();
+        $data = [];
+        foreach ($rows as $i => $row) {
+            $cells = [];
+            $cells[] = '<input type="checkbox" class="sub_chk' . $categoryId . '" data-category="' . $categoryId . '" data-id="' . $row->id . '">';
+            $cells[] = (string) ($start + $i + 1);
+            $cells[] = htmlspecialchars(!empty($row->username) ? $row->username : 'Unassigned', ENT_QUOTES, 'UTF-8');
+            $cells[] = CommonHelper::emptyToNA($row->name ?? null, true);
+            $cells[] = htmlspecialchars((string) $row->imei, ENT_QUOTES, 'UTF-8');
+            $cells[] = ($row->cfg_total_pings !== null && $row->cfg_total_pings !== '') ? htmlspecialchars($row->cfg_total_pings, ENT_QUOTES, 'UTF-8') : '0';
+            if ($userType == 'Admin') {
+                $cells[] = htmlspecialchars((string) ($row->cfg_ping_interval ?? ''), ENT_QUOTES, 'UTF-8');
+            }
+            $cells[] = CommonHelper::getDateAsTimeZone($row->created_at);
+            $cells[] = CommonHelper::getDateAsTimeZone($row->updated_at);
+            if ($userType == 'Admin') {
+                $cells[] = ($row->cfg_is_editable == '1')
+                    ? '<button class="btn btn-success btn-sm"><i class="fa fa-check"></i> Yes</button>'
+                    : '<button class="btn btn-danger btn-sm"><i class="fa fa-times"></i> No</button>';
+                $cells[] = '<button class="btn btn-carrot"><a class="text-white" href="/admin/view-device-logs/' . $row->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button>';
+            }
+            if ($userType == 'Support') {
+                $cells[] = '<button class="btn btn-carrot"><a class="text-white" href="/support/view-device-logs/' . $row->id . '" style="color:#fff;"><i class="fa fa-file-text-o"></i> Logs</a></button>';
+            }
+            $cells[] = '<a href="' . url('/' . strtolower($userType) . '/view-device-configurations/' . $row->id) . '" class="btn btn-primary btn-info"><i class="fa fa-cog"></i> View Configuration</a>';
+            if ($userType == 'Admin') {
+                $cells[] = '<form action="' . route('device.delete', $row->id) . '" method="post">'
+                    . csrf_field()
+                    . method_field('DELETE')
+                    . '<button class="btn btn-danger btn-sm swal-confirm" data-confirm-msg="Are you sure you want to delete this device?" type="submit"><i class="fa fa-trash"></i> Delete</button>'
+                    . '</form>';
+            }
+            $data[] = $cells;
+        }
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Resolve the displayed username for a set of device rows using the
+     * assign_to_ids chain, with all writer lookups done in one query.
+     */
+    private function resolveDeviceUsernames($devices)
+    {
+        $writerIds = [];
+        foreach ($devices as $device) {
+            if (!empty($device->user_id)) {
+                $writerIds[] = $device->user_id;
+            }
+            foreach (explode(',', $device->assign_to_ids ?? '') as $aid) {
+                $aid = trim($aid);
+                if ($aid !== '') {
+                    $writerIds[] = $aid;
+                }
+            }
+        }
+        $writersById = empty($writerIds)
+            ? collect()
+            : DB::table('writers')->select('id', 'name', 'user_type')->whereIn('id', array_unique($writerIds))->get()->keyBy('id');
+
+        foreach ($devices as $device) {
             $userId = $device->user_id;
-            $aids = explode(',', $device->assign_to_ids ?? '');
+            $aids = array_map('trim', explode(',', $device->assign_to_ids ?? ''));
             $next_id = null;
 
-            // Get next assigned user ID relative to current user
             if (!empty($aids)) {
                 $next_id = self::getNextValue($aids, Auth::user()->id);
-                
+
                 if (empty($next_id) && Auth::user()->user_type == 'Admin') {
                     $root_id = $aids[0];
-                    $root_writer = DB::table('writers')->select('user_type')->where('id', $root_id)->first();
+                    $root_writer = $writersById->get($root_id);
                     if ($root_writer && $root_writer->user_type == 'Support') {
                         $next_id = self::getNextValue($aids, $root_id);
                         if (empty($next_id)) {
@@ -326,52 +632,15 @@ class DeviceController extends Controller
                 }
             }
 
-            // Direct assignment
             if ($userId == Auth::user()->id || empty($userId)) {
-                $devices[$dkey]->username = 'Unassigned';
-            }
-            // If next direct child exists in list and is a valid writer
-            elseif ($next_id) {
-                $w_details = DB::table('writers')->where('id', $next_id)->first();
-                if ($w_details) {
-                    $devices[$dkey]->username = $w_details->name;
-                } else {
-                    $devices[$dkey]->username = 'error_' . $device->id . '_' . $next_id;
-                }
-            }
-            // Fallback (e.g., joined username)
-            else {
-                $devices[$dkey]->username = $device->username ?? 'Unassigned';
+                $device->username = 'Unassigned';
+            } elseif ($next_id) {
+                $w_details = $writersById->get($next_id);
+                $device->username = $w_details ? $w_details->name : 'error_' . $device->id . '_' . $next_id;
+            } else {
+                $device->username = $device->username ?? 'Unassigned';
             }
         }
-
-
-        // dd($devices);
-
-        $users = DB::table('writers')
-            ->select('id', 'name')
-            ->where('created_by', Auth::id())
-            ->where('is_deleted', 0)
-            ->where('user_type', '!=', 'Support')
-            ->get();
-
-
-        // dd($users);
-
-        if (Auth::user()->user_type == 'Reseller') {
-            $template_info = DB::table('templates')->select('templates.*')->where('templates.id_user', Auth::user()->id)->where('templates.is_deleted', '0')->where('verify', '2')->get();
-        } else {
-            $template_info = DB::table('templates')->select('templates.*')->where('templates.is_deleted', '0')->where('verify', '1')->get();
-        }
-
-        // foreach ($devices as $dkey => $device) {
-        //     $devices[$dkey]->username = '';
-        // }
-
-        $url_type = self::getURLType();
-
-
-        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => true]);
     }
 
     /**
@@ -1551,93 +1820,16 @@ class DeviceController extends Controller
         //         ->orwhereRaw('FIND_IN_SET(' . $master_id . ',devices.assign_to_ids)')
         //         ->get();
         // }
-        $master_id = Auth::user()->id;
-        if (Auth::user()->user_type == 'Admin') {
-
-            // Admin: only devices that are unassigned
-            $devices = DB::table('devices')
-                ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
-                ->select('devices.*')
-                ->where('devices.is_deleted', '0')
-                ->where(function ($q) {
-                    $q->whereNull('devices.user_id')
-                        ->orWhere('devices.user_id', '')
-                        ->orWhere('devices.user_id', 0);
-                })
-                ->get();
-        } else {
-            // Reseller: devices that are assigned TO this reseller (user_id = reseller_id)
-            // These are devices Reseller can manage and reassign/unassign
-            $devicesQuery = DB::table('devices')
-                ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
-                ->select('devices.*')
-                ->where('devices.is_deleted', '0')
-                ->where('devices.user_id', $master_id);
-            $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, Auth::user());
-            $devices = $devicesQuery->get();
-        }
-
+        // Device rows are served one page at a time by listData() with
+        // mode=unassigned (server-side DataTables).
         $users = DB::table('writers')->select('id', 'name')->where('writers.created_by', Auth::user()->id)->where('writers.is_deleted', '0')->where('user_type', '!=', 'Support')->get();
         if (Auth::user()->user_type == 'Reseller') {
             $template_info = DB::table('templates')->select('templates.*')->where('templates.id_user', Auth::user()->id)->where('templates.is_deleted', '0')->where('verify', '2')->get();
         } else {
             $template_info = DB::table('templates')->select('templates.*')->where('templates.is_deleted', '0')->where('verify', '1')->get();
         }
-        if (count($devices) > 0) {
-            foreach ($devices as $dkey => $device) {
-                if ($device->user_id) {
-                    $u_info = DB::table('writers')->select('name')->where('id', $device->user_id)->first();
-                    $device->username = $u_info->name ?? 'Unassigned';
-                } else {
-                    $device->username = 'Unassigned';
-                }
-            }
-            // foreach ($devices as $dkey => $device) {
-            //     $uname = 'Unassigned'; // default
-            //     $aids = explode(',', $device->assign_to_ids);
-            //     $userId = $device->user_id;
-            //     $next_id = null;
-
-            //     if (!empty($aids)) {
-            //         $next_id = self::getNextValue($aids, $master_id);
-            //     }
-
-            //     // Determine if device should be treated as Unassigned
-            //     if (empty($userId) || $userId == 0 || $userId == $master_id) {
-            //         $uname = 'Unassigned';
-            //     } elseif ($next_id) {
-            //         $w_details = DB::table('writers')->where('id', $next_id)->first();
-            //         $uname = $w_details->name ?? 'error_' . $device->id . '_' . $next_id;
-            //     } elseif (!empty($device->username)) {
-            //         // fallback: use the joined writer name (e.g., admin or other parent)
-            //         $uname = $device->username;
-            //     }
-
-            //     $devices[$dkey]->username = $uname;
-            // }
-            //    foreach ($devices as $dkey => $device) {
-            //         $uname = 'Unassigned'; // default
-
-            //         $aids = explode(',', $device->assign_to_ids);
-            //         $userId = $device->user_id;
-
-            //         if (count($aids) > 0) {
-            //             $next_id = self::getNextValue($aids, $master_id);
-
-            //             // Condition: consider as unassigned if user_id is null/empty/0 OR equals the next_id
-            //             if (empty($userId) || $userId == 0 || $userId == $next_id) {
-            //                 $uname = 'Unassigned';
-            //             } elseif ($next_id) {
-            //                 $w_details = DB::table('writers')->where('id', $next_id)->first();
-            //                 $uname = $w_details->name ?? 'error_' . $device->id . '_' . $next_id;
-            //             }
-            //         }
-
-            //         $devices[$dkey]->username = $uname;
-            //     }
-        }
         $url_type = self::getURLType();
-        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => false]);
+        return view('view_device', ['users' => $users, 'device' => collect(), 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => false, 'server_side' => true, 'list_mode' => 'unassigned']);
     }
     /**
      * Show the form for editing the specified resource.
@@ -1744,7 +1936,9 @@ class DeviceController extends Controller
         ]);
         $is_editable = DB::table('devices')->where('id', $contact_id)->first();
         $prev_uid = $request->input('prev_uid');
-        if (Auth::user()->user_type != 'Admin' && Auth::user()->user_type != 'Support' && $is_editable->is_editable == '1') {
+        // Edit access is governed by the Manage Permissions module
+        // (device_management.edit), not the per-device is_editable flag.
+        if (Auth::user()->user_type != 'Admin' && Auth::user()->user_type != 'Support' && Auth::user()->hasPermission('device_management.edit')) {
             $contact = Device::find($contact_id);
             if (Auth::user()->user_type == 'Reseller') {
                 if ($request->get('user_id')) {
@@ -1988,6 +2182,9 @@ class DeviceController extends Controller
                     $configurations = array_merge($oldChanges, $newchanges);
                 }
             }
+            if (isset($configurations['ping_interval']) && ($configurations['ping_interval']['value'] === '' || $configurations['ping_interval']['value'] === null)) {
+                $configurations['ping_interval']['value'] = isset($oldChanges['ping_interval']['value']) && $oldChanges['ping_interval']['value'] !== '' ? $oldChanges['ping_interval']['value'] : 4;
+            }
             // dd($configurations);
             // $models = DB::table('modals')->where('user_id', $request->user_id)->where('firmware_id', $configurations['firmware_id'])->first();
             // if($configurations['firmware_id']){
@@ -2138,6 +2335,9 @@ class DeviceController extends Controller
                     $mergedConfig[$resolvedKey] = $deviceConfig[$resolvedKey];
                 }
             }
+            if (isset($mergedConfig['ping_interval']) && ($mergedConfig['ping_interval']['value'] === '' || $mergedConfig['ping_interval']['value'] === null)) {
+                $mergedConfig['ping_interval']['value'] = isset($deviceConfig['ping_interval']['value']) && $deviceConfig['ping_interval']['value'] !== '' ? $deviceConfig['ping_interval']['value'] : 4;
+            }
             $device->configurations = json_encode($mergedConfig);
             $device->save();
 
@@ -2192,35 +2392,12 @@ class DeviceController extends Controller
 
     public function showUserDevice()
     {
-        if (Auth::user()->user_type == 'Support') {
-            $devicesQuery = DB::table('devices')
-                ->leftJoin('writers', function ($join) {
-                    $join->on('writers.id', '=', 'devices.user_id')
-                        ->where('writers.is_deleted', '=', '0');
-                })
-                ->select('devices.*', 'writers.name as username')
-                ->where('devices.is_deleted', '0');
-            $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, Auth::user());
-            $devices = $devicesQuery->get();
-        } else {
-            $authId = auth()->id();
-            $devicesQuery = DB::table('devices')
-                ->leftJoin('writers', 'writers.id', '=', 'devices.user_id')
-                ->select('devices.*', 'writers.name as username')
-                ->where('devices.is_deleted', '0')
-                ->where(function ($q) use ($authId) {
-                    $q->where('devices.user_id', $authId)
-                        ->orWhere('devices.master_id', $authId)
-                        ->orWhereRaw("FIND_IN_SET(?, devices.assign_to_ids)", [$authId]);
-                });
-            $this->deviceCategoryAccess()->applyCategoryScopeToQuery($devicesQuery, Auth::user());
-            $devices = $devicesQuery->get();
-        }
+        // Device rows are served one page at a time by listData() with
+        // mode=own (server-side DataTables).
         $users = DB::table('writers')
             ->select('id', 'name')
             ->where('writers.is_deleted', '0')
             ->get();
-        $template_info = [];
         $template_info = DB::table('templates')
             ->select('templates.*')
             ->where('templates.is_deleted', '0')
@@ -2229,7 +2406,7 @@ class DeviceController extends Controller
             ->get();
 
         $url_type = self::getURLType();
-        return view('view_device', ['users' => $users, 'device' => $devices, 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => false]);
+        return view('view_device', ['users' => $users, 'device' => collect(), 'template_info' => $template_info, 'url_type' => $url_type, 'show_acc_wise' => false, 'server_side' => true, 'list_mode' => 'own']);
     }
     public function addMultipleDevice()
     {
@@ -2750,7 +2927,9 @@ class DeviceController extends Controller
                 'value' => $config[$key] ?? $config[$camelKey] ?? ''
             ];
         }
-
+        if (isset($converted['ping_interval']) && $converted['ping_interval']['value'] === '') {
+            $converted['ping_interval']['value'] = 4;
+        }
 
         if (isset($request->user_id) && $request->user_id != '') {
             $user = DB::table('writers')->where(['id' => $request->user_id])->first();
@@ -2780,10 +2959,10 @@ class DeviceController extends Controller
             $firmware = DB::table('firmware')->select('configurations')->where(['id' => $firmwareId])->first();
             if ($firmware) {
                 $fimwareArr = json_decode($firmware->configurations, true);
-                $converted['firmware_id'] = ['value' => $firmwareId];
-                $converted['firmware_file'] = ['value' => $fimwareArr['filename'] ?? ''];
-                $converted['firmware_version'] = ['value' => $fimwareArr['version'] ?? ''];
-                $converted['firmwareFileSize'] = ['value' => $fimwareArr['fileSize'] ?? ''];
+                $converted['firmware_id']      = ['id' => 84, 'value' => $firmwareId];
+                $converted['firmware_file']    = ['id' => 85, 'value' => $fimwareArr['filename'] ?? ''];
+                $converted['firmware_version'] = ['id' => 86, 'value' => $fimwareArr['version'] ?? ''];
+                $converted['firmwareFileSize'] = ['id' => 83, 'value' => $fimwareArr['fileSize'] ?? ''];
             }
         }
         // dd($converted);
@@ -2888,7 +3067,9 @@ class DeviceController extends Controller
                 'value' => $config[$key] ?? $config[$camelKey] ?? ''
             ];
         }
-
+        if (isset($converted['ping_interval']) && $converted['ping_interval']['value'] === '') {
+            $converted['ping_interval']['value'] = 4;
+        }
 
         if (isset($request->user_id) && $request->user_id != '') {
             $user = DB::table('writers')->where(['id' => $request->user_id])->first();
@@ -2918,10 +3099,10 @@ class DeviceController extends Controller
             $firmware = DB::table('firmware')->select('configurations')->where(['id' => $firmwareId])->first();
             if ($firmware) {
                 $fimwareArr = json_decode($firmware->configurations, true);
-                $converted['firmware_id'] = ['value' => $firmwareId];
-                $converted['firmware_file'] = ['value' => $fimwareArr['filename'] ?? ''];
-                $converted['firmware_version'] = ['value' => $fimwareArr['version'] ?? ''];
-                $converted['firmwareFileSize'] = ['value' => $fimwareArr['fileSize'] ?? ''];
+                $converted['firmware_id']      = ['id' => 84, 'value' => $firmwareId];
+                $converted['firmware_file']    = ['id' => 85, 'value' => $fimwareArr['filename'] ?? ''];
+                $converted['firmware_version'] = ['id' => 86, 'value' => $fimwareArr['version'] ?? ''];
+                $converted['firmwareFileSize'] = ['id' => 83, 'value' => $fimwareArr['fileSize'] ?? ''];
             }
         }
         // dd($converted);
@@ -3370,9 +3551,9 @@ class DeviceController extends Controller
         // dd($config['is_editable']['value']);
         $prev_uid = $request->input('prev_uid');
 
-        $is_editable_val = (isset($config['is_editable']) && is_array($config['is_editable'])) ? ($config['is_editable']['value'] ?? '0') : ($config['is_editable'] ?? '0');
-
-        if (Auth::user()->user_type != 'Admin' && $is_editable_val == '1') {
+        // Edit access is governed by the Manage Permissions module
+        // (device_management.edit), not the per-device is_editable flag.
+        if (Auth::user()->user_type != 'Admin' && Auth::user()->user_type != 'Support' && Auth::user()->hasPermission('device_management.edit')) {
             $contact = Device::find($contact_id);
             if (Auth::user()->user_type == 'Reseller') {
                 if ($request->get('user_id')) {

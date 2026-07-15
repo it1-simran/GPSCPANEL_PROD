@@ -266,7 +266,7 @@ $errors = json_decode($device['errors'], true);
                                                         <div class="edit-row">
                                                             @if(Auth::user()->user_type == "Admin" || Auth::user()->hasPermission('device_management.edit'))
                                                                 @if(Auth::user()->user_type != "Support")
-                                                                    @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                                                    @if(Auth::user()->user_type == "Admin" || Auth::user()->hasPermission('device_management.edit'))
                                                                         <button type="button" class="btn btn-primary edit-device-btn"
                                                                             onclick="toggleEditDevice()">
                                                                             <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit
@@ -466,7 +466,7 @@ $errors = json_decode($device['errors'], true);
                                                 <?php    echo CommonHelper::getDeviceConfigurationInput($device['device_category_id'], 0, $configurations, $template_info, $url_type, $device); ?>
                                                 @if(Auth::user()->user_type == "Admin" || Auth::user()->hasPermission('device_management.edit'))
                                                     @if(Auth::user()->user_type != "Support")
-                                                        @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                                        @if(Auth::user()->user_type == "Admin" || Auth::user()->hasPermission('device_management.edit'))
                                                             <div class="row mt-3">
                                                                 <div class="col-lg-12 text-center">
                                                                     <button type="button" class="btn btn-primary edit-btn"
@@ -501,7 +501,7 @@ $errors = json_decode($device['errors'], true);
                                                     @empty($device['can_configurations'])
                                                         <?php            echo CommonHelper::getCanProtocolConfigurationInput($device['device_category_id'], 0, $canConfigData, $url_type, $device); ?>
                                                         @if(Auth::user()->user_type != "Support")
-                                                            @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                                            @if(Auth::user()->user_type == "Admin" || Auth::user()->hasPermission('device_management.edit'))
                                                                 <div class="row mt-3">
                                                                     <div class="col-lg-12 text-center">
 
@@ -526,7 +526,7 @@ $errors = json_decode($device['errors'], true);
                                                     @else
                                                         <?php            echo CommonHelper::getCanProtocolConfigurationInput($device['device_category_id'], 0, $canConfigData, $url_type, $device); ?>
                                                         @if(Auth::user()->user_type != "Support")
-                                                            @if(isset($configurations['is_editable']) && $configurations['is_editable']['value'] == 1 || Auth::user()->user_type == "Admin")
+                                                            @if(Auth::user()->user_type == "Admin" || Auth::user()->hasPermission('device_management.edit'))
                                                                 <div class="row mt-3">
                                                                     <div class="col-lg-12 text-center">
 

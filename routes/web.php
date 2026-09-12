@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\FirmwareController;
 use App\Http\Controllers\DeviceCategoryController;
@@ -14,6 +15,8 @@ use App\Http\Controllers\DeviceLogsController;
 use App\Http\Controllers\GuestUserController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\PermissionManagementController;
+use App\Http\Controllers\KycController;
+use App\Http\Controllers\SkuController;
 use App\Exports\BackendExport;
 use App\Exports\UsersExport;
 use App\Exports\DevicesExports;
@@ -76,6 +79,20 @@ Route::patch('/approval/update/{id}', [GuestUserController::class, 'updateStatus
 Route::post('/guest/send-otp', [GuestUserController::class, 'sendOtp'])->name('guest.send.otp');
 Route::post('/guest/verify-otp', [GuestUserController::class, 'verifyOtp'])->name('guest.verify.otp');
 Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteRequest'])->middleware('auth')->name('request.delete');
+
+/* ======================= KYC (Know Your Customer) ======================= */
+Route::get('/kyc', [KycController::class, 'show'])->middleware('auth')->name('kyc.show');
+Route::post('/kyc', [KycController::class, 'store'])->middleware('auth')->name('kyc.store');
+Route::get('/kyc/approvals', [KycController::class, 'approvalQueue'])->middleware('auth')->name('kyc.approvals');
+
+/* ======================= SKU (create-once, PO-many) ======================= */
+Route::get('/skus', [SkuController::class, 'index'])->middleware('auth')->name('skus.index');
+Route::get('/skus/create', [SkuController::class, 'create'])->middleware('auth')->name('skus.create');
+Route::post('/skus', [SkuController::class, 'store'])->middleware('auth')->name('skus.store');
+Route::get('/skus/{id}/edit', [SkuController::class, 'edit'])->middleware('auth')->name('skus.edit');
+Route::patch('/skus/{id}', [SkuController::class, 'update'])->middleware('auth')->name('skus.update');
+Route::delete('/skus/{id}', [SkuController::class, 'destroy'])->middleware('auth')->name('skus.destroy');
+Route::get('/skus/{id}', [SkuController::class, 'show'])->middleware('auth')->name('skus.show');
     Route::middleware('check.role:admin')->group(function () {
         /* ======================= IMEI Tracking Management (Live Tracker) ======================= */
         Route::get('/admin/tracker', [\App\Http\Controllers\LiveTrackerController::class, 'index'])->name('admin.tracker.index');
@@ -226,6 +243,19 @@ Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteReques
     Route::get('/admin/testview-device-assign', [DeviceController::class, 'testshowAssign'])->middleware('check.permission:device_management.view')->name('device.view');
     Route::get('/admin/view-device-assign', [DeviceController::class, 'show'])->middleware('check.permission:device_management.view')->name('device.view');
     Route::get('/admin/devices-list-data', [DeviceController::class, 'listData'])->middleware('check.permission:device_management.view');
+
+    /* ======================= Purchase Order Routes ======================= */
+    Route::get('/admin/purchase-orders', [PurchaseOrderController::class, 'index']);
+    Route::get('/admin/purchase-orders-list-data', [PurchaseOrderController::class, 'listData']);
+    Route::get('/admin/purchase-orders/create', [PurchaseOrderController::class, 'create']);
+    Route::get('/admin/purchase-orders/model-lookup', [PurchaseOrderController::class, 'modelLookup']);
+    Route::get('/admin/purchase-orders/category-config', [PurchaseOrderController::class, 'categoryConfig']);
+    Route::get('/admin/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
+    Route::get('/admin/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
+    Route::get('/admin/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
+    Route::post('/admin/purchase-orders', [PurchaseOrderController::class, 'store']);
+    Route::get('/admin/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
+    Route::post('/admin/purchase-orders/{id}/resubmit', [PurchaseOrderController::class, 'resubmit']);
     Route::get('/admin/view-device-unassign', [DeviceController::class, 'showAssign'])->middleware('check.permission:device_management.view')->name('device.view');
     Route::get('/admin/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
     Route::patch('/admin/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
@@ -375,6 +405,19 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::get('/view-device-assign', [DeviceController::class, 'show'])->middleware('check.permission:device_management.view')->name('device.view'); // Consider renaming route if needed
     Route::get('/devices-list-data', [DeviceController::class, 'listData'])->middleware('check.permission:device_management.view');
     Route::get('/view-device-unassign', [DeviceController::class, 'showAssign'])->middleware('check.permission:device_management.view');
+
+    /* ======================= Purchase Order Routes ======================= */
+    Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
+    Route::get('/purchase-orders-list-data', [PurchaseOrderController::class, 'listData']);
+    Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create']);
+    Route::get('/purchase-orders/model-lookup', [PurchaseOrderController::class, 'modelLookup']);
+    Route::get('/purchase-orders/category-config', [PurchaseOrderController::class, 'categoryConfig']);
+    Route::get('/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
+    Route::get('/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
+    Route::get('/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
+    Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
+    Route::get('/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
+    Route::post('/purchase-orders/{id}/resubmit', [PurchaseOrderController::class, 'resubmit']);
     Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
     Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
     Route::post('/assignuserAll', [DeviceController::class, 'userassignAll'])->middleware('check.permission:device_management.edit')->name('device.userassignall');
@@ -454,6 +497,20 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     // Device Management
     Route::get('/view-device', [DeviceController::class, 'showUserDevice'])->middleware('check.permission:device_management.view')->name('device.view');
     Route::get('/devices-list-data', [DeviceController::class, 'listData'])->middleware('check.permission:device_management.view');
+
+    /* ======================= Purchase Order Routes ======================= */
+    Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
+    Route::get('/purchase-orders-list-data', [PurchaseOrderController::class, 'listData']);
+    Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create']);
+    Route::get('/purchase-orders/model-lookup', [PurchaseOrderController::class, 'modelLookup']);
+    Route::get('/purchase-orders/category-config', [PurchaseOrderController::class, 'categoryConfig']);
+    Route::get('/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
+    Route::get('/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
+    Route::get('/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
+    Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
+    Route::get('/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
+    Route::post('/purchase-orders/{id}/resubmit', [PurchaseOrderController::class, 'resubmit']);
+
     Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
     Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
     Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations'])->middleware('check.permission:device_management.edit');

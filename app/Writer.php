@@ -18,8 +18,22 @@ class Writer extends Authenticatable{
      * @var array
      */
     protected $fillable = [
-        'device_category_id','configurations','can_configurations','name', 'mobile', 'email', 'password','LoginPassword','showLoginPassword','today_pings','total_pings','otp','twoFactorAuthentication','is_support_active','timezone','user_type','created_by','twoFactorAuthToken','two_factor_expires_at','role_id','parent_user_id'
+        'device_category_id','configurations','can_configurations','name', 'mobile', 'email', 'password','LoginPassword','showLoginPassword','today_pings','total_pings','otp','twoFactorAuthentication','is_support_active','timezone','user_type','created_by','twoFactorAuthToken','two_factor_expires_at','role_id','parent_user_id',
+        'organization_name','gstin','pan_number','organization_address','kyc_document_path','kyc_status','kyc_rejection_reason','kyc_reviewed_by','kyc_reviewed_at','kyc_submitted_at',
     ];
+
+    protected $casts = [
+        'kyc_submitted_at' => 'datetime',
+        'kyc_reviewed_at' => 'datetime',
+    ];
+
+    /**
+     * KYC must be Approved before this account may raise a Purchase Order.
+     */
+    public function isKycApproved(): bool
+    {
+        return $this->kyc_status === 'Approved';
+    }
     /**
      * The attributes that are mass assignable.
      *

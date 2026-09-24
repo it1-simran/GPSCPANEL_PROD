@@ -43,6 +43,156 @@ class CommonHelper
         }
         return $getDeviceCategory;
     }
+
+    /**
+     * Categories + firmware a specific account is assigned, for the Raise-PO form.
+     *  - categories: from writers.device_category_id (comma list) → device_categories
+     *  - firmware:   firmware the account has a model for (modals.user_id → firmware)
+     *
+     * @return array{categories:\Illuminate\Support\Collection, firmware:\Illuminate\Support\Collection}
+     */
+    public static function assignmentsForUser($userId): array
+    {
+        $userId = (int) $userId;
+        $empty = ['categories' => collect(), 'firmware' => collect(), 'backends' => collect()];
+        if ($userId <= 0) {
+            return $empty;
+        }
+
+        $writer = DB::table('writers')->where('id', $userId)->first();
+        if (!$writer) {
+            return $empty;
+        }
+
+        $categoryIds = array_values(array_filter(array_map(
+            'intval',
+            explode(',', (string) ($writer->device_category_id ?? ''))
+        )));
+
+        $categories = empty($categoryIds)
+            ? collect()
+            : DB::table('device_categories')
+                ->whereIn('id', $categoryIds)
+                ->where('is_deleted', 0)
+                ->orderBy('device_category_name')
+                ->get(['id', 'device_category_name']);
+
+        // All firmware under the account's assigned Device Categories — not
+        // limited to firmware the account already has a Model (modals) record
+        // for, so Backend/State can be picked before a Model exists. The
+        // Model/Vendor ID lookup (lookupModel) still separately reports
+        // "no model configured" when there's no modals row for the resolved
+        // firmware, without blocking these selects.
+        $firmware = empty($categoryIds)
+            ? collect()
+            : DB::table('firmware')
+                ->whereIn('device_category_id', $categoryIds)
+                ->where('is_deleted', 0)
+                ->orderBy('name')
+                ->get(['id', 'name', 'device_category_id', 'backend_id', 'configurations']);
+
+        // Each firmware's Backend + State come from its configurations JSON
+        // (see FirmwareController::createFirmware) — parse them out here so the
+        // SKU wizard can drive Backend/State selects that resolve to a firmware,
+        // instead of the account picking firmware by name directly.
+        $stateIds = [];
+        $firmware = $firmware->map(function ($f) use (&$stateIds) {
+            $config = json_decode((string) $f->configurations, true) ?: [];
+            $f->state_id = isset($config['state']) ? (int) $config['state'] : null;
+            if ($f->state_id) {
+                $stateIds[] = $f->state_id;
+            }
+            unset($f->configurations);
+            return $f;
+        });
+
+        $stateNames = empty($stateIds)
+            ? collect()
+            : DB::table('states')->whereIn('id', array_unique($stateIds))->pluck('name', 'id');
+
+        // Backend list is unconditional — every backend in the system, not
+        // just ones referenced by this account's firmware — since accounts
+        // may need to pick a Backend before any Model/firmware exists for them.
+        $backends = DB::table('backends')->orderBy('name')->get(['id', 'name']);
+        $backendNameById = $backends->pluck('name', 'id');
+
+        $firmware = $firmware->map(function ($f) use ($stateNames, $backendNameById) {
+            $f->state_name = $f->state_id ? ($stateNames[$f->state_id] ?? '') : '';
+            $f->backend_name = $f->backend_id ? ($backendNameById[$f->backend_id] ?? '') : '';
+            return $f;
+        });
+
+        return ['categories' => $categories, 'firmware' => $firmware, 'backends' => $backends];
+    }
+
+    /**
+     * Normalized validation rules for a device category's configuration fields —
+     * the SAME source used for devices/templates: the field def
+     * (type / requiredFieldInput) plus the authoritative rule stored in
+     * data_fields.validationConfig ({maxValueInput}, {numberInput:{min,max}},
+     * {selectOptions,selectValues}). Auto/system fields are excluded.
+     *
+     * @return array<int, array> ordered field-rule definitions
+     */
+    public static function deviceCategoryFieldRules($categoryId): array
+    {
+        $auto = ['firmware_id', 'firmware_file', 'firmware_version', 'firmwarefilesize', 'device_id', 'device_category_id'];
+        $out = [];
+        $cat = DB::table('device_categories')->where('id', (int) $categoryId)->first();
+        if (!$cat) {
+            return $out;
+        }
+
+        foreach (['inputs', 'parameters'] as $blob) {
+            $defs = json_decode((string) ($cat->$blob ?? ''), true);
+            if (!is_array($defs)) {
+                continue;
+            }
+            foreach ($defs as $f) {
+                if (empty($f['key'])) {
+                    continue;
+                }
+                $key = strtolower(str_replace(' ', '_', $f['key']));
+                if (in_array($key, $auto, true)) {
+                    continue;
+                }
+
+                // Authoritative rule config lives in data_fields.validationConfig.
+                $vc = [];
+                if (!empty($f['id'])) {
+                    $raw = DB::table('data_fields')->where('id', $f['id'])->value('validationConfig');
+                    if ($raw) {
+                        $vc = json_decode($raw, true) ?: [];
+                    }
+                }
+
+                $sOpts = $vc['selectOptions'] ?? ($f['selectOptions'] ?? []);
+                $sVals = $vc['selectValues'] ?? ($f['selectValues'] ?? []);
+                $options = [];
+                if (is_array($sOpts)) {
+                    foreach ($sOpts as $i => $label) {
+                        $options[] = ['value' => $sVals[$i] ?? $label, 'label' => $label];
+                    }
+                }
+
+                $num = $vc['numberInput'] ?? null;
+                $out[] = [
+                    'key'       => $key,
+                    'label'     => $f['key'],
+                    'type'      => $f['type'] ?? 'text',
+                    'id'        => $f['id'] ?? null,
+                    'value'     => $f['default'] ?? '',
+                    'required'  => !empty($f['requiredFieldInput']),
+                    'maxLength' => (isset($vc['maxValueInput']) && $vc['maxValueInput'] !== '') ? (int) $vc['maxValueInput'] : null,
+                    'min'       => (is_array($num) && isset($num['min']) && $num['min'] !== '') ? $num['min'] : null,
+                    'max'       => (is_array($num) && isset($num['max']) && $num['max'] !== '') ? $num['max'] : null,
+                    'options'   => $options,
+                ];
+            }
+        }
+
+        return $out;
+    }
     public static function getDateAsTimeZone($date, $format = 'd-M-y H:i:s')
     {
         $userTimezone = Auth::check() && !empty(Auth::user()->timezone) ? Auth::user()->timezone : 'UTC';

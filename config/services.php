@@ -30,4 +30,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // MES (production-mis-backend) — Purchase Order integration.
+    // Set MES_API_URL + MES_API_TOKEN in .env to enable. Leave MES_API_URL
+    // empty and PO submission reports "not configured" instead of failing.
+    'mes' => [
+        'url' => env('MES_API_URL', ''),
+        'token' => env('MES_API_TOKEN', ''),
+        'verify_ssl' => env('MES_VERIFY_SSL', true),
+    ],
+
 ];

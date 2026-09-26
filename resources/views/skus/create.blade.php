@@ -168,7 +168,7 @@
                     <select name="device_category_id" id="device_category_id" class="select2" required @if($is_admin) disabled @endif>
                       <option value="">{{ $is_admin ? 'Select an account first' : 'Select Device Category' }}</option>
                       @foreach ($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ old('device_category_id') == $cat->id ? 'selected' : '' }}>
+                        <option value="{{ $cat->id }}" data-is-esim="{{ $cat->is_esim ? '1' : '0' }}" {{ old('device_category_id') == $cat->id ? 'selected' : '' }}>
                           {{ $cat->device_category_name }}
                         </option>
                       @endforeach
@@ -176,7 +176,7 @@
                     <span class="po-hint" id="categoryHint">{{ $is_admin ? 'Only the selected account\'s assigned categories are shown.' : '' }}</span>
                   </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="esimProviderCol">
                   <div class="form-group">
                     <label class="control-label">eSIM Provider <span class="po-required">*</span></label>
                     <select name="esim_provider" id="esim_provider" class="select2" required>
@@ -189,7 +189,7 @@
                     <span class="po-hint">Choose whose eSIM inventory this SKU uses.</span>
                   </div>
                 </div>
-                <div class="col-md-6" id="esimJsdMakeCol">
+                <div class="col-md-6" id="esimMakeCol">
                   <div class="form-group">
                     <label class="control-label">eSIM Make <span class="po-required">*</span></label>
                     <select name="esim_make" id="esim_make" class="select2">
@@ -197,6 +197,7 @@
                       @foreach ($esimMakes as $mk)
                         <option value="{{ $mk['name'] }}" {{ old('esim_make') == $mk['name'] ? 'selected' : '' }}>{{ $mk['name'] }}</option>
                       @endforeach
+                      <option value="others" {{ old('esim_make') == 'others' ? 'selected' : '' }}>Others</option>
                     </select>
                     <span class="po-hint">
                       @if ($esimError)
@@ -205,19 +206,13 @@
                         Fetched from MES. Every eSIM has two profiles.
                       @endif
                     </span>
-                  </div>
-                </div>
-                <div class="col-md-6" id="esimCustomerMakeCol" style="display:none;">
-                  <div class="form-group">
-                    <label class="control-label">eSIM Make <span class="po-required">*</span></label>
-                    <input type="text" name="esim_make" id="esim_make_customer" class="form-control"
-                      value="{{ old('esim_make') }}" placeholder="Enter your eSIM make" disabled>
-                    <span class="po-hint">Not in JSD's catalog — enter your own eSIM's make.</span>
+                    <input type="text" name="esim_make_other" id="esim_make_other" class="form-control" style="margin-top:8px;display:none;"
+                      value="{{ old('esim_make_other') }}" placeholder="Enter eSIM make" disabled>
                   </div>
                 </div>
               </div>
 
-              <div class="row" id="esimJsdProfileRow">
+              <div class="row" id="esimProfileRow">
                 <div class="col-md-6">
                   <div class="form-group">
                     <label class="control-label">eSIM Profile 1 <span class="po-required">*</span></label>
@@ -226,7 +221,10 @@
                       @foreach ($esimProfiles as $prof)
                         <option value="{{ $prof['name'] }}" {{ old('esim_profile_1') == $prof['name'] ? 'selected' : '' }}>{{ $prof['name'] }}</option>
                       @endforeach
+                      <option value="others" {{ old('esim_profile_1') == 'others' ? 'selected' : '' }}>Others</option>
                     </select>
+                    <input type="text" name="esim_profile_1_other" id="esim_profile_1_other" class="form-control" style="margin-top:8px;display:none;"
+                      value="{{ old('esim_profile_1_other') }}" placeholder="Enter Profile 1 name" disabled>
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -237,24 +235,11 @@
                       @foreach ($esimProfiles as $prof)
                         <option value="{{ $prof['name'] }}" {{ old('esim_profile_2') == $prof['name'] ? 'selected' : '' }}>{{ $prof['name'] }}</option>
                       @endforeach
+                      <option value="others" {{ old('esim_profile_2') == 'others' ? 'selected' : '' }}>Others</option>
                     </select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row" id="esimCustomerProfileRow" style="display:none;">
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label class="control-label">eSIM Profile 1 <span class="po-required">*</span></label>
-                    <input type="text" name="esim_profile_1" id="esim_profile_1_customer" class="form-control"
-                      value="{{ old('esim_profile_1') }}" placeholder="Enter Profile 1 name" disabled>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label class="control-label">eSIM Profile 2 <span class="po-required">*</span></label>
-                    <input type="text" name="esim_profile_2" id="esim_profile_2_customer" class="form-control"
-                      value="{{ old('esim_profile_2') }}" placeholder="Enter Profile 2 name" disabled>
+                    <input type="text" name="esim_profile_2_other" id="esim_profile_2_other" class="form-control" style="margin-top:8px;display:none;"
+                      value="{{ old('esim_profile_2_other') }}" placeholder="Enter Profile 2 name" disabled>
+                    <span class="po-hint error" id="profileCollideHint" style="display:none;">Profile 1 and Profile 2 must be different.</span>
                   </div>
                 </div>
               </div>
@@ -733,9 +718,12 @@
         });
     }
 
+    // "Others" is excluded from the mutual-exclusion list on purpose — both
+    // Profile 1 and Profile 2 may independently be set to "Others" with their
+    // own free-text value, unlike the real catalog profiles which can't repeat.
     var PROFILE_OPTS = $('#esim_profile_1 option').map(function () {
       return { v: String($(this).val()), t: $(this).text() };
-    }).get().filter(function (o) { return o.v !== ''; });
+    }).get().filter(function (o) { return o.v !== '' && o.v !== 'others'; });
 
     function isSelect2($el) {
       return $el.hasClass('select2-offscreen') || $el.hasClass('select2-hidden-accessible') || !!$el.data('select2');
@@ -752,6 +740,9 @@
         if (o.v === keepVal && keepVal !== '') $o.prop('selected', true);
         $sel.append($o);
       });
+      var $othersOpt = $('<option>').val('others').text('Others');
+      if (keepVal === 'others') { $othersOpt.prop('selected', true); }
+      $sel.append($othersOpt);
 
       if (wasS2) { $sel.select2({ width: '100%' }); }
     }
@@ -789,45 +780,104 @@
       }
     })();
 
+    // eSIM Make / Profile 1 / Profile 2 are selects regardless of provider
+    // (jsd or customer) — only Recharge Period stays JSD-only.
     function setEsimProviderMode(provider) {
       var isCustomer = provider === 'customer';
 
-      $('#esimJsdMakeCol').toggle(!isCustomer);
-      $('#esimCustomerMakeCol').toggle(isCustomer);
-      $('#esimJsdProfileRow').toggle(!isCustomer);
-      $('#esimCustomerProfileRow').toggle(isCustomer);
       $('#esimRechargeCol').toggle(!isCustomer);
       $('#firmwareCol').toggleClass('col-md-6', !isCustomer).toggleClass('col-md-12', isCustomer);
 
       var $recharge = $('#esim_recharge_period');
       $recharge.prop('disabled', isCustomer).prop('required', !isCustomer);
       try { $recharge.select2(isCustomer ? 'disable' : 'enable'); } catch (e) {}
+    }
 
-      var $jsdMake = $('#esim_make'), $custMake = $('#esim_make_customer');
-      var $jsdP1 = $('#esim_profile_1'), $custP1 = $('#esim_profile_1_customer');
-      var $jsdP2 = $('#esim_profile_2'), $custP2 = $('#esim_profile_2_customer');
-
-      $jsdMake.prop('disabled', isCustomer).prop('required', !isCustomer);
-      try { $jsdMake.select2(isCustomer ? 'disable' : 'enable'); } catch (e) {}
-      $custMake.prop('disabled', !isCustomer).prop('required', isCustomer);
-
-      if (isCustomer) {
-        setProfilesEnabled(false);
-        $jsdP1.prop('disabled', true).prop('required', false);
-        $jsdP2.prop('disabled', true).prop('required', false);
-      } else {
-        setProfilesEnabled(String($jsdMake.val() || '') !== '');
-        $jsdP1.prop('required', true);
-        $jsdP2.prop('required', true);
+    // Generic "Others" pattern: picking the "others" option in a select
+    // reveals a free-text input (a different field name) for the actual value.
+    function wireOthersOption(selectSel, otherInputSel) {
+      var $select = $(selectSel), $other = $(otherInputSel);
+      function sync() {
+        var isOthers = String($select.val() || '') === 'others';
+        $other.toggle(isOthers).prop('disabled', !isOthers).prop('required', isOthers);
+        if (!isOthers) { $other.val(''); }
       }
-      $custP1.prop('disabled', !isCustomer).prop('required', isCustomer);
-      $custP2.prop('disabled', !isCustomer).prop('required', isCustomer);
+      // Namespaced so re-calling this (e.g. after a Device Category change)
+      // re-syncs immediately without stacking duplicate change handlers.
+      $select.off('change.others').on('change.others', sync);
+      sync();
+    }
+
+    // When both Profile 1 and Profile 2 are set to "Others", their typed
+    // values must not be the same (mirrors the catalog selects, which
+    // already can't both hold the same real profile — see PROFILE_OPTS).
+    function checkOtherProfilesDistinct() {
+      var $p1 = $('#esim_profile_1_other'), $p2 = $('#esim_profile_2_other');
+      var v1 = String($p1.val() || '').trim().toLowerCase();
+      var v2 = String($p2.val() || '').trim().toLowerCase();
+      var collide = v1 !== '' && v2 !== '' && v1 === v2;
+      var msg = collide ? 'Profile 1 and Profile 2 must be different.' : '';
+      $p1.get(0).setCustomValidity(msg);
+      $p2.get(0).setCustomValidity(msg);
+      $('#profileCollideHint').toggle(collide);
+      $p1.closest('.form-group').toggleClass('has-error', collide);
+      $p2.closest('.form-group').toggleClass('has-error', collide);
+      return !collide;
+    }
+    $('#esim_profile_1_other, #esim_profile_2_other').on('input change', checkOtherProfilesDistinct);
+    wireOthersOption('#esim_make', '#esim_make_other');
+    wireOthersOption('#esim_profile_1', '#esim_profile_1_other');
+    wireOthersOption('#esim_profile_2', '#esim_profile_2_other');
+    checkOtherProfilesDistinct();
+
+    // Show the eSIM inputs only when the selected Device Category has eSIM
+    // enabled — otherwise hide + disable them all so nothing is submitted
+    // or required for a non-eSIM category.
+    function applyEsimVisibilityForCategory() {
+      var $selected = $('#device_category_id option:selected');
+      var isEsimCategory = String($selected.data('is-esim')) === '1';
+
+      $('#esimProviderCol').toggle(isEsimCategory);
+      var $provider = $('#esim_provider');
+      $provider.prop('disabled', !isEsimCategory).prop('required', isEsimCategory);
+      try { $provider.select2(isEsimCategory ? 'enable' : 'disable'); } catch (e) {}
+
+      if (isEsimCategory) {
+        // Re-show + re-enable Make/Profile (a prior non-eSIM category may
+        // have hidden and disabled them — undo that here).
+        $('#esimMakeCol, #esimProfileRow').show();
+        ['#esim_make', '#esim_profile_1', '#esim_profile_2'].forEach(function (sel) {
+          var $f = $(sel);
+          $f.prop('disabled', false).prop('required', true);
+          try { $f.select2('enable'); } catch (e) {}
+        });
+
+        setEsimProviderMode(String($provider.val() || 'jsd'));
+        wireOthersOption('#esim_make', '#esim_make_other');
+        wireOthersOption('#esim_profile_1', '#esim_profile_1_other');
+        wireOthersOption('#esim_profile_2', '#esim_profile_2_other');
+      } else {
+        // Category has no eSIM at all — hide every eSIM-related field and
+        // disable+unrequire all of them (selects and their "Others" inputs).
+        $('#esimMakeCol, #esimProfileRow, #esimRechargeCol').hide();
+        $('#firmwareCol').removeClass('col-md-12').addClass('col-md-6');
+        [
+          '#esim_make', '#esim_make_other',
+          '#esim_profile_1', '#esim_profile_1_other',
+          '#esim_profile_2', '#esim_profile_2_other',
+          '#esim_recharge_period',
+        ].forEach(function (sel) {
+          var $f = $(sel);
+          $f.prop('disabled', true).prop('required', false);
+          try { $f.select2('disable'); } catch (e) {}
+        });
+      }
     }
 
     $('#esim_provider').on('change', function () {
       setEsimProviderMode(String($(this).val() || 'jsd'));
     });
-    setEsimProviderMode(String($('#esim_provider').val() || 'jsd'));
+    applyEsimVisibilityForCategory();
 
     function setDeviceFieldsEnabled(enabled) {
       $('#device_category_id').prop('disabled', !enabled);
@@ -844,7 +894,7 @@
       var $cat = $('#device_category_id');
       if (isSelect2($cat)) { try { $cat.select2('destroy'); } catch (e) {} }
       $cat.empty().append($('<option>').val('').text(lock ? 'Select an account first' : 'Select Device Category'));
-      cats.forEach(function (c) { $cat.append($('<option>').val(String(c.id)).text(c.name)); });
+      cats.forEach(function (c) { $cat.append($('<option>').val(String(c.id)).attr('data-is-esim', c.is_esim ? '1' : '0').text(c.name)); });
       $cat.select2({ width: '100%' });
     }
 
@@ -855,6 +905,7 @@
         BACKEND_OPTS = [];
         rebuildFirmwareBackend();
         setDeviceFieldsEnabled(false);
+        applyEsimVisibilityForCategory();
         $('#categoryHint').text('Select an account first.');
         return;
       }
@@ -868,6 +919,7 @@
           setDeviceFieldsEnabled(true);
           rebuildFirmwareBackend();
           loadCategoryConfig();
+          applyEsimVisibilityForCategory();
           $('#categoryHint').text(cats.length
             ? "Only the selected account's assigned categories are shown."
             : 'No device categories are assigned to this account.');
@@ -875,7 +927,7 @@
         .fail(function () { $('#categoryHint').text('Could not load assignments. Please retry.'); });
     }
 
-    $('#device_category_id').on('change', function () { rebuildFirmwareBackend(); loadCategoryConfig(); });
+    $('#device_category_id').on('change', function () { rebuildFirmwareBackend(); loadCategoryConfig(); applyEsimVisibilityForCategory(); });
     function refreshEsimProviderCustomerLabel() {
       var $acc = $('#raised_by_user_id option:selected');
       var name = $acc.data('name') ? String($acc.data('name')) : '';
@@ -948,6 +1000,9 @@
         if ($panel.find('#backend_id, #state_id').length && !String($('#firmware_id').val() || '')) {
           ok = false;
           $('#firmware_display').closest('.form-group').addClass('has-error');
+        }
+        if ($panel.find('#esim_profile_1_other, #esim_profile_2_other').length && !checkOtherProfilesDistinct()) {
+          ok = false;
         }
         return ok;
       }

@@ -81,18 +81,18 @@ Route::post('/guest/verify-otp', [GuestUserController::class, 'verifyOtp'])->nam
 Route::delete('/delete-request/{id}', [GuestUserController::class, 'deleteRequest'])->middleware('auth')->name('request.delete');
 
 /* ======================= KYC (Know Your Customer) ======================= */
-Route::get('/kyc', [KycController::class, 'show'])->middleware('auth')->name('kyc.show');
-Route::post('/kyc', [KycController::class, 'store'])->middleware('auth')->name('kyc.store');
+Route::get('/kyc', [KycController::class, 'show'])->middleware(['auth', 'level1.only'])->name('kyc.show');
+Route::post('/kyc', [KycController::class, 'store'])->middleware(['auth', 'level1.only'])->name('kyc.store');
 Route::get('/kyc/approvals', [KycController::class, 'approvalQueue'])->middleware('auth')->name('kyc.approvals');
 
 /* ======================= SKU (create-once, PO-many) ======================= */
-Route::get('/skus', [SkuController::class, 'index'])->middleware('auth')->name('skus.index');
-Route::get('/skus/create', [SkuController::class, 'create'])->middleware('auth')->name('skus.create');
-Route::post('/skus', [SkuController::class, 'store'])->middleware('auth')->name('skus.store');
-Route::get('/skus/{id}/edit', [SkuController::class, 'edit'])->middleware('auth')->name('skus.edit');
-Route::patch('/skus/{id}', [SkuController::class, 'update'])->middleware('auth')->name('skus.update');
-Route::delete('/skus/{id}', [SkuController::class, 'destroy'])->middleware('auth')->name('skus.destroy');
-Route::get('/skus/{id}', [SkuController::class, 'show'])->middleware('auth')->name('skus.show');
+Route::get('/skus', [SkuController::class, 'index'])->middleware(['auth', 'level1.only'])->name('skus.index');
+Route::get('/skus/create', [SkuController::class, 'create'])->middleware(['auth', 'level1.only'])->name('skus.create');
+Route::post('/skus', [SkuController::class, 'store'])->middleware(['auth', 'level1.only'])->name('skus.store');
+Route::get('/skus/{id}/edit', [SkuController::class, 'edit'])->middleware(['auth', 'level1.only'])->name('skus.edit');
+Route::patch('/skus/{id}', [SkuController::class, 'update'])->middleware(['auth', 'level1.only'])->name('skus.update');
+Route::delete('/skus/{id}', [SkuController::class, 'destroy'])->middleware(['auth', 'level1.only'])->name('skus.destroy');
+Route::get('/skus/{id}', [SkuController::class, 'show'])->middleware(['auth', 'level1.only'])->name('skus.show');
     Route::middleware('check.role:admin')->group(function () {
         /* ======================= IMEI Tracking Management (Live Tracker) ======================= */
         Route::get('/admin/tracker', [\App\Http\Controllers\LiveTrackerController::class, 'index'])->name('admin.tracker.index');
@@ -254,6 +254,7 @@ Route::get('/skus/{id}', [SkuController::class, 'show'])->middleware('auth')->na
     Route::get('/admin/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
     Route::get('/admin/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
     Route::post('/admin/purchase-orders', [PurchaseOrderController::class, 'store']);
+    Route::get('/admin/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);
     Route::get('/admin/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
     Route::post('/admin/purchase-orders/{id}/resubmit', [PurchaseOrderController::class, 'resubmit']);
     Route::get('/admin/view-device-unassign', [DeviceController::class, 'showAssign'])->middleware('check.permission:device_management.view')->name('device.view');
@@ -331,6 +332,7 @@ Route::get('/skus/{id}', [SkuController::class, 'show'])->middleware('auth')->na
     Route::delete('/admin/delete-version/{id}', [versionController::class, 'destroy'])->name('version.destroy');
     Route::post('/admin/get-can-protocol-fields', [DeviceController::class, 'getCanProtoColFields']);
     Route::post('/admin/request/send', [GuestUserController::class, 'send'])->name('admin.request.send');
+    Route::get('/admin/request/registration-link', [GuestUserController::class, 'registrationLink'])->name('admin.request.registration-link');
     Route::post('/admin/get-firmware-with-models', [FirmwareController::class, 'getFirmwareWithModel']);
     Route::post('/admin/get-firmware', [FirmwareController::class, 'getFirmware']);
 
@@ -407,17 +409,20 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::get('/view-device-unassign', [DeviceController::class, 'showAssign'])->middleware('check.permission:device_management.view');
 
     /* ======================= Purchase Order Routes ======================= */
-    Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
-    Route::get('/purchase-orders-list-data', [PurchaseOrderController::class, 'listData']);
-    Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create']);
-    Route::get('/purchase-orders/model-lookup', [PurchaseOrderController::class, 'modelLookup']);
-    Route::get('/purchase-orders/category-config', [PurchaseOrderController::class, 'categoryConfig']);
-    Route::get('/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
-    Route::get('/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
-    Route::get('/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
-    Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
-    Route::get('/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
-    Route::post('/purchase-orders/{id}/resubmit', [PurchaseOrderController::class, 'resubmit']);
+    Route::middleware('level1.only')->group(function () {
+        Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
+        Route::get('/purchase-orders-list-data', [PurchaseOrderController::class, 'listData']);
+        Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create']);
+        Route::get('/purchase-orders/model-lookup', [PurchaseOrderController::class, 'modelLookup']);
+        Route::get('/purchase-orders/category-config', [PurchaseOrderController::class, 'categoryConfig']);
+        Route::get('/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
+        Route::get('/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
+        Route::get('/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
+        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
+        Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);
+        Route::get('/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
+        Route::post('/purchase-orders/{id}/resubmit', [PurchaseOrderController::class, 'resubmit']);
+    });
     Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
     Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
     Route::post('/assignuserAll', [DeviceController::class, 'userassignAll'])->middleware('check.permission:device_management.edit')->name('device.userassignall');
@@ -499,17 +504,20 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
     Route::get('/devices-list-data', [DeviceController::class, 'listData'])->middleware('check.permission:device_management.view');
 
     /* ======================= Purchase Order Routes ======================= */
-    Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
-    Route::get('/purchase-orders-list-data', [PurchaseOrderController::class, 'listData']);
-    Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create']);
-    Route::get('/purchase-orders/model-lookup', [PurchaseOrderController::class, 'modelLookup']);
-    Route::get('/purchase-orders/category-config', [PurchaseOrderController::class, 'categoryConfig']);
-    Route::get('/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
-    Route::get('/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
-    Route::get('/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
-    Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
-    Route::get('/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
-    Route::post('/purchase-orders/{id}/resubmit', [PurchaseOrderController::class, 'resubmit']);
+    Route::middleware('level1.only')->group(function () {
+        Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
+        Route::get('/purchase-orders-list-data', [PurchaseOrderController::class, 'listData']);
+        Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create']);
+        Route::get('/purchase-orders/model-lookup', [PurchaseOrderController::class, 'modelLookup']);
+        Route::get('/purchase-orders/category-config', [PurchaseOrderController::class, 'categoryConfig']);
+        Route::get('/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
+        Route::get('/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
+        Route::get('/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
+        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
+        Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);
+        Route::get('/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
+        Route::post('/purchase-orders/{id}/resubmit', [PurchaseOrderController::class, 'resubmit']);
+    });
 
     Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
     Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
@@ -620,6 +628,10 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
 
     Route::get('/view-user-approval-request', [GuestUserController::class, 'showApprovalRequest']);
     Route::get('/assign-device', [DeviceController::class, 'assignDeviceMultiple'])->name('support.device.add.multiple');
+
+    /* ======================= Support: assign (only) a device category ======================= */
+    Route::get('/assign-device-category', [RegisterController::class, 'supportDeviceCategoryAssignment'])->name('support.device-category.assign');
+    Route::post('/assign-device-category', [RegisterController::class, 'enableAccountDeviceCategory'])->name('support.device-category.enable');
     // Route::post('/update-device-configurations/{id}', [DeviceController::class, 'updateDeviceConfigurations']);
     Route::get('/view-device-configurations/{id}', [DeviceController::class, 'showConfigurations'])->middleware('check.permission:device_management.view');
     Route::patch('/update-device-info-configurations/{id}', [DeviceController::class, 'updateDeviceInfoConfigurations'])->middleware('check.permission:device_management.edit');
@@ -650,6 +662,8 @@ Route::middleware(['check.role:support'])->prefix('support')->group(function () 
     Route::get('/view-ticket', [TicketController::class, 'index']);
     Route::post('/request/send', [GuestUserController::class, 'send'])
         ->name('support.request.send');
+    Route::get('/request/registration-link', [GuestUserController::class, 'registrationLink'])
+        ->name('support.request.registration-link');
     Route::post('/get-firmware-with-models', [FirmwareController::class, 'getFirmwareWithModel']);
     Route::post('/get-firmware', [FirmwareController::class, 'getFirmware']);
 

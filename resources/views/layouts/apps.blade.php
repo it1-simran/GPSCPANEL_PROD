@@ -17,6 +17,7 @@ if (Schema::hasTable('version_control')) {
 
 $ticketCount = $tickets->count();
 $userType = Auth::check() ? strtolower(trim((string) Auth::user()->user_type)) : '';
+$isLevel1User = Auth::check() && Auth::user()->isLevel1();
 
 $globalSearchItems = [];
 if ($userType === 'admin') {
@@ -55,17 +56,21 @@ if ($userType === 'admin') {
         ['label' => 'View Account', 'url' => url('/reseller/view-user'), 'keywords' => ['account', 'users']],
         ['label' => 'Assigned Devices', 'url' => url('/reseller/view-device-assign'), 'keywords' => ['device', 'assigned devices']],
         ['label' => 'View Settings', 'url' => url('/reseller/view-template'), 'keywords' => ['settings', 'template']],
-        ['label' => 'My KYC', 'url' => url('/kyc'), 'keywords' => ['kyc', 'gstin', 'organization', 'profile']],
-        ['label' => 'My SKUs', 'url' => url('/skus'), 'keywords' => ['sku', 'device category', 'create sku']],
     ];
+    if ($isLevel1User) {
+        $globalSearchItems[] = ['label' => 'My KYC', 'url' => url('/kyc'), 'keywords' => ['kyc', 'gstin', 'organization', 'profile']];
+        $globalSearchItems[] = ['label' => 'My SKUs', 'url' => url('/skus'), 'keywords' => ['sku', 'device category', 'create sku']];
+    }
 } else {
     $globalSearchItems = [
         ['label' => 'Dashboard', 'url' => url('/user'), 'keywords' => ['home', 'dashboard']],
         ['label' => 'View Device', 'url' => url('/user/view-device'), 'keywords' => ['device', 'devices']],
         ['label' => 'View Settings', 'url' => url('/user/view-template'), 'keywords' => ['settings', 'template']],
-        ['label' => 'My KYC', 'url' => url('/kyc'), 'keywords' => ['kyc', 'gstin', 'organization', 'profile']],
-        ['label' => 'My SKUs', 'url' => url('/skus'), 'keywords' => ['sku', 'device category', 'create sku']],
     ];
+    if ($isLevel1User) {
+        $globalSearchItems[] = ['label' => 'My KYC', 'url' => url('/kyc'), 'keywords' => ['kyc', 'gstin', 'organization', 'profile']];
+        $globalSearchItems[] = ['label' => 'My SKUs', 'url' => url('/skus'), 'keywords' => ['sku', 'device category', 'create sku']];
+    }
 }
 ?>
 
@@ -290,6 +295,7 @@ if ($userType === 'admin') {
                                     <span class="dropdown-usermenu-icon">@include('partials.brand-gps-mark')</span><span>Profile</span>
                                 </a>
                             </li>
+                            @if (Auth::user()->isLevel1())
                             <li>
                                 <a class="dropdown-usermenu-item" href="{{ url('/kyc') }}">
                                     <span class="dropdown-usermenu-icon">@include('partials.brand-gps-mark')</span><span>My KYC</span>
@@ -300,6 +306,7 @@ if ($userType === 'admin') {
                                     <i class="fa fa-cube"></i><span>My SKUs</span>
                                 </a>
                             </li>
+                            @endif
                             @else
                             <li>
                                 <a class="dropdown-usermenu-item" href="{{ url('/kyc/approvals') }}">
@@ -794,6 +801,7 @@ if ($userType === 'admin') {
                         </li>
                         @endif
 
+                        @if (Auth::user()->isLevel1())
                         <li class='sub-menu {{ request()->is('reseller/purchase-orders', 'reseller/purchase-orders/create') ? 'active' : '' }}'>
                             <a href="#"
                                 class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/purchase-orders', 'reseller/purchase-orders/create') ? 'active' : '' }}">
@@ -828,6 +836,7 @@ if ($userType === 'admin') {
                                 <span class='icon-sidebar fa fa-cube fa-2x'></span><span>My SKUs</span>
                             </a>
                         </li>
+                        @endif
                         @else
                         @if (Auth::user()->user_type == 'User')
 
@@ -907,6 +916,7 @@ if ($userType === 'admin') {
                         </li>
                         @endif
 
+                        @if (Auth::user()->isLevel1())
                         <li class='sub-menu {{ request()->is('user/purchase-orders', 'user/purchase-orders/create') ? 'active' : '' }}'>
                             <a href="#"
                                 class="hvr-bounce-to-right-sidebar-parent {{ request()->is('user/purchase-orders', 'user/purchase-orders/create') ? 'active' : '' }}">
@@ -941,6 +951,7 @@ if ($userType === 'admin') {
                                 <span class='icon-sidebar fa fa-cube fa-2x'></span><span>My SKUs</span>
                             </a>
                         </li>
+                        @endif
 
                         @endif
                         @if (Auth::user()->user_type == 'Support')
@@ -967,9 +978,9 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
-                        <li class='sub-menu {{ request()->is('support/view-user-approval-request') ? 'active' : '' }}'>
+                        <li class='sub-menu {{ request()->is('support/view-user-approval-request', 'support/assign-device-category') ? 'active' : '' }}'>
                             <a href="#"
-                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/view-user-approval-request') ? 'active' : '' }}">
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/view-user-approval-request', 'support/assign-device-category') ? 'active' : '' }}">
                                 <span class='icon-sidebar pe-7s-user fa-2x'></span><span>Account Management</span>
                             </a>
                             <ul class='sub'>
@@ -977,6 +988,12 @@ if ($userType === 'admin') {
                                     <a href="{{ url('support/view-user-approval-request') }}"
                                         class="{{ request()->is('support/view-user-approval-request') ? 'active' : '' }}">
                                         View User Approval
+                                    </a>
+                                </li>
+                                <li class="{{ request()->is('support/assign-device-category') ? 'active' : '' }}">
+                                    <a href="{{ url('support/assign-device-category') }}"
+                                        class="{{ request()->is('support/assign-device-category') ? 'active' : '' }}">
+                                        Assign Device Category
                                     </a>
                                 </li>
                             </ul>

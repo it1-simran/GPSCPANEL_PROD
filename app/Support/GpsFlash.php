@@ -30,6 +30,11 @@ class GpsFlash
             $flash['status'] = $status;
         }
 
+        $registrationLink = session()->get('registration_link');
+        if (is_string($registrationLink) && $registrationLink !== '') {
+            $flash['registration_link'] = $registrationLink;
+        }
+
         $validationErrors = self::collectValidationErrors($errors);
         if ($validationErrors !== []) {
             $flash['validation_errors'] = $validationErrors;

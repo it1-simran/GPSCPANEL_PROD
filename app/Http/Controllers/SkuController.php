@@ -110,6 +110,34 @@ class SkuController extends Controller
     }
 
     /**
+     * When the customer picked "Others" for eSIM Make / Profile 1 / Profile 2,
+     * swap in the free-text value they typed instead of the literal "others"
+     * sentinel, then drop the now-unneeded *_other keys.
+     */
+    private function substituteEsimOthers(array &$validated): void
+    {
+        foreach (['esim_make', 'esim_profile_1', 'esim_profile_2'] as $field) {
+            if (($validated[$field] ?? null) === 'others') {
+                $validated[$field] = trim((string) ($validated[$field . '_other'] ?? ''));
+            }
+            unset($validated[$field . '_other']);
+        }
+    }
+
+    /**
+     * Profile 1 and Profile 2 must be two distinct eSIM profiles — the UI
+     * already prevents picking the same catalog profile twice, but a
+     * customer-typed "Others" value on both sides isn't caught by that, so
+     * check it explicitly (case-insensitive) after substitution.
+     */
+    private function esimProfilesCollide(array $validated): bool
+    {
+        $p1 = trim((string) ($validated['esim_profile_1'] ?? ''));
+        $p2 = trim((string) ($validated['esim_profile_2'] ?? ''));
+        return $p1 !== '' && $p2 !== '' && strcasecmp($p1, $p2) === 0;
+    }
+
+    /**
      * Validate + forward a new SKU request to MES. Nothing is stored in CPanel.
      */
     public function store(Request $request, MesService $mes)
@@ -117,14 +145,23 @@ class SkuController extends Controller
         $user = Auth::user();
         $isAdmin = $user->user_type === 'Admin';
 
+        // eSIM fields only apply when the selected Device Category has eSIM
+        // enabled — otherwise the wizard hides them entirely, so they must not
+        // be required (and shouldn't be trusted even if somehow submitted).
+        $categoryIsEsim = (bool) DB::table('device_categories')->where('id', (int) $request->input('device_category_id'))->value('is_esim');
+        $esimRule = $categoryIsEsim ? 'required' : 'nullable';
+
         $validated = $request->validate([
             'raised_by_user_id' => ($isAdmin ? 'required|integer' : 'nullable|integer'),
             'device_category_id' => 'required|integer',
-            'esim_provider' => 'required|in:jsd,customer',
-            'esim_make' => 'required|string|max:191',
-            'esim_profile_1' => 'required|string|max:191',
-            'esim_profile_2' => 'required|string|max:191',
-            'esim_recharge_period' => 'required_if:esim_provider,jsd|nullable|in:1_year,2_year',
+            'esim_provider' => $esimRule . '|in:jsd,customer',
+            'esim_make' => $esimRule . '|string|max:191',
+            'esim_make_other' => 'required_if:esim_make,others|nullable|string|max:191',
+            'esim_profile_1' => $esimRule . '|string|max:191',
+            'esim_profile_1_other' => 'required_if:esim_profile_1,others|nullable|string|max:191',
+            'esim_profile_2' => $esimRule . '|string|max:191',
+            'esim_profile_2_other' => 'required_if:esim_profile_2,others|nullable|string|max:191',
+            'esim_recharge_period' => ($categoryIsEsim ? 'required_if:esim_provider,jsd' : 'nullable') . '|nullable|in:1_year,2_year',
             'firmware_id' => 'nullable|integer',
             'model_name' => 'nullable|string|max:191',
             'vendor_id' => 'nullable|string|max:191',
@@ -135,6 +172,18 @@ class SkuController extends Controller
         ], [
             'raised_by_user_id.required' => 'Please select the account this SKU is for.',
         ]);
+
+        if (!$categoryIsEsim) {
+            $validated['esim_provider'] = $validated['esim_provider'] ?? '';
+            $validated['esim_make'] = $validated['esim_make'] ?? '';
+            $validated['esim_profile_1'] = $validated['esim_profile_1'] ?? '';
+            $validated['esim_profile_2'] = $validated['esim_profile_2'] ?? '';
+            $validated['esim_recharge_period'] = null;
+        }
+        $this->substituteEsimOthers($validated);
+        if ($this->esimProfilesCollide($validated)) {
+            return back()->withInput()->with('error', 'eSIM Profile 1 and Profile 2 must be different.');
+        }
 
         $owner = $user;
         if ($isAdmin && !empty($validated['raised_by_user_id'])) {
@@ -281,13 +330,19 @@ class SkuController extends Controller
             return redirect()->to('/skus')->with('error', 'This SKU request cannot be edited.');
         }
 
+        $categoryIsEsim = (bool) DB::table('device_categories')->where('id', (int) $request->input('device_category_id'))->value('is_esim');
+        $esimRule = $categoryIsEsim ? 'required' : 'nullable';
+
         $validated = $request->validate([
             'device_category_id' => 'required|integer',
-            'esim_provider' => 'required|in:jsd,customer',
-            'esim_make' => 'required|string|max:191',
-            'esim_profile_1' => 'required|string|max:191',
-            'esim_profile_2' => 'required|string|max:191',
-            'esim_recharge_period' => 'required_if:esim_provider,jsd|nullable|in:1_year,2_year',
+            'esim_provider' => $esimRule . '|in:jsd,customer',
+            'esim_make' => $esimRule . '|string|max:191',
+            'esim_make_other' => 'required_if:esim_make,others|nullable|string|max:191',
+            'esim_profile_1' => $esimRule . '|string|max:191',
+            'esim_profile_1_other' => 'required_if:esim_profile_1,others|nullable|string|max:191',
+            'esim_profile_2' => $esimRule . '|string|max:191',
+            'esim_profile_2_other' => 'required_if:esim_profile_2,others|nullable|string|max:191',
+            'esim_recharge_period' => ($categoryIsEsim ? 'required_if:esim_provider,jsd' : 'nullable') . '|nullable|in:1_year,2_year',
             'firmware_id' => 'nullable|integer',
             'model_name' => 'nullable|string|max:191',
             'vendor_id' => 'nullable|string|max:191',
@@ -296,6 +351,18 @@ class SkuController extends Controller
             'sticker_format_id' => 'required|string|max:191',
             'sticker_format_name' => 'nullable|string|max:191',
         ]);
+
+        if (!$categoryIsEsim) {
+            $validated['esim_provider'] = $validated['esim_provider'] ?? '';
+            $validated['esim_make'] = $validated['esim_make'] ?? '';
+            $validated['esim_profile_1'] = $validated['esim_profile_1'] ?? '';
+            $validated['esim_profile_2'] = $validated['esim_profile_2'] ?? '';
+            $validated['esim_recharge_period'] = null;
+        }
+        $this->substituteEsimOthers($validated);
+        if ($this->esimProfilesCollide($validated)) {
+            return back()->withInput()->with('error', 'eSIM Profile 1 and Profile 2 must be different.');
+        }
 
         if ($msg = $this->assertAssigned($writerId, (int) $validated['device_category_id'], $validated['firmware_id'] ?? null)) {
             return back()->withInput()->with('error', $msg);

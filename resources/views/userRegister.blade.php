@@ -128,12 +128,23 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
                     </div>
                     <div class="mb-3 col-sm-6">
                         <label for="device_category" class="form-label"><i class="fa fa-cubes" style="color:#76CF1C;margin-right:5px;font-size:11px;"></i> Device Category</label>
+                        @if (!empty($deviceCategoryId))
+                        {{-- Pre-selected by the admin when the invite was sent — locked so the
+                             invitee can't pick a different category than what was intended. --}}
+                        <select id="deviceCategorySelect" class="form-select" disabled>
+                            @foreach($deviceCategory as $category)
+                            <option value="{{$category->id}}" {{ (string) $category->id === (string) $deviceCategoryId ? 'selected' : '' }}>{{$category->device_category_name}}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="device_category" value="{{ $deviceCategoryId }}">
+                        @else
                         <select id="deviceCategorySelect" name="device_category" class="form-select" required>
                             <option value="">Select Category</option>
                             @foreach($deviceCategory as $category)
                             <option value="{{$category->id}}">{{$category->device_category_name}}</option>
                             @endforeach
                         </select>
+                        @endif
                     </div>
                     <div id="deviceConfigWrapper" style="display:none;">
                         <h5 class="mt-4 config-header-bg"><i class="fa fa-cogs" style="margin-right:8px;color:#76CF1C;"></i> Default Configuration</h5>
@@ -461,5 +472,10 @@ $deviceCategory = DeviceCategory::where('is_deleted', '0')->get();
             });
         });
 
+        // A pre-selected (disabled) category doesn't fire "change" on its
+        // own — trigger it once so the default configuration still loads.
+        if ($('#deviceCategorySelect').prop('disabled') && $('#deviceCategorySelect').val()) {
+            $('#deviceCategorySelect').trigger('change');
+        }
     })
 </script>

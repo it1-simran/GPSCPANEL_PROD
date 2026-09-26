@@ -90,6 +90,31 @@ class PurchaseOrderController extends Controller
     }
 
     /**
+     * Read-only PO detail page — device/eSIM/model/packaging details, logistics,
+     * and a step-wise status history. Non-admins may only view their own PO.
+     */
+    public function show($id, MesService $mes)
+    {
+        $url_type = self::getURLType();
+        $user = Auth::user();
+
+        $res = $mes->getPurchaseOrder($id);
+        $po = $res['po'] ?? null;
+        if (!$po) {
+            return redirect()->to('/' . $url_type . '/purchase-orders')->with('error', 'Purchase Order not found or MES is unreachable.');
+        }
+        if ($user->user_type !== 'Admin' && (int) ($po['raisedBy']['cpanelUserId'] ?? 0) !== (int) $user->id) {
+            abort(403);
+        }
+
+        return view('purchase_order.show', [
+            'url_type' => $url_type,
+            'po' => $po,
+            'poId' => $id,
+        ]);
+    }
+
+    /**
      * Show the Raise-PO wizard pre-filled to EDIT & RESUBMIT a rejected PO.
      * Allowed only when the PO is Rejected AND Sales permitted resubmission,
      * and (for non-admins) the PO belongs to the current user.
@@ -147,6 +172,7 @@ class PurchaseOrderController extends Controller
             'resubmit' => true,
             'po_id' => $id,
             'sales_directions' => $po['salesRemarks'] ?? '',
+            'po_status_history' => $po['statusHistory'] ?? [],
             'prefill' => $prefill,
             'config_overrides' => $configOverrides,
             'locked_account' => [
@@ -367,7 +393,7 @@ class PurchaseOrderController extends Controller
 
         $a = CommonHelper::assignmentsForUser($userId);
         return response()->json([
-            'categories' => $a['categories']->map(fn($c) => ['id' => $c->id, 'name' => $c->device_category_name])->values(),
+            'categories' => $a['categories']->map(fn($c) => ['id' => $c->id, 'name' => $c->device_category_name, 'is_esim' => (bool) ($c->is_esim ?? false)])->values(),
             'firmware'   => $a['firmware']->map(fn($f) => [
                 'id' => $f->id,
                 'name' => $f->name,
@@ -718,17 +744,25 @@ class PurchaseOrderController extends Controller
 
         $deliverySource = $po['expectedDeliveryDate'] ?? $po['ppcDispatchDate'] ?? null;
         $delivery = !empty($deliverySource)
-            ? $e(Carbon::parse($deliverySource)->format('d-M-Y'))
+            ? $e(CommonHelper::getDateAsTimeZone($deliverySource, 'd-M-Y'))
             : '-';
         $created = !empty($po['createdAt'])
-            ? $e(Carbon::parse($po['createdAt'])->format('d-M-Y H:i'))
+            ? $e(CommonHelper::getDateAsTimeZone($po['createdAt'], 'd-M-Y H:i'))
+            : '-';
+        $updated = !empty($po['updatedAt'])
+            ? $e(CommonHelper::getDateAsTimeZone($po['updatedAt'], 'd-M-Y H:i'))
             : '-';
 
-        // Edit & Resubmit only when Sales cancelled AND permitted resubmission.
+        // View is always available; Edit & Resubmit only when Sales cancelled
+        // AND permitted resubmission.
         $action = '<span class="text-muted">-</span>';
-        if ($status === 'Rejected' && !empty($po['resubmissionAllowed']) && !empty($po['_id'])) {
-            $action = '<a href="/' . $this->getURLType() . '/purchase-orders/' . $e($po['_id']) . '/edit" class="btn btn-primary btn-sm">'
-                . '<i class="fa fa-pencil"></i> Edit &amp; Resubmit</a>';
+        if (!empty($po['_id'])) {
+            $action = '<a href="/' . $this->getURLType() . '/purchase-orders/' . $e($po['_id']) . '" class="btn btn-default btn-sm">'
+                . '<i class="fa fa-eye"></i> View</a>';
+            if ($status === 'Rejected' && !empty($po['resubmissionAllowed'])) {
+                $action .= ' <a href="/' . $this->getURLType() . '/purchase-orders/' . $e($po['_id']) . '/edit" class="btn btn-primary btn-sm">'
+                    . '<i class="fa fa-pencil"></i> Edit &amp; Resubmit</a>';
+            }
         }
 
         return [
@@ -746,6 +780,7 @@ class PurchaseOrderController extends Controller
             $e($po['tranzactId'] ?? '-'),
             $badge,
             $created,
+            $updated,
             $action,
         ];
     }

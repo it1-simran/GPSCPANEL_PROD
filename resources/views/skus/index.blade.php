@@ -138,7 +138,7 @@
                   <td>{{ $sku['firmware']['name'] ?? '-' }}</td>
                   <td><span class="sku-status-badge" style="background:{{ $bg }};">{{ $statusLabel }}</span></td>
                   <td>{{ $remarks }}</td>
-                  <td>{{ !empty($sku['createdAt']) ? \Carbon\Carbon::parse($sku['createdAt'])->format('d-M-Y H:i') : '-' }}</td>
+                  <td>{{ !empty($sku['createdAt']) ? \App\Helper\CommonHelper::getDateAsTimeZone($sku['createdAt'], 'd-M-Y H:i') : '-' }}</td>
                   <td>
                     <div class="sku-actions">
                       <a href="/skus/{{ $sku['_id'] }}" class="btn btn-view"><i class="fa fa-eye"></i> View</a>

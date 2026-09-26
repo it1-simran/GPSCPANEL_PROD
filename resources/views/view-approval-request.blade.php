@@ -42,6 +42,7 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                 <div class="modal-content">
                                     <form method="POST" action="{{ route($url_type . '.request.send') }}">
                                         @csrf
+                                        <input type="hidden" id="is_resend" name="is_resend" value="0">
                                         <div class="modal-header">
                                             <h5 class="modal-title" id="accountRequestModalLabel">Send Account Request</h5>
                                             <button type="button" class="arm-close" onclick="closeRequestModal()" aria-label="Close">
@@ -66,6 +67,15 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                                     <option value="Dealer">Dealer</option>
                                                 </select>
                                             </div>
+                                            <div class="margin-bottom-20">
+                                                <label for="device_category_id" class="form-label">Device Category</label>
+                                                <select class="form-control" id="device_category_id" name="device_category_id" required>
+                                                    <option value="">Select Device Category</option>
+                                                    @foreach ($getDeviceCategory as $category)
+                                                        <option value="{{ $category->id }}">{{ $category->device_category_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                         </div>
 
                                         <div class="modal-footer">
@@ -81,6 +91,22 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                         <div class="row" id="alert_msg">
                             @include('partials.gps-inline-alerts')
                         </div>
+
+                        @if (!empty($gpsPageFlash['registration_link']))
+                            <div class="row">
+                                <div class="col-sm-12 alert alert-info gps-inline-alert" role="alert" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                    <strong style="white-space:nowrap;"><i class="fa fa-link"></i> Registration link:</strong>
+                                    <input type="text" id="registrationLinkInput" readonly value="{{ $gpsPageFlash['registration_link'] }}"
+                                        style="flex:1;min-width:260px;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:12.5px;background:#fff;">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="copyRegistrationLink()">
+                                        <i class="fa fa-copy"></i> Copy
+                                    </button>
+                                    <span style="font-size:12px;color:#64748b;width:100%;">
+                                        Valid for 12 hours. If the email doesn't reach the user, share this link directly (WhatsApp, SMS, etc.).
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
                         @if($url_type == 'admin')
                         <div class="container-fluid mt-4">
                             <h4 class="mb-4">Approval Requests</h4>
@@ -175,8 +201,11 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                                     <i class="fa fa-times"></i> Reject
                                                 </button>
                                                 @elseif(in_array($request->status, ['RejectedByAdmin', 'RejectedBySupport', 'RequestMailSent']))
-                                                <button type="button" class="var-btn-resend" onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}')">
+                                                <button type="button" class="var-btn-resend" onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}', '{{ $request->deviceCategory }}')">
                                                     <i class="fa fa-repeat"></i> Resend
+                                                </button>
+                                                <button type="button" class="var-btn-resend" onclick="copyLinkForRequest('{{ $request->name }}', '{{ $request->email }}', this)" title="Copy registration link">
+                                                    <i class="fa fa-link"></i> Copy Link
                                                 </button>
                                                 @endif
                                                 <form id="approvalForm{{ $request->id }}" method="POST" action="{{ route('approval.update', $request->id) }}" style="display: none;">
@@ -263,8 +292,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
                                             </button>
                                             @elseif(in_array($request->status, ['RequestMailSent']))
                                             <button type="button" class="btn btn-sm btn-info"
-                                                onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}')">
+                                                onclick="openResendModal('{{ $request->name }}', '{{ $request->email }}', '{{ $request->userType }}', '{{ $request->deviceCategory }}')">
                                                 Resend Request
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                onclick="copyLinkForRequest('{{ $request->name }}', '{{ $request->email }}', this)" title="Copy registration link">
+                                                <i class="fa fa-link"></i> Copy Link
                                             </button>
                                             @endif
                                             <!-- Hidden Forms -->
@@ -403,6 +436,58 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $("#accountRequestModal").modal("hide");
     }
 
+    function copyLinkForRequest(name, email, btnEl) {
+        var $btn = $(btnEl);
+        var original = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+
+        $.get("{{ route($url_type . '.request.registration-link') }}", { name: name, email: email })
+            .done(function (res) {
+                var link = res && res.link;
+                if (!link) { throw new Error('no link'); }
+                var finish = function () {
+                    $btn.html('<i class="fa fa-check"></i> Copied');
+                    setTimeout(function () { $btn.prop('disabled', false).html(original); }, 1500);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(link).then(finish).catch(function () {
+                        window.prompt('Copy this registration link:', link);
+                        finish();
+                    });
+                } else {
+                    window.prompt('Copy this registration link:', link);
+                    finish();
+                }
+            })
+            .fail(function () {
+                $btn.prop('disabled', false).html(original);
+                alert('Could not generate the registration link. Please try again.');
+            });
+    }
+
+    function copyRegistrationLink() {
+        var $input = $("#registrationLinkInput");
+        var $btn = event ? $(event.currentTarget) : null;
+        if (!$input.length) return;
+        $input.get(0).select();
+        $input.get(0).setSelectionRange(0, 99999);
+        var done = function () {
+            if (!$btn || !$btn.length) return;
+            var original = $btn.html();
+            $btn.html('<i class="fa fa-check"></i> Copied');
+            setTimeout(function () { $btn.html(original); }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText($input.val()).then(done).catch(function () {
+                document.execCommand("copy");
+                done();
+            });
+        } else {
+            document.execCommand("copy");
+            done();
+        }
+    }
+
     function closeViewDetailsModal() {
         $("#viewDetailsModal").modal("hide");
     }
@@ -490,12 +575,14 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         $("#viewDetailsModal").modal("show");
     }
 
-    function openResendModal(name, email, userType) {
+    function openResendModal(name, email, userType, deviceCategoryId) {
         // Set form values
         document.getElementById('name').value = name;
         document.getElementById('email').value = email;
         document.getElementById('user_type').value = userType;
-        
+        document.getElementById('device_category_id').value = deviceCategoryId || '';
+        document.getElementById('is_resend').value = '1';
+
         // Change modal title & button text (optional)
         document.getElementById('accountRequestModalLabel').innerText = 'Resend Account Request';
         document.querySelector('#accountRequestModal button[type="submit"]').innerText = 'Resend Request';
@@ -509,6 +596,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         document.getElementById('name').value = '';
         document.getElementById('email').value = '';
         document.getElementById('user_type').value = '';
+        document.getElementById('device_category_id').value = '';
+        document.getElementById('is_resend').value = '0';
 
         // Reset modal title & button text
         document.getElementById('accountRequestModalLabel').innerText = 'Send Account Request';

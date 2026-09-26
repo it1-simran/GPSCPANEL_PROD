@@ -18,6 +18,23 @@
   .po-section-title i { color: #22c55e; font-size: 14px; }
   .po-section-title small { text-transform: none; letter-spacing: 0; font-weight: 500; color: #64748b; }
   .po-step { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(34,197,94,.16); color: #22c55e; font-size: 12px; font-weight: 700; margin-right: 2px; }
+
+  .po-timeline { list-style: none; margin: 0; padding: 0; }
+  .po-timeline li { position: relative; padding: 0 0 20px 28px; }
+  .po-timeline li:last-child { padding-bottom: 0; }
+  .po-timeline li::before {
+    content: ''; position: absolute; left: 4px; top: 3px; width: 11px; height: 11px;
+    border-radius: 50%; background: #fff; border: 2px solid #94a3b8; z-index: 1;
+  }
+  .po-timeline li::after {
+    content: ''; position: absolute; left: 9px; top: 14px; bottom: -6px; width: 2px; background: rgba(148,163,184,.25);
+  }
+  .po-timeline li:last-child::after { display: none; }
+  .po-timeline li.is-approved::before { border-color: #22c55e; background: #22c55e; }
+  .po-timeline li.is-rejected::before { border-color: #ef4444; background: #ef4444; }
+  .po-timeline li.is-pending::before { border-color: #f59e0b; background: #f59e0b; }
+  .po-timeline .step-label { font-size: 13px; font-weight: 700; color: #1e293b; }
+  .po-timeline .step-meta { font-size: 11.5px; color: #94a3b8; margin-top: 1px; }
   .po-subhead { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .8px; margin: 6px 0 14px; padding-top: 14px; border-top: 1px dashed rgba(148,163,184,.2); }
   .po-subhead i { color: #22c55e; }
   .po-subhead small { text-transform: none; letter-spacing: 0; font-weight: 500; color: #64748b; }
@@ -129,6 +146,40 @@
             @if ($isResubmit && !empty($sales_directions))
               <div class="alert alert-warning" style="border-radius:12px;">
                 <strong><i class="fa fa-comment-o"></i> Sales directions:</strong> {{ $sales_directions }}
+              </div>
+            @endif
+
+            @if ($isResubmit && !empty($po_status_history))
+              @php
+                // Friendly, step-wise labels for the customer — internal
+                // status codes (PendingPpc/PendingSalesConfirm/etc.) are never
+                // shown here.
+                $poStepLabel = [
+                  'Pending' => 'Pending Sales Review',
+                  'PendingPpc' => 'Pending PPC (Dispatch Date)',
+                  'PendingSalesConfirm' => 'Pending Sales Confirmation',
+                  'Approved' => 'Approved',
+                  'Rejected' => 'Cancelled',
+                ];
+                $poStepClass = [
+                  'Pending' => 'is-pending',
+                  'PendingPpc' => 'is-pending',
+                  'PendingSalesConfirm' => 'is-pending',
+                  'Approved' => 'is-approved',
+                  'Rejected' => 'is-rejected',
+                ];
+              @endphp
+              <div class="po-section">
+                <div class="po-section-title"><i class="fa fa-history"></i> History</div>
+                <ul class="po-timeline">
+                  @foreach(array_reverse($po_status_history) as $h)
+                    @php $to = $h['toStatus'] ?? ''; @endphp
+                    <li class="{{ $poStepClass[$to] ?? '' }}">
+                      <div class="step-label">{{ $poStepLabel[$to] ?? $to }}</div>
+                      <div class="step-meta">{{ $h['changedByName'] ?? '' ?: ($h['actorType'] ?? '') }} · {{ !empty($h['changedAt']) ? \App\Helper\CommonHelper::getDateAsTimeZone($h['changedAt'], 'd-M-Y H:i') : '' }}</div>
+                    </li>
+                  @endforeach
+                </ul>
               </div>
             @endif
 

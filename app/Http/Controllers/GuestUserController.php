@@ -36,6 +36,7 @@ class GuestUserController extends Controller
 
         $email = $request->query('email');
         $name = $request->query('name');
+        $deviceCategoryId = $request->query('device_category');
 
         // 2️⃣ Check if the user already exists in the approval table
         $user = GuestApprovalUser::where('email', $email)->first();
@@ -60,7 +61,7 @@ class GuestUserController extends Controller
         }
 
         // 3️⃣ Otherwise, show the registration form
-        return view('userRegister', compact('name', 'email', 'user'));
+        return view('userRegister', compact('name', 'email', 'user', 'deviceCategoryId'));
     }
 
     public function store(Request $request)
@@ -129,33 +130,92 @@ class GuestUserController extends Controller
             'name'  => 'required|string|max:255',
             'email' => 'required|email',
             'user_type' => 'required|string|in:Manufacturer,Dealer',
+            'device_category_id' => 'required|integer|exists:device_categories,id',
         ]);
 
-        $guest = GuestApprovalUser::where('email', $request->email)->first();
+        // An account with this email already exists — don't send another
+        // invite, the user should just log in (or reset their password).
+        if (Writer::where('email', $request->email)->where('is_deleted', 0)->exists()) {
+            return redirect()->back()->with('error', 'An account with this email already exists. Please ask the user to log in instead of sending a new request.');
+        }
 
-        // Send the email
-        Mail::to($request->email)->send(new SendAccountRequestMail($request->name, $request->email));
+        $guest = GuestApprovalUser::where('email', $request->email)->first();
+        $isResend = $request->boolean('is_resend');
+
+        // A request for this email already exists — a fresh "Send Account
+        // Request" must not create a duplicate. Only the explicit Resend
+        // action (from an existing row) is allowed to reuse this email.
+        if ($guest && !$isResend) {
+            return redirect()->back()->with('error', 'A request for this email already exists (status: ' . $guest->status . '). Use "Resend" on that row instead of sending a new request.');
+        }
+
+        // Build the mailable first so we can also surface its signed
+        // registration link in the UI — if the email doesn't land (spam
+        // filters, a typo, a down mail relay), the admin can still copy the
+        // link and send it to the user through WhatsApp, SMS, etc. The device
+        // category is pre-selected by the admin here and carried through the
+        // link so the invitee's registration form has it locked in already.
+        $mailable = new SendAccountRequestMail($request->name, $request->email, $request->device_category_id);
+        $registrationLink = $mailable->link;
+        try {
+            Mail::to($request->email)->send($mailable);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Account request email failed to send: ' . $e->getMessage());
+        }
 
         if ($guest) {
             // Update existing guest
             $guest->update([
-                'name'         => $request->name,
-                'userType'     => $request->user_type,
-                'status'       => 'RequestMailSent',
-                'resend_count' => $guest->resend_count + 1,
+                'name'           => $request->name,
+                'userType'       => $request->user_type,
+                'deviceCategory' => $request->device_category_id,
+                'status'         => 'RequestMailSent',
+                'resend_count'   => $guest->resend_count + 1,
             ]);
         } else {
             // Create new guest entry
             GuestApprovalUser::create([
-                'name'         => $request->name,
-                'email'        => $request->email,
-                'userType'     => $request->user_type,
-                'status'       => 'RequestMailSent',
-                'resend_count' => 1,
+                'name'           => $request->name,
+                'email'          => $request->email,
+                'userType'       => $request->user_type,
+                'deviceCategory' => $request->device_category_id,
+                'status'         => 'RequestMailSent',
+                'resend_count'   => 1,
             ]);
         }
 
-        return redirect()->back()->with('success', 'Request sent successfully to user.');
+        return redirect()->back()
+            ->with('success', 'Request sent successfully to user.')
+            ->with('registration_link', $registrationLink);
+    }
+
+    /**
+     * On-demand signed registration link for an existing guest request — same
+     * link a "Send"/"Resend" would produce, without re-sending the email or
+     * bumping resend_count. Lets an admin grab the link for any pending row
+     * whenever they need it (email lost, wants to share via another channel),
+     * not only in the moment right after sending.
+     */
+    public function registrationLink(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+        ]);
+
+        $params = ['name' => $request->name, 'email' => $request->email];
+        $guest = GuestApprovalUser::where('email', $request->email)->first();
+        if ($guest && !empty($guest->deviceCategory)) {
+            $params['device_category'] = $guest->deviceCategory;
+        }
+
+        $link = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'register.user',
+            \Carbon\Carbon::now()->addMinutes(720),
+            $params
+        );
+
+        return response()->json(['link' => $link]);
     }
 
     public function showApprovalRequest()

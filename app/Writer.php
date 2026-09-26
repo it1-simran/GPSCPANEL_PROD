@@ -34,6 +34,25 @@ class Writer extends Authenticatable{
     {
         return $this->kyc_status === 'Approved';
     }
+
+    /**
+     * "Level 1" = created directly under Admin (parent_user_id points at the
+     * Admin account, or there's no parent at all). Sub-accounts created by a
+     * Reseller/User (parent_user_id points at a non-Admin account) are
+     * "Level 2+" and don't get PO/KYC/SKU of their own — those stay owned by
+     * whichever Level 1 account created them.
+     */
+    public function isLevel1(): bool
+    {
+        if (!$this->parent_user_id) {
+            return true;
+        }
+        if ((int) $this->parent_user_id === (int) $this->id) {
+            return true;
+        }
+        $parent = self::find($this->parent_user_id);
+        return !$parent || $parent->user_type === 'Admin';
+    }
     /**
      * The attributes that are mass assignable.
      *

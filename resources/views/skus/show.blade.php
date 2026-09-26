@@ -22,6 +22,25 @@
   .sku-history-item { font-size: 12.5px; padding: 10px 0; border-top: 1px solid rgba(148,163,184,.14); }
   .sku-history-item:first-child { border-top: none; }
 
+  .sku-timeline { list-style: none; margin: 0; padding: 0; }
+  .sku-timeline li { position: relative; padding: 0 0 20px 28px; }
+  .sku-timeline li:last-child { padding-bottom: 0; }
+  .sku-timeline li::before {
+    content: ''; position: absolute; left: 4px; top: 3px; width: 11px; height: 11px;
+    border-radius: 50%; background: #fff; border: 2px solid #94a3b8; z-index: 1;
+  }
+  .sku-timeline li::after {
+    content: ''; position: absolute; left: 9px; top: 14px; bottom: -6px; width: 2px; background: rgba(148,163,184,.25);
+  }
+  .sku-timeline li:last-child::after { display: none; }
+  .sku-timeline li.is-approved::before { border-color: #22c55e; background: #22c55e; }
+  .sku-timeline li.is-rejected::before { border-color: #ef4444; background: #ef4444; }
+  .sku-timeline li.is-pending::before { border-color: #f59e0b; background: #f59e0b; }
+  .sku-timeline li.is-upcoming .step-label { color: #94a3b8; font-weight: 600; }
+  .sku-timeline .step-label { font-size: 13px; font-weight: 700; color: #1e293b; }
+  .sku-timeline .step-meta { font-size: 11.5px; color: #94a3b8; margin-top: 1px; }
+  .sku-timeline .step-remarks { font-size: 12px; color: #64748b; margin-top: 3px; font-style: italic; }
+
   .sku-actions { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid rgba(148,163,184,.16); padding-top: 18px; margin-top: 4px; }
   .sku-actions .btn { border-radius: 9px; height: 44px; padding: 0 22px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
 
@@ -86,14 +105,14 @@
                 <div><div class="sku-field-label">eSIM Profile 1</div><div class="sku-field-value">{{ $sku['esim']['profile1'] ?? '-' }}</div></div>
                 <div><div class="sku-field-label">eSIM Profile 2</div><div class="sku-field-value">{{ $sku['esim']['profile2'] ?? '-' }}</div></div>
                 <div><div class="sku-field-label">eSIM Recharge</div><div class="sku-field-value">{{ ($sku['esimRechargePeriod'] ?? '') === '2_year' ? '2 Years' : (($sku['esimRechargePeriod'] ?? '') === '1_year' ? '1 Year' : '-') }}</div></div>
-                <div><div class="sku-field-label">Model Name</div><div class="sku-field-value">{{ $sku['modelName'] ?: '-' }}</div></div>
-                <div><div class="sku-field-label">Vendor ID</div><div class="sku-field-value">{{ $sku['vendorId'] ?: '-' }}</div></div>
-                <div><div class="sku-field-label">Sample Serial Number Format</div><div class="sku-field-value">{{ $sku['serialNumberFormat'] ?: '-' }}</div></div>
-                <div><div class="sku-field-label">FG BOM Number</div><div class="sku-field-value">{{ $sku['fgBomNumber'] ?: '-' }}</div></div>
-                <div><div class="sku-field-label">Tranzact ID</div><div class="sku-field-value">{{ $sku['tranzactId'] ?: '-' }}</div></div>
+                <div><div class="sku-field-label">Model Name</div><div class="sku-field-value">{{ $sku['modelName'] ?? '' ?: '-' }}</div></div>
+                <div><div class="sku-field-label">Vendor ID</div><div class="sku-field-value">{{ $sku['vendorId'] ?? '' ?: '-' }}</div></div>
+                <div><div class="sku-field-label">Sample Serial Number Format</div><div class="sku-field-value">{{ $sku['serialNumberFormat'] ?? '' ?: '-' }}</div></div>
+                <div><div class="sku-field-label">FG BOM Number</div><div class="sku-field-value">{{ $sku['fgBomNumber'] ?? '' ?: '-' }}</div></div>
+                <div><div class="sku-field-label">Tranzact ID</div><div class="sku-field-value">{{ $sku['tranzactId'] ?? '' ?: '-' }}</div></div>
                 <div><div class="sku-field-label">Packaging Type</div><div class="sku-field-value">{{ ['direct_master_carton' => 'Direct Master Carton', 'unit_packaging' => 'Unit Packaging'][$sku['cartonType'] ?? ''] ?? '-' }}</div></div>
                 <div><div class="sku-field-label">Sticker Format</div><div class="sku-field-value">{{ $sku['stickerFormat']['name'] ?? '-' }}</div></div>
-                <div><div class="sku-field-label">Submitted</div><div class="sku-field-value">{{ !empty($sku['createdAt']) ? \Carbon\Carbon::parse($sku['createdAt'])->format('d-M-Y H:i') : '-' }}</div></div>
+                <div><div class="sku-field-label">Submitted</div><div class="sku-field-value">{{ !empty($sku['createdAt']) ? \App\Helper\CommonHelper::getDateAsTimeZone($sku['createdAt'], 'd-M-Y H:i') : '-' }}</div></div>
               </div>
             </div>
 
@@ -115,15 +134,70 @@
             </div>
 
             @if(!empty($sku['statusHistory']))
+              @php
+                // Fixed pipeline (New SKU -> Sales -> NPD -> Approved), NOT a
+                // raw dump of statusHistory — a step already passed is always
+                // shown as done/green, regardless of how many stages have
+                // happened since. Only the CURRENT stage shows as pending
+                // (amber); anything not reached yet is grayed out.
+                $history = collect($sku['statusHistory'] ?? []);
+                $lastToStatus = fn($status) => $history->filter(fn($h) => ($h['toStatus'] ?? '') === $status)->last();
+
+                $currentStatus = $sku['status'] ?? '';
+                $rejectedStage = $sku['rejectedAtStage'] ?? '';
+                $isRejected = $currentStatus === 'Rejected';
+
+                $createdEntry = $history->first();
+                $salesDoneEntry = $lastToStatus('PendingNpd');
+                $npdDoneEntry = $lastToStatus('Completed');
+                $rejectedEntry = $lastToStatus('Rejected');
+
+                $metaFor = function ($entry) {
+                  if (!$entry) return '';
+                  $who = $entry['changedByName'] ?: ($entry['actorType'] ?? '');
+                  $when = !empty($entry['changedAt']) ? \App\Helper\CommonHelper::getDateAsTimeZone($entry['changedAt'], 'd-M-Y H:i') : '';
+                  return trim($who . ($who && $when ? ' · ' : '') . $when);
+                };
+
+                $steps = [];
+                $steps[] = ['label' => 'New SKU', 'class' => 'is-approved', 'meta' => $metaFor($createdEntry)];
+
+                if ($isRejected && $rejectedStage === 'sales') {
+                  $steps[] = ['label' => 'Rejected By Sales', 'class' => 'is-rejected', 'meta' => $metaFor($rejectedEntry)];
+                } elseif ($salesDoneEntry) {
+                  $steps[] = ['label' => 'Confirmed By Sales', 'class' => 'is-approved', 'meta' => $metaFor($salesDoneEntry)];
+                } elseif ($currentStatus === 'PendingSales') {
+                  $steps[] = ['label' => 'Sales Confirmation Pending', 'class' => 'is-pending', 'meta' => ''];
+                } else {
+                  $steps[] = ['label' => 'Sales Confirmation Pending', 'class' => 'is-upcoming', 'meta' => ''];
+                }
+
+                if ($isRejected && $rejectedStage === 'npd') {
+                  $steps[] = ['label' => 'Rejected By NPD', 'class' => 'is-rejected', 'meta' => $metaFor($rejectedEntry)];
+                } elseif ($npdDoneEntry) {
+                  $steps[] = ['label' => 'Confirmed By NPD', 'class' => 'is-approved', 'meta' => $metaFor($npdDoneEntry)];
+                } elseif ($currentStatus === 'PendingNpd') {
+                  $steps[] = ['label' => 'NPD Confirmation Pending', 'class' => 'is-pending', 'meta' => ''];
+                } else {
+                  $steps[] = ['label' => 'NPD Confirmation Pending', 'class' => 'is-upcoming', 'meta' => ''];
+                }
+
+                $steps[] = $currentStatus === 'Completed'
+                  ? ['label' => 'Approved', 'class' => 'is-approved', 'meta' => $metaFor($npdDoneEntry)]
+                  : ['label' => 'Approved', 'class' => 'is-upcoming', 'meta' => ''];
+              @endphp
               <div class="sku-section">
                 <div class="sku-section-title"><i class="fa fa-history"></i> History</div>
-                @foreach(array_reverse($sku['statusHistory']) as $h)
-                  <div class="sku-history-item">
-                    <strong>{{ $h['toStatus'] ?? '' }}</strong>
-                    <span class="text-muted"> · {{ $h['changedByName'] ?: ($h['actorType'] ?? '') }} · {{ !empty($h['changedAt']) ? \Carbon\Carbon::parse($h['changedAt'])->format('d-M-Y H:i') : '' }}</span>
-                    @if(!empty($h['remarks']))<div class="text-muted">"{{ $h['remarks'] }}"</div>@endif
-                  </div>
-                @endforeach
+                <ul class="sku-timeline">
+                  @foreach($steps as $step)
+                    <li class="{{ $step['class'] }}">
+                      <div class="step-label">{{ $step['label'] }}</div>
+                      @if($step['meta'])
+                        <div class="step-meta">{{ $step['meta'] }}</div>
+                      @endif
+                    </li>
+                  @endforeach
+                </ul>
               </div>
             @endif
 

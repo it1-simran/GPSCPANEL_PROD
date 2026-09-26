@@ -55,6 +55,7 @@
                     <th>Tranzact ID</th>
                     <th>Status</th>
                     <th>Created</th>
+                    <th>Updated</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -88,7 +89,7 @@
       order: [],
       ajax: { url: $table.data('ajax-url') },
       columnDefs: [
-        { targets: [1, 2, 3, 4, 8, 9, 12, 13], orderable: true },
+        { targets: [1, 2, 3, 4, 8, 9, 12, 13, 14], orderable: true },
         { targets: '_all', orderable: false }
       ],
       lengthMenu: [[25, 50, 100, 500], [25, 50, 100, 500]],

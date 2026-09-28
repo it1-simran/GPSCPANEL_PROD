@@ -43,6 +43,10 @@
                                                 <input type="checkbox" class="default_template_checkbnox adc-checkbox-input" name="is_esim" id="is_esim">
                                                 <span class="adc-option-text">Is ESIM</span>
                                             </label>
+                                            <label class="adc-option-card" for="is_sku_esim" title="Show and require the eSIM fields (provider, make, profiles, recharge) when a SKU is created or edited for this category">
+                                                <input type="checkbox" class="default_template_checkbnox adc-checkbox-input" name="is_sku_esim" id="is_sku_esim">
+                                                <span class="adc-option-text">Enable eSIM in SKU</span>
+                                            </label>
                                             <label class="adc-option-card" for="is_certification_enable">
                                                 <input type="checkbox" class="default_template_checkbnox adc-checkbox-input" name="is_certification_enable" id="is_certification_enable">
                                                 <span class="adc-option-text">Is Certification Enable</span>

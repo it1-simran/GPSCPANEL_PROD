@@ -100,11 +100,21 @@
               <div class="sku-detail-grid">
                 <div><div class="sku-field-label">Device Category</div><div class="sku-field-value">{{ $sku['deviceCategory']['name'] ?? '-' }}</div></div>
                 <div><div class="sku-field-label">Firmware</div><div class="sku-field-value">{{ $sku['firmware']['name'] ?? '-' }}</div></div>
-                <div><div class="sku-field-label">eSIM Provider</div><div class="sku-field-value">{{ ($sku['esim']['provider'] ?? 'jsd') === 'customer' ? ($sku['raisedBy']['name'] ?? 'Customer') : 'JSD' }}</div></div>
+                @php $skuEsimProvider = $sku['esim']['provider'] ?? 'jsd'; @endphp
+                @if ($skuEsimProvider === '')
+                  {{-- Device Category has eSIM disabled: no eSIM details apply. --}}
+                  <div><div class="sku-field-label">eSIM</div><div class="sku-field-value">Not required for this device category</div></div>
+                @else
+                <div><div class="sku-field-label">eSIM Provider</div><div class="sku-field-value">{{ $skuEsimProvider === 'customer' ? ($sku['raisedBy']['name'] ?? 'Customer') : 'JSD' }}</div></div>
                 <div><div class="sku-field-label">eSIM Make</div><div class="sku-field-value">{{ $sku['esim']['make'] ?? '-' }}</div></div>
                 <div><div class="sku-field-label">eSIM Profile 1</div><div class="sku-field-value">{{ $sku['esim']['profile1'] ?? '-' }}</div></div>
                 <div><div class="sku-field-label">eSIM Profile 2</div><div class="sku-field-value">{{ $sku['esim']['profile2'] ?? '-' }}</div></div>
+                @if (!empty($sku['esim']['apnProfile1']) || !empty($sku['esim']['apnProfile2']))
+                  <div><div class="sku-field-label">APN Profile 1</div><div class="sku-field-value">{{ $sku['esim']['apnProfile1'] ?? '' ?: '-' }}</div></div>
+                  <div><div class="sku-field-label">APN Profile 2</div><div class="sku-field-value">{{ $sku['esim']['apnProfile2'] ?? '' ?: '-' }}</div></div>
+                @endif
                 <div><div class="sku-field-label">eSIM Recharge</div><div class="sku-field-value">{{ ($sku['esimRechargePeriod'] ?? '') === '2_year' ? '2 Years' : (($sku['esimRechargePeriod'] ?? '') === '1_year' ? '1 Year' : '-') }}</div></div>
+                @endif
                 <div><div class="sku-field-label">Model Name</div><div class="sku-field-value">{{ $sku['modelName'] ?? '' ?: '-' }}</div></div>
                 <div><div class="sku-field-label">Vendor ID</div><div class="sku-field-value">{{ $sku['vendorId'] ?? '' ?: '-' }}</div></div>
                 <div><div class="sku-field-label">Sample Serial Number Format</div><div class="sku-field-value">{{ $sku['serialNumberFormat'] ?? '' ?: '-' }}</div></div>

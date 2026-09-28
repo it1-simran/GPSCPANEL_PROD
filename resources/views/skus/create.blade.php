@@ -168,7 +168,7 @@
                     <select name="device_category_id" id="device_category_id" class="select2" required @if($is_admin) disabled @endif>
                       <option value="">{{ $is_admin ? 'Select an account first' : 'Select Device Category' }}</option>
                       @foreach ($categories as $cat)
-                        <option value="{{ $cat->id }}" data-is-esim="{{ $cat->is_esim ? '1' : '0' }}" {{ old('device_category_id') == $cat->id ? 'selected' : '' }}>
+                        <option value="{{ $cat->id }}" data-is-esim="{{ ($cat->is_sku_esim ?? 0) ? '1' : '0' }}" {{ old('device_category_id') == $cat->id ? 'selected' : '' }}>
                           {{ $cat->device_category_name }}
                         </option>
                       @endforeach
@@ -240,6 +240,30 @@
                     <input type="text" name="esim_profile_2_other" id="esim_profile_2_other" class="form-control" style="margin-top:8px;display:none;"
                       value="{{ old('esim_profile_2_other') }}" placeholder="Enter Profile 2 name" disabled>
                     <span class="po-hint error" id="profileCollideHint" style="display:none;">Profile 1 and Profile 2 must be different.</span>
+                  </div>
+                </div>
+              </div>
+
+              {{-- APNs for a typed-in ("Others") or customer-supplied eSIM. On
+                   final NPD approval MES adds them to its eSIM master data, so
+                   CCID uploads for this make/profile resolve the APN. --}}
+              <div class="row" id="esimApnRow" style="display:none;">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="control-label">APN Profile 1 <span class="po-required">*</span></label>
+                    <input type="text" name="esim_apn_1" id="esim_apn_1" class="form-control" maxlength="100"
+                      pattern="[A-Za-z0-9.]+" title="Letters, numbers and dots only"
+                      value="{{ old('esim_apn_1') }}" placeholder="e.g. iot.com" disabled>
+                    <span class="po-hint">APN used by eSIM Profile 1.</span>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="control-label">APN Profile 2 <span class="po-required">*</span></label>
+                    <input type="text" name="esim_apn_2" id="esim_apn_2" class="form-control" maxlength="100"
+                      pattern="[A-Za-z0-9.]+" title="Letters, numbers and dots only"
+                      value="{{ old('esim_apn_2') }}" placeholder="e.g. bsnlnet" disabled>
+                    <span class="po-hint">APN used by eSIM Profile 2.</span>
                   </div>
                 </div>
               </div>
@@ -872,10 +896,27 @@
           try { $f.select2('disable'); } catch (e) {}
         });
       }
+      syncApnFields();
     }
+
+    // APN Profile 1/2 are needed whenever the eSIM isn't fully from JSD's
+    // catalog — a customer-supplied eSIM, or any "Others" make/profile —
+    // because MES has no APN on record for it yet.
+    function syncApnFields() {
+      var isEsimCategory = String($('#device_category_id option:selected').data('is-esim')) === '1';
+      var needsApn = isEsimCategory && (
+        String($('#esim_provider').val() || '') === 'customer' ||
+        ['#esim_make', '#esim_profile_1', '#esim_profile_2'].some(function (sel) { return String($(sel).val() || '') === 'others'; })
+      );
+      $('#esimApnRow').toggle(needsApn);
+      $('#esim_apn_1, #esim_apn_2').prop('disabled', !needsApn).prop('required', needsApn);
+      if (!needsApn) { $('#esim_apn_1, #esim_apn_2').val(''); }
+    }
+    $('#esim_make, #esim_profile_1, #esim_profile_2').on('change.apn', syncApnFields);
 
     $('#esim_provider').on('change', function () {
       setEsimProviderMode(String($(this).val() || 'jsd'));
+      syncApnFields();
     });
     applyEsimVisibilityForCategory();
 
@@ -894,7 +935,7 @@
       var $cat = $('#device_category_id');
       if (isSelect2($cat)) { try { $cat.select2('destroy'); } catch (e) {} }
       $cat.empty().append($('<option>').val('').text(lock ? 'Select an account first' : 'Select Device Category'));
-      cats.forEach(function (c) { $cat.append($('<option>').val(String(c.id)).attr('data-is-esim', c.is_esim ? '1' : '0').text(c.name)); });
+      cats.forEach(function (c) { $cat.append($('<option>').val(String(c.id)).attr('data-is-esim', c.is_sku_esim ? '1' : '0').text(c.name)); });
       $cat.select2({ width: '100%' });
     }
 

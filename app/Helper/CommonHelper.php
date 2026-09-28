@@ -75,7 +75,7 @@ class CommonHelper
                 ->whereIn('id', $categoryIds)
                 ->where('is_deleted', 0)
                 ->orderBy('device_category_name')
-                ->get(['id', 'device_category_name', 'is_esim']);
+                ->get(['id', 'device_category_name', 'is_esim', 'is_sku_esim']);
 
         // All firmware under the account's assigned Device Categories — not
         // limited to firmware the account already has a Model (modals) record

@@ -105,7 +105,7 @@
 
           <div class="c_content">
             <p class="po-intro">
-              A Purchase Order is raised against an approved SKU. Select the SKU, then enter the quantity and expected delivery date.
+              A Purchase Order is raised against an approved SKU. Select the SKU, then enter the quantity and delivery/pickup details.
               Don't have an approved SKU yet? <a href="/skus/create">Create one</a> first.
             </p>
 
@@ -151,7 +151,9 @@
                     @endforeach
                   @endif
                 </select>
-                @if(!$is_admin && $mySkus->isEmpty())
+                @if(!$is_admin && !empty($skuLoadError))
+                  <div class="alert alert-danger" style="margin-top:10px;">{{ $skuLoadError }}</div>
+                @elseif(!$is_admin && $mySkus->isEmpty())
                   <div class="alert alert-warning po-empty-hint" style="margin-top:10px;">
                     You have no SKUs yet. <a href="/skus/create">Create one</a> before raising a PO.
                   </div>
@@ -269,7 +271,7 @@
 
               <div class="po-actions">
                 <a href="/{{ $url_type }}/purchase-orders" class="btn btn-default">Cancel</a>
-                <button type="submit" class="btn btn-success"><i class="fa fa-check"></i> Submit Purchase Order</button>
+                <button type="submit" class="btn btn-success" id="poSubmitBtn"><i class="fa fa-check"></i> Submit Purchase Order</button>
               </div>
             </form>
           </div>
@@ -343,7 +345,7 @@
     function detailField(label, value) {
       if (!value) return '';
       return '<div class="col-md-4" style="margin-bottom:14px;">' +
-        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:#94a3b8;margin-bottom:3px;">' + label + '</div>' +
+        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:#94a3b8;margin-bottom:3px;">' + $('<div>').text(label).html() + '</div>' +
         '<div style="font-size:13.5px;font-weight:600;color:#334155;">' + $('<div>').text(value).html() + '</div>' +
       '</div>';
     }
@@ -389,9 +391,15 @@
     renderSkuDetails();
 
     var IS_ADMIN = {{ $is_admin ? 'true' : 'false' }};
+    // One click = one PO (a double click used to raise two).
+    $('#poSkuForm').on('submit', function () {
+      if (this.checkValidity && !this.checkValidity()) return;
+      $('#poSubmitBtn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Submitting…');
+    });
     if (!IS_ADMIN) return;
 
     var SKUS_URL = $('#poSkuForm').data('skus-url');
+    var OLD_SKU_ID = @json((string) old('sku_id', ''));
 
     function loadSkus(userId) {
       if (isSelect2($sku)) { try { $sku.select2('destroy'); } catch (e) {} }
@@ -409,9 +417,16 @@
         if (isSelect2($sku)) { try { $sku.select2('destroy'); } catch (e) {} }
         $sku.empty().append($('<option>').val('').text(skus.length ? 'Select SKU' : 'No approved SKUs for this account'));
         skus.forEach(function (s) { $sku.append($('<option>').val(String(s.id)).text(s.label)); });
+        // Keep the SKU picked before a validation error redirected back.
+        if (OLD_SKU_ID && $sku.find('option[value="' + OLD_SKU_ID + '"]').length) { $sku.val(OLD_SKU_ID); }
         $sku.prop('disabled', false);
         $sku.select2({ width: '100%' });
         $sku.trigger('change');
+      }).fail(function () {
+        if (isSelect2($sku)) { try { $sku.select2('destroy'); } catch (e) {} }
+        $sku.empty().append($('<option>').val('').text('Could not load SKUs — reselect the account to retry')).prop('disabled', true);
+        $sku.select2({ width: '100%' });
+        renderSkuDetails();
       });
     }
 
@@ -420,6 +435,7 @@
     }
 
     $('#raised_by_user_id').on('change', function () { loadSkus(String($(this).val() || '')); });
+
 
     var pre = String($('#raised_by_user_id').val() || '');
     if (pre) { loadSkus(pre); }

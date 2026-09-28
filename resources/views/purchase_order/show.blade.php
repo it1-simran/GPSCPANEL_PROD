@@ -233,16 +233,61 @@
               </div>
             @endif
 
+            @if(!empty($resubmitMode))
+              {{-- Resubmit: only quantity + delivery date change. The device,
+                   eSIM and configuration above come from the approved SKU. --}}
+              <form method="POST" action="/{{ $url_type }}/purchase-orders/{{ $poId }}/resubmit" id="poResubmitForm">
+                @csrf
+                <div class="po-view-section">
+                  <div class="po-view-section-title"><i class="fa fa-pencil"></i> Correct &amp; Resubmit</div>
+                  <p class="text-muted" style="font-size:13px;margin-top:-6px;">
+                    Device, eSIM and configuration come from the approved SKU {{ $po['skuCode'] ?? '' }} and can't be changed here — raise a new SKU for a different specification.
+                  </p>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label class="control-label" for="required_quantity">Required Quantity <span class="text-danger">*</span></label>
+                        <input type="number" min="1" max="1000000" step="1" required class="form-control" id="required_quantity" name="required_quantity"
+                          value="{{ old('required_quantity', $po['requiredQuantity'] ?? '') }}">
+                        @error('required_quantity')<span class="text-danger">{{ $message }}</span>@enderror
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label class="control-label" for="expected_delivery_date">Expected Delivery Date</label>
+                        <input type="date" class="form-control" id="expected_delivery_date" name="expected_delivery_date" min="{{ now()->toDateString() }}"
+                          value="{{ old('expected_delivery_date', !empty($po['expectedDeliveryDate']) ? substr($po['expectedDeliveryDate'], 0, 10) : '') }}">
+                        @error('expected_delivery_date')<span class="text-danger">{{ $message }}</span>@enderror
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="po-view-actions">
+                  <a href="/{{ $url_type }}/purchase-orders/{{ $poId }}" class="btn btn-default">Cancel</a>
+                  <button type="submit" class="btn btn-primary" id="poResubmitBtn"><i class="fa fa-paper-plane"></i> Resubmit for Approval</button>
+                </div>
+              </form>
+            @else
             <div class="po-view-actions">
               @if(($po['status'] ?? '') === 'Rejected' && !empty($po['resubmissionAllowed']))
                 <a href="/{{ $url_type }}/purchase-orders/{{ $poId }}/edit" class="btn btn-primary"><i class="fa fa-pencil"></i> Edit &amp; Resubmit</a>
               @endif
               <a href="/{{ $url_type }}/purchase-orders" class="btn btn-default">Back to Purchase Orders</a>
             </div>
+            @endif
           </div>
         </div>
       </div>
     </div>
   </section>
 </section>
+@stop
+
+@section('scripts')
+<script>
+  // One click = one resubmission.
+  $('#poResubmitForm').on('submit', function () {
+    $('#poResubmitBtn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Resubmitting…');
+  });
+</script>
 @stop

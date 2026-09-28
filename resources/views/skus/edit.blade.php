@@ -160,6 +160,18 @@
               </div>
               </div>
 
+              @php
+                // A JSD SKU saved with a typed-in ("Others") make/profile has no
+                // matching catalog option — preselect "Others" and prefill its box.
+                $isJsdSaved = ($esimProvider ?? 'jsd') !== 'customer';
+                $catalogMakes = collect($esimMakes)->pluck('name')->all();
+                $catalogProfiles = collect($esimProfiles)->pluck('name')->all();
+                $savedEsim = ['make' => $sku['esim']['make'] ?? '', 'p1' => $sku['esim']['profile1'] ?? '', 'p2' => $sku['esim']['profile2'] ?? ''];
+                $isOther = fn($v, $list) => $isJsdSaved && $v !== '' && !in_array($v, $list, true);
+                $makeSel = $isOther($savedEsim['make'], $catalogMakes) ? 'others' : $savedEsim['make'];
+                $p1Sel = $isOther($savedEsim['p1'], $catalogProfiles) ? 'others' : $savedEsim['p1'];
+                $p2Sel = $isOther($savedEsim['p2'], $catalogProfiles) ? 'others' : $savedEsim['p2'];
+              @endphp
               {{-- DEVICE & eSIM --}}
               <div class="po-section">
               <div class="po-section-title"><span class="po-step">2</span><i class="fa fa-microchip"></i> Device, eSIM &amp; Model</div>
@@ -170,7 +182,7 @@
                     <select name="device_category_id" id="device_category_id" class="select2" required>
                       <option value="">Select Device Category</option>
                       @foreach ($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ old('device_category_id', $sku['deviceCategory']['id'] ?? null) == $cat->id ? 'selected' : '' }}>
+                        <option value="{{ $cat->id }}" data-is-esim="{{ ($cat->is_sku_esim ?? 0) ? '1' : '0' }}" {{ old('device_category_id', $sku['deviceCategory']['id'] ?? null) == $cat->id ? 'selected' : '' }}>
                           {{ $cat->device_category_name }}
                         </option>
                       @endforeach
@@ -178,7 +190,7 @@
                     <span class="po-hint" id="categoryHint"></span>
                   </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="esimProviderCol">
                   <div class="form-group">
                     <label class="control-label">eSIM Provider <span class="po-required">*</span></label>
                     <select name="esim_provider" id="esim_provider" class="select2" required>
@@ -194,9 +206,12 @@
                     <select name="esim_make" id="esim_make" class="select2">
                       <option value="">Select eSIM Make</option>
                       @foreach ($esimMakes as $mk)
-                        <option value="{{ $mk['name'] }}" {{ old('esim_make', $sku['esim']['make'] ?? null) == $mk['name'] ? 'selected' : '' }}>{{ $mk['name'] }}</option>
+                        <option value="{{ $mk['name'] }}" {{ old('esim_make', $makeSel) == $mk['name'] ? 'selected' : '' }}>{{ $mk['name'] }}</option>
                       @endforeach
+                      <option value="others" {{ old('esim_make', $makeSel) == 'others' ? 'selected' : '' }}>Others</option>
                     </select>
+                    <input type="text" name="esim_make_other" id="esim_make_other" class="form-control" style="margin-top:8px;display:none;"
+                      value="{{ old('esim_make_other', $makeSel === 'others' ? $savedEsim['make'] : '') }}" placeholder="Enter eSIM make" disabled>
                     <span class="po-hint">
                       @if ($esimError)
                         <span class="error">eSIM data unavailable from MES ({{ $esimError }}).</span>
@@ -224,9 +239,12 @@
                     <select name="esim_profile_1" id="esim_profile_1" class="select2">
                       <option value="">Select Profile 1</option>
                       @foreach ($esimProfiles as $prof)
-                        <option value="{{ $prof['name'] }}" {{ old('esim_profile_1', $sku['esim']['profile1'] ?? null) == $prof['name'] ? 'selected' : '' }}>{{ $prof['name'] }}</option>
+                        <option value="{{ $prof['name'] }}" {{ old('esim_profile_1', $p1Sel) == $prof['name'] ? 'selected' : '' }}>{{ $prof['name'] }}</option>
                       @endforeach
+                      <option value="others" {{ old('esim_profile_1', $p1Sel) == 'others' ? 'selected' : '' }}>Others</option>
                     </select>
+                    <input type="text" name="esim_profile_1_other" id="esim_profile_1_other" class="form-control" style="margin-top:8px;display:none;"
+                      value="{{ old('esim_profile_1_other', $p1Sel === 'others' ? $savedEsim['p1'] : '') }}" placeholder="Enter Profile 1 name" disabled>
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -235,9 +253,12 @@
                     <select name="esim_profile_2" id="esim_profile_2" class="select2">
                       <option value="">Select Profile 2</option>
                       @foreach ($esimProfiles as $prof)
-                        <option value="{{ $prof['name'] }}" {{ old('esim_profile_2', $sku['esim']['profile2'] ?? null) == $prof['name'] ? 'selected' : '' }}>{{ $prof['name'] }}</option>
+                        <option value="{{ $prof['name'] }}" {{ old('esim_profile_2', $p2Sel) == $prof['name'] ? 'selected' : '' }}>{{ $prof['name'] }}</option>
                       @endforeach
+                      <option value="others" {{ old('esim_profile_2', $p2Sel) == 'others' ? 'selected' : '' }}>Others</option>
                     </select>
+                    <input type="text" name="esim_profile_2_other" id="esim_profile_2_other" class="form-control" style="margin-top:8px;display:none;"
+                      value="{{ old('esim_profile_2_other', $p2Sel === 'others' ? $savedEsim['p2'] : '') }}" placeholder="Enter Profile 2 name" disabled>
                   </div>
                 </div>
               </div>
@@ -257,6 +278,27 @@
                     <input type="text" name="esim_profile_2" id="esim_profile_2_customer" class="form-control"
                       value="{{ old('esim_profile_2', ($esimProvider ?? 'jsd') === 'customer' ? ($sku['esim']['profile2'] ?? '') : '') }}"
                       placeholder="Enter Profile 2 name" disabled>
+                  </div>
+                </div>
+              </div>
+
+              {{-- APNs for a typed-in ("Others") or customer-supplied eSIM — MES
+                   adds them to its eSIM master data on final NPD approval. --}}
+              <div class="row" id="esimApnRow" style="display:none;">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="control-label">APN Profile 1 <span class="po-required">*</span></label>
+                    <input type="text" name="esim_apn_1" id="esim_apn_1" class="form-control" maxlength="100"
+                      pattern="[A-Za-z0-9.]+" title="Letters, numbers and dots only"
+                      value="{{ old('esim_apn_1', $sku['esim']['apnProfile1'] ?? '') }}" placeholder="e.g. iot.com" disabled>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="control-label">APN Profile 2 <span class="po-required">*</span></label>
+                    <input type="text" name="esim_apn_2" id="esim_apn_2" class="form-control" maxlength="100"
+                      pattern="[A-Za-z0-9.]+" title="Letters, numbers and dots only"
+                      value="{{ old('esim_apn_2', $sku['esim']['apnProfile2'] ?? '') }}" placeholder="e.g. bsnlnet" disabled>
                   </div>
                 </div>
               </div>
@@ -729,7 +771,7 @@
 
     var PROFILE_OPTS = $('#esim_profile_1 option').map(function () {
       return { v: String($(this).val()), t: $(this).text() };
-    }).get().filter(function (o) { return o.v !== ''; });
+    }).get().filter(function (o) { return o.v !== '' && o.v !== 'others'; });
 
     function isSelect2($el) {
       return $el.hasClass('select2-offscreen') || $el.hasClass('select2-hidden-accessible') || !!$el.data('select2');
@@ -741,11 +783,15 @@
 
       $sel.empty().append($('<option>').val('').text(placeholder));
       PROFILE_OPTS.forEach(function (o) {
-        if (o.v === excludeVal) return;
+        if (o.v === excludeVal && excludeVal !== 'others') return;
         var $o = $('<option>').val(o.v).text(o.t);
         if (o.v === keepVal && keepVal !== '') $o.prop('selected', true);
         $sel.append($o);
       });
+      // "Others" is never excluded — both profiles may be typed in.
+      var $othersOpt = $('<option>').val('others').text('Others');
+      if (keepVal === 'others') { $othersOpt.prop('selected', true); }
+      $sel.append($othersOpt);
 
       if (wasS2) { $sel.select2({ width: '100%' }); }
     }
@@ -765,6 +811,28 @@
         rebuildProfile($('#esim_profile_2'), 'Select Profile 2', v1, String($('#esim_profile_2').val() || ''));
       }
     })();
+
+    // "Others" in a JSD select reveals a free-text box for the real value
+    // (only in JSD mode — customer mode has its own free-text inputs).
+    var OTHERS_PAIRS = [['#esim_make', '#esim_make_other'], ['#esim_profile_1', '#esim_profile_1_other'], ['#esim_profile_2', '#esim_profile_2_other']];
+    function syncOthers() {
+      var jsd = String($('#esim_provider').val() || 'jsd') !== 'customer' && !$('#esim_provider').prop('disabled');
+      OTHERS_PAIRS.forEach(function (p) {
+        var on = jsd && String($(p[0]).val() || '') === 'others';
+        $(p[1]).toggle(on).prop('disabled', !on).prop('required', on);
+      });
+    }
+    $('#esim_make, #esim_profile_1, #esim_profile_2').on('change.others', function () { syncOthers(); syncApnFields(); });
+
+    // APN Profile 1/2 are needed whenever the eSIM isn't fully from JSD's
+    // catalog — customer-supplied, or any "Others" make/profile.
+    function syncApnFields() {
+      var isEsimCategory = String($('#device_category_id option:selected').data('is-esim')) === '1';
+      var isCustomer = String($('#esim_provider').val() || '') === 'customer';
+      var needsApn = isEsimCategory && (isCustomer || OTHERS_PAIRS.some(function (p) { return String($(p[0]).val() || '') === 'others'; }));
+      $('#esimApnRow').toggle(needsApn);
+      $('#esim_apn_1, #esim_apn_2').prop('disabled', !needsApn).prop('required', needsApn);
+    }
 
     function setProfilesEnabled(enabled) {
       var $p1 = $('#esim_profile_1'), $p2 = $('#esim_profile_2');
@@ -801,14 +869,48 @@
       $jsdP2.prop('required', !isCustomer);
       $custP1.prop('disabled', !isCustomer).prop('required', isCustomer);
       $custP2.prop('disabled', !isCustomer).prop('required', isCustomer);
+      syncOthers();
+      syncApnFields();
+    }
+
+    // Show the eSIM inputs only when the selected Device Category has eSIM
+    // enabled — otherwise hide + disable them all so nothing is submitted
+    // or required for a non-eSIM category (same rule as skus/create).
+    function applyEsimVisibilityForCategory() {
+      var isEsimCategory = String($('#device_category_id option:selected').data('is-esim')) === '1';
+      var $provider = $('#esim_provider');
+
+      $('#esimProviderCol').toggle(isEsimCategory);
+      $provider.prop('disabled', !isEsimCategory).prop('required', isEsimCategory);
+      try { $provider.select2(isEsimCategory ? 'enable' : 'disable'); } catch (e) {}
+
+      if (isEsimCategory) {
+        setEsimProviderMode(String($provider.val() || 'jsd'));
+        return;
+      }
+      $('#esimJsdMakeCol, #esimCustomerMakeCol, #esimJsdProfileRow, #esimCustomerProfileRow, #esimRechargeCol').hide();
+      $('#firmwareCol').removeClass('col-md-6').addClass('col-md-12');
+      [
+        '#esim_make', '#esim_make_customer',
+        '#esim_profile_1', '#esim_profile_1_customer',
+        '#esim_profile_2', '#esim_profile_2_customer',
+        '#esim_recharge_period',
+        '#esim_make_other', '#esim_profile_1_other', '#esim_profile_2_other',
+      ].forEach(function (sel) {
+        var $f = $(sel);
+        $f.prop('disabled', true).prop('required', false);
+        try { $f.select2('disable'); } catch (e) {}
+      });
+      $('#esim_make_other, #esim_profile_1_other, #esim_profile_2_other').hide();
+      syncApnFields();
     }
 
     $('#esim_provider').on('change', function () {
       setEsimProviderMode(String($(this).val() || 'jsd'));
     });
-    setEsimProviderMode(String($('#esim_provider').val() || 'jsd'));
+    applyEsimVisibilityForCategory();
 
-    $('#device_category_id').on('change', function () { rebuildFirmwareBackend(); loadCategoryConfig(); });
+    $('#device_category_id').on('change', function () { applyEsimVisibilityForCategory(); rebuildFirmwareBackend(); loadCategoryConfig(); });
 
     rebuildFirmwareBackend();
     // Pre-select Backend/State from the SKU's already-saved firmware.

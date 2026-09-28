@@ -57,6 +57,14 @@
                                     </div>
                                 </div>
                                 <div class="form-group ">
+                                    <label for="is_sku_esim" class="control-label col-lg-3"><b>Enable eSIM in SKU </b></label>
+                                    <div class="col-lg-6">
+                                        <input type="checkbox" class='default_template_checkbnox' name="is_sku_esim" id="is_sku_esim"
+                                            {{ ($device_category->is_sku_esim ?? 0) == 1 ? 'checked' : '' }}>
+                                        <span class="help-block">When on, the SKU form shows and requires the eSIM fields for this category.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group ">
                                     <label for="curl" class="control-label col-lg-3"><b>Is Certification Enable </b></label>
                                     <div class="col-lg-6">
                                         <input type="checkbox" class='default_template_checkbnox' name="is_certification_enable" id="is_certification_enable"  {{$device_category->is_certification_enable == 1 ?

@@ -34,6 +34,7 @@
           <div class="c_content">
             @include('partials.gps-inline-alerts')
 
+            <div id="poListError" class="alert alert-danger" style="display:none;"></div>
             <div class="table-responsive" style="width:100%;">
               <table id="poTable" class="table table-bordered table-striped"
                 data-server-side="1"
@@ -74,6 +75,17 @@
 <script>
   $(document).ready(function () {
     var $table = $('#poTable');
+    var $err = $('#poListError');
+    // Show MES failures inline (listData returns `error`) instead of an
+    // alert() popup or a misleading empty "No data available" table.
+    $.fn.dataTable.ext.errMode = 'none';
+    $table.on('error.dt', function (e, settings, techNote, message) {
+      var json = settings.json || {};
+      $err.text(json.error || 'Could not load purchase orders. Please try again shortly.').show();
+    });
+    $table.on('xhr.dt', function (e, settings, json) {
+      if (json && !json.error) { $err.hide(); }
+    });
     $table.DataTable({
       serverSide: true,
       processing: true,
@@ -81,17 +93,14 @@
       searching: true,
       searchDelay: 400,
       info: true,
-      ordering: true,
+      // MES returns POs newest-first and doesn't take a sort column, so
+      // column-header sorting would only re-fetch the same order.
+      ordering: false,
       lengthChange: true,
       autoWidth: false,
       scrollX: true,
       scrollCollapse: true,
-      order: [],
       ajax: { url: $table.data('ajax-url') },
-      columnDefs: [
-        { targets: [1, 2, 3, 4, 8, 9, 12, 13, 14], orderable: true },
-        { targets: '_all', orderable: false }
-      ],
       lengthMenu: [[25, 50, 100, 500], [25, 50, 100, 500]],
       pageLength: 25
     });

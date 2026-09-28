@@ -61,10 +61,15 @@ class PurchaseOrderController extends Controller
         // Admin picks the account in the form → SKUs load via AJAX after that.
         $mySkus = collect();
         $mySkuDetails = collect();
+        $skuLoadError = null;
         if (!$isAdmin) {
             $result = $mes->listSkuRequests(['raisedBy' => $user->id, 'role' => $user->user_type, 'status' => 'Completed']);
             $mySkus = collect($result['rows'])->map(fn($row) => self::mapSkuRow($row));
             $mySkuDetails = collect($result['rows'])->map(fn($row) => self::mapSkuDetail($row));
+            // A failed MES call must not read as "you have no SKUs yet".
+            if (!empty($result['error'])) {
+                $skuLoadError = 'Could not load your approved SKUs from MES. Please refresh the page in a moment.';
+            }
         }
 
         // Admin raises the PO on behalf of a selected account.
@@ -84,6 +89,7 @@ class PurchaseOrderController extends Controller
             'current_user_id' => $user->id,
             'mySkus' => $mySkus,
             'mySkuDetails' => $mySkuDetails,
+            'skuLoadError' => $skuLoadError,
             'accounts' => $accounts,
             'locked_account' => null,
         ]);
@@ -115,11 +121,13 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * Show the Raise-PO wizard pre-filled to EDIT & RESUBMIT a rejected PO.
-     * Allowed only when the PO is Rejected AND Sales permitted resubmission,
-     * and (for non-admins) the PO belongs to the current user.
+     * Load a PO for resubmission and enforce who may resubmit it: it must
+     * exist, be Rejected with resubmission allowed by Sales, and belong to the
+     * current user (Admins may act for any account). Returns [$po, null] or
+     * [null, $response] — shared by the edit page AND the POST, which used to
+     * skip every one of these checks.
      */
-    public function editResubmit($id, MesService $mes)
+    private function loadResubmittablePo($id, MesService $mes): array
     {
         $url_type = self::getURLType();
         $user = Auth::user();
@@ -127,115 +135,69 @@ class PurchaseOrderController extends Controller
         $res = $mes->getPurchaseOrder($id);
         $po = $res['po'] ?? null;
         if (!$po) {
-            return redirect()->to('/' . $url_type . '/purchase-orders')->with('error', 'Purchase Order not found or MES is unreachable.');
-        }
-        if (($po['status'] ?? '') !== 'Rejected' || empty($po['resubmissionAllowed'])) {
-            return redirect()->to('/' . $url_type . '/purchase-orders')->with('error', 'This PO cannot be resubmitted.');
+            return [null, redirect()->to('/' . $url_type . '/purchase-orders')->with('error', 'Purchase Order not found or MES is unreachable.')];
         }
         if ($user->user_type !== 'Admin' && (int) ($po['raisedBy']['cpanelUserId'] ?? 0) !== (int) $user->id) {
             abort(403);
         }
+        if (($po['status'] ?? '') !== 'Rejected' || empty($po['resubmissionAllowed'])) {
+            return [null, redirect()->to('/' . $url_type . '/purchase-orders')->with('error', 'This PO cannot be resubmitted.')];
+        }
+        return [$po, null];
+    }
 
-        // Categories + firmware assigned to the (locked) account this PO is for.
-        $assign = CommonHelper::assignmentsForUser($po['raisedBy']['cpanelUserId'] ?? 0);
-
-        // Flatten the saved configuration snapshot (values keyed by normalized
-        // field key) so the config form can pre-fill each field with its saved value.
-        $configOverrides = [];
-        foreach (($po['configuration']['values'] ?? []) as $k => $v) {
-            $configOverrides[(string) $k] = is_array($v) ? ($v['value'] ?? '') : $v;
+    /**
+     * Resubmit page for a rejected PO: the PO detail view with only Quantity
+     * and Expected Delivery editable. Device, eSIM, firmware, model/vendor and
+     * configuration came from the approved SKU and are not changeable here —
+     * a different specification needs a new SKU.
+     */
+    public function editResubmit($id, MesService $mes)
+    {
+        [$po, $fail] = $this->loadResubmittablePo($id, $mes);
+        if ($fail) {
+            return $fail;
         }
 
-        $prefill = [
-            'device_category_id' => $po['deviceCategory']['id'] ?? '',
-            'esim_make' => $po['esim']['make'] ?? '',
-            'esim_profile_1' => $po['esim']['profile1'] ?? '',
-            'esim_profile_2' => $po['esim']['profile2'] ?? '',
-            'esim_recharge_period' => $po['esimRechargePeriod'] ?? '',
-            'firmware_id' => $po['firmware']['id'] ?? '',
-            'model_name' => $po['modelName'] ?? '',
-            'vendor_id' => $po['vendorId'] ?? '',
-            'required_quantity' => $po['requiredQuantity'] ?? '',
-            'expected_delivery_date' => !empty($po['expectedDeliveryDate']) ? substr($po['expectedDeliveryDate'], 0, 10) : '',
-        ];
-
-        return view('purchase_order.create', [
-            'url_type' => $url_type,
-            'is_admin' => $user->user_type === 'Admin',
-            'current_user_id' => $user->id,
-            'categories' => $assign['categories'],
-            'esimMakes' => $mes->getEsimOptions()['makes'],
-            'esimProfiles' => $mes->getEsimOptions()['profiles'],
-            'esimError' => null,
-            'firmwares' => $assign['firmware'],
-            'accounts' => collect(),
-            'resubmit' => true,
-            'po_id' => $id,
-            'sales_directions' => $po['salesRemarks'] ?? '',
-            'po_status_history' => $po['statusHistory'] ?? [],
-            'prefill' => $prefill,
-            'config_overrides' => $configOverrides,
-            'locked_account' => [
-                'id' => $po['raisedBy']['cpanelUserId'] ?? null,
-                'name' => $po['raisedBy']['name'] ?? '',
-                'role' => $po['raisedBy']['role'] ?? '',
-            ],
+        return view('purchase_order.show', [
+            'url_type' => self::getURLType(),
+            'po' => $po,
+            'poId' => $id,
+            'resubmitMode' => true,
         ]);
     }
 
     /**
-     * Persist the customer's edits and resubmit the rejected PO to MES.
+     * Resubmit a rejected PO to MES with a corrected quantity / delivery date.
      */
     public function resubmit(Request $request, $id, MesService $mes)
     {
+        [$po, $fail] = $this->loadResubmittablePo($id, $mes);
+        if ($fail) {
+            return $fail;
+        }
+
         $validated = $request->validate([
-            'device_category_id' => 'required|integer',
-            'esim_make' => 'required|string|max:191',
-            'esim_profile_1' => 'required|string|max:191',
-            'esim_profile_2' => 'required|string|max:191',
-            'esim_recharge_period' => 'required|in:1_year,2_year',
-            'firmware_id' => 'nullable|integer',
-            'model_name' => 'nullable|string|max:191',
-            'vendor_id' => 'nullable|string|max:191',
-            'expected_delivery_date' => 'required|date',
-            'required_quantity' => 'required|integer|min:1',
+            'required_quantity' => 'required|integer|min:1|max:1000000',
+            'expected_delivery_date' => 'nullable|date|after_or_equal:today',
+        ], [
+            'expected_delivery_date.after_or_equal' => 'The expected delivery date cannot be in the past.',
         ]);
 
-        // Anti-tamper: validate category + firmware against the (locked) account.
-        $poRes = $mes->getPurchaseOrder($id);
-        $accountId = (int) ($poRes['po']['raisedBy']['cpanelUserId'] ?? 0);
-        if ($msg = $this->assertAssigned($accountId, (int) $validated['device_category_id'], $validated['firmware_id'] ?? null)) {
-            return back()->withInput()->with('error', $msg);
-        }
-        if ($cfgErr = $this->validateConfigValues((int) $validated['device_category_id'], (array) $request->input('config', []))) {
-            return back()->withInput()->with('error', $cfgErr);
+        // Same KYC gate as raising a PO, checked live for the PO's account.
+        $owner = \App\Writer::where('id', (int) ($po['raisedBy']['cpanelUserId'] ?? 0))->where('is_deleted', 0)->first();
+        if (!$owner || $mes->syncKycStatus($owner) !== 'Approved') {
+            return back()->withInput()->with('error', 'The account\'s KYC must be approved by Accounts before this Purchase Order can be resubmitted.');
         }
 
-        $categoryName = DB::table('device_categories')->where('id', $validated['device_category_id'])->value('device_category_name');
-        $firmwareName = !empty($validated['firmware_id'])
-            ? DB::table('firmware')->where('id', $validated['firmware_id'])->value('name')
-            : null;
-
+        // Only quantity/date travel — MES keeps the SKU-derived specification.
         $payload = [
-            'deviceCategory' => ['id' => (int) $validated['device_category_id'], 'name' => $categoryName],
-            'esim' => [
-                'make' => $validated['esim_make'],
-                'profile1' => $validated['esim_profile_1'],
-                'profile2' => $validated['esim_profile_2'],
-            ],
-            'esimRechargePeriod' => $validated['esim_recharge_period'],
-            'firmware' => ['id' => $validated['firmware_id'] ?? null, 'name' => $firmwareName],
-            'modelName' => $validated['model_name'] ?? '',
-            'vendorId' => $validated['vendor_id'] ?? null,
-            'expectedDeliveryDate' => $validated['expected_delivery_date'],
             'requiredQuantity' => (int) $validated['required_quantity'],
-            'configuration' => $this->buildConfigSnapshot(
-                (int) $validated['device_category_id'],
-                !empty($validated['firmware_id']) ? (int) $validated['firmware_id'] : null,
-                (array) $request->input('config', [])
-            ),
             'remarks' => 'Resubmitted after edit',
         ];
+        if (!empty($validated['expected_delivery_date'])) {
+            $payload['expectedDeliveryDate'] = $validated['expected_delivery_date'];
+        }
 
         $result = $mes->resubmitPurchaseOrder($id, $payload);
         $redirect = redirect()->to('/' . self::getURLType() . '/purchase-orders');
@@ -393,7 +355,7 @@ class PurchaseOrderController extends Controller
 
         $a = CommonHelper::assignmentsForUser($userId);
         return response()->json([
-            'categories' => $a['categories']->map(fn($c) => ['id' => $c->id, 'name' => $c->device_category_name, 'is_esim' => (bool) ($c->is_esim ?? false)])->values(),
+            'categories' => $a['categories']->map(fn($c) => ['id' => $c->id, 'name' => $c->device_category_name, 'is_esim' => (bool) ($c->is_esim ?? false), 'is_sku_esim' => (bool) ($c->is_sku_esim ?? false)])->values(),
             'firmware'   => $a['firmware']->map(fn($f) => [
                 'id' => $f->id,
                 'name' => $f->name,
@@ -422,7 +384,11 @@ class PurchaseOrderController extends Controller
 
     public function modelLookup(Request $request)
     {
+        $user = Auth::user();
         $userId = (int) $request->input('user_id');
+        if ($user->user_type !== 'Admin') {
+            $userId = (int) $user->id; // lock non-admins to their own models
+        }
         $firmwareId = (int) $request->input('firmware_id');
 
         $modal = null;
@@ -564,7 +530,7 @@ class PurchaseOrderController extends Controller
             // Admin must pick the account the PO is raised for.
             'raised_by_user_id' => ($isAdmin ? 'required|integer' : 'nullable|integer'),
             'sku_id' => 'required|string',
-            'required_quantity' => 'required|integer|min:1',
+            'required_quantity' => 'required|integer|min:1|max:1000000',
             'logistics_managed_by' => 'required|in:us,customer',
             'delivery_address' => 'required_if:logistics_managed_by,us|nullable|string|max:1000',
             'contact_name' => 'required_if:logistics_managed_by,us|nullable|string|max:191',
@@ -573,7 +539,7 @@ class PurchaseOrderController extends Controller
             'transporter_name' => 'required_if:logistics_managed_by,customer|nullable|string|max:191',
             'transporter_contact' => 'required_if:logistics_managed_by,customer|nullable|string|max:20',
             'vehicle_number' => 'required_if:logistics_managed_by,customer|nullable|string|max:20',
-            'pickup_datetime' => 'required_if:logistics_managed_by,customer|nullable|date',
+            'pickup_datetime' => 'required_if:logistics_managed_by,customer|nullable|date|after_or_equal:today',
             'pickup_person_name' => 'nullable|string|max:191',
             'special_instructions' => 'nullable|string|max:1000',
         ], [
@@ -586,17 +552,23 @@ class PurchaseOrderController extends Controller
             'transporter_contact.required_if' => 'Transporter contact is required when the customer manages logistics.',
             'vehicle_number.required_if' => 'Vehicle number is required when the customer manages logistics.',
             'pickup_datetime.required_if' => 'Pickup date/time is required when the customer manages logistics.',
+            'pickup_datetime.after_or_equal' => 'Pickup date/time cannot be in the past.',
         ]);
 
         // The PO is raised FOR the selected account (admin) or the current user.
         $raiser = $user;
         if ($isAdmin && !empty($validated['raised_by_user_id'])) {
+            // Same account rules as the picker in create(): an active Level-1
+            // Reseller/User. A tampered or stale id used to fall back silently
+            // to the admin themselves.
             $selected = \App\Writer::where('id', $validated['raised_by_user_id'])
                 ->where('is_deleted', 0)
+                ->whereIn('user_type', ['Reseller', 'User'])
                 ->first();
-            if ($selected) {
-                $raiser = $selected;
+            if (!$selected || !$selected->isLevel1()) {
+                return back()->withInput()->with('error', 'The selected account was not found or cannot raise Purchase Orders.');
             }
+            $raiser = $selected;
         }
 
         // KYC must be approved before the account can raise a PO — checked live
@@ -696,8 +668,11 @@ class PurchaseOrderController extends Controller
             'limit' => $length,
             'search' => $search,
         ];
-        // Admin sees all; everyone else only their own POs.
-        if ($user->user_type !== 'Admin') {
+        // Admin sees all; everyone else only their own POs. MES now refuses a
+        // non-admin listing without raisedBy, so the admin role is explicit.
+        if ($user->user_type === 'Admin') {
+            $filters['role'] = 'admin';
+        } else {
             $filters['raisedBy'] = $user->id;
             $filters['role'] = $user->user_type;
         }
@@ -709,12 +684,19 @@ class PurchaseOrderController extends Controller
             $data[] = $this->renderRow($po, $start + $i + 1);
         }
 
-        return response()->json([
+        $payload = [
             'draw' => $draw,
             'recordsTotal' => $result['total'],
             'recordsFiltered' => $result['total'],
             'data' => $data,
-        ]);
+        ];
+        // Surface an MES failure instead of an empty "No data available" table.
+        if (!empty($result['error'])) {
+            $payload['error'] = $result['error'] === 'not_configured'
+                ? 'MES integration is not configured.'
+                : 'Could not load purchase orders from MES. Please try again shortly.';
+        }
+        return response()->json($payload);
     }
 
     /**

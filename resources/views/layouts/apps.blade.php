@@ -641,12 +641,20 @@ if ($userType === 'admin') {
 
                         @if (\App\Helpers\PermissionHelper::hasPermission('device_management.view'))
                         <li
-                            class='sub-menu {{ request()->is('reseller/view-device-assign', 'reseller/view-device-unassign') ? 'active' : '' }}'>
+                            class='sub-menu {{ request()->is('reseller/bulk-assign-device', 'reseller/view-device-assign', 'reseller/view-device-unassign') ? 'active' : '' }}'>
                             <a href="#"
-                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/view-device-assign', 'reseller/view-device-unassign') ? 'active' : '' }}">
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/bulk-assign-device', 'reseller/view-device-assign', 'reseller/view-device-unassign') ? 'active' : '' }}">
                                 <span class='icon-sidebar pe-7s-albums fa-2x'></span><span>Device Management</span>
                             </a>
                             <ul class='sub'>
+                                @if (\App\Helpers\PermissionHelper::hasPermission('device_management.edit') && \App\Helpers\PermissionHelper::hasPermission('device_management.bulk_assign'))
+                                <li class="{{ request()->is('reseller/bulk-assign-device') ? 'active' : '' }}">
+                                    <a href="{{ url('/reseller/bulk-assign-device') }}"
+                                        class="{{ request()->is('reseller/bulk-assign-device') ? 'active' : '' }}">
+                                        Bulk Assign Devices
+                                    </a>
+                                </li>
+                                @endif
                                 @if (\App\Helpers\PermissionHelper::hasPermission('device_management.view'))
                                 <li class="{{ request()->is('reseller/view-device-assign') ? 'active' : '' }}">
                                     <a href="{{ url('/reseller/view-device-assign') }}"

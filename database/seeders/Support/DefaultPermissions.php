@@ -17,6 +17,7 @@ class DefaultPermissions
 
             ['key' => 'device_management.view', 'module' => 'device_management', 'action' => 'view', 'label' => 'View Device Management', 'order' => 1],
             ['key' => 'device_management.edit', 'module' => 'device_management', 'action' => 'edit', 'label' => 'Edit Device', 'order' => 2],
+            ['key' => 'device_management.bulk_assign', 'module' => 'device_management', 'action' => 'bulk_assign', 'label' => 'Bulk Assign Devices', 'order' => 3],
 
             ['key' => 'certificate_management.view', 'module' => 'certificate_management', 'action' => 'view', 'label' => 'View Certificate', 'order' => 1],
 
@@ -72,6 +73,7 @@ class DefaultPermissions
             'account_management.edit' => 'account_management.view',
             'account_management.delete' => 'account_management.view',
             'device_management.edit' => 'device_management.view',
+            'device_management.bulk_assign' => 'device_management.edit',
             'settings_management.create' => 'settings_management.view',
             'settings_management.edit' => 'settings_management.view',
             'settings_management.delete' => 'settings_management.view',

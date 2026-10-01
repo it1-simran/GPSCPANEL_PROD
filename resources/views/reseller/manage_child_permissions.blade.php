@@ -59,102 +59,139 @@
         margin-bottom: 20px;
     }
     .permission-toolbar .permission-search-wrap { margin-bottom: 0; flex: 1; min-width: 220px; }
-    .child-user-select-wrap { max-width: 400px; }
-    .child-user-select-wrap .select2-container { width: 100% !important; }
 </style>
+@include('partials.permission-manager-styles')
 @endpush
 
 @section('content')
 <section id="main-content">
     <section class="wrapper">
-        <div class="vd-breadcrumb-wrap">
-            <nav class="vd-breadcrumb">
-                <a href="{{ url('reseller') }}" class="bc-home" title="Home"><i class="fa fa-home"></i></a>
-                <a href="{{ url('reseller') }}" class="bc-item">Home</a>
-                <span class="bc-sep">›</span>
-                <span class="bc-item active">Manage Child Permissions</span>
-            </nav>
-        </div>
-
         <div class="row">
             <div class="col-md-12">
-                <div class="c_panel">
-                    <div class="c_title" style="margin-bottom: 10px;">
-                        <div class="row bgx-title-container">
-                            <div class="col-lg-12">
-                                <h2><i class="fa fa-lock" style="color:#76CF1C; margin-right:10px;"></i>Manage Child User Permissions</h2>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="c_content">
+                <div class="c_panel mcp-panel">
+                    <div class="c_content mcp-content">
                         <div class="row" id="alert_msg">
                             @include('partials.gps-inline-alerts')
                         </div>
 
-                        <div class="info-box">
-                            <i class="fa fa-info-circle"></i> <strong>Permission Inheritance:</strong> Child users can only receive permissions that you (the parent) have assigned. You can only assign a subset of your own permissions.
-                        </div>
-
-                        <div id="availablePermissionsBox" class="{{ empty($availablePermissions) ? 'd-none' : '' }}" style="margin-bottom: 20px; padding: 10px; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 4px; color: #92400e;">
-                            <i class="fa fa-key" style="margin-right: 5px;"></i>
-                            <strong>Your Available Permissions:</strong> <span id="availablePermissionsCount">{{ $availablePermissions->count() }}</span> permission(s)
-                        </div>
-
-                        <div class="child-user-select-wrap" style="margin-bottom: 20px;">
-                            <label style="font-weight: 600; display: block; margin-bottom: 10px;">Select Child User:</label>
-                            <select id="childUserSelect" class="user-select" style="width: 100%;">
-                                <option value="">-- Choose a Child User --</option>
-                                @foreach($childUsers as $childUser)
-                                    <option value="{{ $childUser->id }}"
-                                        data-user-type="{{ $childUser->user_type }}"
-                                        {{ (string) request()->query('user_id') === (string) $childUser->id || (!empty($selectedUser) && (string) $selectedUser->id === (string) $childUser->id) ? 'selected' : '' }}>
-                                        {{ $childUser->name }} ({{ $childUser->email }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        @if(count($childUsers) == 0)
-                            <div class="alert alert-info">
-                                <i class="fa fa-info-circle"></i> You don't have any child users yet. Create users first to manage their permissions.
+                        {{-- Header --}}
+                        <div class="mcp-hero">
+                            <div class="mcp-hero-main">
+                                <div class="mcp-hero-icon"><i class="fa fa-lock"></i></div>
+                                <div>
+                                    <h1>Manage Child User Permissions</h1>
+                                    <p>Child users can only receive permissions that you (the parent) have assigned. You can only assign a subset of your own permissions.</p>
+                                </div>
                             </div>
-                        @endif
+                            <div id="availablePermissionsBox" class="mcp-total {{ empty($availablePermissions) ? 'd-none' : '' }}">
+                                <div class="mcp-total-icon"><i class="fa fa-users"></i></div>
+                                <div>
+                                    <span class="mcp-total-label">Total Available Permissions</span>
+                                    <strong class="mcp-total-value"><span id="availablePermissionsCount">{{ $availablePermissions->count() }}</span> permissions</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mcp-info">
+                            <i class="fa fa-check-circle"></i>
+                            <span><strong>Permission Inheritance:</strong> Child users can only receive permissions that you (the parent) have assigned. You can only assign a subset of your own permissions.</span>
+                        </div>
+
+                        @php
+                            $childKindOf = function ($type) {
+                                return $type === 'Reseller' ? 'manufacturer' : ($type === 'User' ? 'dealer' : 'other');
+                            };
+                            $childKindCounts = $childUsers->groupBy(function ($u) use ($childKindOf) { return $childKindOf($u->user_type); })->map->count();
+                        @endphp
+
+                        {{-- Account picker + how it works --}}
+                        <div class="mcp-card">
+                            <div class="mcp-pick">
+                                <div class="mcp-pick-left">
+                                    @if(count($childUsers) > 0)
+                                    <div class="child-kind-tabs" role="tablist" aria-label="Account type">
+                                        <button type="button" data-kind="manufacturer" role="tab"><i class="fa fa-industry"></i> Manufacturer <span class="child-kind-count">{{ $childKindCounts['manufacturer'] ?? 0 }}</span></button>
+                                        <button type="button" data-kind="dealer" role="tab"><i class="fa fa-user"></i> Dealer <span class="child-kind-count">{{ $childKindCounts['dealer'] ?? 0 }}</span></button>
+                                        @if(($childKindCounts['other'] ?? 0) > 0)
+                                        <button type="button" data-kind="other" role="tab"><i class="fa fa-users"></i> Other <span class="child-kind-count">{{ $childKindCounts['other'] }}</span></button>
+                                        @endif
+                                    </div>
+                                    @endif
+
+                                    <div class="child-user-select-wrap">
+                                        <label for="childUserSelect" class="child-kind-label"><i class="fa fa-users"></i> <span id="childKindLabel">Select the child account to manage permissions.</span> <span class="require">*</span></label>
+                                        <div class="mcp-select">
+                                            <i class="fa fa-industry mcp-select-icon" id="childKindIcon"></i>
+                                            <select id="childUserSelect" style="width: 100%;">
+                                                <option value=""></option>
+                                                @foreach($childUsers as $childUser)
+                                                    <option value="{{ $childUser->id }}"
+                                                        data-user-type="{{ $childUser->user_type }}"
+                                                        data-kind="{{ $childKindOf($childUser->user_type) }}"
+                                                        {{ (string) request()->query('user_id') === (string) $childUser->id || (!empty($selectedUser) && (string) $selectedUser->id === (string) $childUser->id) ? 'selected' : '' }}>
+                                                        {{ $childUser->name }} ({{ $childUser->email }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <span class="child-kind-empty" id="childKindEmpty" style="display:none;"><i class="fa fa-exclamation-circle"></i> <span></span></span>
+                                    </div>
+
+                                    @if(count($childUsers) == 0)
+                                        <div class="alert alert-info" style="margin-top:14px;">
+                                            <i class="fa fa-info-circle"></i> You don't have any child users yet. Create users first to manage their permissions.
+                                        </div>
+                                    @endif
+                                </div>
+
+                            </div>
+
+                            <div class="mcp-hint" id="childPickHint">
+                                <i class="fa fa-info-circle"></i> <span id="childPickHintText">Select a manufacturer to view and manage its permissions.</span>
+                            </div>
+                        </div>
 
                         <div id="loading" class="loading">
                             <img src="/assets/icons/loader.gif" alt="Loading..." style="height: 50px;">
                         </div>
 
                         <div id="permissionsContainer" style="display:none;">
-                            <div class="permission-toolbar">
-                                <div class="permission-search-wrap">
-                                    <i class="fa fa-search search-icon"></i>
-                                    <input type="text" id="permissionSearch" placeholder="Search permissions or modules..." autocomplete="off">
+                            <div class="perm-head">
+                                <div class="perm-head-text">
+                                    <h3>Permissions for <span id="permTargetName"></span></h3>
+                                    <p><strong id="permEnabledTotal">0</strong> of <span id="permTotal">0</span> permissions enabled &middot; changes are saved automatically</p>
+                                </div>
+                                <div class="permission-toolbar">
+                                    <div class="permission-search-wrap">
+                                        <i class="fa fa-search search-icon"></i>
+                                        <input type="text" id="permissionSearch" placeholder="Search permissions or modules..." autocomplete="off">
+                                    </div>
                                 </div>
                             </div>
                             <div id="permissionNoResults" class="permission-no-results">
                                 <i class="fa fa-search" style="margin-right: 6px;"></i>No permissions match your search.
                             </div>
+                            @php
+                                $moduleIcons = ['account_management' => 'fa-users', 'device_management' => 'fa-mobile', 'certificate_management' => 'fa-certificate', 'settings_management' => 'fa-sliders'];
+                            @endphp
                             @foreach($modules as $module)
                                 @if(empty($permissionsByModule[$module]) || count($permissionsByModule[$module]) === 0)
                                     @continue
                                 @endif
                                 <div class="module-section" data-module="{{ $module }}">
                                     <div class="module-title">
-                                        {{ ucwords(str_replace('_', ' ', $module)) }}
+                                        <span class="mt-icon"><i class="fa {{ $moduleIcons[$module] ?? 'fa-cube' }}"></i></span>
+                                        <span class="mt-name">{{ ucwords(str_replace('_', ' ', $module)) }}</span>
+                                        <span class="mt-count">0/{{ count($permissionsByModule[$module]) }} enabled</span>
                                     </div>
                                     <table class="permission-matrix">
-                                        <thead>
-                                            <tr>
-                                                <th style="text-align: left;">Permission</th>
-                                                <th>Enabled</th>
-                                            </tr>
-                                        </thead>
                                         <tbody>
                                             @foreach($permissionsByModule[$module] as $permission)
                                                 <tr class="permission-row" data-permission-id="{{ $permission->id }}">
-                                                    <td style="text-align: left;">{{ $permission->label }}</td>
-                                                    <td>
+                                                    <td class="perm-cell">
+                                                        <span class="perm-label">{{ $permission->label }}</span>
+                                                    </td>
+                                                    <td class="perm-toggle-cell">
                                                         <label class="toggle-switch">
                                                             <input type="checkbox" class="permission-checkbox" value="{{ $permission->id }}" data-permission="{{ $permission->key }}">
                                                             <span class="toggle-slider"></span>
@@ -227,6 +264,7 @@
 
         isSyncingPermissions = false;
         applyModuleVisibilityForChildUser(currentChildUserType);
+        updatePermissionCounts();
 
         const searchQuery = $('#permissionSearch').val();
         if (searchQuery) {
@@ -310,6 +348,37 @@
         }
     }
 
+    const MODULE_ICONS = {
+        account_management: 'fa-users',
+        device_management: 'fa-mobile',
+        certificate_management: 'fa-certificate',
+        settings_management: 'fa-sliders'
+    };
+
+    function moduleIcon(module) {
+        return MODULE_ICONS[module] || 'fa-cube';
+    }
+
+    // "X/Y enabled" badge per module card, overall total and selected account name in the header.
+    function updatePermissionCounts() {
+        let enabled = 0;
+        let total = 0;
+        $('#permissionsContainer .module-section').each(function() {
+            const $section = $(this);
+            if (currentChildUserType === 'User' && $section.data('module') === 'account_management') {
+                return; // never shown / saved for Dealer accounts
+            }
+            const $boxes = $section.find('.permission-checkbox');
+            const on = $boxes.filter(':checked').length;
+            $section.find('.mt-count').text(on + '/' + $boxes.length + ' enabled').toggleClass('is-full', on > 0 && on === $boxes.length);
+            enabled += on;
+            total += $boxes.length;
+        });
+        $('#permEnabledTotal').text(enabled);
+        $('#permTotal').text(total);
+        $('#permTargetName').text(($('#childUserSelect option:selected').text() || '').replace(/\s*\(.*\)\s*$/, '').trim());
+    }
+
     function renderPermissionsMatrix(permissionsByModule, modules) {
         $('#permissionsContainer .module-section').remove();
 
@@ -327,8 +396,10 @@
             let rowsHtml = '';
             permissions.forEach(function(permission) {
                 rowsHtml += '<tr class="permission-row" data-permission-id="' + permission.id + '">' +
-                    '<td style="text-align: left;">' + escapeHtml(permission.label) + '</td>' +
-                    '<td>' +
+                    '<td class="perm-cell">' +
+                        '<span class="perm-label">' + escapeHtml(permission.label) + '</span>' +
+                    '</td>' +
+                    '<td class="perm-toggle-cell">' +
                         '<label class="toggle-switch">' +
                             '<input type="checkbox" class="permission-checkbox" value="' + permission.id + '" data-permission="' + escapeHtml(permission.key) + '">' +
                             '<span class="toggle-slider"></span>' +
@@ -338,14 +409,12 @@
             });
 
             const sectionHtml = '<div class="module-section" data-module="' + escapeHtml(module) + '">' +
-                '<div class="module-title">' + escapeHtml(formatModuleTitle(module)) + '</div>' +
+                '<div class="module-title">' +
+                    '<span class="mt-icon"><i class="fa ' + moduleIcon(module) + '"></i></span>' +
+                    '<span class="mt-name">' + escapeHtml(formatModuleTitle(module)) + '</span>' +
+                    '<span class="mt-count">0/' + permissions.length + ' enabled</span>' +
+                '</div>' +
                 '<table class="permission-matrix">' +
-                    '<thead>' +
-                        '<tr>' +
-                            '<th style="text-align: left;">Permission</th>' +
-                            '<th>Enabled</th>' +
-                        '</tr>' +
-                    '</thead>' +
                     '<tbody>' + rowsHtml + '</tbody>' +
                 '</table>' +
             '</div>';
@@ -361,15 +430,76 @@
         }
 
         $select.select2({
-            placeholder: '-- Choose a Child User --',
+            placeholder: 'Select Manufacturer',
             allowClear: true,
             width: '100%',
-            minimumResultsForSearch: 0
+            minimumResultsForSearch: 0,
+            dropdownCssClass: 'mcp-s2-drop'
+        }).on('select2-open', function() {
+            $('.mcp-s2-drop .select2-input').attr('placeholder', currentChildKind === 'dealer' ? 'Search dealer...' : 'Search manufacturer...');
         });
     }
 
+    // Manufacturer / Dealer tabs: the picker lists only the chosen account type.
+    const CHILD_KIND_CFG = {
+        manufacturer: { placeholder: 'Select Manufacturer', icon: 'fa-industry', hint: 'Select a manufacturer to view and manage its permissions.', intro: 'Select the <strong>Manufacturer</strong> account to manage its permissions.', empty: 'No Manufacturer accounts found.' },
+        dealer: { placeholder: 'Select Dealer', icon: 'fa-user', hint: 'Select a dealer to view and manage its permissions.', intro: 'Select the <strong>Dealer</strong> account to manage its permissions.', empty: 'No Dealer accounts found.' },
+        other: { placeholder: 'Select Account', icon: 'fa-users', hint: 'Select an account to view and manage its permissions.', intro: 'Select the account to manage its permissions.', empty: 'No accounts found.' }
+    };
+
+    // The footer hint is shown only while no account is selected.
+    function updateChildPickHint() {
+        $('#childPickHint').toggle(!$('#childUserSelect').val());
+    }
+    const CHILD_OPTIONS = {};
+    let currentChildKind = 'manufacturer';
+
+    function collectChildOptions() {
+        $('#childUserSelect option[data-kind]').each(function() {
+            const kind = $(this).data('kind');
+            (CHILD_OPTIONS[kind] = CHILD_OPTIONS[kind] || []).push(this.outerHTML.replace(/\sselected(="[^"]*")?/, ''));
+        });
+    }
+
+    // Rebuild the picker for one account type; keepId stays selected if it belongs to that type.
+    function setChildKind(kind, keepId, silent) {
+        const cfg = CHILD_KIND_CFG[kind] || CHILD_KIND_CFG.other;
+        const $select = $('#childUserSelect');
+        currentChildKind = kind;
+        $('.child-kind-tabs button').removeClass('is-active').filter('[data-kind="' + kind + '"]').addClass('is-active');
+        $('#childKindLabel').html(cfg.intro);
+        $('#childKindIcon').attr('class', 'fa ' + cfg.icon + ' mcp-select-icon');
+        $('#childPickHintText').text(cfg.hint);
+        $select.html('<option value=""></option>' + (CHILD_OPTIONS[kind] || []).join('')).attr('data-placeholder', cfg.placeholder);
+
+        const keep = keepId && $select.find('option[value="' + keepId + '"]').length ? String(keepId) : '';
+        if ($.fn.select2 && $select.data('select2')) {
+            $select.select2('val', keep);
+        } else {
+            $select.val(keep);
+        }
+        $('#childKindEmpty').toggle(!(CHILD_OPTIONS[kind] || []).length).find('span').text(cfg.empty);
+        updateChildPickHint();
+        if (!silent) {
+            $select.trigger('change');
+        }
+    }
+
     $(document).ready(function() {
+        collectChildOptions();
+        const preselectId = new URLSearchParams(window.location.search).get('user_id') || $('#childUserSelect').val() || null;
+        const preselectKind = preselectId ? $('#childUserSelect option[value="' + preselectId + '"]').data('kind') : null;
+        const startKind = preselectKind || (CHILD_OPTIONS.manufacturer ? 'manufacturer' : (CHILD_OPTIONS.dealer ? 'dealer' : 'other'));
+
         initChildUserSelect2();
+        setChildKind(startKind, preselectId, true);
+
+        $('.child-kind-tabs').on('click', 'button', function() {
+            const kind = $(this).data('kind');
+            if (kind !== currentChildKind) {
+                setChildKind(kind, null, false);
+            }
+        });
 
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('user_id') || $('#childUserSelect').val() || null;
@@ -385,6 +515,7 @@
         });
 
         $('#childUserSelect').on('change', function() {
+            updateChildPickHint();
             currentUserId = $(this).val();
             if (currentUserId) {
                 loadPermissionDependencies(function() {
@@ -397,6 +528,11 @@
         });
 
         // Add change event listeners for permission checkboxes
+        // Recount after the dependency handler below has (un)checked parents/children.
+        $(document).on('change', '.permission-checkbox', function() {
+            setTimeout(updatePermissionCounts, 0);
+        });
+
         $(document).on('change', '.permission-checkbox', function() {
             const permId = $(this).val();
             const isChecked = $(this).is(':checked');

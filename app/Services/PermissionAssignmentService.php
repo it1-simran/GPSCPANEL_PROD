@@ -18,6 +18,39 @@ class PermissionAssignmentService
     ];
 
     /**
+     * Permissions that only Manufacturer (Reseller) accounts may hold; never granted to Dealer (User) accounts.
+     */
+    private const MANUFACTURER_ONLY_KEYS = [
+        'device_management.bulk_assign',
+    ];
+
+    /**
+     * @return string[]
+     */
+    public function getManufacturerOnlyKeys(): array
+    {
+        return self::MANUFACTURER_ONLY_KEYS;
+    }
+
+    /**
+     * Drop Manufacturer-only permissions when the account is not a Manufacturer (Reseller).
+     */
+    public function stripManufacturerOnlyFor(array $permissionIds, ?string $userType): array
+    {
+        $permissionIds = array_values(array_unique(array_map('intval', $permissionIds)));
+        if ($userType === 'Reseller') {
+            return $permissionIds;
+        }
+
+        $onlyIds = Permission::whereIn('key', self::MANUFACTURER_ONLY_KEYS)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return array_values(array_diff($permissionIds, $onlyIds));
+    }
+
+    /**
      * Permission keys disabled by default for Manufacturer (Reseller) and Dealer (User) accounts.
      *
      * @return string[]
@@ -374,6 +407,8 @@ class PermissionAssignmentService
         $permissionIds = array_values(array_unique(array_map('intval', $permissionIds)));
         $permissionIds = $this->applyDependencies($permissionIds);
         $permissionIds = $this->applyCreateEditPairing($permissionIds);
+        // Manufacturer-only permissions are silently dropped (and removed if present) for Dealer accounts.
+        $permissionIds = $this->stripManufacturerOnlyFor($permissionIds, $targetUser->user_type ?? null);
 
         if ($assigningUser && $assigningUser->user_type !== 'Admin') {
             $assignablePermissionIds = $this->getEffectiveAssignedPermissionIds($assigningUser);
@@ -563,6 +598,14 @@ class PermissionAssignmentService
             ];
         }
 
+        // Rule 4b: Manufacturer-only permissions (e.g. Bulk Assign Devices)
+        if ($targetUser->user_type !== 'Reseller' && in_array($permission->key, self::MANUFACTURER_ONLY_KEYS, true)) {
+            return [
+                'valid' => false,
+                'message' => "'{$permission->label}' is available for Manufacturer accounts only"
+            ];
+        }
+
         // Rule 5: Target user cannot be parent or ancestor of assigning user
         // (can't create a cycle in the hierarchy)
         if ($targetUser->id === $assigningUser->id) {
@@ -600,10 +643,13 @@ class PermissionAssignmentService
             ->map(fn ($id) => (int) $id)
             ->toArray();
 
-        return $this->stripResellerDealerDefaultExclusions(
-            $this->applyDependencies(
-                $this->applyCreateEditPairing($permissionIds)
-            )
+        return $this->stripManufacturerOnlyFor(
+            $this->stripResellerDealerDefaultExclusions(
+                $this->applyDependencies(
+                    $this->applyCreateEditPairing($permissionIds)
+                )
+            ),
+            $user->user_type ?? null
         );
     }
 
@@ -624,10 +670,13 @@ class PermissionAssignmentService
                     ->toArray();
             }
 
-            return $this->stripResellerDealerDefaultExclusions(
-                $this->applyDependencies(
-                    $this->applyCreateEditPairing($permissionIds)
-                )
+            return $this->stripManufacturerOnlyFor(
+                $this->stripResellerDealerDefaultExclusions(
+                    $this->applyDependencies(
+                        $this->applyCreateEditPairing($permissionIds)
+                    )
+                ),
+                $targetUserType
             );
         }
 
@@ -637,10 +686,13 @@ class PermissionAssignmentService
             ->map(fn($id) => (int) $id)
             ->toArray();
 
-        return $this->stripResellerDealerDefaultExclusions(
-            $this->applyDependencies(
-                $this->applyCreateEditPairing($permissionIds)
-            )
+        return $this->stripManufacturerOnlyFor(
+            $this->stripResellerDealerDefaultExclusions(
+                $this->applyDependencies(
+                    $this->applyCreateEditPairing($permissionIds)
+                )
+            ),
+            $targetUserType
         );
     }
 

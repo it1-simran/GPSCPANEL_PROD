@@ -174,6 +174,38 @@ class MesService
     }
 
     /**
+     * Accessories MES offers on a PO for a device category (its Product
+     * Category's accessory mapping). categoryMapped=false when the device
+     * category isn't linked to any MES Product Category.
+     *
+     * @return array{items:array, categoryMapped:bool, error:?string}
+     */
+    public function getCategoryAccessories(?int $deviceCategoryId, string $deviceCategoryName = ''): array
+    {
+        if (!$this->isConfigured()) {
+            return ['items' => [], 'categoryMapped' => false, 'error' => 'not_configured'];
+        }
+        try {
+            $response = $this->client()->get($this->baseUrl . '/integrations/cpanel/accessories', [
+                'deviceCategoryId' => $deviceCategoryId,
+                'deviceCategoryName' => $deviceCategoryName,
+            ]);
+            if (!$response->successful()) {
+                Log::warning('MES getCategoryAccessories non-2xx', ['status' => $response->status(), 'body' => $response->body()]);
+                return ['items' => [], 'categoryMapped' => false, 'error' => 'mes_error'];
+            }
+            return [
+                'items' => $response->json('data') ?? [],
+                'categoryMapped' => (bool) $response->json('categoryMapped'),
+                'error' => null,
+            ];
+        } catch (Exception $e) {
+            Log::error('MES getCategoryAccessories failed: ' . $e->getMessage());
+            return ['items' => [], 'categoryMapped' => false, 'error' => 'unreachable'];
+        }
+    }
+
+    /**
      * Full sticker format design (dimensions + fields) for the live preview.
      *
      * @return array{format:?array, error:?string}

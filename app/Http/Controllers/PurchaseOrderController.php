@@ -439,6 +439,35 @@ class PurchaseOrderController extends Controller
     }
 
     /**
+     * Accessories offered for the selected SKU's device category (from MES).
+     * Non-admins may only look up their own SKUs.
+     */
+    public function skuAccessories(Request $request, MesService $mes)
+    {
+        $user = Auth::user();
+        $skuId = (string) $request->input('sku_id', '');
+        if ($skuId === '') {
+            return response()->json(['items' => [], 'categoryMapped' => false, 'error' => null]);
+        }
+        $sku = $mes->getSkuRequest($skuId)['sku'] ?? null;
+        if (!$sku) {
+            return response()->json(['items' => [], 'categoryMapped' => false, 'error' => 'SKU not found or MES is unreachable.'], 404);
+        }
+        if ($user->user_type !== 'Admin' && (int) ($sku['raisedBy']['cpanelUserId'] ?? 0) !== (int) $user->id) {
+            abort(403);
+        }
+        $res = $mes->getCategoryAccessories(
+            isset($sku['deviceCategory']['id']) ? (int) $sku['deviceCategory']['id'] : null,
+            (string) ($sku['deviceCategory']['name'] ?? '')
+        );
+        return response()->json([
+            'items' => $res['items'],
+            'categoryMapped' => $res['categoryMapped'],
+            'error' => $res['error'] ? 'Could not load accessories from MES.' : null,
+        ]);
+    }
+
+    /**
      * Flattened, view-friendly snapshot of a SKU request — shown read-only on
      * the Raise-PO form once an account's SKU is selected, so the requester
      * can confirm the exact device/eSIM/model/packaging config the PO applies
@@ -542,6 +571,12 @@ class PurchaseOrderController extends Controller
             'pickup_datetime' => 'required_if:logistics_managed_by,customer|nullable|date|after_or_equal:today',
             'pickup_person_name' => 'nullable|string|max:191',
             'special_instructions' => 'nullable|string|max:1000',
+            // Accessories picked from the SKU's category mapping — MES re-validates
+            // them (and always adds mandatory ones), so this only checks shape.
+            'accessories' => 'nullable|array|max:100',
+            'accessories.*.id' => 'required|string|max:64',
+            'accessories.*.qty' => 'nullable|integer|min:1|max:100000',
+            'accessories.*.selected' => 'nullable|in:1',
         ], [
             'raised_by_user_id.required' => 'Please select the account to raise this PO for.',
             'sku_id.required' => 'Please select a SKU to raise this PO against.',
@@ -607,6 +642,8 @@ class PurchaseOrderController extends Controller
             'skuCode' => $sku['skuCode'] ?? '',
             'deviceCategory' => ['id' => $sku['deviceCategory']['id'] ?? null, 'name' => $sku['deviceCategory']['name'] ?? ''],
             'esim' => [
+                // jsd / customer — MES only requires a recharge period for a JSD eSIM.
+                'provider' => $sku['esim']['provider'] ?? '',
                 'make' => $sku['esim']['make'] ?? '',
                 'profile1' => $sku['esim']['profile1'] ?? '',
                 'profile2' => $sku['esim']['profile2'] ?? '',
@@ -623,6 +660,10 @@ class PurchaseOrderController extends Controller
             'requiredQuantity' => (int) $validated['required_quantity'],
             // Frozen snapshot captured when the SKU was approved — not re-derived per PO.
             'configuration' => $sku['configuration'] ?? [],
+            'accessories' => collect($validated['accessories'] ?? [])
+                ->filter(fn($a) => ($a['selected'] ?? null) === '1')
+                ->map(fn($a) => ['id' => $a['id'], 'qty' => isset($a['qty']) ? (int) $a['qty'] : null])
+                ->values()->all(),
             'logistics' => [
                 'managedBy' => $validated['logistics_managed_by'],
                 'deliveryAddress' => $validated['delivery_address'] ?? '',

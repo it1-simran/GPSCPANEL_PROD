@@ -253,6 +253,7 @@ Route::get('/skus/{id}', [SkuController::class, 'show'])->middleware(['auth', 'l
     Route::get('/admin/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
     Route::get('/admin/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
     Route::get('/admin/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
+    Route::get('/admin/purchase-orders/sku-accessories', [PurchaseOrderController::class, 'skuAccessories']);
     Route::post('/admin/purchase-orders', [PurchaseOrderController::class, 'store']);
     Route::get('/admin/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);
     Route::get('/admin/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
@@ -418,6 +419,7 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
         Route::get('/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
         Route::get('/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
         Route::get('/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
+        Route::get('/purchase-orders/sku-accessories', [PurchaseOrderController::class, 'skuAccessories']);
         Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
         Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);
         Route::get('/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);
@@ -513,6 +515,7 @@ Route::middleware(['check.role:user'])->prefix('user')->group(function () {
         Route::get('/purchase-orders/account-assignments', [PurchaseOrderController::class, 'accountAssignments']);
         Route::get('/purchase-orders/sticker-format-preview/{id}', [PurchaseOrderController::class, 'stickerFormatPreview']);
         Route::get('/purchase-orders/account-skus', [PurchaseOrderController::class, 'accountSkus']);
+        Route::get('/purchase-orders/sku-accessories', [PurchaseOrderController::class, 'skuAccessories']);
         Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
         Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show']);
         Route::get('/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'editResubmit']);

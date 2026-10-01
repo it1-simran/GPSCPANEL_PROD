@@ -173,7 +173,20 @@
 
               <div class="form-group">
                 <label class="control-label">Required Quantity <span class="po-required">*</span></label>
-                <input type="number" name="required_quantity" class="form-control" min="1" value="{{ old('required_quantity') }}" placeholder="Enter quantity" required>
+                <input type="number" name="required_quantity" id="required_quantity" class="form-control" min="1" value="{{ old('required_quantity') }}" placeholder="Enter quantity" required>
+              </div>
+
+              {{-- ACCESSORIES: only those mapped (in MES) to the SKU's product
+                   category. Mandatory ones are always included; MES re-checks. --}}
+              <div class="po-section" id="poAccessoriesSection" style="display:none;">
+                <div class="po-section-title"><i class="fa fa-paperclip"></i> Accessories</div>
+                <p class="po-hint" id="poAccessoriesHint" style="margin-top:-4px;"></p>
+                <div class="table-responsive">
+                  <table class="table table-bordered" id="poAccessoriesTable" style="margin-bottom:0;">
+                    <thead><tr><th style="width:40px;"></th><th>Accessory</th><th style="width:170px;">Quantity</th><th style="width:130px;">Total for PO</th></tr></thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
               </div>
 
               {{-- LOGISTICS --}}
@@ -388,6 +401,73 @@
     }
 
     $sku.on('change', renderSkuDetails);
+
+    // ---- Accessories for the selected SKU's category (fetched from MES) ----
+    var ACC_URL = '/{{ $url_type }}/purchase-orders/sku-accessories';
+    var OLD_ACC = @json(old('accessories', []));
+    var $accSection = $('#poAccessoriesSection'), $accBody = $('#poAccessoriesTable tbody'), $accHint = $('#poAccessoriesHint');
+    var accReq = 0;
+    function escHtml(v) { return $('<div>').text(v == null ? '' : String(v)).html(); }
+    function oldAccFor(id) {
+      var hit = null;
+      $.each(OLD_ACC || {}, function (_, a) { if (a && String(a.id) === String(id)) hit = a; });
+      return hit;
+    }
+    function updateAccTotals() {
+      var devices = parseInt($('#required_quantity').val(), 10) || 0;
+      $accBody.find('tr').each(function () {
+        var $tr = $(this);
+        var per = parseInt($tr.find('.acc-qty').val(), 10) || 0;
+        var total = $tr.data('mode') === 'per_po' ? per : per * devices;
+        var on = $tr.find('.acc-check').is(':checked');
+        $tr.find('.acc-total').text(on ? (total + ' ' + $tr.data('unit')) : '-');
+        $tr.find('.acc-qty').prop('disabled', !on || !$tr.data('editable'));
+        $tr.find('.acc-selected').val(on ? '1' : '');
+      });
+    }
+    function loadAccessories() {
+      var skuId = String($sku.val() || '');
+      var mine = ++accReq;
+      $accBody.empty();
+      if (!skuId) { $accSection.hide(); return; }
+      $accSection.show();
+      $accHint.text('Loading accessories…');
+      $.getJSON(ACC_URL, { sku_id: skuId }).done(function (res) {
+        if (mine !== accReq) return;
+        var items = (res && res.items) || [];
+        if (res && res.error) { $accHint.text(res.error); return; }
+        if (!items.length) {
+          $accHint.text(res && res.categoryMapped ? 'No accessories are configured for this product category.' : 'No accessories are configured for this device category.');
+          return;
+        }
+        $accHint.text('Select the accessories to supply with these devices. Mandatory ones are always included.');
+        items.forEach(function (it, i) {
+          var prev = oldAccFor(it.accessoryId);
+          var checked = it.mandatory || (prev && prev.selected === '1');
+          var qty = (prev && prev.qty) ? prev.qty : it.defaultQty;
+          var basis = it.qtyMode === 'per_po' ? 'per PO' : 'per device';
+          var $tr = $('<tr>').attr({ 'data-mode': it.qtyMode, 'data-unit': it.unit, 'data-editable': it.allowQtyChange ? 1 : 0 });
+          $tr.append('<td>'
+            + '<input type="hidden" name="accessories[' + i + '][id]" value="' + escHtml(it.accessoryId) + '">'
+            + '<input type="hidden" class="acc-selected" name="accessories[' + i + '][selected]" value="">'
+            + '<input type="checkbox" class="acc-check"' + (checked ? ' checked' : '') + (it.mandatory ? ' disabled' : '') + '></td>');
+          $tr.append('<td><strong>' + escHtml(it.name) + '</strong>' + (it.mandatory ? ' <span class="label label-danger">Mandatory</span>' : '')
+            + '<div style="font-size:11.5px;color:#94a3b8;">' + escHtml(it.code) + (it.description ? ' · ' + escHtml(it.description) : '') + '</div></td>');
+          $tr.append('<td><div class="input-group input-group-sm"><input type="number" min="1" max="100000" step="1" class="form-control acc-qty" name="accessories[' + i + '][qty]" value="' + escHtml(qty) + '"' + (it.allowQtyChange ? '' : ' readonly') + '>'
+            + '<span class="input-group-addon">' + basis + '</span></div></td>');
+          $tr.append('<td class="acc-total">-</td>');
+          $accBody.append($tr);
+        });
+        updateAccTotals();
+      }).fail(function () {
+        if (mine !== accReq) return;
+        $accHint.text('Could not load accessories from MES — you can still submit; mandatory accessories are added automatically.');
+      });
+    }
+    $accBody.on('change input', '.acc-check, .acc-qty', updateAccTotals);
+    $('#required_quantity').on('input change', updateAccTotals);
+    $sku.on('change', loadAccessories);
+    loadAccessories();
     renderSkuDetails();
 
     var IS_ADMIN = {{ $is_admin ? 'true' : 'false' }};

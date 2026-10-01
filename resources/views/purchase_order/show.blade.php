@@ -113,6 +113,28 @@
               </div>
             </div>
 
+            @if(!empty($po['accessories']))
+              <div class="po-view-section">
+                <div class="po-view-section-title"><i class="fa fa-paperclip"></i> Accessories ({{ count($po['accessories']) }})</div>
+                <div class="table-responsive">
+                  <table class="table table-bordered" style="margin-bottom:0;">
+                    <thead><tr><th>Accessory</th><th>Quantity</th><th>Total for PO</th><th>Issued</th></tr></thead>
+                    <tbody>
+                      @foreach($po['accessories'] as $acc)
+                        <tr>
+                          <td><strong>{{ $acc['name'] ?? '-' }}</strong> @if(!empty($acc['mandatory']))<span class="label label-danger">Mandatory</span>@endif
+                            <div style="font-size:11.5px;color:#94a3b8;">{{ $acc['code'] ?? '' }}</div></td>
+                          <td>{{ $acc['qtyPerUnit'] ?? '-' }} {{ ($acc['qtyMode'] ?? '') === 'per_po' ? 'per PO' : 'per device' }}</td>
+                          <td>{{ $acc['requiredQty'] ?? 0 }} {{ $acc['unit'] ?? '' }}</td>
+                          <td>{{ max(0, (int) ($acc['issuedQty'] ?? 0) - (int) ($acc['returnedQty'] ?? 0)) }}</td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            @endif
+
             @if(!empty($po['logistics']))
               <div class="po-view-section">
                 <div class="po-view-section-title"><i class="fa fa-truck"></i> Logistics — {{ ($po['logistics']['managedBy'] ?? 'us') === 'customer' ? "I'll arrange my own pickup" : 'JSD arranges delivery' }}</div>

@@ -33,8 +33,7 @@ class PermissionManagementController extends Controller
         // Clear permission cache to ensure fresh load from database
         \App\Helpers\PermissionHelper::flushCache();
 
-        $accounts = Writer::whereIn('user_type', ['Reseller', 'User'])
-            ->where('is_deleted', 0)
+        $accounts = $this->adminOwnedAccountsQuery()
             ->orderBy('user_type')
             ->orderBy('name')
             ->get();
@@ -42,6 +41,10 @@ class PermissionManagementController extends Controller
         $selectedAccountId = request()->query('account_id')
             ?? request()->query('reseller_id')
             ?? request()->query('user_id');
+        // A link to an account the Admin did not create (e.g. a Manufacturer's child) opens nothing.
+        if ($selectedAccountId && !$accounts->contains('id', (int) $selectedAccountId)) {
+            $selectedAccountId = null;
+        }
 
         // Get all permissions grouped by module (fresh from database)
         $permissionsByModule = Permission::where('is_active', 1)
@@ -422,6 +425,9 @@ class PermissionManagementController extends Controller
         if ($targetUser && $targetUser->user_type === 'User') {
             $query->where('module', '!=', 'account_management');
         }
+        if ($targetUser && $targetUser->user_type !== 'Reseller') {
+            $query->whereNotIn('key', (new PermissionAssignmentService())->getManufacturerOnlyKeys());
+        }
 
         return $query->pluck('id')
             ->map(fn($id) => (int) $id)
@@ -650,10 +656,108 @@ class PermissionManagementController extends Controller
 
     private function findManageableAccount($accountId): ?Writer
     {
-        return Writer::where('id', $accountId)
-            ->whereIn('user_type', ['Reseller', 'User'])
-            ->where('is_deleted', 0)
+        return $this->adminOwnedAccountsQuery()
+            ->where('id', $accountId)
             ->first();
+    }
+
+    /**
+     * Read-only account chain below an Admin-created account, for the "Hierarchy Summary" on
+     * Manage Permissions. Parent is parent_user_id, else created_by (same rule the permission
+     * cascade uses). Does not change any permission or hierarchy data.
+     */
+    public function getAccountHierarchy($accountId)
+    {
+        if (Auth::user()->user_type !== 'Admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $root = $this->findManageableAccount($accountId);
+        if (!$root) {
+            return response()->json(['error' => 'Account not found'], 404);
+        }
+
+        $accounts = Writer::where('is_deleted', 0)
+            ->whereNotIn('user_type', ['Admin'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'user_type', 'created_by', 'parent_user_id']);
+
+        $childrenOf = [];
+        foreach ($accounts as $account) {
+            $parentId = (int) ($account->parent_user_id ?: $account->created_by);
+            if ($parentId && $parentId !== (int) $account->id) {
+                $childrenOf[$parentId][] = $account;
+            }
+        }
+
+        // Collect the whole chain first (cycle-safe), then count devices for those accounts only.
+        $chainIds = [(int) $root->id];
+        $queue = [(int) $root->id];
+        $seen = [(int) $root->id => true];
+        while ($queue) {
+            $id = array_shift($queue);
+            foreach ($childrenOf[$id] ?? [] as $child) {
+                if (!isset($seen[$child->id])) {
+                    $seen[$child->id] = true;
+                    $chainIds[] = (int) $child->id;
+                    $queue[] = (int) $child->id;
+                }
+            }
+        }
+        $devicesBy = DB::table('devices')
+            ->where('is_deleted', '0')
+            ->whereIn('user_id', $chainIds)
+            ->groupBy('user_id')
+            ->select('user_id', DB::raw('COUNT(*) as total'))
+            ->pluck('total', 'user_id');
+
+        $counts = ['manufacturers' => 0, 'dealers' => 0, 'others' => 0, 'total' => 0, 'devices' => (int) ($devicesBy[$root->id] ?? 0), 'levels' => 0];
+        $visited = [(int) $root->id => true];
+        $build = function ($account, int $depth) use (&$build, &$counts, &$visited, $childrenOf, $devicesBy) {
+            $node = [
+                'id' => (int) $account->id,
+                'name' => $account->name,
+                'email' => $account->email,
+                'type' => $account->user_type,
+                'type_label' => $this->accountTypeLabel($account->user_type),
+                'devices' => (int) ($devicesBy[$account->id] ?? 0),
+                'children' => [],
+            ];
+            foreach ($childrenOf[$account->id] ?? [] as $child) {
+                if (isset($visited[$child->id])) {
+                    continue;
+                }
+                $visited[$child->id] = true;
+                $counts['total']++;
+                $counts['levels'] = max($counts['levels'], $depth + 1);
+                $counts['devices'] += (int) ($devicesBy[$child->id] ?? 0);
+                if ($child->user_type === 'Reseller') {
+                    $counts['manufacturers']++;
+                } elseif ($child->user_type === 'User') {
+                    $counts['dealers']++;
+                } else {
+                    $counts['others']++;
+                }
+                $node['children'][] = $build($child, $depth + 1);
+            }
+            return $node;
+        };
+
+        return response()->json([
+            'root' => $build($root, 0),
+            'counts' => $counts,
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    /**
+     * Manufacturer / Dealer accounts created by an Admin. Child accounts created by a
+     * Manufacturer are managed by that Manufacturer (Manage Child Permissions), not here.
+     */
+    private function adminOwnedAccountsQuery()
+    {
+        return Writer::whereIn('user_type', ['Reseller', 'User'])
+            ->where('is_deleted', 0)
+            ->whereIn('created_by', Writer::where('user_type', 'Admin')->pluck('id'));
     }
 
     private function accountTypeLabel(string $userType): string

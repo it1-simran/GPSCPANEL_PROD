@@ -2446,6 +2446,313 @@ class DeviceController extends Controller
             ->first();
         return view('assign_device', ['users' => $users, 'default_template' => $default_template]);
     }
+
+    /**
+     * Child accounts (dealers) of the logged-in Reseller that devices can be bulk assigned to.
+     */
+    private function bulkAssignDealers()
+    {
+        return Writer::select('id', 'name', 'device_category_id', 'user_type')
+            ->where('created_by', Auth::user()->id)
+            ->where('is_deleted', '0')
+            ->where('user_type', '!=', 'Support')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Reseller: bulk assign / move / take back devices across own stock and direct child accounts.
+     */
+    public function bulkAssignDevice()
+    {
+        $dealers = $this->bulkAssignDealers();
+
+        return view('bulk_assign_device', array_merge(
+            ['users' => $dealers],
+            $this->bulkAssignStats(Auth::user(), $dealers)
+        ));
+    }
+
+    /**
+     * Fresh counts for the Bulk Assign page, so it can update after an assignment without reloading.
+     */
+    public function bulkAssignStatsData()
+    {
+        $stats = $this->bulkAssignStats(Auth::user(), $this->bulkAssignDealers());
+
+        return response()->json([
+            'stock_count' => $stats['stock_count'],
+            'accounts_device_count' => $stats['accounts_device_count'],
+            'dealer_count' => $stats['dealer_count'],
+            'manufacturer_count' => $stats['manufacturer_count'],
+            'categories' => $stats['categories']->map(function ($category) {
+                return [
+                    'id' => (int) $category->id,
+                    'stock_count' => $category->stock_count,
+                    'assigned_count' => $category->assigned_count,
+                ];
+            })->values(),
+        ]);
+    }
+
+    /**
+     * Stock / account counts shown on the Bulk Assign page (overall and per device category).
+     */
+    private function bulkAssignStats($me, $dealers): array
+    {
+        $stock = DB::table('devices')->where('is_deleted', '0')->where('user_id', $me->id);
+        $this->deviceCategoryAccess()->applyCategoryScopeToQuery($stock, $me);
+
+        $withAccounts = DB::table('devices')->where('is_deleted', '0')->whereIn('user_id', $dealers->pluck('id'));
+        $this->deviceCategoryAccess()->applyCategoryScopeToQuery($withAccounts, $me);
+
+        $stockByCategory = (clone $stock)->groupBy('device_category_id')->select('device_category_id', DB::raw('COUNT(*) as total'))->pluck('total', 'device_category_id');
+        $assignedByCategory = (clone $withAccounts)->groupBy('device_category_id')->select('device_category_id', DB::raw('COUNT(*) as total'))->pluck('total', 'device_category_id');
+        $categories = $this->bulkAssignCategories($me)->map(function ($category) use ($stockByCategory, $assignedByCategory) {
+            $category->stock_count = (int) ($stockByCategory[$category->id] ?? 0);
+            $category->assigned_count = (int) ($assignedByCategory[$category->id] ?? 0);
+            return $category;
+        });
+
+        return [
+            'categories' => $categories,
+            'stock_count' => $stock->count(),
+            'accounts_device_count' => $withAccounts->count(),
+            'dealer_count' => $dealers->where('user_type', 'User')->count(),
+            'manufacturer_count' => $dealers->where('user_type', 'Reseller')->count(),
+        ];
+    }
+
+    /**
+     * Device categories the logged-in Reseller has enabled (the ones Bulk Assign can work on).
+     */
+    private function bulkAssignCategories($user)
+    {
+        $query = DeviceCategory::select('id', 'device_category_name')
+            ->where('is_deleted', 0)
+            ->orderBy('device_category_name');
+
+        if ($this->deviceCategoryAccess()->restrictsByCategory($user)) {
+            $query->whereIn('id', $this->deviceCategoryAccess()->parseEnabledCategoryIds($user) ?: [0]);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Parse the uploaded sheet / pasted text and classify every IMEI for the chosen target.
+     * Target "self" = take devices back into the Reseller's own unassigned stock.
+     */
+    public function bulkAssignPreview(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required',
+            'category_id' => 'required|integer',
+            'excel_file' => 'nullable|file|mimes:xlsx,xls,csv|max:5120',
+            'imei_list' => 'nullable|string',
+        ]);
+
+        $me = Auth::user();
+        $dealers = $this->bulkAssignDealers()->keyBy('id');
+        $toSelf = $request->user_id === 'self';
+        $target = $toSelf ? null : $dealers->get((int) $request->user_id);
+        if (!$toSelf && !$target) {
+            return response()->json(['error' => 'Selected account is not one of your accounts.'], 422);
+        }
+
+        $category = $this->bulkAssignCategories($me)->firstWhere('id', (int) $request->category_id);
+        if (!$category) {
+            return response()->json(['error' => 'Selected device category is not enabled for your account.'], 422);
+        }
+        if ($target && !in_array((string) $category->id, array_map('trim', explode(',', (string) $target->device_category_id)), true)) {
+            return response()->json(['error' => $category->device_category_name . ' is not enabled for ' . $target->name . '.'], 422);
+        }
+
+        $imeis = [];
+        if ($request->hasFile('excel_file')) {
+            $rows = Excel::toArray(new DeviceImport, $request->file('excel_file'));
+            $data = $rows[0] ?? [];
+            unset($data[0]); // header row (SL NO, Name, IMEI)
+            foreach ($data as $value) {
+                $imeis[] = isset($value[2]) ? (string) $value[2] : '';
+            }
+        }
+        if (trim((string) $request->imei_list) !== '') {
+            $imeis = array_merge($imeis, preg_split('/[\s,;]+/', $request->imei_list));
+        }
+        $imeis = array_values(array_unique(array_filter(array_map(function ($imei) {
+            return preg_replace('/\D/', '', trim((string) $imei));
+        }, $imeis), function ($imei) {
+            return $imei !== '';
+        })));
+
+        if (count($imeis) === 0) {
+            return response()->json(['error' => 'Please upload an Excel file or enter at least one IMEI.'], 422);
+        }
+
+        $targetCategories = $target ? array_filter(array_map('trim', explode(',', (string) $target->device_category_id))) : [];
+        $devices = Device::whereIn('imei', $imeis)->where('is_deleted', '0')->get()->keyBy('imei');
+        $userNames = Writer::whereIn('id', $devices->pluck('user_id')->filter()->unique())->pluck('name', 'id');
+        $categoryNames = DeviceCategory::pluck('device_category_name', 'id');
+
+        $rows = [];
+        $differentCategory = 0;
+        $alreadyAssigned = 0; // devices currently held by one of the Reseller's accounts
+        $alreadyInStock = 0;  // take back requested for devices already in the Reseller's stock
+        foreach ($imeis as $imei) {
+            $device = $devices->get($imei);
+            $holderId = $device ? (int) $device->user_id : 0;
+            $inStock = $device && $holderId === (int) $me->id;
+            $fromDealer = $device && $dealers->has($holderId);
+            // Never expose details of devices outside the Reseller's own stock / accounts.
+            $visible = $inStock || $fromDealer;
+            if ($fromDealer) {
+                $alreadyAssigned++;
+            }
+            $row = [
+                'imei' => $imei,
+                'id' => null,
+                'name' => $visible ? ($device->name ?? '') : '',
+                'category' => $visible ? ($categoryNames[$device->device_category_id] ?? '') : '',
+                'holder' => $inStock ? 'My Stock' : ($fromDealer ? ($userNames[$holderId] ?? '') : ''),
+                'action' => '',
+                'status' => 'skip',
+                'reason' => '',
+            ];
+
+            if (!$device) {
+                $row['reason'] = 'IMEI not found';
+            } elseif (!$inStock && !$fromDealer) {
+                $row['reason'] = 'Not in your stock or your accounts';
+            } elseif (!$this->deviceCategoryAccess()->userCanAccessDevice($me, $device)) {
+                $row['reason'] = 'Device category not enabled for you';
+            } elseif ((int) $device->device_category_id !== (int) $category->id) {
+                $row['reason'] = 'Different category (' . ($row['category'] ?: 'Unknown') . ')';
+                $differentCategory++;
+            } elseif ($toSelf) {
+                if ($inStock) {
+                    $row['reason'] = 'Already in your stock';
+                    $alreadyInStock++;
+                } else {
+                    $row['status'] = 'ready';
+                    $row['action'] = 'take_back';
+                    $row['reason'] = 'Take back from ' . $row['holder'];
+                }
+            } elseif ($holderId === (int) $target->id) {
+                $row['reason'] = 'Already with ' . $target->name;
+            } elseif (!in_array((string) $device->device_category_id, $targetCategories, true)) {
+                $row['reason'] = 'Category not enabled for ' . $target->name;
+            } else {
+                $row['status'] = 'ready';
+                $row['action'] = $inStock ? 'assign' : 'move';
+                $row['reason'] = $inStock ? 'Assign from stock' : 'Move from ' . $row['holder'];
+            }
+
+            if ($row['status'] === 'ready') {
+                $row['id'] = $device->id;
+            }
+            $rows[] = $row;
+        }
+
+        return response()->json([
+            'rows' => $rows,
+            'total' => count($rows),
+            'ready' => count(array_filter($rows, function ($r) {
+                return $r['status'] === 'ready';
+            })),
+            'dealer' => $toSelf ? 'My Stock' : $target->name,
+            'category' => $category->device_category_name,
+            'different_category' => $differentCategory,
+            'already_assigned' => $alreadyAssigned,
+            'already_in_stock' => $alreadyInStock,
+            'to_self' => $toSelf,
+        ]);
+    }
+
+    /**
+     * Apply the confirmed rows. Ownership is re-validated here; assign/move reuses userassignAll(),
+     * take back mirrors its "unassign from child" branch.
+     */
+    public function bulkAssignSubmit(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required',
+            'category_id' => 'required|integer',
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $me = Auth::user();
+        $dealers = $this->bulkAssignDealers()->keyBy('id');
+
+        $category = $this->bulkAssignCategories($me)->firstWhere('id', (int) $request->category_id);
+        if (!$category) {
+            return response()->json(['success' => '', 'error' => 'Selected device category is not enabled for your account.'], 422);
+        }
+
+        if ($request->user_id === 'self') {
+            $devices = Device::whereIn('id', $request->ids)
+                ->where('is_deleted', '0')
+                ->where('device_category_id', $category->id)
+                ->whereIn('user_id', $dealers->keys())
+                ->get();
+
+            $done = [];
+            foreach ($devices as $device) {
+                if (!$this->deviceCategoryAccess()->userCanAccessDevice($me, $device)) {
+                    continue;
+                }
+                $chain = self::getAssignsIdsForChangeDeviceUser($me->id, $device->assign_to_ids, 'yes');
+                $chainIds = $chain !== '' ? explode(',', $chain) : [];
+                DB::table('devices')->where('id', $device->id)->update([
+                    'master_id' => !empty($chainIds) ? (int) $chainIds[0] : 1,
+                    'user_id' => $me->id,
+                    'assign_to_ids' => $chain,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+                Devicelog::create([
+                    'device_id' => $device->id,
+                    'user_id' => $me->id,
+                    'log' => 'Device with Imei No ' . $device->imei . ' taken back from ' . ($dealers[$device->user_id]->name ?? '') . ' to own stock Successfully!!',
+                    'action' => 'Unassign Account',
+                    'is_active' => 1,
+                ]);
+                $done[] = $device->imei;
+            }
+
+            if (count($done) === 0) {
+                return response()->json(['success' => '', 'error' => 'None of the selected devices can be taken back.'], 422);
+            }
+            return response()->json([
+                'success' => 'Total Device Taken Back :' . count($done) . '</br>Devices moved to your stock for this imei: ' . implode(', ', $done),
+                'error' => '',
+            ]);
+        }
+
+        $target = $dealers->get((int) $request->user_id);
+        if (!$target) {
+            return response()->json(['success' => '', 'error' => 'Selected account is not one of your accounts.'], 422);
+        }
+
+        $sources = $dealers->keys()->push($me->id)->reject(function ($id) use ($target) {
+            return (int) $id === (int) $target->id;
+        })->values();
+
+        $ids = Device::whereIn('id', $request->ids)
+            ->where('is_deleted', '0')
+            ->where('device_category_id', $category->id)
+            ->whereIn('user_id', $sources)
+            ->whereRaw('FIND_IN_SET(device_category_id, ?)', [(string) $target->device_category_id])
+            ->pluck('id')
+            ->all();
+
+        if (count($ids) === 0) {
+            return response()->json(['success' => '', 'error' => 'None of the selected devices can be assigned.'], 422);
+        }
+
+        $request->merge(['ids' => implode(',', $ids), 'user_id' => $target->id]);
+        return $this->userassignAll($request);
+    }
     public function submitImeiSheet(Request $request)
     {
         $rows = Excel::toArray(new DeviceImport, $request->file('excel_file'));

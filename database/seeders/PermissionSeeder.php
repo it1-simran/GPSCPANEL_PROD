@@ -59,6 +59,7 @@ class PermissionSeeder extends Seeder
             'account_management.view', 'account_management.create',
             'account_management.edit', 'account_management.delete',
             'device_management.view', 'device_management.edit',
+            'device_management.bulk_assign',
             'settings_management.view', 'settings_management.create',
             'settings_management.edit', 'settings_management.delete',
             'settings_management.assign_bulk',

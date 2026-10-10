@@ -180,8 +180,21 @@ class PurchaseOrderController extends Controller
         $validated = $request->validate([
             'required_quantity' => 'required|integer|min:1|max:1000000',
             'expected_delivery_date' => 'nullable|date|after_or_equal:today',
+            // Delivery / pickup details can be corrected on resubmit too.
+            'logistics_managed_by' => 'nullable|in:us,customer',
+            'delivery_address' => 'required_if:logistics_managed_by,us|nullable|string|max:1000',
+            'contact_name' => 'required_if:logistics_managed_by,us|nullable|string|max:191',
+            'contact_phone' => 'required_if:logistics_managed_by,us|nullable|string|max:20',
+            'delivery_mode' => 'nullable|string|max:50',
+            'transporter_name' => 'required_if:logistics_managed_by,customer|nullable|string|max:191',
+            'transporter_contact' => 'required_if:logistics_managed_by,customer|nullable|string|max:20',
+            'vehicle_number' => 'required_if:logistics_managed_by,customer|nullable|string|max:20',
+            'pickup_datetime' => 'required_if:logistics_managed_by,customer|nullable|date|after_or_equal:today',
+            'pickup_person_name' => 'nullable|string|max:191',
+            'special_instructions' => 'nullable|string|max:1000',
         ], [
             'expected_delivery_date.after_or_equal' => 'The expected delivery date cannot be in the past.',
+            'pickup_datetime.after_or_equal' => 'Pickup date/time cannot be in the past.',
         ]);
 
         // Same KYC gate as raising a PO, checked live for the PO's account.
@@ -195,8 +208,27 @@ class PurchaseOrderController extends Controller
             'requiredQuantity' => (int) $validated['required_quantity'],
             'remarks' => 'Resubmitted after edit',
         ];
-        if (!empty($validated['expected_delivery_date'])) {
-            $payload['expectedDeliveryDate'] = $validated['expected_delivery_date'];
+        // Cleared on the form = clear it in MES (an old Sales date would otherwise stay).
+        $payload['expectedDeliveryDate'] = !empty($validated['expected_delivery_date']) ? $validated['expected_delivery_date'] : null;
+        if (!empty($validated['logistics_managed_by'])) {
+            $old = $po['logistics'] ?? [];
+            $payload['logistics'] = [
+                'managedBy' => $validated['logistics_managed_by'],
+                'deliveryAddress' => $validated['delivery_address'] ?? '',
+                'contactName' => $validated['contact_name'] ?? '',
+                'contactPhone' => $validated['contact_phone'] ?? '',
+                'deliveryMode' => $validated['delivery_mode'] ?? '',
+                'insuranceRequired' => !empty($old['insuranceRequired']),
+                'transporterName' => $validated['transporter_name'] ?? '',
+                'transporterContact' => $validated['transporter_contact'] ?? '',
+                'vehicleNumber' => $validated['vehicle_number'] ?? '',
+                'pickupDateTime' => !empty($validated['pickup_datetime'])
+                    ? \App\Helper\CommonHelper::convertLocalToUTC($validated['pickup_datetime'])->toIso8601String()
+                    : null,
+                'pickupPersonName' => $validated['pickup_person_name'] ?? '',
+                'ewayBillBy' => $old['ewayBillBy'] ?? 'us',
+                'specialInstructions' => $validated['special_instructions'] ?? '',
+            ];
         }
 
         $result = $mes->resubmitPurchaseOrder($id, $payload);
@@ -419,22 +451,23 @@ class PurchaseOrderController extends Controller
         }
 
         $skus = collect();
+        $details = collect();
+        $error = null;
         if ($userId > 0) {
             $result = $mes->listSkuRequests(['raisedBy' => $userId, 'role' => 'user', 'status' => 'Completed']);
-            $skus = collect($result['rows'])->map(fn($row) => self::mapSkuRow($row));
+            $error = $result['error'] ?? null;
+            $rows = collect($result['rows'] ?? []);
+            $skus = $rows->map(fn($row) => self::mapSkuRow($row));
+            $details = $rows->map(fn($row) => self::mapSkuDetail($row));
         }
-
-        $details = $userId > 0
-            ? collect($mes->listSkuRequests(['raisedBy' => $userId, 'role' => 'user', 'status' => 'Completed'])['rows'])
-                ->map(fn($row) => self::mapSkuDetail($row))
-            : collect();
 
         return response()->json([
             'skus' => $skus->map(fn($s) => [
                 'id' => $s->id,
-                'label' => $s->sku_code . ' — ' . $s->device_category_name . ' (' . $s->esim_make . ')',
+                'label' => $s->sku_code . ' — ' . $s->device_category_name . ($s->esim_make !== '' && $s->esim_make !== null ? ' (' . $s->esim_make . ')' : ''),
             ])->values(),
             'details' => $details->values(),
+            'error' => $error ? 'Could not load SKUs from MES (' . $error . ') — please retry.' : null,
         ]);
     }
 
@@ -617,6 +650,9 @@ class PurchaseOrderController extends Controller
         // configuration all come from it, frozen at approval time.
         $skuRes = $mes->getSkuRequest($validated['sku_id']);
         $sku = $skuRes['sku'] ?? null;
+        if (!$sku && !empty($skuRes['error']) && $skuRes['error'] !== 'not_found') {
+            return back()->withInput()->with('error', 'Could not reach MES to check the SKU (' . $skuRes['error'] . ') — please retry.');
+        }
         if (!$sku || (int) ($sku['raisedBy']['cpanelUserId'] ?? 0) !== (int) $raiser->id) {
             return back()->withInput()->with('error', 'The selected SKU was not found for this account.');
         }
@@ -673,7 +709,9 @@ class PurchaseOrderController extends Controller
                 'transporterName' => $validated['transporter_name'] ?? '',
                 'transporterContact' => $validated['transporter_contact'] ?? '',
                 'vehicleNumber' => $validated['vehicle_number'] ?? '',
-                'pickupDateTime' => $validated['pickup_datetime'] ?? null,
+                'pickupDateTime' => !empty($validated['pickup_datetime'])
+                    ? \App\Helper\CommonHelper::convertLocalToUTC($validated['pickup_datetime'])->toIso8601String()
+                    : null,
                 'pickupPersonName' => $validated['pickup_person_name'] ?? '',
                 'specialInstructions' => $validated['special_instructions'] ?? '',
             ],
@@ -799,8 +837,6 @@ class PurchaseOrderController extends Controller
             $recharge,
             (string) ($po['requiredQuantity'] ?? '-'),
             $delivery,
-            $e($po['fgBomNumber'] ?? '-'),
-            $e($po['tranzactId'] ?? '-'),
             $badge,
             $created,
             $updated,

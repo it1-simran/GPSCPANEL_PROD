@@ -52,8 +52,6 @@
                     <th>Recharge</th>
                     <th>Qty</th>
                     <th>Expected Delivery</th>
-                    <th>FG BOM Number</th>
-                    <th>Tranzact ID</th>
                     <th>Status</th>
                     <th>Created</th>
                     <th>Updated</th>

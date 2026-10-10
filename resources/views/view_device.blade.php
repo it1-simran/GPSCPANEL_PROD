@@ -155,12 +155,17 @@ $currentEmail = Auth::user()->email;
     }, 3000);
   }
 
+  // With scrollX/scrollY, DataTables clones the <table> (all attributes except id, incl.
+  // data-server-side / class) into its scroll header and footer and moves the real <thead>
+  // into that clone. Those clones must never be initialised again.
+  var DT_SCROLL_CLONES = '.dataTables_scrollHead table, .dataTables_scrollFoot table';
+
   // Initialize a server-side (AJAX) DataTable once, on demand.
   function initServerSideTable($table) {
-    if (!$table.length || $table.data('dt-initialized')) {
+    if (!$table.length || !$table.attr('id') || $table.is(DT_SCROLL_CLONES)
+      || $.fn.DataTable.isDataTable($table[0])) {
       return;
     }
-    $table.data('dt-initialized', 1);
     var orderableCols = $table.data('orderable-cols') || [];
     $table.DataTable({
       serverSide: true,
@@ -197,15 +202,18 @@ $currentEmail = Auth::user()->email;
 
   // Initialize any server-side tables inside a container (e.g. a tab pane).
   function initServerTablesIn(selector) {
-    $(selector).find('table[data-server-side="1"]').each(function() {
+    $(selector).find('table[data-server-side="1"]').not(DT_SCROLL_CLONES).each(function() {
       initServerSideTable($(this));
     });
   }
 
   $(document).ready(function() {
     function initializeDataTables() {
-      $('.example').not('[data-server-side="1"]').each(function() {
+      $('.example').not('[data-server-side="1"]').not(DT_SCROLL_CLONES).each(function() {
         var elementId = $(this).attr('id');
+        if (!elementId) {
+          return;
+        }
         if ($.fn.DataTable.isDataTable("#" + elementId)) {
           $("#" + elementId).DataTable().destroy();
         }

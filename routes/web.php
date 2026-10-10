@@ -376,6 +376,7 @@ Route::get('/skus/{id}', [SkuController::class, 'show'])->middleware(['auth', 'l
         Route::get('/admin/permissions/dependencies/get', [PermissionManagementController::class, 'getPermissionDependencies']);
 
         // Generic reseller routes
+        Route::get('/admin/permissions/{resellerId}/hierarchy', [PermissionManagementController::class, 'getAccountHierarchy']);
         Route::get('/admin/permissions/{resellerId}', [PermissionManagementController::class, 'getResellerPermissions']);
         Route::post('/admin/permissions/{resellerId}/preview', [PermissionManagementController::class, 'previewResellerPermissionImpact']);
         Route::post('/admin/permissions/{resellerId}/update', [PermissionManagementController::class, 'updateResellerPermissions']);
@@ -428,6 +429,10 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::get('/edit-device/{id}', [DeviceController::class, 'edit'])->middleware('check.permission:device_management.edit')->name('device.edit');
     Route::patch('/update-device/{id}', [DeviceController::class, 'update'])->middleware('check.permission:device_management.edit')->name('device.update');
     Route::post('/assignuserAll', [DeviceController::class, 'userassignAll'])->middleware('check.permission:device_management.edit')->name('device.userassignall');
+    Route::get('/bulk-assign-device', [DeviceController::class, 'bulkAssignDevice'])->middleware(['check.permission:device_management.edit', 'check.permission:device_management.bulk_assign'])->name('reseller.device.bulkAssign');
+    Route::get('/bulk-assign-device/stats', [DeviceController::class, 'bulkAssignStatsData'])->middleware(['check.permission:device_management.edit', 'check.permission:device_management.bulk_assign']);
+    Route::post('/bulk-assign-device/preview', [DeviceController::class, 'bulkAssignPreview'])->middleware(['check.permission:device_management.edit', 'check.permission:device_management.bulk_assign']);
+    Route::post('/bulk-assign-device/submit', [DeviceController::class, 'bulkAssignSubmit'])->middleware(['check.permission:device_management.edit', 'check.permission:device_management.bulk_assign']);
 
     // Templates
     Route::get('/add-template', [TemplateController::class, 'index'])->middleware('check.permission:settings_management.create')->name('template.add');

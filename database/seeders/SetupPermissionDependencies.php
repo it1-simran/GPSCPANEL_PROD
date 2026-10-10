@@ -25,6 +25,7 @@ class SetupPermissionDependencies extends Seeder
 
             // Device Management - View Device is the parent
             'device_management.edit' => 'device_management.view',
+            'device_management.bulk_assign' => 'device_management.edit',
 
             // Settings Management - View Settings is the parent
             'settings_management.create' => 'settings_management.view',

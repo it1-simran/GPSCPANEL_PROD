@@ -134,7 +134,7 @@
                 <tr>
                   <td class="sku-code-cell">{{ $sku['skuCode'] ?? '-' }}</td>
                   <td>{{ $sku['deviceCategory']['name'] ?? '-' }}</td>
-                  <td>{{ $sku['esim']['make'] ?? '-' }}</td>
+                  <td>{{ ($sku['esim']['make'] ?? '') !== '' ? $sku['esim']['make'] : '-' }}</td>
                   <td>{{ $sku['firmware']['name'] ?? '-' }}</td>
                   <td><span class="sku-status-badge" style="background:{{ $bg }};">{{ $statusLabel }}</span></td>
                   <td>{{ $remarks }}</td>

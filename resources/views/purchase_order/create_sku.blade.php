@@ -146,7 +146,7 @@
                   @if(!$is_admin)
                     @foreach ($mySkus as $s)
                       <option value="{{ $s->id }}" {{ old('sku_id') == $s->id ? 'selected' : '' }}>
-                        {{ $s->sku_code }} — {{ $s->device_category_name }} ({{ $s->esim_make }})
+                        {{ $s->sku_code }} — {{ $s->device_category_name }}@if($s->esim_make) ({{ $s->esim_make }})@endif
                       </option>
                     @endforeach
                   @endif
@@ -495,7 +495,7 @@
         var skus = (res && res.skus) || [];
         indexSkuDetails(res && res.details);
         if (isSelect2($sku)) { try { $sku.select2('destroy'); } catch (e) {} }
-        $sku.empty().append($('<option>').val('').text(skus.length ? 'Select SKU' : 'No approved SKUs for this account'));
+        $sku.empty().append($('<option>').val('').text(res && res.error ? res.error : (skus.length ? 'Select SKU' : 'No approved SKUs for this account')));
         skus.forEach(function (s) { $sku.append($('<option>').val(String(s.id)).text(s.label)); });
         // Keep the SKU picked before a validation error redirected back.
         if (OLD_SKU_ID && $sku.find('option[value="' + OLD_SKU_ID + '"]').length) { $sku.val(OLD_SKU_ID); }

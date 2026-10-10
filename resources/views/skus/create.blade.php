@@ -317,16 +317,88 @@
               </div>
 
               <div class="po-subhead"><i class="fa fa-barcode"></i> Serial Number</div>
+              @php
+                $sfCurrentId = (string) old('serial_format_id', '');
+                $sfCurrentSample = (string) old('serial_number_format', '');
+                $sfKnown = $sfCurrentId !== '' && collect($serialFormats)->contains(fn ($x) => (string) ($x['_id'] ?? '') === $sfCurrentId);
+                // Typed sample (pre-master SKU) or a format deactivated since: offer to keep it.
+                $sfLegacy = $sfCurrentSample !== '' && $sfCurrentId !== '__custom__' && !$sfKnown;
+                // "Others": the customer's own pattern (prefix + number + suffix).
+                $sfCustom = [
+                  'prefix' => (string) old('custom_serial_prefix', ''),
+                  'suffix' => (string) old('custom_serial_suffix', ''),
+                  'pad' => (string) old('custom_serial_pad', '1'),
+                  'digits' => (string) old('custom_serial_digits', 6),
+                ];
+              @endphp
               <div class="row">
                 <div class="col-md-6">
                   <div class="form-group">
-                    <label class="control-label">Sample Serial Number Format <span class="po-required">*</span></label>
-                    <input type="text" name="serial_number_format" id="serial_number_format" class="form-control"
-                      value="{{ old('serial_number_format') }}" placeholder="e.g. JSD-XXXX-000000" maxlength="191" required>
-                    <span class="po-hint">Give a sample of the serial number pattern this SKU's devices will use.</span>
+                    <label class="control-label">Serial Number Format <span class="po-required">*</span></label>
+                    @if (!$serialFormatsError)
+                      <select id="serial_format_id" name="serial_format_id" class="select2" required>
+                        <option value="">Select Serial Number Format</option>
+                        @if ($sfLegacy)
+                          <option value="{{ $sfCurrentId }}" data-sample="{{ $sfCurrentSample }}" data-name="" selected>Keep current: {{ $sfCurrentSample }}</option>
+                        @endif
+                        @foreach ($serialFormats as $sf)
+                          <option value="{{ $sf['_id'] }}" data-name="{{ $sf['name'] }}" data-sample="{{ $sf['sample'] }}" {{ $sfCurrentId === (string) $sf['_id'] ? 'selected' : '' }}>{{ $sf['name'] }} — {{ $sf['sample'] }}</option>
+                        @endforeach
+                        <option value="__custom__" data-name="" data-sample="" {{ $sfCurrentId === '__custom__' ? 'selected' : '' }}>Others — create my own format</option>
+                      </select>
+                      <input type="hidden" name="serial_format_name" id="serial_format_name" value="{{ old('serial_format_name', '') }}">
+                      <input type="hidden" name="serial_number_format" id="serial_number_format" value="{{ $sfCurrentSample }}">
+                      <div class="po-hint">Sample serial: <strong id="serial_format_sample" style="font-family:monospace">{{ $sfCurrentSample !== '' ? $sfCurrentSample : '—' }}</strong> · from the MES Device Serial Formats master.</div>
+                    @else
+                      <input type="text" name="serial_number_format" id="serial_number_format" class="form-control"
+                        value="{{ $sfCurrentSample }}" placeholder="e.g. JSD-XXXX-000000" maxlength="191" required>
+                      <span class="po-hint"><span class="error">Serial formats unavailable from MES ({{ $serialFormatsError }}) — type a sample serial for now.</span></span>
+                    @endif
                   </div>
                 </div>
               </div>
+              @if (!$serialFormatsError)
+              <div class="row" id="customSerialBuilder" style="{{ $sfCurrentId === '__custom__' ? '' : 'display:none' }}">
+                <div class="col-md-12">
+                  <div style="border:1px dashed #cbd5e1;border-radius:10px;padding:14px 16px;background:#f8fafc;margin-bottom:12px">
+                    <div style="font-weight:600;margin-bottom:2px"><i class="fa fa-magic"></i> Create your serial number format</div>
+                    <div class="po-hint" style="margin-bottom:10px">Serials are built as <strong>prefix</strong> + <strong>running number</strong> + <strong>suffix</strong>. It's added to the MES master when the SKU is approved.</div>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <div class="form-group">
+                          <label class="control-label">Prefix <span class="po-required">*</span></label>
+                          <input type="text" name="custom_serial_prefix" id="custom_serial_prefix" class="form-control" maxlength="30" value="{{ $sfCustom['prefix'] }}" placeholder="e.g. GAGN14A26">
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="form-group">
+                          <label class="control-label">Running number</label>
+                          <div style="display:flex;gap:8px;align-items:center">
+                            <label style="display:flex;align-items:center;gap:6px;font-weight:normal;margin:0;white-space:nowrap">
+                              <input type="hidden" name="custom_serial_pad" value="0">
+                              <input type="checkbox" name="custom_serial_pad" id="custom_serial_pad" value="1" {{ $sfCustom['pad'] === '1' ? 'checked' : '' }}> Zero-pad to
+                            </label>
+                            <input type="number" name="custom_serial_digits" id="custom_serial_digits" class="form-control" min="1" max="12" value="{{ $sfCustom['digits'] }}" style="max-width:90px">
+                            <span class="po-hint" style="margin:0">digits</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="form-group">
+                          <label class="control-label">Suffix <span style="font-weight:normal;color:#94a3b8">(optional)</span></label>
+                          <input type="text" name="custom_serial_suffix" id="custom_serial_suffix" class="form-control" maxlength="15" value="{{ $sfCustom['suffix'] }}" placeholder="e.g. -A">
+                        </div>
+                      </div>
+                    </div>
+                    <div style="font-family:monospace;font-size:15px">
+                      <span class="po-hint" style="font-family:inherit">First serials:</span>
+                      <strong id="custom_serial_preview">—</strong>
+                    </div>
+                    <div class="po-hint">Letters, digits, - _ / only.</div>
+                  </div>
+                </div>
+              </div>
+              @endif
 
               </div>{{-- /device, esim & model section --}}
 
@@ -537,6 +609,45 @@
         .fail(function () { clearStickerPreview('Could not load this sticker format.'); });
     }
 
+
+    // Serial Number Format: a master format, or "Others" = build your own.
+    function customSerialSample(n) {
+      var prefix = String($('#custom_serial_prefix').val() || '').trim();
+      if (!prefix) return '';
+      var digits = parseInt($('#custom_serial_digits').val(), 10) || 1;
+      var num = $('#custom_serial_pad').is(':checked') ? String(n).padStart(Math.max(1, digits), '0') : String(n);
+      return prefix + num + String($('#custom_serial_suffix').val() || '').trim();
+    }
+    function syncSerialFormat() {
+      var $sel = $('#serial_format_id');
+      if (!$sel.length) return;
+      var custom = $sel.val() === '__custom__';
+      $('#customSerialBuilder').toggle(custom);
+      $('#custom_serial_prefix').prop('required', custom);
+      var sample;
+      if (custom) {
+        sample = customSerialSample(1);
+        $('#serial_format_name').val('');
+        $('#custom_serial_preview').text(sample ? sample + ', ' + customSerialSample(2) + ' …' : '—');
+      } else {
+        var $opt = $sel.find('option:selected');
+        sample = $opt.data('sample') ? String($opt.data('sample')) : '';
+        $('#serial_format_name').val($opt.data('name') ? String($opt.data('name')) : '');
+      }
+      $('#serial_number_format').val(sample);
+      $('#serial_format_sample').text(sample || '—');
+    }
+    $('#custom_serial_prefix, #custom_serial_suffix').on('input', function () {
+      this.value = this.value.replace(/[^A-Za-z0-9\-_/]/g, '');
+      syncSerialFormat();
+    });
+    $('#custom_serial_digits, #custom_serial_pad').on('input change', function () {
+      $('#custom_serial_digits').prop('disabled', !$('#custom_serial_pad').is(':checked'));
+      syncSerialFormat();
+    });
+    $('#serial_format_id').on('change', syncSerialFormat);
+    $('#custom_serial_digits').prop('disabled', !$('#custom_serial_pad').is(':checked'));
+    syncSerialFormat();
     $('#sticker_format_id').on('change', function () {
       var $opt = $(this).find('option:selected');
       $('#sticker_format_name').val($opt.data('name') ? String($opt.data('name')) : '');

@@ -92,9 +92,9 @@
                 <div><div class="po-view-field-label">SKU Code</div><div class="po-view-field-value">{{ $po['skuCode'] ?? '' ?: '-' }}</div></div>
                 <div><div class="po-view-field-label">Device Category</div><div class="po-view-field-value">{{ $po['deviceCategory']['name'] ?? '-' }}</div></div>
                 <div><div class="po-view-field-label">Firmware</div><div class="po-view-field-value">{{ $po['firmware']['name'] ?? '-' }}</div></div>
-                <div><div class="po-view-field-label">eSIM Make</div><div class="po-view-field-value">{{ $po['esim']['make'] ?? '-' }}</div></div>
-                <div><div class="po-view-field-label">eSIM Profile 1</div><div class="po-view-field-value">{{ $po['esim']['profile1'] ?? '-' }}</div></div>
-                <div><div class="po-view-field-label">eSIM Profile 2</div><div class="po-view-field-value">{{ $po['esim']['profile2'] ?? '-' }}</div></div>
+                <div><div class="po-view-field-label">eSIM Make</div><div class="po-view-field-value">{{ ($po['esim']['make'] ?? '') !== '' ? $po['esim']['make'] : '-' }}</div></div>
+                <div><div class="po-view-field-label">eSIM Profile 1</div><div class="po-view-field-value">{{ ($po['esim']['profile1'] ?? '') !== '' ? $po['esim']['profile1'] : '-' }}</div></div>
+                <div><div class="po-view-field-label">eSIM Profile 2</div><div class="po-view-field-value">{{ ($po['esim']['profile2'] ?? '') !== '' ? $po['esim']['profile2'] : '-' }}</div></div>
                 <div><div class="po-view-field-label">eSIM Recharge</div><div class="po-view-field-value">{{ ($po['esimRechargePeriod'] ?? '') === '2_year' ? '2 Years' : (($po['esimRechargePeriod'] ?? '') === '1_year' ? '1 Year' : '-') }}</div></div>
                 <div><div class="po-view-field-label">Model Name</div><div class="po-view-field-value">{{ $po['modelName'] ?? '' ?: '-' }}</div></div>
                 <div><div class="po-view-field-label">Vendor ID</div><div class="po-view-field-value">{{ $po['vendorId'] ?? '' ?: '-' }}</div></div>
@@ -282,6 +282,60 @@
                         @error('expected_delivery_date')<span class="text-danger">{{ $message }}</span>@enderror
                       </div>
                     </div>
+                  </div>
+                </div>
+                @php
+                  $lg = $po['logistics'] ?? [];
+                  $lgBy = ($lg['managedBy'] ?? 'us') === 'customer' ? 'customer' : 'us';
+                  $lgPickup = !empty($lg['pickupDateTime']) ? \Illuminate\Support\Carbon::parse($lg['pickupDateTime'])->timezone(Auth::user()->timezone ?: 'UTC')->format('Y-m-d\TH:i') : '';
+                @endphp
+                <input type="hidden" name="logistics_managed_by" value="{{ $lgBy }}">
+                <div class="po-view-section" style="margin-top:16px">
+                  <div class="po-view-section-title">{{ $lgBy === 'us' ? 'Delivery details' : 'Pickup details' }}</div>
+                  <div class="row">
+                    @if ($lgBy === 'us')
+                      <div class="col-md-12"><div class="form-group">
+                        <label class="control-label">Delivery Address <span class="text-danger">*</span></label>
+                        <textarea name="delivery_address" class="form-control" rows="2" required>{{ old('delivery_address', $lg['deliveryAddress'] ?? '') }}</textarea>
+                      </div></div>
+                      <div class="col-md-4"><div class="form-group">
+                        <label class="control-label">Contact Name <span class="text-danger">*</span></label>
+                        <input type="text" name="contact_name" class="form-control" maxlength="191" required value="{{ old('contact_name', $lg['contactName'] ?? '') }}">
+                      </div></div>
+                      <div class="col-md-4"><div class="form-group">
+                        <label class="control-label">Contact Phone <span class="text-danger">*</span></label>
+                        <input type="text" name="contact_phone" class="form-control" maxlength="20" required value="{{ old('contact_phone', $lg['contactPhone'] ?? '') }}">
+                      </div></div>
+                      <div class="col-md-4"><div class="form-group">
+                        <label class="control-label">Delivery Mode</label>
+                        <input type="text" name="delivery_mode" class="form-control" maxlength="50" value="{{ old('delivery_mode', $lg['deliveryMode'] ?? '') }}">
+                      </div></div>
+                    @else
+                      <div class="col-md-6"><div class="form-group">
+                        <label class="control-label">Transporter Name <span class="text-danger">*</span></label>
+                        <input type="text" name="transporter_name" class="form-control" maxlength="191" required value="{{ old('transporter_name', $lg['transporterName'] ?? '') }}">
+                      </div></div>
+                      <div class="col-md-6"><div class="form-group">
+                        <label class="control-label">Transporter Contact <span class="text-danger">*</span></label>
+                        <input type="text" name="transporter_contact" class="form-control" maxlength="20" required value="{{ old('transporter_contact', $lg['transporterContact'] ?? '') }}">
+                      </div></div>
+                      <div class="col-md-4"><div class="form-group">
+                        <label class="control-label">Vehicle Number <span class="text-danger">*</span></label>
+                        <input type="text" name="vehicle_number" class="form-control" maxlength="20" required value="{{ old('vehicle_number', $lg['vehicleNumber'] ?? '') }}">
+                      </div></div>
+                      <div class="col-md-4"><div class="form-group">
+                        <label class="control-label">Pickup Date/Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" name="pickup_datetime" class="form-control" required value="{{ old('pickup_datetime', $lgPickup) }}">
+                      </div></div>
+                      <div class="col-md-4"><div class="form-group">
+                        <label class="control-label">Pickup Person</label>
+                        <input type="text" name="pickup_person_name" class="form-control" maxlength="191" value="{{ old('pickup_person_name', $lg['pickupPersonName'] ?? '') }}">
+                      </div></div>
+                    @endif
+                    <div class="col-md-12"><div class="form-group">
+                      <label class="control-label">Special Instructions</label>
+                      <textarea name="special_instructions" class="form-control" rows="2" maxlength="1000">{{ old('special_instructions', $lg['specialInstructions'] ?? '') }}</textarea>
+                    </div></div>
                   </div>
                 </div>
                 <div class="po-view-actions">

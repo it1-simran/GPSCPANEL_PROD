@@ -81,6 +81,7 @@ class SkuController extends Controller
 
         $esimOptions = $mes->getEsimOptions();
         $stickerFormats = $mes->getStickerFormats();
+        $serialFormats = $mes->getDeviceSerialFormats();
 
         $accounts = collect();
         if ($isAdmin) {
@@ -106,6 +107,8 @@ class SkuController extends Controller
             'accounts' => $accounts,
             'stickerFormats' => $stickerFormats['formats'],
             'stickerFormatsError' => $stickerFormats['error'],
+            'serialFormats' => $serialFormats['formats'],
+            'serialFormatsError' => $serialFormats['error'],
         ]);
     }
 
@@ -205,6 +208,13 @@ class SkuController extends Controller
             'model_name' => 'nullable|string|max:191',
             'vendor_id' => 'nullable|string|max:191',
             'serial_number_format' => 'required|string|max:191',
+            'serial_format_id' => 'nullable|string|max:64',
+            'serial_format_name' => 'nullable|string|max:191',
+            // "Others": the customer's own serial pattern.
+            'custom_serial_prefix' => ['nullable', 'required_if:serial_format_id,__custom__', 'string', 'max:30', 'regex:/^[A-Za-z0-9\-_\/]+$/'],
+            'custom_serial_suffix' => ['nullable', 'string', 'max:15', 'regex:/^[A-Za-z0-9\-_\/]*$/'],
+            'custom_serial_pad' => 'nullable|in:0,1',
+            'custom_serial_digits' => 'nullable|integer|min:1|max:12',
             'carton_type' => 'required|in:direct_master_carton,unit_packaging',
             'sticker_format_id' => 'required|string|max:191',
             'sticker_format_name' => 'nullable|string|max:191',
@@ -222,10 +232,16 @@ class SkuController extends Controller
 
         $owner = $user;
         if ($isAdmin && !empty($validated['raised_by_user_id'])) {
-            $selected = \App\Writer::where('id', $validated['raised_by_user_id'])->where('is_deleted', 0)->first();
-            if ($selected) {
-                $owner = $selected;
+            // Same account rules as the PO path: an active Level-1 Reseller/User.
+            // A stale or tampered id used to fall back silently to the admin.
+            $selected = \App\Writer::where('id', $validated['raised_by_user_id'])
+                ->where('is_deleted', 0)
+                ->whereIn('user_type', ['Reseller', 'User'])
+                ->first();
+            if (!$selected || !$selected->isLevel1()) {
+                return back()->withInput()->with('error', 'The selected account was not found or cannot raise SKUs.');
             }
+            $owner = $selected;
         }
 
         // KYC must be approved before the account can create a SKU — checked
@@ -271,6 +287,9 @@ class SkuController extends Controller
             'modelName' => $validated['model_name'] ?? '',
             'vendorId' => $validated['vendor_id'] ?? null,
             'serialNumberFormat' => $validated['serial_number_format'],
+            // Picked from the MES Device Serial Formats master, or "Others" = the
+            // customer's own pattern (MES re-derives the sample either way).
+            'serialFormat' => $request->has('serial_format_id') ? $this->serialFormatPayload($validated) : null,
             'cartonType' => $validated['carton_type'],
             'stickerFormat' => ['id' => $validated['sticker_format_id'], 'name' => $validated['sticker_format_name'] ?? ''],
             'configuration' => $this->buildConfigSnapshot(
@@ -280,7 +299,7 @@ class SkuController extends Controller
             ),
         ];
 
-        $result = $mes->createSkuRequest($payload);
+        $result = $mes->createSkuRequest($this->withoutNulls($payload));
 
         $redirect = redirect()->to('/skus');
         if ($result['success']) {
@@ -320,6 +339,7 @@ class SkuController extends Controller
         $assign = CommonHelper::assignmentsForUser($writerId);
         $esimOptions = $mes->getEsimOptions();
         $stickerFormats = $mes->getStickerFormats();
+        $serialFormats = $mes->getDeviceSerialFormats();
 
         $configOverrides = [];
         foreach (($sku['configuration']['values'] ?? []) as $k => $v) {
@@ -341,6 +361,8 @@ class SkuController extends Controller
             'backends' => $assign['backends'],
             'stickerFormats' => $stickerFormats['formats'],
             'stickerFormatsError' => $stickerFormats['error'],
+            'serialFormats' => $serialFormats['formats'],
+            'serialFormatsError' => $serialFormats['error'],
             'configOverrides' => $configOverrides,
         ]);
     }
@@ -389,6 +411,13 @@ class SkuController extends Controller
             'model_name' => 'nullable|string|max:191',
             'vendor_id' => 'nullable|string|max:191',
             'serial_number_format' => 'required|string|max:191',
+            'serial_format_id' => 'nullable|string|max:64',
+            'serial_format_name' => 'nullable|string|max:191',
+            // "Others": the customer's own serial pattern.
+            'custom_serial_prefix' => ['nullable', 'required_if:serial_format_id,__custom__', 'string', 'max:30', 'regex:/^[A-Za-z0-9\-_\/]+$/'],
+            'custom_serial_suffix' => ['nullable', 'string', 'max:15', 'regex:/^[A-Za-z0-9\-_\/]*$/'],
+            'custom_serial_pad' => 'nullable|in:0,1',
+            'custom_serial_digits' => 'nullable|integer|min:1|max:12',
             'carton_type' => 'required|in:direct_master_carton,unit_packaging',
             'sticker_format_id' => 'required|string|max:191',
             'sticker_format_name' => 'nullable|string|max:191',
@@ -400,6 +429,12 @@ class SkuController extends Controller
         $this->substituteEsimOthers($validated);
         if ($this->esimProfilesCollide($validated)) {
             return back()->withInput()->with('error', 'eSIM Profile 1 and Profile 2 must be different.');
+        }
+
+        // KYC must still be approved to edit or resubmit (same gate as create).
+        $ownerRow = \App\Writer::where('id', $writerId)->where('is_deleted', 0)->first();
+        if (!$ownerRow || $mes->syncKycStatus($ownerRow) !== 'Approved') {
+            return back()->withInput()->with('error', 'KYC (organization details) must be approved by Accounts before this SKU can be edited or resubmitted.');
         }
 
         if ($msg = $this->assertAssigned($writerId, (int) $validated['device_category_id'], $validated['firmware_id'] ?? null)) {
@@ -415,6 +450,7 @@ class SkuController extends Controller
             : null;
 
         $payload = [
+            'kycApproved' => true,
             'deviceCategory' => ['id' => (int) $validated['device_category_id'], 'name' => $categoryName],
             'esim' => [
                 'provider' => $validated['esim_provider'],
@@ -430,6 +466,9 @@ class SkuController extends Controller
             'modelName' => $validated['model_name'] ?? '',
             'vendorId' => $validated['vendor_id'] ?? null,
             'serialNumberFormat' => $validated['serial_number_format'],
+            // Picked from the MES Device Serial Formats master, or "Others" = the
+            // customer's own pattern (MES re-derives the sample either way).
+            'serialFormat' => $request->has('serial_format_id') ? $this->serialFormatPayload($validated) : null,
             'cartonType' => $validated['carton_type'],
             'stickerFormat' => ['id' => $validated['sticker_format_id'], 'name' => $validated['sticker_format_name'] ?? ''],
             'configuration' => $this->buildConfigSnapshot(
@@ -440,8 +479,8 @@ class SkuController extends Controller
         ];
 
         $result = $isResubmit
-            ? $mes->resubmitSkuRequest($id, $payload + ['remarks' => 'Resubmitted after edit'])
-            : $mes->updateSkuRequest($id, $payload);
+            ? $mes->resubmitSkuRequest($id, $this->withoutNulls($payload) + ['remarks' => 'Resubmitted after edit'])
+            : $mes->updateSkuRequest($id, $this->withoutNulls($payload));
 
         $redirect = redirect()->to('/skus');
         if ($result['success']) {
@@ -501,4 +540,30 @@ class SkuController extends Controller
             'skuId' => $id,
         ]);
     }
+
+    /**
+     * serialFormat sent to MES: a master format ({id, name}) or, for "Others",
+     * the customer's own pattern ({custom, prefix, suffix, enableZero, noOfZeroRequired}).
+     */
+    private function serialFormatPayload(array $validated): array
+    {
+        if (($validated['serial_format_id'] ?? '') === '__custom__') {
+            $pad = ($validated['custom_serial_pad'] ?? '1') === '1';
+            return [
+                'custom' => true,
+                'prefix' => trim($validated['custom_serial_prefix'] ?? ''),
+                'suffix' => trim($validated['custom_serial_suffix'] ?? ''),
+                'enableZero' => $pad,
+                'noOfZeroRequired' => $pad ? (int) ($validated['custom_serial_digits'] ?? 6) : 0,
+            ];
+        }
+        return ['id' => $validated['serial_format_id'] ?? '', 'name' => $validated['serial_format_name'] ?? ''];
+    }
+
+    /** Drop null entries (e.g. serialFormat when the form had no format picker). */
+    private function withoutNulls(array $payload): array
+    {
+        return array_filter($payload, fn ($v) => $v !== null);
+    }
 }
+

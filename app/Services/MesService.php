@@ -155,6 +155,30 @@ class MesService
      *
      * @return array{formats:array, error:?string}
      */
+    /**
+     * Active Device Serial Formats from the MES master (SKU form picklist).
+     * Each item: _id, name, prefix, suffix, enableZero, noOfZeroRequired, sample.
+     *
+     * @return array{formats:array, error:?string}
+     */
+    public function getDeviceSerialFormats(): array
+    {
+        if (!$this->isConfigured()) {
+            return ['formats' => [], 'error' => 'not_configured'];
+        }
+        try {
+            $response = $this->client()->get($this->baseUrl . '/integrations/cpanel/device-serial-formats');
+            if (!$response->successful()) {
+                Log::warning('MES getDeviceSerialFormats non-2xx', ['status' => $response->status(), 'body' => $response->body()]);
+                return ['formats' => [], 'error' => 'mes_error'];
+            }
+            return ['formats' => $response->json('data') ?? [], 'error' => null];
+        } catch (Exception $e) {
+            Log::error('MES getDeviceSerialFormats failed: ' . $e->getMessage());
+            return ['formats' => [], 'error' => 'unreachable'];
+        }
+    }
+
     public function getStickerFormats(): array
     {
         if (!$this->isConfigured()) {

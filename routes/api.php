@@ -5,6 +5,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiControllers\DeviceApiController;
 use App\Http\Controllers\Api\TrackerPacketController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\KycController;
+
+// MES → CPanel master-data (Sales PO edit form). Guarded by shared x-api-key.
+Route::get('/integrations/mes/device-categories', [PurchaseOrderController::class, 'mesDeviceCategories']);
+Route::get('/integrations/mes/firmware', [PurchaseOrderController::class, 'mesFirmware']);
+Route::get('/integrations/mes/model-lookup', [PurchaseOrderController::class, 'mesModelLookup']);
+Route::get('/integrations/mes/model-options', [PurchaseOrderController::class, 'mesModelOptions']);
+Route::post('/integrations/mes/models', [PurchaseOrderController::class, 'mesCreateModel']);
+// MES → CPanel: stream a Writer's KYC document to the Accounts review page.
+Route::get('/integrations/mes/kyc-document/{cpanelUserId}', [KycController::class, 'mesKycDocument']);
 
 /*
 |--------------------------------------------------------------------------

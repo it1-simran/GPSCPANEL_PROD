@@ -98,6 +98,7 @@ class DeviceCategoryController extends Controller
             'device_category_name' => $request->deviceName,
             'inputs' => json_encode($result),
             'is_esim' => $request->is_esim == 'on' ? 1 : 0,
+            'is_sku_esim' => $request->is_sku_esim == 'on' ? 1 : 0,
             'is_certification_enable' => $isCertificationEnabled ? 1 : 0,
             'arai_tac_no' => $isCertificationEnabled ? $request->arai_tac_no : null,
             'arai_date' => $isCertificationEnabled ? $request->arai_date : null,
@@ -403,6 +404,7 @@ class DeviceCategoryController extends Controller
         $device_category = DeviceCategory::find($request->device_id);
         $device_category->device_category_name = $request->deviceName;
         $device_category->is_esim = $request->is_esim == "on" ? 1 : 0;
+        $device_category->is_sku_esim = $request->is_sku_esim == "on" ? 1 : 0;
         $device_category->is_can_protocol = $request->is_can_enable == "on" ? 1 : 0;
         $device_category->is_certification_enable = $isCertificationEnabled ? 1 : 0;
         $device_category->arai_tac_no = $isCertificationEnabled ? $request->arai_tac_no : null;

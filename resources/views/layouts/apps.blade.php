@@ -17,6 +17,7 @@ if (Schema::hasTable('version_control')) {
 
 $ticketCount = $tickets->count();
 $userType = Auth::check() ? strtolower(trim((string) Auth::user()->user_type)) : '';
+$isLevel1User = Auth::check() && Auth::user()->isLevel1();
 
 $globalSearchItems = [];
 if ($userType === 'admin') {
@@ -24,6 +25,7 @@ if ($userType === 'admin') {
         ['label' => 'Dashboard', 'url' => url('/admin'), 'keywords' => ['home', 'dashboard']],
         ['label' => 'Ping Analysis', 'url' => url('/admin/ping-interval-analysis'), 'keywords' => ['ping', 'analysis', 'device ping', 'offline']],
         ['label' => 'Raised Tickets', 'url' => url('/admin/tickets'), 'keywords' => ['ticket', 'raised', 'complaint', 'issue']],
+        ['label' => 'KYC Approvals', 'url' => url('/kyc/approvals'), 'keywords' => ['kyc', 'gstin', 'organization', 'approval']],
         ['label' => 'Version Management', 'url' => url('/admin/version-control'), 'keywords' => ['version', 'release', 'notes']],
         ['label' => 'IMEI Management', 'url' => url('/admin/view-imeis'), 'keywords' => ['imei', 'imei list']],
         ['label' => 'Live Tracker', 'url' => url('/admin/tracker'), 'keywords' => ['live', 'tracker', 'tracking', 'logs']],
@@ -38,6 +40,7 @@ if ($userType === 'admin') {
         ['label' => 'Dashboard', 'url' => url('/support'), 'keywords' => ['home', 'dashboard']],
         ['label' => 'Ticket Management', 'url' => url('/support/view-ticket'), 'keywords' => ['ticket', 'raise ticket', 'issue', 'support ticket']],
         ['label' => 'User Approval', 'url' => url('/support/view-user-approval-request'), 'keywords' => ['approval', 'user approval', 'account approval']],
+        ['label' => 'KYC Approvals', 'url' => url('/kyc/approvals'), 'keywords' => ['kyc', 'gstin', 'organization', 'approval']],
         ['label' => 'View Devices', 'url' => url('/support/view-device'), 'keywords' => ['device', 'devices', 'imei']],
         ['label' => 'Assign Devices', 'url' => url('/support/assign-device'), 'keywords' => ['assign device', 'multiple device']],
         ['label' => 'Manage Trackers', 'url' => url('/support/imei-devices'), 'keywords' => ['tracker', 'imei devices', 'manage tracker']],
@@ -54,12 +57,20 @@ if ($userType === 'admin') {
         ['label' => 'Assigned Devices', 'url' => url('/reseller/view-device-assign'), 'keywords' => ['device', 'assigned devices']],
         ['label' => 'View Settings', 'url' => url('/reseller/view-template'), 'keywords' => ['settings', 'template']],
     ];
+    if ($isLevel1User) {
+        $globalSearchItems[] = ['label' => 'My KYC', 'url' => url('/kyc'), 'keywords' => ['kyc', 'gstin', 'organization', 'profile']];
+        $globalSearchItems[] = ['label' => 'My SKUs', 'url' => url('/skus'), 'keywords' => ['sku', 'device category', 'create sku']];
+    }
 } else {
     $globalSearchItems = [
         ['label' => 'Dashboard', 'url' => url('/user'), 'keywords' => ['home', 'dashboard']],
         ['label' => 'View Device', 'url' => url('/user/view-device'), 'keywords' => ['device', 'devices']],
         ['label' => 'View Settings', 'url' => url('/user/view-template'), 'keywords' => ['settings', 'template']],
     ];
+    if ($isLevel1User) {
+        $globalSearchItems[] = ['label' => 'My KYC', 'url' => url('/kyc'), 'keywords' => ['kyc', 'gstin', 'organization', 'profile']];
+        $globalSearchItems[] = ['label' => 'My SKUs', 'url' => url('/skus'), 'keywords' => ['sku', 'device category', 'create sku']];
+    }
 }
 ?>
 
@@ -103,6 +114,16 @@ if ($userType === 'admin') {
     <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @include('partials.gps-notifications-assets')
+    <style>
+        .icon-sidebar.icon-sidebar-brand { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; }
+        .icon-sidebar.icon-sidebar-brand .brand-gps-mark { display: inline-flex; width: 20px; height: 20px; }
+        .icon-sidebar.icon-sidebar-brand .brand-gps-mark svg { width: 100%; height: 100%; fill: currentColor; }
+        .dropdown-usermenu-item { display: flex !important; align-items: center; gap: 10px; white-space: nowrap; }
+        .dropdown-usermenu-item i { width: 14px; text-align: center; flex-shrink: 0; }
+        .dropdown-usermenu-icon { display: inline-flex; width: 14px; height: 14px; flex-shrink: 0; }
+        .dropdown-usermenu-icon .brand-gps-mark { display: inline-flex; width: 100%; height: 100%; }
+        .dropdown-usermenu-icon .brand-gps-mark svg { width: 100%; height: 100%; fill: currentColor; }
+    </style>
 
 
     <!-- Page loader + header / nav (assets/css/portal/layout-shell.css) -->
@@ -269,15 +290,34 @@ if ($userType === 'admin') {
                         <ul class="dropdown-menu dropdown-usermenu animated fadeInUp pull-right">
                             @if (Auth::user()->user_type != 'Admin' && Auth::user()->user_type != "Support")
                             <li>
-                                <a
-                                    href="{{ url(strtolower(Auth::user()->user_type) . '/edit-user/' . Auth::user()->user_type . '/' . Auth::user()->id) }}">Profile</a>
+                                <a class="dropdown-usermenu-item"
+                                    href="{{ url(strtolower(Auth::user()->user_type) . '/edit-user/' . Auth::user()->user_type . '/' . Auth::user()->id) }}">
+                                    <span class="dropdown-usermenu-icon">@include('partials.brand-gps-mark')</span><span>Profile</span>
+                                </a>
+                            </li>
+                            @if (Auth::user()->isLevel1())
+                            <li>
+                                <a class="dropdown-usermenu-item" href="{{ url('/kyc') }}">
+                                    <span class="dropdown-usermenu-icon">@include('partials.brand-gps-mark')</span><span>My KYC</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-usermenu-item" href="{{ url('/skus') }}">
+                                    <i class="fa fa-cube"></i><span>My SKUs</span>
+                                </a>
+                            </li>
+                            @endif
+                            @else
+                            <li>
+                                <a class="dropdown-usermenu-item" href="{{ url('/kyc/approvals') }}">
+                                    <span class="dropdown-usermenu-icon">@include('partials.brand-gps-mark')</span><span>KYC Approvals</span>
+                                </a>
                             </li>
                             @endif
                             <li>
-                                <a class="hvr-bounce-to-right" href="{{ route('logout') }}" onclick="event.preventDefault();
+                                <a class="hvr-bounce-to-right dropdown-usermenu-item" href="{{ route('logout') }}" onclick="event.preventDefault();
                                     document.getElementById('logout-form').submit();">
-                                    <i class="icon-login pull-right"></i>
-                                    {{ __('Logout') }}
+                                    <i class="icon-login"></i><span>{{ __('Logout') }}</span>
                                 </a>
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST"
                                     style="display: none;">
@@ -596,6 +636,34 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
+                        <li class='sub-menu {{ request()->is('admin/purchase-orders', 'admin/purchase-orders/create') ? 'active' : '' }}'>
+                            <a href="#"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/purchase-orders', 'admin/purchase-orders/create') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-file-text-o fa-2x'></span><span>Purchase Orders</span>
+                            </a>
+                            <ul class='sub'>
+                                <li class="{{ request()->is('admin/purchase-orders') ? 'active' : '' }}">
+                                    <a href="{{ url('admin/purchase-orders') }}"
+                                        class="{{ request()->is('admin/purchase-orders') ? 'active' : '' }}">
+                                        View Purchase Orders
+                                    </a>
+                                </li>
+                                <li class="{{ request()->is('admin/purchase-orders/create') ? 'active' : '' }}">
+                                    <a href="{{ url('admin/purchase-orders/create') }}"
+                                        class="{{ request()->is('admin/purchase-orders/create') ? 'active' : '' }}">
+                                        Raise PO
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="{{ request()->is('kyc/approvals') ? 'active' : '' }}">
+                            <a href="{{ url('/kyc/approvals') }}"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('kyc/approvals') ? 'active' : '' }}">
+                                <span class='icon-sidebar icon-sidebar-brand'>@include('partials.brand-gps-mark')</span><span>KYC Approvals</span>
+                            </a>
+                        </li>
+
                         @elseif (Auth::user()->user_type == 'Reseller')
 
                         <li class="{{ request()->is('reseller') ? 'active' : '' }}">
@@ -740,6 +808,43 @@ if ($userType === 'admin') {
                             </a>
                         </li>
                         @endif
+
+                        @if (Auth::user()->isLevel1())
+                        <li class='sub-menu {{ request()->is('reseller/purchase-orders', 'reseller/purchase-orders/create') ? 'active' : '' }}'>
+                            <a href="#"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/purchase-orders', 'reseller/purchase-orders/create') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-file-text-o fa-2x'></span><span>Purchase Orders</span>
+                            </a>
+                            <ul class='sub'>
+                                <li class="{{ request()->is('reseller/purchase-orders') ? 'active' : '' }}">
+                                    <a href="{{ url('reseller/purchase-orders') }}"
+                                        class="{{ request()->is('reseller/purchase-orders') ? 'active' : '' }}">
+                                        View Purchase Orders
+                                    </a>
+                                </li>
+                                <li class="{{ request()->is('reseller/purchase-orders/create') ? 'active' : '' }}">
+                                    <a href="{{ url('reseller/purchase-orders/create') }}"
+                                        class="{{ request()->is('reseller/purchase-orders/create') ? 'active' : '' }}">
+                                        Raise PO
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="{{ request()->is('kyc') ? 'active' : '' }}">
+                            <a href="{{ url('/kyc') }}"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('kyc') ? 'active' : '' }}">
+                                <span class='icon-sidebar icon-sidebar-brand'>@include('partials.brand-gps-mark')</span><span>My KYC</span>
+                            </a>
+                        </li>
+
+                        <li class="{{ request()->is('skus') || request()->is('skus/create') ? 'active' : '' }}">
+                            <a href="{{ url('/skus') }}"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('skus') || request()->is('skus/create') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-cube fa-2x'></span><span>My SKUs</span>
+                            </a>
+                        </li>
+                        @endif
                         @else
                         @if (Auth::user()->user_type == 'User')
 
@@ -819,6 +924,43 @@ if ($userType === 'admin') {
                         </li>
                         @endif
 
+                        @if (Auth::user()->isLevel1())
+                        <li class='sub-menu {{ request()->is('user/purchase-orders', 'user/purchase-orders/create') ? 'active' : '' }}'>
+                            <a href="#"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('user/purchase-orders', 'user/purchase-orders/create') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-file-text-o fa-2x'></span><span>Purchase Orders</span>
+                            </a>
+                            <ul class='sub'>
+                                <li class="{{ request()->is('user/purchase-orders') ? 'active' : '' }}">
+                                    <a href="{{ url('user/purchase-orders') }}"
+                                        class="{{ request()->is('user/purchase-orders') ? 'active' : '' }}">
+                                        View Purchase Orders
+                                    </a>
+                                </li>
+                                <li class="{{ request()->is('user/purchase-orders/create') ? 'active' : '' }}">
+                                    <a href="{{ url('user/purchase-orders/create') }}"
+                                        class="{{ request()->is('user/purchase-orders/create') ? 'active' : '' }}">
+                                        Raise PO
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="{{ request()->is('kyc') ? 'active' : '' }}">
+                            <a href="{{ url('/kyc') }}"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('kyc') ? 'active' : '' }}">
+                                <span class='icon-sidebar icon-sidebar-brand'>@include('partials.brand-gps-mark')</span><span>My KYC</span>
+                            </a>
+                        </li>
+
+                        <li class="{{ request()->is('skus') || request()->is('skus/create') ? 'active' : '' }}">
+                            <a href="{{ url('/skus') }}"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('skus') || request()->is('skus/create') ? 'active' : '' }}">
+                                <span class='icon-sidebar fa fa-cube fa-2x'></span><span>My SKUs</span>
+                            </a>
+                        </li>
+                        @endif
+
                         @endif
                         @if (Auth::user()->user_type == 'Support')
 
@@ -837,9 +979,16 @@ if ($userType === 'admin') {
                             </a>
                         </li>
 
-                        <li class='sub-menu {{ request()->is('support/view-user-approval-request') ? 'active' : '' }}'>
+                        <li class="{{ request()->is('kyc/approvals') ? 'active' : '' }}">
+                            <a href="{{ url('/kyc/approvals') }}"
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('kyc/approvals') ? 'active' : '' }}">
+                                <span class='icon-sidebar icon-sidebar-brand'>@include('partials.brand-gps-mark')</span><span>KYC Approvals</span>
+                            </a>
+                        </li>
+
+                        <li class='sub-menu {{ request()->is('support/view-user-approval-request', 'support/assign-device-category') ? 'active' : '' }}'>
                             <a href="#"
-                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/view-user-approval-request') ? 'active' : '' }}">
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('support/view-user-approval-request', 'support/assign-device-category') ? 'active' : '' }}">
                                 <span class='icon-sidebar pe-7s-user fa-2x'></span><span>Account Management</span>
                             </a>
                             <ul class='sub'>
@@ -847,6 +996,12 @@ if ($userType === 'admin') {
                                     <a href="{{ url('support/view-user-approval-request') }}"
                                         class="{{ request()->is('support/view-user-approval-request') ? 'active' : '' }}">
                                         View User Approval
+                                    </a>
+                                </li>
+                                <li class="{{ request()->is('support/assign-device-category') ? 'active' : '' }}">
+                                    <a href="{{ url('support/assign-device-category') }}"
+                                        class="{{ request()->is('support/assign-device-category') ? 'active' : '' }}">
+                                        Assign Device Category
                                     </a>
                                 </li>
                             </ul>

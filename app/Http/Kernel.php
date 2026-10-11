@@ -59,6 +59,7 @@ class Kernel extends HttpKernel
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'check.role' => \App\Http\Middleware\CheckUserType::class,
         'check.permission' => \App\Http\Middleware\CheckPermission::class,
+        'level1.only' => \App\Http\Middleware\EnsureLevel1Account::class,
         'check.auth.token' => \App\Http\Middleware\CheckAuthorizationToken::class,
         'check.auth.token.jig' => \App\Http\Middleware\CheckAuthorizationTokenJig::class,
         'check.auth.file.token' => \App\Http\Middleware\CheckAuthorizationFileToken::class,

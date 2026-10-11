@@ -544,6 +544,39 @@ class RegisterController extends Controller
     ]);
   }
 
+  /**
+   * Support-only, assign-nothing-else page: lets Support add a device
+   * category to any non-Admin account. Deliberately minimal — no other
+   * account fields are shown or editable here, and there is no "remove"
+   * action (see authorizeAccountDeviceCategoryChange()'s 'enable'-only gate
+   * for Support).
+   */
+  public function supportDeviceCategoryAssignment()
+  {
+    $accounts = Writer::where('is_deleted', 0)
+      ->where('user_type', '!=', 'Admin')
+      ->orderBy('name')
+      ->get(['id', 'name', 'email', 'user_type', 'device_category_id']);
+
+    $allCategories = DeviceCategory::where('is_deleted', 0)->orderBy('device_category_name')->get(['id', 'device_category_name']);
+
+    $accountsData = $accounts->map(function ($account) use ($allCategories) {
+      $assignedIds = array_filter(array_map('trim', explode(',', (string) $account->device_category_id)));
+      return [
+        'id' => $account->id,
+        'name' => $account->name,
+        'email' => $account->email,
+        'user_type' => $account->user_type,
+        'assigned' => $allCategories->whereIn('id', $assignedIds)->values(),
+        'unassigned' => $allCategories->whereNotIn('id', $assignedIds)->values(),
+      ];
+    });
+
+    return view('support_assign_device_category', [
+      'accounts' => $accountsData,
+    ]);
+  }
+
   public function enableAccountDeviceCategory(Request $request, AccountDeviceCategoryService $service)
   {
     try {
@@ -552,7 +585,7 @@ class RegisterController extends Controller
         'category_id' => 'required|integer',
       ]);
 
-      $this->authorizeAccountDeviceCategoryChange((int) $request->user_id);
+      $this->authorizeAccountDeviceCategoryChange((int) $request->user_id, 'enable');
 
       $result = $service->enableCategoryForAccount((int) $request->user_id, (int) $request->category_id);
 
@@ -585,7 +618,7 @@ class RegisterController extends Controller
         'category_id' => 'required|integer',
       ]);
 
-      $this->authorizeAccountDeviceCategoryChange((int) $request->user_id);
+      $this->authorizeAccountDeviceCategoryChange((int) $request->user_id, 'disable');
 
       $service->disableCategoryForAccount((int) $request->user_id, (int) $request->category_id);
 
@@ -608,7 +641,7 @@ class RegisterController extends Controller
     }
   }
 
-  protected function authorizeAccountDeviceCategoryChange(int $userId): Writer
+  protected function authorizeAccountDeviceCategoryChange(int $userId, string $action = 'manage'): Writer
   {
     $currentUser = Auth::user();
     $contact = Writer::where('id', $userId)->where('is_deleted', 0)->firstOrFail();
@@ -627,6 +660,14 @@ class RegisterController extends Controller
     }
 
     if ($currentUser->user_type === 'User' && $currentUser->id === $contact->id) {
+      return $contact;
+    }
+
+    // Support may only ASSIGN a new device category to a non-Admin account —
+    // never disable one, and never anything else this method is reused for.
+    // Enforced here (not just by routing) so this stays true even if a
+    // disable route is ever wired up for Support by mistake later.
+    if ($currentUser->user_type === 'Support' && $action === 'enable' && $contact->user_type !== 'Admin') {
       return $contact;
     }
 

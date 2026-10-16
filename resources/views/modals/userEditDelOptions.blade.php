@@ -50,7 +50,9 @@
 
         <div class="just_confirm text-center hide">
           <i class="fa fa-question-circle" style="font-size:36px;color:#76CF1C;display:block;margin-bottom:12px;"></i>
-          Are you sure you want to delete this?
+          <div style="font-weight:700;margin-bottom:6px;">Are you sure you want to delete this?</div>
+          <div class="confirm_text"></div>
+          <div style="margin-top:8px;font-size:12px;color:#64748b;">It can be restored later from Deactivated Accounts.</div>
         </div>
       </div>
 

@@ -13,6 +13,7 @@ use App\Http\Controllers\DeviceCategoryController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\DeviceLogsController;
 use App\Http\Controllers\GuestUserController;
+use App\Http\Controllers\DeactivatedAccountController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\PermissionManagementController;
 use App\Http\Controllers\KycController;
@@ -192,6 +193,11 @@ Route::get('/skus/{id}', [SkuController::class, 'show'])->middleware(['auth', 'l
     Route::post('/admin/disable-account-device-category', [RegisterController::class, 'disableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
     Route::patch('/admin/update-user-info/{id}/{user_type}', [RegisterController::class, 'updateWriterInformation'])->middleware('check.permission:account_management.edit')->name('writer.updateWriterInformation');
     Route::delete('/admin/delete-user/{id}', [RegisterController::class, 'deleteWriter'])->middleware('check.permission:account_management.delete')->name('writer.delete');
+    Route::get('/admin/delete-user-preview/{id}', [DeactivatedAccountController::class, 'deletePreview'])->middleware('check.permission:account_management.delete');
+    Route::get('/admin/deactivated-accounts', [DeactivatedAccountController::class, 'index'])->middleware('check.permission:account_management.delete');
+    Route::get('/admin/deactivated-accounts/{id}/devices', [DeactivatedAccountController::class, 'devices'])->middleware('check.permission:account_management.delete');
+    Route::post('/admin/deactivated-accounts/{id}/restore', [DeactivatedAccountController::class, 'restore'])->middleware('check.permission:account_management.delete');
+    Route::post('/admin/deactivated-accounts/legacy/{userId}/restore', [DeactivatedAccountController::class, 'restoreLegacy'])->middleware('check.permission:account_management.delete');
     Route::post('/admin/getusers', [RegisterController::class, 'getuserinfo'])->name('user.getinfo');
     Route::post('/admin/assign-device', [RegisterController::class, 'assign'])->name('template.assign');
     Route::post('/admin/get-model-name', [FirmwareController::class, 'getModelName']);
@@ -240,7 +246,6 @@ Route::get('/skus/{id}', [SkuController::class, 'show'])->middleware(['auth', 'l
     Route::post('/admin/submitImeiSheet', [DeviceController::class, 'submitImeiSheet'])->middleware('check.role:admin');
     Route::post('/admin/submit-Multipledevice', [DeviceController::class, 'submitMultipleDevice'])->middleware('check.role:admin');
     Route::post('/admin/store-device', [DeviceController::class, 'create'])->middleware('check.role:admin');
-    Route::get('/admin/testview-device-assign', [DeviceController::class, 'testshowAssign'])->middleware('check.permission:device_management.view')->name('device.view');
     Route::get('/admin/view-device-assign', [DeviceController::class, 'show'])->middleware('check.permission:device_management.view')->name('device.view');
     Route::get('/admin/devices-list-data', [DeviceController::class, 'listData'])->middleware('check.permission:device_management.view');
 
@@ -404,6 +409,11 @@ Route::middleware(['check.role:reseller'])->prefix('reseller')->group(function (
     Route::post('/disable-account-device-category', [RegisterController::class, 'disableAccountDeviceCategory'])->middleware('check.permission:account_management.edit');
     Route::patch('/update-user-info/{id}/{user_type}', [RegisterController::class, 'updateWriterInformation'])->middleware('check.permission:account_management.edit')->name('writer.updateWriterInformation');
     Route::delete('/delete-user/{id}', [RegisterController::class, 'deleteWriter'])->middleware('check.permission:account_management.delete')->name('rwriter.delete');
+    Route::get('/delete-user-preview/{id}', [DeactivatedAccountController::class, 'deletePreview'])->middleware('check.permission:account_management.delete');
+    Route::get('/deactivated-accounts', [DeactivatedAccountController::class, 'index'])->middleware(['check.permission:account_management.delete', 'check.permission:account_management.deactivated_accounts']);
+    Route::get('/deactivated-accounts/{id}/devices', [DeactivatedAccountController::class, 'devices'])->middleware(['check.permission:account_management.delete', 'check.permission:account_management.deactivated_accounts']);
+    Route::post('/deactivated-accounts/{id}/restore', [DeactivatedAccountController::class, 'restore'])->middleware(['check.permission:account_management.delete', 'check.permission:account_management.deactivated_accounts']);
+    Route::post('/deactivated-accounts/legacy/{userId}/restore', [DeactivatedAccountController::class, 'restoreLegacy'])->middleware(['check.permission:account_management.delete', 'check.permission:account_management.deactivated_accounts']);
 
     // Device Management
     Route::get('/view-device-assign', [DeviceController::class, 'show'])->middleware('check.permission:device_management.view')->name('device.view'); // Consider renaming route if needed

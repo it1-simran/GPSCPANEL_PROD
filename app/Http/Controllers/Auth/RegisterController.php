@@ -8,6 +8,9 @@ use App\Writer;
 use App\Device;
 use App\Template;
 use App\DeviceCategory;
+use App\Firmware;
+use App\Modal;
+use App\Helper\CommonHelper;
 use DB;
 use Auth;
 use App\Http\Controllers\Controller;
@@ -17,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use App\Services\AccountDeactivationService;
 use App\Services\AccountDeviceCategoryService;
 use App\Services\PermissionAssignmentService;
 use Svg\Tag\Rect;
@@ -114,6 +118,7 @@ class RegisterController extends Controller
 
     $formatted = [];
     $formattedByCategory = [];
+    $firmwareModels = [];
 
     foreach ($configuration as $categoryId => $config) {
       $formattedRow = [];
@@ -136,6 +141,20 @@ class RegisterController extends Controller
             'value' => $config[$key] ?? ''
           ];
         }
+      }
+
+      // The form keys configuration by position (0, 1, ...) when categories are
+      // ticked, so the firmware's own category is used, not this key.
+      // Only Admin may override Model Name / Vendor ID; other roles always get
+      // the resolved values, whatever the form sends.
+      $canEditFirmwareModel = Auth::user()->user_type == 'Admin';
+      $firmwareModel = $this->resolveFirmwareModelForNewAccount(
+        $config['firmware_id'] ?? null,
+        $canEditFirmwareModel ? ($config['modelName'] ?? null) : null,
+        $canEditFirmwareModel ? ($config['vendorId'] ?? null) : null
+      );
+      if ($firmwareModel) {
+        $firmwareModels[] = $firmwareModel;
       }
 
       $formattedByCategory[(int) $categoryId] = $formattedRow;
@@ -198,6 +217,10 @@ class RegisterController extends Controller
       'password' => 'required|string|min:4|max:10',
       'configuration' => 'required|array|min:1',
       'timezone' => 'required|string|max:255',
+    ], [
+      // Deactivated accounts keep their email/mobile so they can be restored.
+      'email.unique' => 'The email has already been taken (it may belong to a deactivated account — restore it from Deactivated Accounts).',
+      'mobile.unique' => 'The mobile has already been taken (it may belong to a deactivated account — restore it from Deactivated Accounts).',
     ]);
 
     foreach ($configurationData as $key => $configuration) {
@@ -228,29 +251,15 @@ class RegisterController extends Controller
           case 'fota':
             $rule .= '|in:1,0';
             break;
+          case 'modelName':
+          case 'vendorId':
+            $rule .= '|string|max:255';
+            break;
         }
         $configurationRules["configuration.{$key}.{$field}"] = $rule;
       }
     }
     $request->validate($configurationRules);
-    $validate_email = true;
-    $checkUser = DB::table('writers')->where('email', $request->email)->first();
-    if (isset($checkUser->id)) {
-      if ($checkUser->is_deleted == 1) {
-        $validate_email = false;
-        DB::table('writers')->where('id', $checkUser->id)->delete();
-      }
-    }
-    if ($validate_email) {
-      $validated = $request->validate([
-        'email' => 'required|unique:writers|max:255',
-        'mobile' => 'required|unique:writers|min:10|max:10',
-      ]);
-    } else {
-      $validated = $request->validate([
-        'mobile' => 'required|unique:writers|min:10|max:10',
-      ]);
-    }
     //print_r($checkUser); die();
     $writer =  Writer::create([
       'name' => $request->name,
@@ -277,7 +286,58 @@ class RegisterController extends Controller
     app(AccountDeviceCategoryService::class)
       ->provisionDefaultTemplatesForNewAccount($writer, $canConfiguration);
 
+    // Map the selected firmware to the new account (same record Firmware
+    // Management > View Models creates), so no separate assignment is needed.
+    foreach ($firmwareModels as $firmwareModel) {
+      if (!in_array((string) $firmwareModel['category_id'], array_map('strval', $device_category), true)) {
+        continue;
+      }
+      Modal::firstOrCreate(
+        ['user_id' => $writer->id, 'firmware_id' => $firmwareModel['firmware_id']],
+        ['name' => $firmwareModel['name'], 'vendorId' => $firmwareModel['vendorId']]
+      );
+    }
+
     return json_encode(['success' => $request->email . ' Added Successfully']);
+  }
+
+  /**
+   * Model Name / Vendor ID for a firmware selected on Add Account: the values
+   * typed on the form (Admin only); when blank, the creator's hierarchy mapping, else the
+   * category name with vendor "JSD" (same rules as FirmwareController::getModelName).
+   * Null when the firmware is missing or deleted; the caller skips categories the
+   * account doesn't have.
+   */
+  private function resolveFirmwareModelForNewAccount($firmwareId, $modelName = null, $vendorId = null)
+  {
+    if (empty($firmwareId)) {
+      return null;
+    }
+
+    $firmware = Firmware::where('id', $firmwareId)->where('is_deleted', 0)->first();
+    if (!$firmware) {
+      return null;
+    }
+    $categoryId = $firmware->device_category_id;
+
+    $modelName = trim((string) $modelName);
+    $vendorId = trim((string) $vendorId);
+    if ($modelName === '' || $vendorId === '') {
+      $modal = CommonHelper::getModelByHierarchy(null, $firmware->id, Auth::id(), $categoryId);
+      if ($modelName === '') {
+        $modelName = $modal ? $modal->name : CommonHelper::getDeviceCategoryName($categoryId);
+      }
+      if ($vendorId === '') {
+        $vendorId = $modal ? $modal->vendorId : 'JSD';
+      }
+    }
+
+    return [
+      'category_id' => (int) $categoryId,
+      'firmware_id' => $firmware->id,
+      'name' => $modelName,
+      'vendorId' => $vendorId,
+    ];
   }
   public function linkResellers(Request $request)
   {
@@ -416,18 +476,14 @@ class RegisterController extends Controller
         2 => 'writers.name',
         3 => 'writers.mobile',
         4 => 'writers.email',
-        7 => 'writers.total_pings',
-        8 => 'writers.today_pings',
+        8 => 'writers.total_pings',
+        9 => 'writers.today_pings',
       ],
       'fetchRows' => function (array $ids) {
         $contacts = DB::table('writers')->whereIn('id', $ids)->get();
 
         // Page-scoped batch lookups (device counts + latest login per account)
-        $deviceCounts = DB::table('devices')
-          ->select('user_id', DB::raw('COUNT(*) as device_count'))
-          ->whereIn('user_id', $ids)
-          ->groupBy('user_id')
-          ->pluck('device_count', 'user_id');
+        $deviceTotals = $this->deviceTotalsForAccounts($ids);
         $latestLogins = DB::table('user_logins')
           ->whereIn('user_id', $ids)
           ->orderBy('logged_at', 'desc')
@@ -436,7 +492,8 @@ class RegisterController extends Controller
           ->keyBy('user_id');
 
         foreach ($contacts as $contact) {
-          $contact->device_count = $deviceCounts[$contact->id] ?? 0;
+          $contact->device_count = $deviceTotals[$contact->id]['total'] ?? 0;
+          $contact->in_stock_count = $deviceTotals[$contact->id]['in_stock'] ?? 0;
           $login = $latestLogins->get($contact->id);
           $contact->last_ip = $login->ip_address ?? 'N/A';
           $contact->last_device = $login->user_agent ?? 'N/A';
@@ -470,6 +527,7 @@ class RegisterController extends Controller
           $e($contact->email),
           $passwordCell,
           (string) ($contact->device_count ?? 0),
+          (string) ($contact->in_stock_count ?? 0),
           $e($contact->total_pings),
           $e($contact->today_pings),
           $e($contact->last_ip ?? 'N/A'),
@@ -500,6 +558,60 @@ class RegisterController extends Controller
         return $cells;
       },
     ]);
+  }
+  /**
+   * Device counts per account: 'in_stock' = devices the account holds itself (its
+   * Unassigned Devices), 'total' = devices held anywhere in its hierarchy (itself +
+   * all active child accounts, following created_by).
+   *
+   * @return array<int, array{total:int, in_stock:int}>
+   */
+  protected function deviceTotalsForAccounts(array $ids): array
+  {
+    $ids = array_values(array_unique(array_map('intval', $ids)));
+    if (empty($ids)) {
+      return [];
+    }
+
+    $childrenOf = [];
+    foreach (DB::table('writers')->where('is_deleted', 0)->where('user_type', '!=', 'Admin')->get(['id', 'created_by']) as $w) {
+      if ((int) $w->created_by !== (int) $w->id) {
+        $childrenOf[(int) $w->created_by][] = (int) $w->id;
+      }
+    }
+
+    $subtrees = [];
+    foreach ($ids as $id) {
+      $seen = [$id => true];
+      $queue = [$id];
+      while ($queue) {
+        foreach ($childrenOf[array_shift($queue)] ?? [] as $child) {
+          if (!isset($seen[$child])) {
+            $seen[$child] = true;
+            $queue[] = $child;
+          }
+        }
+      }
+      $subtrees[$id] = array_keys($seen);
+    }
+
+    $held = DB::table('devices')
+      ->select('user_id', DB::raw('COUNT(*) as device_count'))
+      ->where('is_deleted', 0)
+      ->whereIn('user_id', array_values(array_unique(array_merge(...array_values($subtrees)))))
+      ->groupBy('user_id')
+      ->pluck('device_count', 'user_id');
+
+    $totals = [];
+    foreach ($subtrees as $id => $tree) {
+      $total = 0;
+      foreach ($tree as $uid) {
+        $total += (int) ($held[$uid] ?? 0);
+      }
+      $totals[$id] = ['total' => $total, 'in_stock' => (int) ($held[$id] ?? 0)];
+    }
+
+    return $totals;
   }
   public function editWriter($userType, $id)
   {
@@ -925,22 +1037,27 @@ class RegisterController extends Controller
   }
   public function deleteWriter(Request $request, $id)
   {
-    try {
-      $contact = Writer::find($id);
-      if (!$contact) {
-        return redirect()->back()->with('error', 'User not found.');
-      }
-      $contact->is_deleted = '1';
-      $contact->save();
-      self::manageEditDelAccs($id, $request->all(), 'delete');
-      if (Auth::user()->user_type == 'Admin') {
-        return redirect('admin/view-user')->with('error',  $contact->email . '-Deleted Successfully');
-      } else {
-        return redirect('reseller/view-user')->with('error',  $contact->email . '-Deleted Successfully');
-      }
-    } catch (QueryException $e) {
-      return redirect()->back()->with('error', 'This user cannot be deleted because other records still depend on it.');
+    // Soft delete: the account and its whole hierarchy are deactivated, their devices
+    // move to the deleting account's unassigned stock, and it all shows (restorable)
+    // on the Deactivated Accounts page.
+    $service = app(AccountDeactivationService::class);
+    if ($reason = $service->deleteDenialReason(Auth::user(), (int) $id)) {
+      return redirect()->back()->with('error', $reason);
     }
+    try {
+      $deactivation = $service->deactivate(Auth::user(), (int) $id);
+    } catch (\RuntimeException $e) {
+      return redirect()->back()->with('error', $e->getMessage());
+    } catch (QueryException $e) {
+      report($e);
+      return redirect()->back()->with('error', 'This account could not be deleted. Nothing was changed.');
+    }
+    $email = Writer::where('id', $id)->value('email');
+    $redirect = Auth::user()->user_type == 'Admin' ? 'admin/view-user' : 'reseller/view-user';
+    return redirect($redirect)->with(
+      'success',
+      $email . ' deactivated: ' . $deactivation->account_count . ' account(s), ' . $deactivation->device_count . ' device(s) moved to Unassigned Devices. You can restore it from Deactivated Accounts.'
+    );
   }
   public function getuserinfo(Request $request)
   {
@@ -1042,7 +1159,19 @@ class RegisterController extends Controller
     // Fetch the contact based on user type and permissions
 
     // $templates = Template::where('templates.is_deleted', '0')->where('verify', '1')->whereIn('device_category_id', $categoryIds)->get();
-    return view('view_configuration', ['deviceCount' => $deviceCount, 'user' => $contact, 'template_info' => $templates, 'url_type' => $url_type, 'descendants' => $childAccounts]);
+    // Second level of the Child Accounts table (accounts under each child Manufacturer)
+    $grandchildren = DB::table('writers')
+      ->whereIn('created_by', $childAccounts->where('user_type', 'Reseller')->pluck('id')->all() ?: [0])
+      ->where('is_deleted', 0)
+      ->where('user_type', '!=', 'Admin')
+      ->get()
+      ->groupBy('created_by');
+    $deviceTotals = $this->deviceTotalsForAccounts(array_merge(
+      $childAccounts->pluck('id')->all(),
+      $grandchildren->flatten()->pluck('id')->all()
+    ));
+
+    return view('view_configuration', ['deviceCount' => $deviceCount, 'user' => $contact, 'template_info' => $templates, 'url_type' => $url_type, 'descendants' => $childAccounts, 'grandchildren' => $grandchildren, 'deviceTotals' => $deviceTotals]);
   }
   public function updateConfigurations(Request $request, $id)
   {
@@ -1229,44 +1358,54 @@ class RegisterController extends Controller
   public function viewUncategorized()
   {
     $url_type = self::getURLType();
-    $usertype = Auth::user()->user_type;
-    if ($usertype == 'Admin') {
-      $utype = '1';
-      $user_id = NULL;
-    } else {
-      $utype = $user_id = Auth::user()->id;
+    $utype = Auth::user()->user_type == 'Admin' ? 1 : Auth::user()->id;
+
+    // Accounts that still have a device category which has since been deleted.
+    $deletedCategoryIds = DeviceCategory::where('is_deleted', 1)
+      ->pluck('id')
+      ->map(fn($id) => (string) $id)
+      ->all();
+
+    $users = collect();
+    if (!empty($deletedCategoryIds)) {
+      $users = Writer::where('created_by', $utype)
+        ->where('is_deleted', 0)
+        ->where('user_type', '!=', 'Admin')
+        ->get()
+        ->filter(function ($writer) use ($deletedCategoryIds) {
+          $categories = array_map('trim', explode(',', (string) $writer->device_category_id));
+          return count(array_intersect($categories, $deletedCategoryIds)) > 0;
+        })
+        ->values();
     }
 
-    // Step 1: Get all device category IDs from writers
-    $deviceCategoryIdsArray = Writer::where('is_deleted', 0)
-      ->where('user_type', '!=', 'Admin')
-      ->pluck('device_category_id') // Get the device_category_id column
-      ->toArray();
-
-    // Flatten the array of comma-separated IDs and remove duplicates
-    $deviceCategoryIdsArray = array_unique(array_merge(...array_map(function ($ids) {
-      return explode(',', $ids); // Split each comma-separated string into an array
-    }, $deviceCategoryIdsArray)));
-
-    // Step 2: Get valid device categories that are marked as deleted
-    $validDeviceCategories = DeviceCategory::whereIn('id', $deviceCategoryIdsArray)
-      ->where('is_deleted', 1) // Check for deleted categories (or adjust based on your needs)
-      ->pluck('id') // Retrieve only the IDs of valid categories
-      ->toArray();
-    // dd($validDeviceCategories);
-    foreach ($validDeviceCategories as $validDeviceCategory) {
-      // Step 3: Query users based on the valid device categories
-      $users = Writer::leftJoin('device_categories', 'device_categories.id', '=', 'device_categories.id')
-        ->where('writers.device_category_id', $validDeviceCategory) // Filter by valid categories
-        ->where('writers.created_by', $utype) // Assuming $utype is defined elsewhere
-        ->where('writers.is_deleted', 0)
-        ->where('writers.user_type', '!=', 'Admin')
-        ->select('writers.*') // Adjust this if you need to select specific columns
-        ->get();
+    $deviceTotals = $this->deviceTotalsForAccounts($users->pluck('id')->all());
+    foreach ($users as $writer) {
+      $writer->total_devices = $deviceTotals[$writer->id]['total'] ?? 0;
     }
-    // Debugging output
-    dd($users);
 
-    return view('view_uncategorized_users', ['users' => $users, 'url_type' => $url_type]);
+    // Assign-device modal: the viewer's unassigned stock in these accounts' categories.
+    $categoryIds = $users->flatMap(fn($writer) => array_map('trim', explode(',', (string) $writer->device_category_id)))
+      ->filter()
+      ->unique()
+      ->values()
+      ->all();
+    $unassign_device = collect();
+    if (!empty($categoryIds)) {
+      $stock = DB::table('devices')
+        ->select('id', 'imei', 'device_category_id')
+        ->where('is_deleted', 0)
+        ->whereIn('device_category_id', $categoryIds);
+      if (Auth::user()->user_type == 'Admin') {
+        $stock->where(function ($q) {
+          $q->whereNull('user_id')->orWhere('user_id', 0);
+        });
+      } else {
+        $stock->where('user_id', Auth::user()->id);
+      }
+      $unassign_device = $stock->orderBy('imei')->get();
+    }
+
+    return view('view_uncategorized_users', ['users' => $users, 'url_type' => $url_type, 'unassign_device' => $unassign_device]);
   }
 }

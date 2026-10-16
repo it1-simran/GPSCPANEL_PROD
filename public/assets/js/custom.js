@@ -614,29 +614,11 @@ $(document).ready(function () {
                 $("body").find(".userResellerEditForm").submit();
             }
         } else if (action_type == "delete") {
-            /// FOR DELETE CASE
-            var in_html = "";
-
-            if (change_type == "Reseller") {
-                var del_type = parent_element
-                    .find('input[class="selectDelType"]:checked')
-                    .val();
-                in_html +=
-                    '<input type="hidden" name="del_type" value="' +
-                    del_type +
-                    '">';
-                in_html +=
-                    '<input type="hidden" name="user_type" value="' +
-                    change_type +
-                    '">';
-            } else {
-                in_html +=
-                    '<input type="hidden" name="user_type" value="' +
-                    change_type +
-                    '">';
-            }
-
-            $("body").find(".userAccCases").html(in_html);
+            /// FOR DELETE CASE: the whole hierarchy is deactivated server-side
+            element.prop("disabled", true);
+            $("body")
+                .find(".userAccCases")
+                .html('<input type="hidden" name="user_type" value="' + change_type + '">');
             $("body").find(".delUserResellerForm").submit();
         }
     });
@@ -726,12 +708,31 @@ $(document).ready(function () {
 
         parent_element.find(".change_type").val(utype);
 
-        if (utype == "Reseller") {
-            parent_element.find("#del_all").prop("checked", true);
-        } else if (utype == "User") {
-            parent_element.find(".steps_area").addClass("hide");
-            parent_element.find(".just_confirm").removeClass("hide");
-        }
+        // Deleting deactivates the account with its whole hierarchy and moves
+        // every device to the deleter's Unassigned Devices (restorable later).
+        parent_element.find(".steps_area").addClass("hide");
+        parent_element.find(".just_confirm").removeClass("hide");
+        var $submit = parent_element.find(".submitEditDelUserOptions");
+        $submit.text("Delete").prop("disabled", true);
+        var $msg = parent_element.find(".just_confirm .confirm_text");
+        $msg.text("Checking account hierarchy…");
+        $.getJSON(
+            form_element.attr("data-action").replace("delete-user/", "delete-user-preview/") + uid
+        )
+            .done(function (p) {
+                var parts = [];
+                if (p.reseller_count > 0) parts.push(p.reseller_count + " child manufacturer(s)");
+                if (p.dealer_count > 0) parts.push(p.dealer_count + " dealer(s)");
+                var text = "This account";
+                if (parts.length) text += " and its " + parts.join(" and ");
+                text += " will be deactivated. " + p.device_count + " device(s) will move to " + p.stock + ".";
+                $msg.text(text);
+                $submit.prop("disabled", false);
+            })
+            .fail(function (xhr) {
+                var err = xhr.responseJSON && xhr.responseJSON.error;
+                $msg.text(err || "Unable to check this account. Please try again.");
+            });
 
         $("body").find("#userEditDelOptionsModal").modal({
             backdrop: "static",

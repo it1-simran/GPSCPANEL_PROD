@@ -34,6 +34,16 @@ class CheckUserType
             ]);
         }
 
+        // A deactivated account loses access immediately, including sessions opened before the delete.
+        if ((int) (Auth::user()->is_deleted ?? 0) === 1) {
+            Auth::logout();
+            $request->session()->invalidate();
+            return response()->view('unauthorized_access', [
+                'error' => 403,
+                'error_msg' => 'Your account has been deactivated.'
+            ]);
+        }
+
         $userRole = strtolower(Auth::user()->user_type);
         $allowedRoles = $this->roleHierarchy[$userRole] ?? [];
         

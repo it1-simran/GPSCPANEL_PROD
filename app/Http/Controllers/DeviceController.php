@@ -1680,12 +1680,6 @@ class DeviceController extends Controller
         ]);
     }
 
-    public function testshowAssign(Device $device, Request $request)
-    {
-        $master_id = Auth::user()->id;
-        self::getDeviceAssignToList(873);
-        die();
-    }
     // public function showAssign(Device $device, Request $request)
     // {
     //     $master_id = Auth::user()->id;

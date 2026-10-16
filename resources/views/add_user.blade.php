@@ -286,13 +286,13 @@
                         <div class="col-md-6">
                           <div class="form-group" style="margin-bottom: 24px;">
                             <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Model Name <span style="color: #ef4444;">*</span></label>
-                            <input type="text" class="form-control" name="configuration[<?= $category->id ?>][modelName]" id="modelName<?= $category->id ?>" readonly style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; background-color: #f8fafc;" />
+                            <input type="text" class="form-control" name="configuration[<?= $category->id ?>][modelName]" id="modelName<?= $category->id ?>" maxlength="255" required {{ Auth::user()->user_type == 'Admin' ? '' : 'readonly' }} style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;{{ Auth::user()->user_type == 'Admin' ? '' : ' background-color: #f8fafc;' }}" />
                           </div>
                         </div>
                         <div class="col-md-6">
                           <div class="form-group" style="margin-bottom: 24px;">
                             <label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Vendor ID <span style="color: #ef4444;">*</span></label>
-                            <input type="text" class="form-control" name="configuration[<?= $category->id ?>][vendorId]" id="vendorId<?= $category->id ?>" readonly style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569; background-color: #f8fafc;" />
+                            <input type="text" class="form-control" name="configuration[<?= $category->id ?>][vendorId]" id="vendorId<?= $category->id ?>" maxlength="255" required {{ Auth::user()->user_type == 'Admin' ? '' : 'readonly' }} style="border-radius: 6px; border: 1px solid #cbd5e1; height: 44px; box-shadow: none; font-size: 14px; color: #475569;{{ Auth::user()->user_type == 'Admin' ? '' : ' background-color: #f8fafc;' }}" />
                           </div>
                         </div>
                       </div>
@@ -951,9 +951,9 @@
                 // Add Model and Vendor fields
                 htmlContent += '<div class="row">';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Model Name <span class="require">*</span></label><div><input type="text" class="form-control" name="configuration[' + index + '][modelName]" id="modelName' + index + '" readonly /></div></div></div>';
+                htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Model Name <span class="require">*</span></label><div><input type="text" class="form-control" name="configuration[' + index + '][modelName]" id="modelName' + index + '" maxlength="255" required {{ Auth::user()->user_type == 'Admin' ? '' : 'readonly' }} /></div></div></div>';
                 htmlContent += '<div class="col-lg-6">';
-                htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Vendor ID <span class="require">*</span></label><div><input type="text" class="form-control" name="configuration[' + index + '][vendorId]" id="vendorId' + index + '" readonly /></div></div></div>';
+                htmlContent += '<div class="form-group" style="margin-bottom: 24px;"><label style="font-weight: 700; color: #334155; font-size: 14px; margin-bottom: 8px; display: block;">Vendor ID <span class="require">*</span></label><div><input type="text" class="form-control" name="configuration[' + index + '][vendorId]" id="vendorId' + index + '" maxlength="255" required {{ Auth::user()->user_type == 'Admin' ? '' : 'readonly' }} /></div></div></div>';
                 htmlContent += '</div>';
 
                 input.forEach((input, index1) => {

@@ -23,6 +23,7 @@ $globalSearchItems = [];
 if ($userType === 'admin') {
     $globalSearchItems = [
         ['label' => 'Dashboard', 'url' => url('/admin'), 'keywords' => ['home', 'dashboard']],
+        ['label' => 'Deactivated Accounts', 'url' => url('/admin/deactivated-accounts'), 'keywords' => ['deactivated', 'deleted', 'restore', 'account']],
         ['label' => 'Ping Analysis', 'url' => url('/admin/ping-interval-analysis'), 'keywords' => ['ping', 'analysis', 'device ping', 'offline']],
         ['label' => 'Raised Tickets', 'url' => url('/admin/tickets'), 'keywords' => ['ticket', 'raised', 'complaint', 'issue']],
         ['label' => 'KYC Approvals', 'url' => url('/kyc/approvals'), 'keywords' => ['kyc', 'gstin', 'organization', 'approval']],
@@ -54,6 +55,7 @@ if ($userType === 'admin') {
     $globalSearchItems = [
         ['label' => 'Dashboard', 'url' => url('/reseller'), 'keywords' => ['home', 'dashboard']],
         ['label' => 'View Account', 'url' => url('/reseller/view-user'), 'keywords' => ['account', 'users']],
+        ['label' => 'Deactivated Accounts', 'url' => url('/reseller/deactivated-accounts'), 'keywords' => ['deactivated', 'deleted', 'restore', 'account']],
         ['label' => 'Assigned Devices', 'url' => url('/reseller/view-device-assign'), 'keywords' => ['device', 'assigned devices']],
         ['label' => 'View Settings', 'url' => url('/reseller/view-template'), 'keywords' => ['settings', 'template']],
     ];
@@ -419,9 +421,9 @@ if ($userType === 'admin') {
                         </li>
 
                         <li
-                            class='sub-menu {{ request()->is('admin/add-user', 'admin/view-user', 'admin/view-user-approval-request') ? 'active' : '' }}'>
+                            class='sub-menu {{ request()->is('admin/add-user', 'admin/view-user', 'admin/view-user-approval-request', 'admin/deactivated-accounts') ? 'active' : '' }}'>
                             <a href="#"
-                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/add-user', 'admin/view-user', 'admin/view-user-approval-request') ? 'active' : '' }}">
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('admin/add-user', 'admin/view-user', 'admin/view-user-approval-request', 'admin/deactivated-accounts') ? 'active' : '' }}">
                                 <span class='icon-sidebar pe-7s-user fa-2x'></span><span>Account Management</span>
                             </a>
                             <ul class='sub'>
@@ -437,6 +439,12 @@ if ($userType === 'admin') {
                                     <a href="{{ url('admin/view-user-approval-request') }}"
                                         class="{{ request()->is('admin/view-user-approval-request') ? 'active' : '' }}">
                                         View User Approval
+                                    </a>
+                                </li>
+                                <li class="{{ request()->is('admin/deactivated-accounts') ? 'active' : '' }}">
+                                    <a href="{{ url('admin/deactivated-accounts') }}"
+                                        class="{{ request()->is('admin/deactivated-accounts') ? 'active' : '' }}">
+                                        Deactivated Accounts
                                     </a>
                                 </li>
                             </ul>
@@ -681,9 +689,9 @@ if ($userType === 'admin') {
                         @endphp
                         @if (\App\Helpers\PermissionHelper::canAccessAccountManagement() && ($resellerCanAddAccount || $resellerCanViewAccount))
                         <li
-                            class='sub-menu {{ request()->is('reseller/add-user', 'reseller/view-user') ? 'active' : '' }}'>
+                            class='sub-menu {{ request()->is('reseller/add-user', 'reseller/view-user', 'reseller/deactivated-accounts') ? 'active' : '' }}'>
                             <a href="#"
-                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/add-user', 'reseller/view-user') ? 'active' : '' }}">
+                                class="hvr-bounce-to-right-sidebar-parent {{ request()->is('reseller/add-user', 'reseller/view-user', 'reseller/deactivated-accounts') ? 'active' : '' }}">
                                 <span class='icon-sidebar pe-7s-user fa-2x'></span><span>Account Management</span>
                             </a>
                             <ul class='sub'>
@@ -700,6 +708,14 @@ if ($userType === 'admin') {
                                     <a href="{{ url('reseller/view-user') }}"
                                         class="{{ request()->is('reseller/view-user') ? 'active' : '' }}">
                                         View Account
+                                    </a>
+                                </li>
+                                @endif
+                                @if (\App\Helpers\PermissionHelper::hasPermission('account_management.delete') && \App\Helpers\PermissionHelper::hasPermission('account_management.deactivated_accounts'))
+                                <li class="{{ request()->is('reseller/deactivated-accounts') ? 'active' : '' }}">
+                                    <a href="{{ url('reseller/deactivated-accounts') }}"
+                                        class="{{ request()->is('reseller/deactivated-accounts') ? 'active' : '' }}">
+                                        Deactivated Accounts
                                     </a>
                                 </li>
                                 @endif

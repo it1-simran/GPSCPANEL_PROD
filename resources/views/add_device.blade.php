@@ -1,10 +1,7 @@
-<?php
-
-use App\Helper\CommonHelper;
-
-$getDeviceCategory = CommonHelper::getDeviceCategory();
-?>
 @extends('layouts.apps')
+@php
+    $getDeviceCategory = \App\Helper\CommonHelper::getDeviceCategory();
+@endphp
 
 @push('styles')
 <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('add-device') }}">
@@ -245,7 +242,8 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 </div>
 <!--======== Main Content End ========-->
 @stop
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+@section('scripts')
 <script type="text/javascript">
     $(document).ready(function() {
         $(' #container').on('input', '.inputType', function() {
@@ -920,3 +918,4 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
         });
     }
 </script>
+@endsection

@@ -120,7 +120,8 @@
 <th>Mobile</th>
 <th>Email</th>
 <th>Login Password</th>
-<th>Total Devices</th>
+<th title="Devices in this account and all its child accounts">Total Devices</th>
+<th title="Devices in this account's own Unassigned Devices">In Stock</th>
 <th>Total Pings</th>
 <th>Today Pings</th>
 <th>Login IP</th>
@@ -246,7 +247,7 @@
         order: [],
         ajax: { url: $table.data('ajax-url') },
         columnDefs: [
-            { targets: [1, 2, 3, 4, 7, 8], orderable: true },
+            { targets: [1, 2, 3, 4, 8, 9], orderable: true },
             { targets: '_all', orderable: false }
         ],
         lengthMenu: [

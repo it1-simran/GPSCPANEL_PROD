@@ -7,6 +7,12 @@ $getDeviceCategory = CommonHelper::getDeviceCategory();
 ?>
 @extends('layouts.apps')
 @section('content')
+@include('modals.userEditDelOptions')
+<form class="delUserResellerForm" data-action="/admin/delete-user/" action="" method="post">
+  @csrf
+  @method('DELETE')
+  <div class="userAccCases"></div>
+</form>
 <section id="main-content">
     <section class="wrapper">
         <!--======== Page Title and Breadcrumbs Start ========-->

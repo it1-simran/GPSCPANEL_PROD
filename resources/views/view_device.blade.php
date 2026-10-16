@@ -79,8 +79,6 @@ $currentEmail = Auth::user()->email;
   </section>
 </section>
 
-@stop
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <div class="modal" id="certificateModal" aria-hidden="true">
   <div class="modal-dialog modal-md">
     <div class="modal-content">
@@ -120,6 +118,9 @@ $currentEmail = Auth::user()->email;
   </div>
 
 <div class="gps-toast-container" id="gpsToastContainer"></div>
+@stop
+
+@section('scripts')
 <script>
   function showToast(msg, type, title) {
     type = type || 'warning';
@@ -583,6 +584,4 @@ $currentEmail = Auth::user()->email;
       return false;
   }
 </script>
-
-
-
+@endsection

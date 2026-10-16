@@ -22,6 +22,7 @@ class PermissionAssignmentService
      */
     private const MANUFACTURER_ONLY_KEYS = [
         'device_management.bulk_assign',
+        'account_management.deactivated_accounts',
     ];
 
     /**

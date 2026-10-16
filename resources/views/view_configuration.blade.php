@@ -10,6 +10,103 @@ $timeZones = TimezoneModel::all();
 
 @push('styles')
 <link rel="stylesheet" href="{{ \App\Support\PortalAssets::pageUrl('view-configuration') }}">
+<style>
+	/* Child Accounts (View Configuration) */
+	.ca-section-title .ca-section-title__text { display: inline-flex; flex-direction: column; vertical-align: middle; line-height: 1.25; }
+	.ca-section-title small { font-size: 12.5px; font-weight: 500; color: #64748b; margin-top: 3px; letter-spacing: 0; text-transform: none; }
+	.ca-panel { padding-top: 4px; }
+	.ca-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 18px; }
+	.ca-summary__item { display: flex; align-items: center; gap: 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+	.ca-summary__icon { width: 52px; height: 52px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+	.ca-summary__icon.is-green { background: #ecf8df; color: #5aa915; }
+	.ca-summary__icon.is-blue { background: #e8edff; color: #3b4fd8; }
+	.ca-summary__icon.is-amber { background: #e9f7e0; color: #4d8a12; }
+	.ca-summary__val { display: block; font-size: 26px; font-weight: 800; color: #0f172a; line-height: 1.1; }
+	.ca-summary__lbl { display: block; font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+	.ca-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+	.ca-filter { display: inline-flex; flex-wrap: wrap; gap: 10px; }
+	.ca-filter__btn { border: 1px solid #e2e8f0; background: #f1f5f9; color: #334155; border-radius: 999px; padding: 9px 18px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+	.ca-filter__btn span { background: #e2e8f0; color: #475569; border-radius: 999px; min-width: 24px; height: 24px; padding: 0 7px; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
+	.ca-filter__btn:hover { border-color: #b7e58a; }
+	.ca-filter__btn.active { background: #5cbf16; border-color: #5cbf16; color: #fff; box-shadow: 0 4px 12px rgba(92, 191, 22, .3); }
+	.ca-filter__btn.active span { background: #fff; color: #4d8a12; }
+	.ca-search { position: relative; flex: 0 1 380px; }
+	.ca-search i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 15px; }
+	.ca-search__input { width: 100%; height: 46px; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0 14px 0 44px; font-size: 14px; background: #fff; outline: none; transition: border-color .15s, box-shadow .15s; }
+	.ca-search__input:focus { border-color: #76CF1C; box-shadow: 0 0 0 3px rgba(118, 207, 28, .15); }
+	.ca-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+	.ca-table-wrap { overflow-x: auto; }
+	.ca-table, .ca-subtable { width: 100%; border-collapse: collapse; margin: 0; }
+	.ca-table > thead th { background: #f4f7fb; color: #334155; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 16px 12px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; text-align: left; }
+	.ca-table > .ca-group > .ca-row > td { padding: 14px 12px; border-bottom: 1px solid #eef2f7; vertical-align: middle; font-size: 14px; color: #1e293b; }
+	.ca-table > .ca-group.is-alt > .ca-row > td { background: #f7fbf3; }
+	.ca-table > .ca-group:hover > .ca-row > td { background: #f1f8ea; }
+	.ca-table > .ca-group.is-open > .ca-row > td { background: #eef7e4; border-bottom-color: transparent; }
+	.ca-col-num { width: 52px; text-align: center !important; }
+	.ca-sr { color: #0f172a; font-weight: 700; }
+	.ca-num { text-align: center !important; white-space: nowrap; }
+	.ca-pings { text-align: left !important; white-space: nowrap; }
+	.ca-mono { font-size: 14px !important; white-space: nowrap; letter-spacing: .01em; }
+	.ca-account { display: flex; align-items: center; gap: 12px; min-width: 200px; }
+	.ca-account__text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+	.ca-account__text strong { color: #0f172a; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.ca-account__text span { color: #64748b; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+	.ca-avatar { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 17px; color: #fff; flex-shrink: 0; }
+	.ca-avatar.is-small { width: 32px; height: 32px; font-size: 13px; }
+	.ca-avatar.is-manufacturer { background: #4f46e5; }
+	.ca-avatar.is-dealer { background: #ea7a12; }
+	.ca-avatar.is-other { background: #64748b; }
+	.ca-pill { display: inline-block; border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+	.ca-pill.is-manufacturer { background: #eef2ff; color: #4338ca; }
+	.ca-pill.is-dealer { background: #fef3c7; color: #a15c07; }
+	.ca-pill.is-other { background: #f1f5f9; color: #475569; }
+	.ca-count { display: block; font-weight: 800; color: #0f172a; font-size: 16px; }
+	.ca-count.is-stock { color: #4d8a12; }
+	.ca-sub { display: block; font-size: 12px; color: #94a3b8; margin-top: 2px; font-weight: 500; }
+	.ca-muted { color: #cbd5e1; font-weight: 700; }
+	.ca-table.is-dealer-view > thead .ca-col-stock,
+	.ca-table.is-dealer-view > .ca-group > .ca-row > .ca-col-stock { display: none; }
+	.ca-expand { align-self: flex-start; margin-top: 6px; border: 1px solid #e2e8f0; background: #fff; color: #334155; border-radius: 999px; padding: 3px 10px; font-size: 11.5px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: all .15s; }
+	.ca-expand i { font-size: 10px; margin-right: 4px; transition: transform .2s; }
+	.ca-expand:hover:not([disabled]) { border-color: #76CF1C; color: #4d8a12; }
+	.ca-expand[aria-expanded="true"] { background: #5cbf16; border-color: #5cbf16; color: #fff; }
+	.ca-expand[aria-expanded="true"] i { transform: rotate(180deg); }
+	.ca-expand[disabled] { opacity: .5; cursor: default; }
+	.ca-detail > td { padding: 0 14px 16px 48px !important; background: #eef7e4; border-bottom: 1px solid #e2e8f0; }
+	.ca-nested { background: #fff; border: 1px solid #e2e8f0; border-left: 3px solid #5cbf16; border-radius: 12px; overflow-x: auto; width: 0; min-width: 100%; /* never widens the outer table */ }
+	.ca-nested__title { padding: 12px 16px; font-size: 13px; font-weight: 800; color: #334155; border-bottom: 1px solid #f1f5f9; }
+	.ca-nested__title i { color: #5cbf16; margin-right: 6px; }
+	.ca-subtable th { color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; padding: 10px 11px; text-align: left; white-space: nowrap; border-bottom: 1px solid #f1f5f9; background: #fafcff; }
+	.ca-subtable td { padding: 10px 11px; font-size: 13.5px; color: #1e293b; border-bottom: 1px solid #f4f6f9; vertical-align: middle; }
+	.ca-subtable tbody tr:last-child td { border-bottom: none; }
+	.ca-subtable .ca-account { min-width: 180px; gap: 10px; }
+	.ca-subtable .ca-account__text strong { font-size: 13.5px; }
+	.ca-subtable .ca-account__text span { font-size: 12px; }
+	.ca-subtable .ca-count { font-size: 14px; }
+	.ca-empty { text-align: center; padding: 40px 16px !important; color: #94a3b8; font-size: 14px; }
+	.ca-empty i { margin-right: 6px; }
+	.ca-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 16px 22px; border-top: 1px solid #eef2f7; }
+	.ca-footer__left { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+	.ca-pagesize { margin: 0; font-size: 14px; color: #475569; font-weight: 500; display: inline-flex; align-items: center; gap: 12px; padding-right: 22px; border-right: 1px solid #e2e8f0; }
+	.ca-pagesize__select { height: 40px; min-width: 84px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0 10px; font-size: 14px; background: #fff; }
+	.ca-info { font-size: 14px; color: #475569; }
+	.ca-info b { color: #0f172a; font-weight: 700; }
+	.ca-pager { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+	.ca-page { min-width: 36px; height: 36px; padding: 0 10px; border: 1px solid #e2e8f0; background: #fff; color: #334155; border-radius: 8px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+	.ca-page:hover:not([disabled]):not(.active) { border-color: #76CF1C; color: #4d8a12; }
+	.ca-page.active { background: #5cbf16; border-color: #5cbf16; color: #fff; }
+	.ca-page[disabled] { opacity: .5; cursor: not-allowed; }
+	.ca-page-gap { color: #94a3b8; padding: 0 2px; }
+	@media (max-width: 1200px) {
+		.ca-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	}
+	@media (max-width: 768px) {
+		.ca-summary { grid-template-columns: 1fr; }
+		.ca-search { flex: 1 1 100%; }
+		.ca-detail > td { padding-left: 16px !important; }
+		.ca-pagesize { border-right: none; padding-right: 0; }
+	}
+</style>
 @endpush
 @section('content')
 
@@ -193,148 +290,206 @@ $timeZones = TimezoneModel::all();
 										</div>
 									</div>
 									@if(Auth::user()->user_type == 'Admin' && $user['user_type'] != 'Support')
+									@php
+										$typeLabel = function ($type) {
+											return $type === 'Reseller' ? 'Manufacturer' : ($type === 'User' ? 'Dealer' : $type);
+										};
+										$typeClass = function ($type) {
+											return $type === 'Reseller' ? 'is-manufacturer' : ($type === 'User' ? 'is-dealer' : 'is-other');
+										};
+										$initial = function ($name) {
+											return mb_strtoupper(mb_substr(trim((string) $name) ?: '?', 0, 1));
+										};
+										$orNa = function ($value) {
+											return ($value === null || $value === '') ? '—' : $value;
+										};
+										// In Stock (own Unassigned Devices) only applies to Manufacturer accounts
+										$showInStock = $user['user_type'] != 'User';
+										$caCols = $showInStock ? 8 : 7;
+										$manufacturerCount = $descendants->where('user_type', 'Reseller')->count();
+										$dealerCount = $descendants->where('user_type', 'User')->count();
+										$hierarchyTotal = collect($descendants)->sum(function ($a) use ($deviceTotals) {
+											return $deviceTotals[$a['id']]['total'] ?? 0;
+										});
+									@endphp
 									<div class="user-info mb-4">
-										<div class="vc-section-title"><i class="fa fa-users"></i> Child Accounts</div>
-										<div class='row view-user-configurations'>
-											<div class='col-lg-12'>
-												<div class="vc-table-wrap">
-													<div class="table-container">
-														<table id="childDataTable" class="vc-table fold-table view_user_table">
-															<thead>
-																<tr>
-																	<th>Sr. No.</th>
-																	<th>Account Type</th>
-																	<th>Name</th>
-																	<th>Mobile</th>
-																	<th>Email</th>
-																	<th>Login Password</th>
-																	<th>Total Devices</th>
-																	<th>Total Pings</th>
-																	<th>Today Pings</th>
-																</tr>
-															</thead>
-															<tbody>
-																@if(count($descendants) > 0)
-																@foreach($descendants as $account)
-																<tr class="view">
-																	<td class="{{ $account['user_type'] == 'Reseller' ? 'accordion-header' : '' }}">
-																		<div style="display: flex; align-items: center; gap: 8px;">
-																			@if($account['user_type'] == 'Reseller')
-																			<div class="svg-container" style="flex-shrink:0;">
-																				<svg fill="#000000" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-																					width="15px" height="15px" viewBox="0 0 45.402 45.402" xml:space="preserve">
-																					<g>
-																						<path d="M41.267,18.557H26.832V4.134C26.832,1.851,24.99,0,22.707,0c-2.283,0-4.124,1.851-4.124,4.135v14.432H4.141
-                                                                                            c-2.283,0-4.139,1.851-4.138,4.135c-0.001,1.141,0.46,2.187,1.207,2.934c0.748,0.749,1.78,1.222,2.92,1.222h14.453V41.27
-                                                                                            c0,1.142,0.453,2.176,1.201,2.922c0.748,0.748,1.777,1.211,2.919,1.211c2.282,0,4.129-1.851,4.129-4.133V26.857h14.435
-                                                                                            c2.283,0,4.134-1.867,4.133-4.15C45.399,20.425,43.548,18.557,41.267,18.557z" />
-																					</g>
-																				</svg>
-																			</div>
-																			@endif
-																			<span>{{ $loop->iteration }}</span>
-																		</div>
-																	</td>
-																	<td>{{ $account['user_type'] == 'Reseller ' ? 'ManuFacturer' :'Dealer'  }}</td>
-																	<td>{{ $account['name'] !== null && $account['name'] !== '' ? $account['name'] : 'N/A' }}</td>
-																	<td>{{ $account['mobile'] !== null && $account['mobile'] !== '' ? $account['mobile'] : 'N/A' }}</td>
-																	<td>{{ $account['email'] !== null && $account['email'] !== '' ? $account['email'] : 'N/A' }}</td>
-																	<td>
-																		<div class="vc-pwd-field" id="pwd-field-{{ $account['id'] }}">
-																			<div class="vc-pwd-field__dots">••••••••</div>
-																			<div class="vc-pwd-field__value">{{ $account['showLoginPassword'] !== null && $account['showLoginPassword'] !== '' ? $account['showLoginPassword'] : 'N/A' }}</div>
-																			<button class="vc-pwd-field__toggle" type="button" onclick="document.getElementById('pwd-field-{{ $account['id'] }}').classList.toggle('vc-pwd-field--visible')">
-																				<i class="fa fa-eye"></i>
-																			</button>
-																		</div>
-																	</td>
-																	<td>{{ $account['device_count'] !== null && $account['device_count'] !== '' ? $account['device_count'] : 'N/A' }}</td>
-																	<td>{{ $account['total_pings'] !== null && $account['total_pings'] !== '' ? $account['total_pings'] : 'N/A' }}</td>
-																	<td>{{ $account['today_pings'] !== null && $account['today_pings'] !== '' ? $account['today_pings'] : 'N/A' }}</td>
-																</tr>
-																@if($account['user_type'] == 'Reseller')
-																<tr class="fold">
-																	<td colspan="9">
-																		<div class="fold-content">
-																			<table class="view_user_table table table-bordered table-striped ">
-																				<thead>
-																					<tr>
-																						<th>Sr. No.</th>
-																						<th>Account Type</th>
-																						<th>Name</th>
-																						<th>Mobile</th>
-																						<th>Email</th>
-																						<th>Login Password</th>
-																						<th>Total Devices</th>
-																						<th>Total Pings</th>
-																						<th>Today Pings</th>
-																					</tr>
-																				</thead>
-																				<tbody>
-																					@php
-																					$j = 1;
-																					$grandchilds = DB::table('writers')->where('created_by', $account['id'])->get();
-																					@endphp
-																					@foreach($grandchilds as $grandchild)
-																					<tr class="accordion-content">
-																						<td class="{{ $grandchild->user_type == 'Reseller' ? 'accordion-header' : '' }}">
-																							<div style="display: flex; align-items: center; gap: 8px;">
-																								@if($grandchild->user_type == 'Reseller')
-																								<div class="svg-container" style="flex-shrink:0;">
-																									<svg class="icon plus-icon" fill="#000000" version="1.1" xmlns="http://www.w3.org/2000/svg" width="15px" height="15px" viewBox="0 0 24 24">
-																										<g>
-																											<path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
-																										</g>
-																									</svg>
-																									<svg class="icon minus-icon" fill="#000000" version="1.1" xmlns="http://www.w3.org/2000/svg" width="15px" height="15px" viewBox="0 0 24 24" style="display:none;">
-																										<g>
-																											<path d="M19 13H5V11H19V13Z" />
-																										</g>
-																									</svg>
-																								</div>
-																								@endif
-																								<span>{{ $j }}</span>
-																							</div>
-																						</td>
-																						<td>{{ $account['user_type'] == 'Reseller ' ? 'ManuFacturer' :'Dealer'  }}</td>
-																						<td>{{ $grandchild->name !== null && $grandchild->name !== '' ? $grandchild->name : 'N/A' }}</td>
-																						<td>{{ $grandchild->mobile !== null && $grandchild->mobile !== '' ? $grandchild->mobile : 'N/A' }}</td>
-																						<td>{{ $grandchild->email !== null && $grandchild->email !== '' ? $grandchild->email : 'N/A' }}</td>
-																						<td>
-																							<div class="vc-pwd-field" id="pwd-field-{{ $grandchild->id }}">
-																								<div class="vc-pwd-field__dots">••••••••</div>
-																								<div class="vc-pwd-field__value">{{ $grandchild->showLoginPassword !== null && $grandchild->showLoginPassword !== '' ? $grandchild->showLoginPassword : 'N/A' }}</div>
-																								<button class="vc-pwd-field__toggle" type="button" onclick="document.getElementById('pwd-field-{{ $grandchild->id }}').classList.toggle('vc-pwd-field--visible')">
-																									<i class="fa fa-eye"></i>
-																								</button>
-																							</div>
-																						</td>
-																						<td>N/A</td>
-																						<td>{{ $grandchild->total_pings !== null && $grandchild->total_pings !== '' ? $grandchild->total_pings : 'N/A' }}</td>
-																						<td>{{ $grandchild->today_pings !== null && $grandchild->today_pings !== '' ? $grandchild->today_pings : 'N/A' }}</td>
-																					</tr>
-																					@php $j++; @endphp
-																					@endforeach
-																				</tbody>
-																			</table>
-																		</div>
-																	</td>
-																	<td style="display:none;"></td>
-																	<td style="display:none;"></td>
-																	<td style="display:none;"></td>
-																	<td style="display:none;"></td>
-																	<td style="display:none;"></td>
-																	<td style="display:none;"></td>
-																	<td style="display:none;"></td>
-																	<td style="display:none;"></td>
-																</tr>
-																@endif
-																@endforeach
-																@endif
-															</tbody>
-														</table>
-													</div>
+										<div class="vc-section-title ca-section-title"><i class="fa fa-users"></i> <span class="ca-section-title__text">Child Accounts<small>Manage and monitor child accounts and their devices.</small></span></div>
+										<div class="ca-panel">
+											<div class="ca-summary">
+												<div class="ca-summary__item"><span class="ca-summary__icon is-green"><i class="fa fa-users"></i></span><div><span class="ca-summary__val">{{ count($descendants) }}</span><span class="ca-summary__lbl">Direct accounts</span></div></div>
+												<div class="ca-summary__item"><span class="ca-summary__icon is-blue"><i class="fa fa-industry"></i></span><div><span class="ca-summary__val">{{ $manufacturerCount }}</span><span class="ca-summary__lbl">Manufacturers</span></div></div>
+												<div class="ca-summary__item"><span class="ca-summary__icon is-amber"><i class="fa fa-briefcase"></i></span><div><span class="ca-summary__val">{{ $dealerCount }}</span><span class="ca-summary__lbl">Dealers</span></div></div>
+												<div class="ca-summary__item"><span class="ca-summary__icon is-green"><i class="fa fa-sitemap"></i></span><div><span class="ca-summary__val">{{ $hierarchyTotal }}</span><span class="ca-summary__lbl">Devices in hierarchy</span></div></div>
+											</div>
+
+											<div class="ca-toolbar">
+												<div class="ca-filter" role="group" aria-label="Filter child accounts by type">
+													<button type="button" class="ca-filter__btn active" data-type="">All <span>{{ count($descendants) }}</span></button>
+													<button type="button" class="ca-filter__btn" data-type="Reseller">Manufacturer <span>{{ $manufacturerCount }}</span></button>
+													<button type="button" class="ca-filter__btn" data-type="User">Dealer <span>{{ $dealerCount }}</span></button>
 												</div>
+												<div class="ca-search">
+													<i class="fa fa-search"></i>
+													<input type="text" class="ca-search__input" placeholder="Search name, email or mobile" aria-label="Search child accounts">
+												</div>
+											</div>
+
+											<div class="ca-card">
+											<div class="ca-table-wrap">
+												<table class="ca-table" id="childAccountsTable">
+													<thead>
+														<tr>
+															<th class="ca-col-num">#</th>
+															<th>Account</th>
+															<th>Type</th>
+															<th>Mobile</th>
+															<th>Login Password</th>
+															<th class="ca-num" title="Devices in this account and all its child accounts">Total Devices</th>
+															@if($showInStock)
+															<th class="ca-num ca-col-stock" title="Devices in the Manufacturer's own Unassigned Devices">In Stock</th>
+															@endif
+															<th class="ca-pings">Pings</th>
+														</tr>
+													</thead>
+													@forelse($descendants as $account)
+													@php
+														$kids = $grandchildren[$account['id']] ?? collect();
+														$searchText = mb_strtolower(implode(' ', array_merge(
+															[$account['name'], $account['email'], $account['mobile']],
+															$kids->flatMap(fn($k) => [$k->name, $k->email, $k->mobile])->all()
+														)));
+													@endphp
+													<tbody class="ca-group" data-type="{{ $account['user_type'] }}" data-search="{{ $searchText }}" data-search-self="{{ mb_strtolower($account['name'] . ' ' . $account['email'] . ' ' . $account['mobile']) }}">
+														<tr class="ca-row">
+															<td class="ca-col-num ca-sr">{{ $loop->iteration }}</td>
+															<td>
+																<div class="ca-account">
+																	<span class="ca-avatar {{ $typeClass($account['user_type']) }}">{{ $initial($account['name']) }}</span>
+																	<div class="ca-account__text">
+																		<strong>{{ $orNa($account['name']) }}</strong>
+																		<span>{{ $orNa($account['email']) }}</span>
+																	@if($account['user_type'] == 'Reseller')
+																	<button type="button" class="ca-expand" aria-expanded="false" {{ $kids->isEmpty() ? 'disabled' : '' }}>
+																		<i class="fa fa-chevron-down"></i> {{ $kids->count() }} {{ $kids->count() == 1 ? 'account' : 'accounts' }}
+																	</button>
+																	@endif
+																	</div>
+																</div>
+															</td>
+															<td><span class="ca-pill {{ $typeClass($account['user_type']) }}">{{ $typeLabel($account['user_type']) }}</span></td>
+															<td class="ca-mono">{{ $orNa($account['mobile']) }}</td>
+															<td>
+																<div class="vc-pwd-field" id="pwd-field-{{ $account['id'] }}">
+																	<div class="vc-pwd-field__dots">••••••••</div>
+																	<div class="vc-pwd-field__value">{{ $orNa($account['showLoginPassword']) }}</div>
+																	<button class="vc-pwd-field__toggle" type="button" onclick="document.getElementById('pwd-field-{{ $account['id'] }}').classList.toggle('vc-pwd-field--visible')">
+																		<i class="fa fa-eye"></i>
+																	</button>
+																</div>
+															</td>
+															<td class="ca-num"><span class="ca-count">{{ $deviceTotals[$account['id']]['total'] ?? 0 }}</span></td>
+															@if($showInStock)
+															<td class="ca-num ca-col-stock">
+																@if($account['user_type'] == 'Reseller')
+																<span class="ca-count is-stock">{{ $deviceTotals[$account['id']]['in_stock'] ?? 0 }}</span>
+																@else
+																<span class="ca-muted">—</span>
+																@endif
+															</td>
+															@endif
+															<td class="ca-pings">
+																<span class="ca-count">{{ $orNa($account['total_pings']) }}</span>
+																<span class="ca-sub">Today {{ $orNa($account['today_pings']) }}</span>
+															</td>
+														</tr>
+														@if($account['user_type'] == 'Reseller' && $kids->isNotEmpty())
+														<tr class="ca-detail" hidden>
+															<td colspan="{{ $caCols }}">
+																<div class="ca-nested">
+																	<div class="ca-nested__title"><i class="fa fa-level-up fa-rotate-90"></i> Accounts under {{ $account['name'] }}</div>
+																	<table class="ca-subtable">
+																		<thead>
+																			<tr>
+																				<th>Account</th>
+																				<th>Type</th>
+																				<th>Mobile</th>
+																				<th>Login Password</th>
+																				<th class="ca-num">Total Devices</th>
+																				<th class="ca-num">In Stock</th>
+																				<th class="ca-pings">Pings</th>
+																			</tr>
+																		</thead>
+																		<tbody>
+																			@foreach($kids as $kid)
+																			<tr>
+																				<td>
+																					<div class="ca-account">
+																						<span class="ca-avatar is-small {{ $typeClass($kid->user_type) }}">{{ $initial($kid->name) }}</span>
+																						<div class="ca-account__text">
+																							<strong>{{ $orNa($kid->name) }}</strong>
+																							<span>{{ $orNa($kid->email) }}</span>
+																						</div>
+																					</div>
+																				</td>
+																				<td><span class="ca-pill {{ $typeClass($kid->user_type) }}">{{ $typeLabel($kid->user_type) }}</span></td>
+																				<td class="ca-mono">{{ $orNa($kid->mobile) }}</td>
+																				<td>
+																					<div class="vc-pwd-field" id="pwd-field-{{ $kid->id }}">
+																						<div class="vc-pwd-field__dots">••••••••</div>
+																						<div class="vc-pwd-field__value">{{ $orNa($kid->showLoginPassword) }}</div>
+																						<button class="vc-pwd-field__toggle" type="button" onclick="document.getElementById('pwd-field-{{ $kid->id }}').classList.toggle('vc-pwd-field--visible')">
+																							<i class="fa fa-eye"></i>
+																						</button>
+																					</div>
+																				</td>
+																				<td class="ca-num"><span class="ca-count">{{ $deviceTotals[$kid->id]['total'] ?? 0 }}</span></td>
+																				<td class="ca-num">
+																					@if($kid->user_type == 'Reseller')
+																					<span class="ca-count is-stock">{{ $deviceTotals[$kid->id]['in_stock'] ?? 0 }}</span>
+																					@else
+																					<span class="ca-muted">—</span>
+																					@endif
+																				</td>
+																				<td class="ca-pings">
+																					<span class="ca-count">{{ $orNa($kid->total_pings) }}</span>
+																					<span class="ca-sub">Today {{ $orNa($kid->today_pings) }}</span>
+																				</td>
+																			</tr>
+																			@endforeach
+																		</tbody>
+																	</table>
+																</div>
+															</td>
+														</tr>
+														@endif
+													</tbody>
+													@empty
+													<tbody>
+														<tr><td colspan="{{ $caCols }}" class="ca-empty"><i class="fa fa-users"></i> This account has no child accounts yet.</td></tr>
+													</tbody>
+													@endforelse
+													<tbody class="ca-no-match" hidden>
+														<tr><td colspan="{{ $caCols }}" class="ca-empty"><i class="fa fa-search"></i> No accounts match your filter.</td></tr>
+													</tbody>
+												</table>
+											</div>
+
+											@if(count($descendants) > 0)
+											<div class="ca-footer">
+												<div class="ca-footer__left">
+													<label class="ca-pagesize">Show
+														<select class="ca-pagesize__select">
+															<option value="10">10</option>
+															<option value="25">25</option>
+															<option value="50">50</option>
+															<option value="0">All</option>
+														</select>
+													</label>
+													<span class="ca-info"></span>
+												</div>
+												<div class="ca-pager"></div>
+											</div>
+											@endif
 											</div>
 										</div>
 									</div>
@@ -491,20 +646,94 @@ $timeZones = TimezoneModel::all();
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 	$(document).ready(function() {
-		$("#childDataTable").DataTable({
-			paging: true,
-			searching: true,
-			ordering: true,
-			lengthChange: true,
-			pageLength: 10,
-			scrollX: true,
-			"aLengthMenu": [
-				[10, 25, 50, 100, 500, -1],
-				[10, 25, 50, 100, 500, "All"]
-			],
-			"iDisplayLength": 10
+		// Child Accounts: type filter + search + pagination over account groups
+		// (each tbody.ca-group = one direct child account and its nested accounts).
+		var $ca = $('#childAccountsTable');
+		if (!$ca.length) {
+			return;
+		}
+		var $groups = $ca.children('tbody.ca-group');
+		var $panel = $ca.closest('.ca-panel');
+		var state = { type: '', query: '', page: 1, size: 10 };
+
+		function render() {
+			var matched = $groups.filter(function() {
+				var $g = $(this);
+				return (!state.type || $g.attr('data-type') === state.type) &&
+					(!state.query || ($g.attr('data-search') || '').indexOf(state.query) !== -1);
+			});
+			var total = matched.length;
+			var size = state.size > 0 ? state.size : Math.max(total, 1);
+			var pages = Math.max(1, Math.ceil(total / size));
+			state.page = Math.min(Math.max(state.page, 1), pages);
+			var start = (state.page - 1) * size;
+
+			$groups.prop('hidden', true);
+			matched.slice(start, start + size).prop('hidden', false).each(function(i) {
+				$(this).toggleClass('is-alt', i % 2 === 1); // zebra rows follow what is visible
+			});
+			// A search hit inside a Manufacturer's nested accounts opens that group
+			if (state.query) {
+				matched.each(function() {
+					if (($(this).attr('data-search-self') || '').indexOf(state.query) === -1) {
+						setOpen($(this), true);
+					}
+				});
+			}
+			$ca.children('tbody.ca-no-match').prop('hidden', total > 0 || !$groups.length);
+
+			$panel.find('.ca-info').html(total
+				? 'Showing <b>' + (start + 1) + '–' + Math.min(start + size, total) + '</b> of <b>' + total + '</b> account' + (total === 1 ? '' : 's')
+				: 'No accounts');
+
+			var html = '';
+			if (total > 0) {
+				html += '<button type="button" class="ca-page" data-page="' + (state.page - 1) + '"' + (state.page === 1 ? ' disabled' : '') + '><i class="fa fa-angle-left"></i></button>';
+				for (var p = 1; p <= pages; p++) {
+					if (p === 1 || p === pages || Math.abs(p - state.page) <= 1) {
+						html += '<button type="button" class="ca-page' + (p === state.page ? ' active' : '') + '" data-page="' + p + '">' + p + '</button>';
+					} else if (p === state.page - 2 || p === state.page + 2) {
+						html += '<span class="ca-page-gap">…</span>';
+					}
+				}
+				html += '<button type="button" class="ca-page" data-page="' + (state.page + 1) + '"' + (state.page === pages ? ' disabled' : '') + '><i class="fa fa-angle-right"></i></button>';
+			}
+			$panel.find('.ca-pager').html(html);
+		}
+
+		$panel.on('click', '.ca-filter__btn', function() {
+			$(this).addClass('active').siblings().removeClass('active');
+			state.type = $(this).data('type') || '';
+			// In Stock only applies to Manufacturers: hide the column when listing Dealers
+			$ca.toggleClass('is-dealer-view', state.type === 'User');
+			state.page = 1;
+			render();
 		});
-	})
+		$panel.on('input', '.ca-search__input', function() {
+			state.query = $.trim($(this).val()).toLowerCase();
+			state.page = 1;
+			render();
+		});
+		$panel.on('change', '.ca-pagesize__select', function() {
+			state.size = parseInt($(this).val(), 10) || 0;
+			state.page = 1;
+			render();
+		});
+		$panel.on('click', '.ca-page[data-page]:not([disabled])', function() {
+			state.page = parseInt($(this).data('page'), 10) || 1;
+			render();
+		});
+		function setOpen($group, open) {
+			$group.toggleClass('is-open', open).find('.ca-detail').prop('hidden', !open);
+			$group.find('.ca-expand').attr('aria-expanded', open ? 'true' : 'false');
+		}
+		$ca.on('click', '.ca-expand:not([disabled])', function() {
+			var $group = $(this).closest('tbody.ca-group');
+			setOpen($group, !$group.hasClass('is-open'));
+		});
+
+		render();
+	});
 
 	function togglePasswordShow(id) {
 		var passwordDiv = document.getElementById('showpassword-' + id);
